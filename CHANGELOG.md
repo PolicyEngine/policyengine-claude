@@ -8,17 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2025-10-18
 
 ### Added
-- **7 new skills** for comprehensive PolicyEngine knowledge base:
+- **10 new skills** for comprehensive PolicyEngine knowledge base:
   - `policyengine-user-guide-skill` - Using PolicyEngine web apps for all users
   - `policyengine-python-client-skill` - Programmatic access via Python/API
   - `policyengine-core-skill` - Core simulation engine architecture and patterns
-  - `policyengine-api-skill` - Flask API development and integration patterns
-  - `policyengine-app-skill` - React app development and component patterns
+  - `policyengine-api-skill` - Flask API development and integration patterns (v1)
+  - `policyengine-app-skill` - React app development and component patterns (v1)
   - `microdf-skill` - Weighted DataFrames for inequality and poverty analysis
-  - `policyengine-design-skill` - Visual identity, colors, fonts, logos, and branding (references both app v1 and v2)
+  - `microimpute-skill` - ML-based variable imputation (replaces synthimpute)
+  - `microcalibrate-skill` - Survey weight calibration with L0 regularization
+  - `l0-skill` - PyTorch L0 regularization for sparsification
+  - `policyengine-design-skill` - Visual identity, colors, fonts, logos (covers v1 and v2 transition)
 - **2 new plugins:**
   - `essential` - For all PolicyEngine users (user-guide, us, writing skills)
-  - `data-science` - For data package contributors (microdf, us, design, standards, writing)
+  - `data-science` - For data package contributors (microdf, microimpute, microcalibrate, l0, us, design, standards, writing)
 
 ### Changed
 - **Multi-audience approach** - All skills now organized with "For Users", "For Analysts", "For Contributors" sections
@@ -33,10 +36,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Version bump to 2.0.0 across all plugins
 - **README rewrite** - Comprehensive documentation of multi-repo, multi-audience approach
 
+### Deprecated
+- **synthimpute** - Archived, replaced by microimpute + microcalibrate
+- References to synthimpute removed from ecosystem documentation
+
+### Notes
+- **v1/v2 transition:** Skills document both API v1 (production) and API v2 (development), and app v1 (production) and app v2 (development)
+- **Complete ecosystem map:** Added ECOSYSTEM.md documenting full dependency graph
+- **Data pipeline:** Complete coverage of data enhancement workflow (L0 → microimpute → microcalibrate → policyengine-us-data)
+
 ### Breaking Changes
 - Plugin structure changed - users need to reinstall from marketplace
 - Some plugin names changed (e.g., skills separated by audience)
 - Marketplace version bumped to 2.0.0
+- Data-science plugin now includes 8 skills (was 4)
 
 ## [1.0.0] - 2025-10-18
 

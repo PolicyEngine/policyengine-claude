@@ -8,7 +8,7 @@ PolicyEngine Claude provides agents, slash commands, and skills for working with
 
 - **🤖 18 Specialized Agents** - Automated workflows for development
 - **🎯 3 Slash Commands** - Multi-agent orchestration
-- **📚 11 Skills** - Knowledge base for users, analysts, and contributors
+- **📚 14 Skills** - Knowledge base for users, analysts, and contributors
 
 ## Three Audiences, One Plugin
 
@@ -59,7 +59,7 @@ Develop PolicyEngine software across country models, API, app, and data packages
 /plugin install data-science@policyengine-claude
 ```
 
-## Skills Overview (11 Total)
+## Skills Overview (14 Total)
 
 ### User-Facing Skills
 
@@ -121,23 +121,43 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Survey microdata analysis
 - Multi-audience: what microdf does (users), how to use (analysts), how to develop (contributors)
 
+### Data Ecosystem Skills
+
+**9. microimpute** 🆕
+- ML-based variable imputation
+- Multiple methods (linear, random forest, quantile forest, XGBoost)
+- Quantile loss benchmarking
+- Used in policyengine-us-data to fill missing survey variables
+
+**10. microcalibrate** 🆕
+- Survey weight calibration to population targets
+- L0 regularization for dataset sparsification
+- Automatic hyperparameter tuning (Optuna)
+- Interactive dashboard at microcalibrate.vercel.app
+
+**11. l0** 🆕
+- PyTorch L0 regularization for neural networks
+- Intelligent sampling and feature selection
+- Used by microcalibrate for household selection
+- Based on Louizos et al. (2017) paper
+
 ### Design and Standards Skills
 
-**9. policyengine-design** 🆕
+**12. policyengine-design** 🆕
 - PolicyEngine visual identity (colors, fonts, logos)
 - Chart branding (Plotly format_fig pattern)
 - Streamlit theme configuration
-- Color palette and usage guidelines
+- Color palette and usage guidelines (v1: #39C6C0, v2: #319795)
 - Multi-audience: recognizing brand (users), applying branding (analysts/contributors)
 
-**10. policyengine-standards** ✅
+**13. policyengine-standards** ✅
 - Code formatting (Black, Prettier)
 - Git workflow
 - Changelog management
 - CI requirements
 - Common AI pitfalls
 
-**11. policyengine-writing** ✅
+**14. policyengine-writing** ✅
 - Active voice, quantitative language
 - Sentence case for headings
 - Neutral, objective tone
@@ -196,11 +216,11 @@ Develop PolicyEngine software across country models, API, app, and data packages
 |--------|----------|--------|----------|--------|
 | **essential** | Users | 0 | 0 | 3 |
 | **country-models** | Contributors | 15 | 3 | 5 |
-| **api-development** | Contributors | 1 | 0 | 5 |
-| **app-development** | Contributors | 1 | 0 | 5 |
-| **analysis-tools** | Analysts | 0 | 0 | 6 |
-| **data-science** | Analysts/Contributors | 0 | 0 | 4 |
-| **complete** | All | 18 | 3 | 10 |
+| **api-development** | Contributors | 1 | 0 | 6 |
+| **app-development** | Contributors | 1 | 0 | 6 |
+| **analysis-tools** | Analysts | 0 | 0 | 7 |
+| **data-science** | Analysts/Contributors | 0 | 0 | 8 |
+| **complete** | All | 18 | 3 | 14 |
 
 ## Installation
 
@@ -246,33 +266,46 @@ Each PolicyEngine repo has `.claude/settings.json` that auto-installs the approp
 ### The PolicyEngine Ecosystem
 
 ```
+Layer 0: Foundation
+├── L0 (PyTorch regularization for sparsification)
+
 Layer 1: Core Engine
 ├── policyengine-core (simulation engine)
 
-Layer 2: Country Models
-├── policyengine-us (US tax/benefit system)
-├── policyengine-uk (UK tax/benefit system)
-├── policyengine-canada (Canada system)
-└── [other countries]
+Layer 2: Country Models (depend on core)
+├── policyengine-us (US federal + 50 states)
+├── policyengine-uk (UK tax and benefits)
+├── policyengine-canada (Canada federal + provincial)
+├── policyengine-il (Israel)
+└── policyengine-ng (Nigeria)
 
-Layer 3: Services
-├── policyengine-api (REST API)
+Layer 3: Data Utilities
+├── microdf (weighted DataFrames for analysis)
+├── microimpute (ML variable imputation)
+└── microcalibrate (survey calibration, uses L0)
+
+Layer 4: Enhanced Data (depend on country models + data utilities)
+├── policyengine-us-data (enhanced CPS, uses microimpute + microcalibrate)
+└── policyengine-uk-data (enhanced FRS)
+
+Layer 5: Services
+├── policyengine-api (v1 - production Flask API)
+├── policyengine-api-v2 (v2 - monorepo with 3 microservices, in development)
 └── policyengine.py (Python client)
 
-Layer 4: Interfaces
-├── policyengine-app (web app)
+Layer 6: Interfaces
+├── policyengine-app (v1 - production React app)
+└── policyengine-app-v2 (v2 - Next.js + Mantine, in development)
 
-Layer 5: Data
-├── policyengine-us-data (enhanced microdata)
-├── microdf (weighted DataFrames)
-├── microimpute (ML imputation)
-└── microcalibrate (survey calibration and reweighting)
-
-Layer 6: Applications
-├── Analysis repos (crfb-tob-impacts, newsletters)
-├── Calculators (givecalc, salt-amt-calculator)
-└── Dashboards (2024-election-dashboard)
+Layer 7: Applications
+├── Analysis repos (crfb-tob-impacts, newsletters, dashboards)
+└── Calculators (givecalc, salt-amt-calculator, ctc-calculator)
 ```
+
+**Version status:**
+- ✅ v1 APIs and apps are current production
+- 🚧 v2 APIs and apps are in active development
+- Skills cover both where relevant, with migration notes
 
 ### Skills Point to Repos
 
@@ -529,11 +562,14 @@ Claude: [Has api-development plugin]
 | policyengine-python-client | ⚪ | ✅ | ⚪ | API access, policyengine.py package |
 | policyengine-core | ✅ | ✅ | ✅ | Simulation engine, architecture |
 | policyengine-us | ✅ | ✅ | ✅ | US tax/benefit system, variables |
-| policyengine-api | ⚪ | ✅ | ✅ | REST endpoints, caching, services |
-| policyengine-app | ⚪ | ⚪ | ✅ | React components, routing, charts |
+| policyengine-api | ⚪ | ✅ | ✅ | REST endpoints (v1), caching, services |
+| policyengine-app | ⚪ | ⚪ | ✅ | React components (v1), routing, charts |
 | policyengine-analysis | ✅ | ✅ | ⚪ | Impact studies, dashboards, notebooks |
 | microdf | ✅ | ✅ | ✅ | Inequality, poverty, weighted stats |
-| policyengine-design | ✅ | ✅ | ✅ | Colors, fonts, logos, branding |
+| microimpute | ⚪ | ✅ | ✅ | ML imputation, quantile forest |
+| microcalibrate | ⚪ | ✅ | ✅ | Survey calibration, L0 sparsity |
+| l0 | ⚪ | ✅ | ✅ | Regularization, sampling gates |
+| policyengine-design | ✅ | ✅ | ✅ | Colors (v1/v2), fonts, logos, branding |
 | policyengine-standards | ⚪ | ⚪ | ✅ | Code formatting, Git, CI |
 | policyengine-writing | ✅ | ✅ | ✅ | Active voice, quantitative, neutral |
 

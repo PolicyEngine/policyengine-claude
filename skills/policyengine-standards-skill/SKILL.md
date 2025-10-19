@@ -35,11 +35,203 @@ Use this skill to ensure code meets PolicyEngine's development standards and pas
 
 ## Before Committing - Checklist
 
-1. **Format code**: `make format` or language-specific formatter
-2. **Run tests**: `make test` to ensure all tests pass
-3. **Check linting**: Ensure no linting errors
-4. **Use config files**: Prefer config files over environment variables
-5. **Reference issues**: Include "Fixes #123" in commit message
+1. **Write tests first** (TDD - see below)
+2. **Format code**: `make format` or language-specific formatter
+3. **Run tests**: `make test` to ensure all tests pass
+4. **Check linting**: Ensure no linting errors
+5. **Use config files**: Prefer config files over environment variables
+6. **Reference issues**: Include "Fixes #123" in commit message
+
+## Test-Driven Development (TDD)
+
+PolicyEngine follows Test-Driven Development practices across all repositories.
+
+### TDD Workflow
+
+**1. Write test first (RED):**
+```python
+# tests/test_new_feature.py
+def test_california_eitc_calculation():
+    """Test California EITC for family with 2 children earning $30,000."""
+    situation = create_family(income=30000, num_children=2, state="CA")
+    sim = Simulation(situation=situation)
+    ca_eitc = sim.calculate("ca_eitc", 2024)[0]
+
+    # Test fails initially (feature not implemented yet)
+    assert ca_eitc == 3000, "CA EITC should be $3,000 for this household"
+```
+
+**2. Implement feature (GREEN):**
+```python
+# policyengine_us/variables/gov/states/ca/tax/income/credits/ca_eitc.py
+class ca_eitc(Variable):
+    value_type = float
+    entity = TaxUnit
+    definition_period = YEAR
+
+    def formula(tax_unit, period, parameters):
+        # Implementation to make test pass
+        federal_eitc = tax_unit("eitc", period)
+        return federal_eitc * parameters(period).gov.states.ca.tax.eitc.match
+```
+
+**3. Refactor (REFACTOR):**
+```python
+# Clean up, optimize, add documentation
+# All while tests continue to pass
+```
+
+### TDD Benefits
+
+**Why PolicyEngine uses TDD:**
+- ✅ **Accuracy** - Tests verify implementation matches regulations
+- ✅ **Documentation** - Tests show expected behavior
+- ✅ **Regression prevention** - Changes don't break existing features
+- ✅ **Confidence** - Safe to refactor
+- ✅ **Isolation** - Multi-agent workflow (test-creator and rules-engineer work separately)
+
+### TDD in Multi-Agent Workflow
+
+**Country model development:**
+1. **@document-collector** gathers regulations
+2. **@test-creator** writes tests from regulations (isolated, no implementation access)
+3. **@rules-engineer** implements from regulations (isolated, no test access)
+4. Both work from same source → tests verify implementation accuracy
+
+**See policyengine-core-skill and country-models agents for details.**
+
+### Test Examples
+
+**Python (pytest):**
+```python
+def test_ctc_for_two_children():
+    """Test CTC calculation for married couple with 2 children."""
+    situation = create_married_couple(
+        income_1=75000,
+        income_2=50000,
+        num_children=2,
+        child_ages=[5, 8]
+    )
+
+    sim = Simulation(situation=situation)
+    ctc = sim.calculate("ctc", 2024)[0]
+
+    assert ctc == 4000, "CTC should be $2,000 per child"
+```
+
+**React (Jest + RTL):**
+```javascript
+import { render, screen } from '@testing-library/react';
+import TaxCalculator from './TaxCalculator';
+
+test('displays calculated tax', () => {
+  render(<TaxCalculator income={50000} />);
+
+  // Test what user sees, not implementation
+  expect(screen.getByText(/\$5,000/)).toBeInTheDocument();
+});
+```
+
+### Test Organization
+
+**Python:**
+```
+tests/
+├── test_variables/
+│   ├── test_income.py
+│   ├── test_deductions.py
+│   └── test_credits.py
+├── test_parameters/
+└── test_simulations/
+```
+
+**React:**
+```
+src/
+├── components/
+│   └── TaxCalculator/
+│       ├── TaxCalculator.jsx
+│       └── TaxCalculator.test.jsx
+```
+
+### Running Tests
+
+**Python:**
+```bash
+# All tests
+make test
+
+# With uv
+uv run pytest tests/ -v
+
+# Specific test
+uv run pytest tests/test_credits.py::test_ctc_for_two_children -v
+
+# With coverage
+uv run pytest tests/ --cov=policyengine_us --cov-report=html
+```
+
+**React:**
+```bash
+# All tests
+make test
+
+# Watch mode
+npm test -- --watch
+
+# Specific test
+npm test -- TaxCalculator.test.jsx
+
+# Coverage
+npm test -- --coverage
+```
+
+### Test Quality Standards
+
+**Good tests:**
+- ✅ Test behavior, not implementation
+- ✅ Clear, descriptive names
+- ✅ Single assertion per test (when possible)
+- ✅ Include documentation (docstrings)
+- ✅ Based on official regulations with citations
+
+**Bad tests:**
+- ❌ Testing private methods
+- ❌ Mocking everything
+- ❌ No assertion messages
+- ❌ Magic numbers without explanation
+
+### Example: TDD for New Feature
+
+```python
+# Step 1: Write test (RED)
+def test_new_york_empire_state_child_credit():
+    """Test NY Empire State Child Credit for family with 1 child.
+
+    Based on NY Tax Law Section 606(c-1).
+    Family earning $50,000 with 1 child under 4 should receive $330.
+    """
+    situation = create_family(
+        income=50000,
+        num_children=1,
+        child_ages=[2],
+        state="NY"
+    )
+
+    sim = Simulation(situation=situation)
+    credit = sim.calculate("ny_empire_state_child_credit", 2024)[0]
+
+    assert credit == 330, "Should receive $330 for child under 4"
+
+# Test fails - feature doesn't exist yet
+
+# Step 2: Implement (GREEN)
+# Create variable in policyengine_us/variables/gov/states/ny/...
+# Test passes
+
+# Step 3: Refactor
+# Optimize, add documentation, maintain passing tests
+```
 
 ## Python Standards
 
