@@ -82,10 +82,10 @@ gh pr create --draft --title "Title" --body "Body"
 PR_NUMBER=$(gh pr view --json number --jq '.number')
 
 # 2. Wait for CI (ACTUALLY WAIT - don't give up!)
-MAX_WAIT=600  # 10 minutes
+POLL_INTERVAL=15
 ELAPSED=0
 
-while [ $ELAPSED -lt $MAX_WAIT ]; do
+while true; do  # No timeout - wait as long as needed
   CHECKS=$(gh pr checks $PR_NUMBER --json status,conclusion)
   TOTAL=$(echo "$CHECKS" | jq '. | length')
   COMPLETED=$(echo "$CHECKS" | jq '[.[] | select(.status == "COMPLETED")] | length')
@@ -105,9 +105,11 @@ while [ $ELAPSED -lt $MAX_WAIT ]; do
     fi
   fi
 
-  sleep 15
-  ELAPSED=$((ELAPSED + 15))
+  sleep $POLL_INTERVAL
+  ELAPSED=$((ELAPSED + POLL_INTERVAL))
 done
+
+# Important: No timeout! Population simulations can take 30+ minutes.
 ```
 
 ### DO NOT Say "I'll Check Back Later"

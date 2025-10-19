@@ -120,17 +120,22 @@ echo "URL: $(gh pr view --json url --jq '.url')"
 
 **This is where Claude usually fails. DO NOT say "I'll check back later".**
 
-**Instead, ACTUALLY wait using a polling loop:**
+**Instead, ACTUALLY wait using a polling loop with NO timeout:**
 
 ```bash
 echo "Waiting for CI checks to complete..."
-echo "This may take 2-10 minutes. I will wait and not give up."
+echo "Typical CI times by repository:"
+echo "  - policyengine-app: 3-6 minutes"
+echo "  - policyengine-uk: 9-12 minutes"
+echo "  - policyengine-api: 30 minutes"
+echo "  - policyengine-us: 60-75 minutes (longest)"
+echo ""
+echo "I will poll every 15 seconds until all checks complete. No time limit."
 
-MAX_WAIT=600  # 10 minutes max
 POLL_INTERVAL=15  # Check every 15 seconds
 ELAPSED=0
 
-while [ $ELAPSED -lt $MAX_WAIT ]; do
+while true; do
   # Get check status
   CHECKS_JSON=$(gh pr checks $PR_NUMBER --json name,status,conclusion)
 
@@ -153,32 +158,23 @@ while [ $ELAPSED -lt $MAX_WAIT ]; do
   # If all completed
   if [ "$COMPLETED" -eq "$TOTAL" ]; then
     if [ "$FAILED" -eq 0 ]; then
-      echo "✅ All CI checks passed!"
+      echo "✅ All CI checks passed after $ELAPSED seconds!"
       break
     else
-      echo "❌ Some CI checks failed."
+      echo "❌ Some CI checks failed after $ELAPSED seconds."
       # Show failures
       gh pr checks $PR_NUMBER
       break
     fi
   fi
 
-  # Continue waiting
+  # Continue waiting (no timeout!)
   sleep $POLL_INTERVAL
   ELAPSED=$((ELAPSED + POLL_INTERVAL))
 done
-
-if [ $ELAPSED -ge $MAX_WAIT ]; then
-  echo "⏱️ Timeout: CI checks still running after $MAX_WAIT seconds"
-  echo "Current status:"
-  gh pr checks $PR_NUMBER
-  echo ""
-  echo "You can:"
-  echo "1. Wait longer and check manually: gh pr checks $PR_NUMBER"
-  echo "2. Mark ready anyway: gh pr ready $PR_NUMBER"
-  echo "3. Keep as draft until you verify CI"
-fi
 ```
+
+**Important:** No timeout means we actually wait as long as needed. Population simulations can take 30+ minutes.
 
 ## Step 6: Mark Ready for Review (If CI Passed)
 
@@ -208,23 +204,6 @@ else
 fi
 ```
 
-## Alternative: If CI is Too Slow
-
-If checks take longer than 10 minutes, you can:
-
-```bash
-# Just create draft PR and tell user to check manually
-gh pr create --draft --title "..." --body "..."
-
-echo "⏱️ PR created as draft. CI checks may take a while."
-echo "I've set up the PR but won't wait for CI completion."
-echo ""
-echo "To mark ready when CI passes, run:"
-echo "  gh pr ready $PR_NUMBER"
-echo ""
-echo "To check CI status:"
-echo "  gh pr checks $PR_NUMBER"
-```
 
 ## Key Differences from Default Behavior
 
@@ -313,19 +292,15 @@ git push
 /create-pr  # "PR #123 exists, checking CI status..."
 ```
 
-## Configuration
+## CI Duration Expectations
 
-**Timeout can be adjusted:**
-```bash
-# In command, modify:
-MAX_WAIT=600  # Default: 10 minutes
+**By repository (based on actual data):**
+- **policyengine-app:** 3-6 minutes (fast)
+- **policyengine-uk:** 9-12 minutes (medium)
+- **policyengine-api:** ~30 minutes (slow)
+- **policyengine-us:** 60-75 minutes (very slow - population simulations)
 
-# For slow CI (like population simulations):
-MAX_WAIT=1200  # 20 minutes
-
-# For fast CI:
-MAX_WAIT=300  # 5 minutes
-```
+**The command has no timeout** - it will wait as long as needed, even for policyengine-us's 75-minute CI runs.
 
 ## Why This Works
 
