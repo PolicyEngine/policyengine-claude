@@ -1,0 +1,211 @@
+name: Test Plugin Marketplace
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  validate-marketplace:
+    name: Validate marketplace.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check JSON syntax
+        run: |
+          echo "Validating marketplace.json syntax..."
+          jq empty .claude-plugin/marketplace.json
+          echo "✅ JSON is valid"
+
+      - name: Validate schema
+        run: |
+          echo "Checking required fields..."
+
+          # Check top-level fields
+          jq -e '.name' .claude-plugin/marketplace.json > /dev/null
+          jq -e '.version' .claude-plugin/marketplace.json > /dev/null
+          jq -e '.description' .claude-plugin/marketplace.json > /dev/null
+          jq -e '.owner.name' .claude-plugin/marketplace.json > /dev/null
+          jq -e '.owner.email' .claude-plugin/marketplace.json > /dev/null
+          jq -e '.plugins' .claude-plugin/marketplace.json > /dev/null
+
+          echo "✅ Top-level fields present"
+
+          # Check each plugin has required fields
+          PLUGIN_COUNT=$(jq '.plugins | length' .claude-plugin/marketplace.json)
+          echo "Found $PLUGIN_COUNT plugins"
+
+          for i in $(seq 0 $((PLUGIN_COUNT - 1))); do
+            echo "Checking plugin $i..."
+
+            # Required fields
+            jq -e ".plugins[$i].name" .claude-plugin/marketplace.json > /dev/null
+            jq -e ".plugins[$i].description" .claude-plugin/marketplace.json > /dev/null
+            jq -e ".plugins[$i].source" .claude-plugin/marketplace.json > /dev/null
+            jq -e ".plugins[$i].version" .claude-plugin/marketplace.json > /dev/null
+
+            # Check author is object
+            AUTHOR_TYPE=$(jq -r ".plugins[$i].author | type" .claude-plugin/marketplace.json)
+            if [ "$AUTHOR_TYPE" != "object" ]; then
+              echo "❌ Plugin $i: author must be object, got $AUTHOR_TYPE"
+              exit 1
+            fi
+
+            jq -e ".plugins[$i].author.name" .claude-plugin/marketplace.json > /dev/null
+
+            # Check source starts with ./
+            SOURCE=$(jq -r ".plugins[$i].source" .claude-plugin/marketplace.json)
+            if [[ ! "$SOURCE" =~ ^\.\/ ]]; then
+              echo "❌ Plugin $i: source must start with './', got '$SOURCE'"
+              exit 1
+            fi
+
+            echo "  ✅ Plugin $i schema valid"
+          done
+
+          echo "✅ All plugin schemas valid"
+
+      - name: Verify referenced files exist
+        run: |
+          echo "Checking that all referenced files exist..."
+
+          PLUGIN_COUNT=$(jq '.plugins | length' .claude-plugin/marketplace.json)
+
+          for i in $(seq 0 $((PLUGIN_COUNT - 1))); do
+            PLUGIN_NAME=$(jq -r ".plugins[$i].name" .claude-plugin/marketplace.json)
+            echo "Checking files for plugin: $PLUGIN_NAME"
+
+            # Check agents
+            AGENT_COUNT=$(jq ".plugins[$i].agents // [] | length" .claude-plugin/marketplace.json)
+            if [ "$AGENT_COUNT" -gt 0 ]; then
+              for j in $(seq 0 $((AGENT_COUNT - 1))); do
+                AGENT_PATH=$(jq -r ".plugins[$i].agents[$j]" .claude-plugin/marketplace.json)
+                if [ ! -f "$AGENT_PATH" ]; then
+                  echo "❌ Missing agent: $AGENT_PATH"
+                  exit 1
+                fi
+              done
+              echo "  ✅ All $AGENT_COUNT agents exist"
+            fi
+
+            # Check commands
+            CMD_COUNT=$(jq ".plugins[$i].commands // [] | length" .claude-plugin/marketplace.json)
+            if [ "$CMD_COUNT" -gt 0 ]; then
+              for j in $(seq 0 $((CMD_COUNT - 1))); do
+                CMD_PATH=$(jq -r ".plugins[$i].commands[$j]" .claude-plugin/marketplace.json)
+                if [ ! -f "$CMD_PATH" ]; then
+                  echo "❌ Missing command: $CMD_PATH"
+                  exit 1
+                fi
+              done
+              echo "  ✅ All $CMD_COUNT commands exist"
+            fi
+
+            # Check skills
+            SKILL_COUNT=$(jq ".plugins[$i].skills // [] | length" .claude-plugin/marketplace.json)
+            if [ "$SKILL_COUNT" -gt 0 ]; then
+              for j in $(seq 0 $((SKILL_COUNT - 1))); do
+                SKILL_PATH=$(jq -r ".plugins[$i].skills[$j]" .claude-plugin/marketplace.json)
+                if [ ! -d "$SKILL_PATH" ]; then
+                  echo "❌ Missing skill directory: $SKILL_PATH"
+                  exit 1
+                fi
+                if [ ! -f "$SKILL_PATH/SKILL.md" ]; then
+                  echo "❌ Missing SKILL.md in: $SKILL_PATH"
+                  exit 1
+                fi
+              done
+              echo "  ✅ All $SKILL_COUNT skills exist with SKILL.md"
+            fi
+          done
+
+          echo "✅ All referenced files exist"
+
+      - name: Validate SKILL.md frontmatter
+        run: |
+          echo "Validating SKILL.md files have proper frontmatter..."
+
+          SKILL_DIRS=$(find skills -type d -name "*-skill")
+
+          for SKILL_DIR in $SKILL_DIRS; do
+            SKILL_FILE="$SKILL_DIR/SKILL.md"
+
+            if [ ! -f "$SKILL_FILE" ]; then
+              echo "❌ Missing SKILL.md in $SKILL_DIR"
+              exit 1
+            fi
+
+            # Check for YAML frontmatter
+            if ! head -1 "$SKILL_FILE" | grep -q "^---$"; then
+              echo "❌ $SKILL_FILE: Missing YAML frontmatter (must start with ---)"
+              exit 1
+            fi
+
+            # Extract frontmatter and validate required fields
+            FRONTMATTER=$(awk '/^---$/,/^---$/{if (NR>1) print}' "$SKILL_FILE" | sed '$d')
+
+            # Check for name field
+            if ! echo "$FRONTMATTER" | grep -q "^name:"; then
+              echo "❌ $SKILL_FILE: Missing 'name' field in frontmatter"
+              exit 1
+            fi
+
+            # Check for description field
+            if ! echo "$FRONTMATTER" | grep -q "^description:"; then
+              echo "❌ $SKILL_FILE: Missing 'description' field in frontmatter"
+              exit 1
+            fi
+
+            echo "  ✅ $(basename $SKILL_DIR) has valid frontmatter"
+          done
+
+          echo "✅ All SKILL.md files have valid frontmatter"
+
+      - name: Check for duplicate skills across plugins
+        run: |
+          echo "Checking for consistency across plugins..."
+
+          # Get all unique skills referenced
+          ALL_SKILLS=$(jq -r '.plugins[].skills[]? // empty' .claude-plugin/marketplace.json | sort | uniq)
+
+          echo "Total unique skills: $(echo "$ALL_SKILLS" | wc -l)"
+
+          for SKILL in $ALL_SKILLS; do
+            if [ ! -d "$SKILL" ]; then
+              echo "❌ Skill directory not found: $SKILL"
+              exit 1
+            fi
+          done
+
+          echo "✅ All referenced skills exist"
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "========================="
+          echo "Plugin Marketplace Summary"
+          echo "========================="
+          echo ""
+          echo "Marketplace: $(jq -r '.name' .claude-plugin/marketplace.json)"
+          echo "Version: $(jq -r '.version' .claude-plugin/marketplace.json)"
+          echo "Plugins: $(jq '.plugins | length' .claude-plugin/marketplace.json)"
+          echo ""
+
+          PLUGIN_COUNT=$(jq '.plugins | length' .claude-plugin/marketplace.json)
+          for i in $(seq 0 $((PLUGIN_COUNT - 1))); do
+            PLUGIN_NAME=$(jq -r ".plugins[$i].name" .claude-plugin/marketplace.json)
+            AGENT_COUNT=$(jq ".plugins[$i].agents // [] | length" .claude-plugin/marketplace.json)
+            CMD_COUNT=$(jq ".plugins[$i].commands // [] | length" .claude-plugin/marketplace.json)
+            SKILL_COUNT=$(jq ".plugins[$i].skills // [] | length" .claude-plugin/marketplace.json)
+
+            echo "$PLUGIN_NAME:"
+            echo "  - Agents: $AGENT_COUNT"
+            echo "  - Commands: $CMD_COUNT"
+            echo "  - Skills: $SKILL_COUNT"
+          done
+
+          echo ""
+          echo "✅ All validation checks passed!"
