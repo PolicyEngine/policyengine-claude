@@ -1,0 +1,136 @@
+{
+  "$schema": "https://claude.ai/schemas/plugin-marketplace.json",
+  "name": "policyengine-claude",
+  "version": "1.0.0",
+  "description": "Complete PolicyEngine development toolkit - agents, commands, and skills for tax and benefit microsimulation",
+  "owner": {
+    "name": "PolicyEngine",
+    "email": "hello@policyengine.org"
+  },
+  "plugins": [
+    {
+      "name": "country-models",
+      "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages (policyengine-us, policyengine-uk, etc.)",
+      "source": ".",
+      "category": "development",
+      "version": "1.0.0",
+      "keywords": ["tax", "benefits", "microsimulation", "country-models", "rules", "testing"],
+      "author": "PolicyEngine",
+      "license": "MIT",
+      "agents": [
+        "./agents/country-models/rules-engineer.md",
+        "./agents/country-models/test-creator.md",
+        "./agents/country-models/document_collector.md",
+        "./agents/country-models/rules-reviewer.md",
+        "./agents/country-models/parameter-architect.md",
+        "./agents/country-models/policy-domain-validator.md",
+        "./agents/country-models/reference-validator.md",
+        "./agents/country-models/cross-program-validator.md",
+        "./agents/country-models/implementation-validator.md",
+        "./agents/country-models/documentation-enricher.md",
+        "./agents/country-models/edge-case-generator.md",
+        "./agents/country-models/performance-optimizer.md",
+        "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/isolation-setup.md",
+        "./agents/country-models/isolation-enforcement.md",
+        "./agents/policy-domain-validator.md",
+        "./agents/reference-validator.md"
+      ],
+      "commands": [
+        "./commands/encode-policy.md",
+        "./commands/review-pr.md",
+        "./commands/fix-pr.md"
+      ],
+      "skills": [
+        "./skills/policyengine-us-skill",
+        "./skills/policyengine-standards-skill"
+      ]
+    },
+    {
+      "name": "api-development",
+      "description": "Agents and tools for PolicyEngine API (Flask) development",
+      "source": ".",
+      "category": "development",
+      "version": "1.0.0",
+      "keywords": ["api", "flask", "backend", "policyengine-api"],
+      "author": "PolicyEngine",
+      "license": "MIT",
+      "agents": [
+        "./agents/api/api-reviewer.md"
+      ],
+      "skills": [
+        "./skills/policyengine-standards-skill"
+      ]
+    },
+    {
+      "name": "app-development",
+      "description": "Agents and tools for PolicyEngine App (React) development",
+      "source": ".",
+      "category": "development",
+      "version": "1.0.0",
+      "keywords": ["react", "frontend", "app", "policyengine-app"],
+      "author": "PolicyEngine",
+      "license": "MIT",
+      "agents": [
+        "./agents/app/app-reviewer.md"
+      ],
+      "skills": [
+        "./skills/policyengine-standards-skill"
+      ]
+    },
+    {
+      "name": "analysis-tools",
+      "description": "Skills and patterns for PolicyEngine analysis repositories (impact studies, dashboards, research)",
+      "source": ".",
+      "category": "analysis",
+      "version": "1.0.0",
+      "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly"],
+      "author": "PolicyEngine",
+      "license": "MIT",
+      "skills": [
+        "./skills/policyengine-us-skill",
+        "./skills/policyengine-analysis-skill",
+        "./skills/policyengine-standards-skill"
+      ]
+    },
+    {
+      "name": "complete",
+      "description": "Complete PolicyEngine toolkit - all agents, commands, and skills",
+      "source": ".",
+      "category": "development",
+      "version": "1.0.0",
+      "keywords": ["tax", "benefits", "microsimulation", "policy", "complete"],
+      "author": "PolicyEngine",
+      "license": "MIT",
+      "agents": [
+        "./agents/country-models/rules-engineer.md",
+        "./agents/country-models/test-creator.md",
+        "./agents/country-models/document_collector.md",
+        "./agents/country-models/rules-reviewer.md",
+        "./agents/country-models/parameter-architect.md",
+        "./agents/country-models/cross-program-validator.md",
+        "./agents/country-models/implementation-validator.md",
+        "./agents/country-models/documentation-enricher.md",
+        "./agents/country-models/edge-case-generator.md",
+        "./agents/country-models/performance-optimizer.md",
+        "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/isolation-setup.md",
+        "./agents/country-models/isolation-enforcement.md",
+        "./agents/policy-domain-validator.md",
+        "./agents/reference-validator.md",
+        "./agents/api/api-reviewer.md",
+        "./agents/app/app-reviewer.md"
+      ],
+      "commands": [
+        "./commands/encode-policy.md",
+        "./commands/review-pr.md",
+        "./commands/fix-pr.md"
+      ],
+      "skills": [
+        "./skills/policyengine-us-skill",
+        "./skills/policyengine-analysis-skill",
+        "./skills/policyengine-standards-skill"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+# Example: Single tax filer in California
+# Income: $60,000, Age: 30, with charitable donations
+
+people:
+  person:
+    age:
+      2024: 30
+    employment_income:
+      2024: 60000
+    charitable_cash_donations:
+      2024: 5000
+
+families:
+  family:
+    members:
+      - person
+
+marital_units:
+  marital_unit:
+    members:
+      - person
+
+tax_units:
+  tax_unit:
+    members:
+      - person
+
+spm_units:
+  spm_unit:
+    members:
+      - person
+
+households:
+  household:
+    members:
+      - person
+    state_name:
+      2024: CA

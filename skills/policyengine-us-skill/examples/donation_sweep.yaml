@@ -1,0 +1,71 @@
+# Example: Analyzing charitable donation impacts using axes
+# Married couple with 2 children in New York
+# Sweeps charitable donations from $0 to $50,000
+
+people:
+  parent_1:
+    age:
+      2024: 35
+    employment_income:
+      2024: 100000
+  parent_2:
+    age:
+      2024: 35
+    employment_income:
+      2024: 50000
+  child_1:
+    age:
+      2024: 8
+  child_2:
+    age:
+      2024: 5
+
+families:
+  family:
+    members:
+      - parent_1
+      - parent_2
+      - child_1
+      - child_2
+
+marital_units:
+  marital_unit:
+    members:
+      - parent_1
+      - parent_2
+      - child_1
+      - child_2
+
+tax_units:
+  tax_unit:
+    members:
+      - parent_1
+      - parent_2
+      - child_1
+      - child_2
+
+spm_units:
+  spm_unit:
+    members:
+      - parent_1
+      - parent_2
+      - child_1
+      - child_2
+
+households:
+  household:
+    members:
+      - parent_1
+      - parent_2
+      - child_1
+      - child_2
+    state_name:
+      2024: NY
+
+# Axes: Vary charitable donations from $0 to $50,000
+axes:
+  - - name: charitable_cash_donations
+      count: 1001
+      min: 0
+      max: 50000
+      period: 2024
