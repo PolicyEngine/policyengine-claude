@@ -10,20 +10,26 @@ PolicyEngine Claude provides agents, slash commands, and skills for working with
 - **🎯 4 Slash Commands** - Multi-agent orchestration and PR workflows
 - **📚 14 Skills** - Knowledge base for users, analysts, and contributors
 
-## Three Audiences, One Plugin
+## Quick Start
+
+**Install everything (recommended for most users):**
+```bash
+/plugin marketplace add PolicyEngine/policyengine-claude
+/plugin install complete@policyengine-claude
+```
+
+This gives you all 18 agents, 4 commands, and 14 skills for the entire PolicyEngine ecosystem.
+
+**Or install selectively by use case:**
+
+## Three Audiences, Targeted Plugins
 
 ### 👥 For Users
 Learn to use PolicyEngine web apps, understand calculations, and interpret results.
 
-**Install (run these commands separately):**
-
-**Step 1: Add marketplace**
+**Install:**
 ```bash
 /plugin marketplace add PolicyEngine/policyengine-claude
-```
-
-**Step 2: Install plugin**
-```bash
 /plugin install essential@policyengine-claude
 ```
 
@@ -35,15 +41,9 @@ Learn to use PolicyEngine web apps, understand calculations, and interpret resul
 ### 📊 For Analysts
 Create policy analyses, build dashboards, and conduct research using PolicyEngine programmatically.
 
-**Install (run separately):**
-
-**Step 1: Add marketplace** (if not already added)
+**Install:**
 ```bash
 /plugin marketplace add PolicyEngine/policyengine-claude
-```
-
-**Step 2: Install plugin**
-```bash
 /plugin install analysis-tools@policyengine-claude
 ```
 
@@ -244,28 +244,26 @@ Develop PolicyEngine software across country models, API, app, and data packages
 
 ## Installation
 
-### For End Users
+### Install Everything
 
-**Step 1:** Add marketplace
 ```bash
 /plugin marketplace add PolicyEngine/policyengine-claude
+/plugin install complete@policyengine-claude
 ```
 
-**Step 2:** Install essentials
-```bash
-/plugin install essential@policyengine-claude
-```
+### Install for Specific Use Cases
 
-### For Policy Analysts
-
-**Step 1:** Add marketplace (if not already added)
 ```bash
+# Add marketplace first
 /plugin marketplace add PolicyEngine/policyengine-claude
-```
 
-**Step 2:** Install analysis tools
-```bash
-/plugin install analysis-tools@policyengine-claude
+# Then install what you need:
+/plugin install essential@policyengine-claude         # For users
+/plugin install analysis-tools@policyengine-claude    # For analysts
+/plugin install country-models@policyengine-claude    # For country devs
+/plugin install api-development@policyengine-claude   # For API devs
+/plugin install app-development@policyengine-claude   # For app devs
+/plugin install data-science@policyengine-claude      # For data work
 ```
 
 ### For Contributors
@@ -549,60 +547,32 @@ Claude: [Has api-development plugin]
 
 ## Installation by Use Case
 
-**First:** Add the marketplace (run once)
+### Get Everything (Recommended)
+
+```bash
+/plugin marketplace add PolicyEngine/policyengine-claude
+/plugin install complete@policyengine-claude
+```
+
+**Includes:** All 18 agents, 4 commands, 14 skills for the entire PolicyEngine ecosystem.
+
+### Selective Installation
+
+**First:** Add marketplace (if not already added)
 ```bash
 /plugin marketplace add PolicyEngine/policyengine-claude
 ```
 
-**Then:** Install the plugin you need (separate command)
+**Then choose what you need:**
 
-### I want to: Use PolicyEngine
-
-```bash
-/plugin install essential@policyengine-claude
-```
-
-### I want to: Analyze policies with Python
-
-```bash
-/plugin install analysis-tools@policyengine-claude
-```
-
-### I want to: Contribute to policyengine-us
-
-```bash
-# Automatic when you trust policyengine-us repo
-# Or manually:
-/plugin install country-models@policyengine-claude
-```
-
-### I want to: Develop the API
-
-```bash
-# Automatic when you trust policyengine-api repo
-# Or manually:
-/plugin install api-development@policyengine-claude
-```
-
-### I want to: Develop the React app
-
-```bash
-# Automatic when you trust policyengine-app repo
-# Or manually:
-/plugin install app-development@policyengine-claude
-```
-
-### I want to: Work with data packages
-
-```bash
-/plugin install data-science@policyengine-claude
-```
-
-### I want to: Everything
-
-```bash
-/plugin install complete@policyengine-claude
-```
+| Use Case | Command |
+|----------|---------|
+| Use PolicyEngine web app | `/plugin install essential@policyengine-claude` |
+| Policy analysis with Python | `/plugin install analysis-tools@policyengine-claude` |
+| Country model development | `/plugin install country-models@policyengine-claude` |
+| API development | `/plugin install api-development@policyengine-claude` |
+| App development | `/plugin install app-development@policyengine-claude` |
+| Data science work | `/plugin install data-science@policyengine-claude` |
 
 ## Skills Catalog
 
