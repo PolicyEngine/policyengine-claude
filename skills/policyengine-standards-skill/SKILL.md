@@ -42,6 +42,123 @@ Use this skill to ensure code meets PolicyEngine's development standards and pas
 5. **Use config files**: Prefer config files over environment variables
 6. **Reference issues**: Include "Fixes #123" in commit message
 
+## Creating Pull Requests
+
+### The CI Waiting Problem
+
+**Common failure pattern:**
+```
+User: "Create a PR and mark it ready when CI passes"
+Claude: "I've created the PR as draft. CI will take a while, I'll check back later..."
+[Chat ends - Claude never checks back]
+Result: PR stays in draft, user has to manually check CI and mark ready
+```
+
+### Solution: Use /create-pr Command
+
+**When creating PRs, use the /create-pr command:**
+
+```bash
+/create-pr
+```
+
+**This command:**
+- ✅ Creates PR as draft
+- ✅ Actually waits for CI (polls every 15 seconds)
+- ✅ Marks ready when CI passes
+- ✅ Reports failures with details
+- ✅ Handles timeouts gracefully
+
+**Why this works:**
+The command contains explicit polling logic that Claude executes, so it actually waits instead of giving up.
+
+### If /create-pr is Not Available
+
+**If the command isn't installed, implement the pattern directly:**
+
+```bash
+# 1. Create PR as draft
+gh pr create --draft --title "Title" --body "Body"
+PR_NUMBER=$(gh pr view --json number --jq '.number')
+
+# 2. Wait for CI (ACTUALLY WAIT - don't give up!)
+MAX_WAIT=600  # 10 minutes
+ELAPSED=0
+
+while [ $ELAPSED -lt $MAX_WAIT ]; do
+  CHECKS=$(gh pr checks $PR_NUMBER --json status,conclusion)
+  TOTAL=$(echo "$CHECKS" | jq '. | length')
+  COMPLETED=$(echo "$CHECKS" | jq '[.[] | select(.status == "COMPLETED")] | length')
+
+  echo "[$ELAPSED s] CI: $COMPLETED/$TOTAL completed"
+
+  if [ "$COMPLETED" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+    FAILED=$(echo "$CHECKS" | jq '[.[] | select(.conclusion == "FAILURE")] | length')
+    if [ "$FAILED" -eq 0 ]; then
+      echo "✅ All CI passed! Marking ready..."
+      gh pr ready $PR_NUMBER
+      break
+    else
+      echo "❌ CI failed. PR remains draft."
+      gh pr checks $PR_NUMBER
+      break
+    fi
+  fi
+
+  sleep 15
+  ELAPSED=$((ELAPSED + 15))
+done
+```
+
+### DO NOT Say "I'll Check Back Later"
+
+**❌ WRONG:**
+```
+"I've created the PR as draft. CI checks will take a few minutes.
+I'll check back later once they complete."
+```
+
+**Why wrong:** You cannot check back later. The chat session ends.
+
+**✅ CORRECT:**
+```
+"I've created the PR as draft. Now polling CI status every 15 seconds..."
+[Actually polls using while loop]
+"CI checks completed. All passed! Marking PR as ready for review."
+```
+
+### When to Create Draft vs Ready
+
+**Always create as draft when:**
+- CI checks are configured
+- User asks to wait for CI
+- Making automated changes
+- Unsure if CI will pass
+
+**Create as ready only when:**
+- User explicitly requests ready PR
+- No CI configured
+- CI already verified locally
+
+### PR Workflow Standards
+
+**Standard flow:**
+```bash
+# 1. Ensure branch is pushed
+git push -u origin feature-branch
+
+# 2. Create PR as draft
+gh pr create --draft --title "..." --body "..."
+
+# 3. Wait for CI (use polling loop - see pattern above)
+
+# 4. If CI passes:
+gh pr ready $PR_NUMBER
+
+# 5. If CI fails:
+echo "CI failed. PR remains draft. Fix issues and push again."
+```
+
 ## Test-Driven Development (TDD)
 
 PolicyEngine follows Test-Driven Development practices across all repositories.

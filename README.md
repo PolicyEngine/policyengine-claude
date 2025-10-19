@@ -7,7 +7,7 @@ Official Claude Code plugin for PolicyEngine - a comprehensive knowledge base fo
 PolicyEngine Claude provides agents, slash commands, and skills for working with PolicyEngine's 40+ repository ecosystem:
 
 - **🤖 18 Specialized Agents** - Automated workflows for development
-- **🎯 3 Slash Commands** - Multi-agent orchestration
+- **🎯 4 Slash Commands** - Multi-agent orchestration and PR workflows
 - **📚 14 Skills** - Knowledge base for users, analysts, and contributors
 
 ## Three Audiences, One Plugin
@@ -193,7 +193,14 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - `api-reviewer` - Review Flask/API code
 - `app-reviewer` - Review React/app code
 
-## Slash Commands (3 Total)
+## Slash Commands (4 Total)
+
+**`/create-pr [title]`** 🆕
+- Create PR as draft and wait for CI to pass
+- Actually polls CI status (doesn't give up!)
+- Marks ready when all checks pass
+- Solves the "I'll check back later" problem
+- Example: `/create-pr` or `/create-pr "Add new feature"`
 
 **`/encode-policy <program-name>`**
 - Orchestrate complete multi-agent workflow
@@ -215,12 +222,12 @@ Develop PolicyEngine software across country models, API, app, and data packages
 | Plugin | Audience | Agents | Commands | Skills |
 |--------|----------|--------|----------|--------|
 | **essential** | Users | 0 | 0 | 3 |
-| **country-models** | Contributors | 15 | 3 | 5 |
-| **api-development** | Contributors | 1 | 0 | 6 |
-| **app-development** | Contributors | 1 | 0 | 6 |
+| **country-models** | Contributors | 15 | 4 | 5 |
+| **api-development** | Contributors | 1 | 3 | 6 |
+| **app-development** | Contributors | 1 | 3 | 6 |
 | **analysis-tools** | Analysts | 0 | 0 | 7 |
 | **data-science** | Analysts/Contributors | 0 | 0 | 8 |
-| **complete** | All | 18 | 3 | 14 |
+| **complete** | All | 18 | 4 | 14 |
 
 ## Installation
 
@@ -486,7 +493,27 @@ Claude: [Has country-models plugin]
 Creates: Tests + Implementation + PR
 ```
 
-### Use Case 4: Cross-Repo Debugging
+### Use Case 4: Creating PR That Waits for CI
+
+```
+User in policyengine-us: "Create a PR for these changes and mark ready when CI passes"
+
+Claude: [Has country-models plugin]
+[Sees in policyengine-standards-skill: "Use /create-pr command"]
+
+/create-pr
+
+[Command creates draft PR #456]
+[Polls CI every 15 seconds]
+[After 3 minutes: "CI: 3/3 checks passed"]
+[Marks PR ready]
+
+Result: "✅ PR #456 is ready for review! All CI checks passed."
+```
+
+**Problem solved:** Claude doesn't say "I'll check back later" and give up. It actually waits!
+
+### Use Case 5: Cross-Repo Debugging
 
 ```
 User in policyengine-api: "Why is EITC calculation wrong?"

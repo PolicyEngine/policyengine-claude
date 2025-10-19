@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2025-10-18
 
 ### Added
+- **New slash command:**
+  - `/create-pr` - Create PR as draft, poll CI status, mark ready when passed (solves "I'll check back later" problem)
 - **10 new skills** for comprehensive PolicyEngine knowledge base:
   - `policyengine-user-guide-skill` - Using PolicyEngine web apps for all users
   - `policyengine-python-client-skill` - Programmatic access via Python/API
@@ -28,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced existing skills:**
   - `policyengine-us-skill` - Added user and analyst sections explaining what's modeled and how to use
   - `policyengine-analysis-skill` - Added user section explaining how analysis works
-  - `policyengine-standards-skill` - Removed writing content (moved to dedicated skill)
+  - `policyengine-standards-skill` - Added TDD section, PR workflow guidance, CI waiting pattern (teaches Claude to use /create-pr command)
 - **Documentation pointer pattern** - Skills now point to current repo code instead of duplicating it
 - **Marketplace reorganization:**
   - Renamed/reorganized plugins for clarity (country-models, api-development, app-development, analysis-tools, data-science, complete)

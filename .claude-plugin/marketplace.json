@@ -52,7 +52,8 @@
       "commands": [
         "./commands/encode-policy.md",
         "./commands/review-pr.md",
-        "./commands/fix-pr.md"
+        "./commands/fix-pr.md",
+        "./commands/create-pr.md"
       ],
       "skills": [
         "./skills/policyengine-user-guide-skill",
@@ -74,10 +75,16 @@
       "agents": [
         "./agents/api/api-reviewer.md"
       ],
+      "commands": [
+        "./commands/create-pr.md",
+        "./commands/review-pr.md",
+        "./commands/fix-pr.md"
+      ],
       "skills": [
         "./skills/policyengine-api-skill",
         "./skills/policyengine-core-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]
@@ -93,6 +100,11 @@
       "license": "MIT",
       "agents": [
         "./agents/app/app-reviewer.md"
+      ],
+      "commands": [
+        "./commands/create-pr.md",
+        "./commands/review-pr.md",
+        "./commands/fix-pr.md"
       ],
       "skills": [
         "./skills/policyengine-app-skill",
@@ -169,6 +181,7 @@
         "./agents/app/app-reviewer.md"
       ],
       "commands": [
+        "./commands/create-pr.md",
         "./commands/encode-policy.md",
         "./commands/review-pr.md",
         "./commands/fix-pr.md"
