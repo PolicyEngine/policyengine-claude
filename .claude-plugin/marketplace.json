@@ -1,19 +1,34 @@
 {
   "$schema": "https://claude.ai/schemas/plugin-marketplace.json",
   "name": "policyengine-claude",
-  "version": "1.0.0",
-  "description": "Complete PolicyEngine development toolkit - agents, commands, and skills for tax and benefit microsimulation",
+  "version": "2.0.0",
+  "description": "Complete PolicyEngine knowledge base - for users, analysts, and contributors across the entire PolicyEngine ecosystem",
   "owner": {
     "name": "PolicyEngine",
     "email": "hello@policyengine.org"
   },
   "plugins": [
     {
+      "name": "essential",
+      "description": "Essential PolicyEngine knowledge for all users - understanding the platform, using the web app, and basic concepts",
+      "source": ".",
+      "category": "getting-started",
+      "version": "2.0.0",
+      "keywords": ["beginner", "users", "guide", "basics"],
+      "author": "PolicyEngine",
+      "license": "MIT",
+      "skills": [
+        "./skills/policyengine-user-guide-skill",
+        "./skills/policyengine-us-skill",
+        "./skills/policyengine-writing-skill"
+      ]
+    },
+    {
       "name": "country-models",
-      "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages (policyengine-us, policyengine-uk, etc.)",
+      "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages",
       "source": ".",
       "category": "development",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "keywords": ["tax", "benefits", "microsimulation", "country-models", "rules", "testing"],
       "author": "PolicyEngine",
       "license": "MIT",
@@ -32,9 +47,7 @@
         "./agents/country-models/performance-optimizer.md",
         "./agents/country-models/ci-fixer.md",
         "./agents/country-models/isolation-setup.md",
-        "./agents/country-models/isolation-enforcement.md",
-        "./agents/policy-domain-validator.md",
-        "./agents/reference-validator.md"
+        "./agents/country-models/isolation-enforcement.md"
       ],
       "commands": [
         "./commands/encode-policy.md",
@@ -42,67 +55,94 @@
         "./commands/fix-pr.md"
       ],
       "skills": [
+        "./skills/policyengine-user-guide-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-core-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]
     },
     {
       "name": "api-development",
-      "description": "Agents and tools for PolicyEngine API (Flask) development",
+      "description": "API development - Flask endpoints, caching, services, and integration patterns",
       "source": ".",
       "category": "development",
-      "version": "1.0.0",
-      "keywords": ["api", "flask", "backend", "policyengine-api"],
+      "version": "2.0.0",
+      "keywords": ["api", "flask", "backend", "rest", "endpoints"],
       "author": "PolicyEngine",
       "license": "MIT",
       "agents": [
         "./agents/api/api-reviewer.md"
       ],
       "skills": [
+        "./skills/policyengine-api-skill",
+        "./skills/policyengine-core-skill",
+        "./skills/policyengine-us-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]
     },
     {
       "name": "app-development",
-      "description": "Agents and tools for PolicyEngine App (React) development",
+      "description": "React app development - components, routing, charts, and PolicyEngine-specific patterns",
       "source": ".",
       "category": "development",
-      "version": "1.0.0",
-      "keywords": ["react", "frontend", "app", "policyengine-app"],
+      "version": "2.0.0",
+      "keywords": ["react", "frontend", "app", "ui", "components"],
       "author": "PolicyEngine",
       "license": "MIT",
       "agents": [
         "./agents/app/app-reviewer.md"
       ],
       "skills": [
+        "./skills/policyengine-app-skill",
+        "./skills/policyengine-api-skill",
+        "./skills/policyengine-us-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]
     },
     {
       "name": "analysis-tools",
-      "description": "Skills and patterns for PolicyEngine analysis repositories (impact studies, dashboards, research)",
+      "description": "Policy analysis and research - impact studies, dashboards, notebooks, and visualizations",
       "source": ".",
       "category": "analysis",
-      "version": "1.0.0",
-      "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly"],
+      "version": "2.0.0",
+      "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly", "notebooks"],
       "author": "PolicyEngine",
       "license": "MIT",
       "skills": [
+        "./skills/policyengine-user-guide-skill",
+        "./skills/policyengine-python-client-skill",
         "./skills/policyengine-us-skill",
         "./skills/policyengine-analysis-skill",
+        "./skills/microdf-skill",
+        "./skills/policyengine-writing-skill"
+      ]
+    },
+    {
+      "name": "data-science",
+      "description": "Data analysis, survey enhancement, and microdata utilities",
+      "source": ".",
+      "category": "data",
+      "version": "2.0.0",
+      "keywords": ["data", "microdata", "survey", "imputation", "inequality", "poverty"],
+      "author": "PolicyEngine",
+      "license": "MIT",
+      "skills": [
+        "./skills/microdf-skill",
+        "./skills/policyengine-us-skill",
+        "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]
     },
     {
       "name": "complete",
-      "description": "Complete PolicyEngine toolkit - all agents, commands, and skills",
+      "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
       "source": ".",
-      "category": "development",
-      "version": "1.0.0",
-      "keywords": ["tax", "benefits", "microsimulation", "policy", "complete"],
+      "category": "complete",
+      "version": "2.0.0",
+      "keywords": ["complete", "all", "comprehensive"],
       "author": "PolicyEngine",
       "license": "MIT",
       "agents": [
@@ -119,8 +159,6 @@
         "./agents/country-models/ci-fixer.md",
         "./agents/country-models/isolation-setup.md",
         "./agents/country-models/isolation-enforcement.md",
-        "./agents/policy-domain-validator.md",
-        "./agents/reference-validator.md",
         "./agents/api/api-reviewer.md",
         "./agents/app/app-reviewer.md"
       ],
@@ -130,8 +168,14 @@
         "./commands/fix-pr.md"
       ],
       "skills": [
+        "./skills/policyengine-user-guide-skill",
+        "./skills/policyengine-python-client-skill",
+        "./skills/policyengine-core-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-api-skill",
+        "./skills/policyengine-app-skill",
         "./skills/policyengine-analysis-skill",
+        "./skills/microdf-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]

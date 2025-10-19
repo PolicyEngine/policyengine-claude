@@ -3,19 +3,65 @@ name: policyengine-us
 description: PolicyEngine-US tax and benefit microsimulation patterns, situation creation, and common workflows
 ---
 
-# PolicyEngine-US Skill
+# PolicyEngine-US
 
-Use this skill when working with PolicyEngine-US for tax and benefit calculations, household simulations, or policy analysis.
+PolicyEngine-US models the US federal and state tax and benefit system.
 
-## When to Use This Skill
+## For Users 👥
 
-- Creating household situations for tax/benefit calculations
-- Running microsimulations with PolicyEngine-US
-- Analyzing policy reforms and their impacts
-- Building tools that use PolicyEngine-US (calculators, analysis notebooks)
-- Debugging PolicyEngine-US calculations
+### What is PolicyEngine-US?
 
-## Installation and Setup
+PolicyEngine-US is the "calculator" for US taxes and benefits. When you use policyengine.org/us, PolicyEngine-US runs behind the scenes.
+
+**What it models:**
+
+**Federal taxes:**
+- Income tax (with standard/itemized deductions)
+- Payroll tax (Social Security, Medicare)
+- Capital gains tax
+
+**Federal benefits:**
+- Earned Income Tax Credit (EITC)
+- Child Tax Credit (CTC)
+- SNAP (food stamps)
+- WIC, ACA premium tax credits
+- Social Security, SSI, TANF
+
+**State programs (varies by state):**
+- State income tax (all 50 states + DC)
+- State EITC, CTC
+- State-specific benefits
+
+**See full list:** https://policyengine.org/us/parameters
+
+### Understanding Variables
+
+When you see results in PolicyEngine, these are variables:
+
+**Income variables:**
+- `employment_income` - W-2 wages
+- `self_employment_income` - 1099 income
+- `qualified_dividend_income` - Dividends
+- `capital_gains` - Capital gains
+
+**Tax variables:**
+- `income_tax` - Federal income tax
+- `state_income_tax` - State income tax
+- `payroll_tax` - FICA taxes
+
+**Benefit variables:**
+- `eitc` - Earned Income Tax Credit
+- `ctc` - Child Tax Credit
+- `snap` - SNAP benefits
+
+**Summary variables:**
+- `household_net_income` - Income after taxes and benefits
+- `household_tax` - Total taxes
+- `household_benefits` - Total benefits
+
+## For Analysts 📊
+
+### Installation and Setup
 
 ```bash
 # Install PolicyEngine-US
@@ -23,6 +69,82 @@ pip install policyengine-us
 
 # Or with uv (recommended)
 uv pip install policyengine-us
+```
+
+### Quick Start
+
+```python
+from policyengine_us import Simulation
+
+# Create a household
+situation = {
+    "people": {
+        "you": {
+            "age": {2024: 30},
+            "employment_income": {2024: 50000}
+        }
+    },
+    "families": {"family": {"members": ["you"]}},
+    "marital_units": {"marital_unit": {"members": ["you"]}},
+    "tax_units": {"tax_unit": {"members": ["you"]}},
+    "spm_units": {"spm_unit": {"members": ["you"]}},
+    "households": {
+        "household": {
+            "members": ["you"],
+            "state_name": {2024: "CA"}
+        }
+    }
+}
+
+# Calculate taxes and benefits
+sim = Simulation(situation=situation)
+income_tax = sim.calculate("income_tax", 2024)[0]
+eitc = sim.calculate("eitc", 2024)[0]
+
+print(f"Income tax: ${income_tax:,.0f}")
+print(f"EITC: ${eitc:,.0f}")
+```
+
+### Web App to Python
+
+**Web app URL:**
+```
+policyengine.org/us/household?household=12345
+```
+
+**Equivalent Python (conceptually):**
+The household ID represents a situation dictionary. To replicate in Python, you'd create a similar situation.
+
+### When to Use This Skill
+
+- Creating household situations for tax/benefit calculations
+- Running microsimulations with PolicyEngine-US
+- Analyzing policy reforms and their impacts
+- Building tools that use PolicyEngine-US (calculators, analysis notebooks)
+- Debugging PolicyEngine-US calculations
+
+## For Contributors 💻
+
+### Repository
+
+**Location:** PolicyEngine/policyengine-us
+
+**To see current implementation:**
+```bash
+git clone https://github.com/PolicyEngine/policyengine-us
+cd policyengine-us
+
+# Explore structure
+tree policyengine_us/
+```
+
+**Key directories:**
+```bash
+ls policyengine_us/
+# - variables/   - Tax and benefit calculations
+# - parameters/  - Policy rules (YAML)
+# - reforms/     - Pre-defined reforms
+# - tests/       - Test cases
 ```
 
 ## Core Concepts

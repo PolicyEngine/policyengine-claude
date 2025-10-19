@@ -3,16 +3,64 @@ name: policyengine-analysis
 description: Common analysis patterns for PolicyEngine research repositories (CRFB, newsletters, dashboards, impact studies)
 ---
 
-# PolicyEngine Analysis Skill
+# PolicyEngine Analysis
 
-Use this skill when working on PolicyEngine analysis repositories like:
-- `crfb-tob-impacts` - Policy impact analyses
-- `newsletters` - Data-driven newsletters
-- `2024-election-dashboard` - Policy comparison dashboards
-- `marginal-child` - Specialized policy analyses
-- Other research and analysis projects
+Patterns for creating policy impact analyses, dashboards, and research using PolicyEngine.
 
-## When to Use This Skill
+## For Users 👥
+
+### What are Analysis Repositories?
+
+Analysis repositories produce the research you see on PolicyEngine:
+
+**Blog posts:**
+- "How Montana's tax cuts affect poverty"
+- "Harris EITC proposal costs and impacts"
+- "UK Budget 2024 analysis"
+
+**Dashboards:**
+- State tax comparisons
+- Policy proposal scorecards
+- Interactive calculators (GiveCalc, SALT calculator)
+
+**Research reports:**
+- Distributional analyses for organizations
+- Policy briefs for legislators
+- Impact assessments
+
+### How Analysis Works
+
+1. **Define policy reform** using PolicyEngine parameters
+2. **Create household examples** showing specific impacts
+3. **Run population simulations** for aggregate effects
+4. **Calculate distributional impacts** (who wins, who loses)
+5. **Create visualizations** (charts, tables)
+6. **Write report** following policyengine-writing-skill style
+7. **Publish** to blog or share with stakeholders
+
+### Reading PolicyEngine Analysis
+
+**Key sections in typical analysis:**
+
+**The proposal:**
+- What policy changes
+- Specific parameter values
+
+**Household impacts:**
+- 3-5 example households
+- Dollar amounts for each
+- Charts showing impact across income range
+
+**Statewide/national impacts:**
+- Total cost or revenue
+- Winners and losers by income decile
+- Poverty and inequality effects
+
+**See policyengine-writing-skill for writing conventions.**
+
+## For Analysts 📊
+
+### When to Use This Skill
 
 - Creating policy impact analyses
 - Building interactive dashboards with Streamlit/Plotly
@@ -21,6 +69,14 @@ Use this skill when working on PolicyEngine analysis repositories like:
 - Comparing policy proposals
 - Creating visualizations for research
 - Publishing policy research
+
+### Example Analysis Repositories
+
+- `crfb-tob-impacts` - Policy impact analyses
+- `newsletters` - Data-driven newsletters
+- `2024-election-dashboard` - Policy comparison dashboards
+- `marginal-child` - Specialized policy analyses
+- `givecalc` - Charitable giving calculator
 
 ## Repository Structure
 

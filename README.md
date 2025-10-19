@@ -1,42 +1,227 @@
 # PolicyEngine Claude
 
-Official Claude Code plugin marketplace for PolicyEngine development - agents, commands, and skills for tax and benefit microsimulation.
+Official Claude Code plugin for PolicyEngine - a comprehensive knowledge base for users, analysts, and contributors across the entire PolicyEngine ecosystem.
 
 ## Overview
 
-This plugin provides a complete development toolkit for PolicyEngine repositories, including:
+PolicyEngine Claude provides agents, slash commands, and skills for working with PolicyEngine's 40+ repository ecosystem:
 
-- **18 Specialized Agents** - Automated workflows for implementing, testing, and reviewing tax/benefit rules
-- **3 Slash Commands** - Multi-agent orchestration workflows
-- **3 Skills** - Reference documentation and best practices
+- **🤖 18 Specialized Agents** - Automated workflows for development
+- **🎯 3 Slash Commands** - Multi-agent orchestration
+- **📚 10 Skills** - Knowledge base for users, analysts, and contributors
 
-## Quick Start
+## Three Audiences, One Plugin
 
-### Installation
+### 👥 For Users
+Learn to use PolicyEngine web apps, understand calculations, and interpret results.
 
+**Install:**
 ```bash
-# Add PolicyEngine marketplace
 /plugin marketplace add PolicyEngine/policyengine-claude
-
-# For country model development (policyengine-us, policyengine-uk, etc.)
-/plugin install country-models@policyengine-claude
-
-# For API development (policyengine-api)
-/plugin install api-development@policyengine-claude
-
-# For App development (policyengine-app)
-/plugin install app-development@policyengine-claude
-
-# For analysis repositories (crfb-tob-impacts, newsletters, etc.)
-/plugin install analysis-tools@policyengine-claude
-
-# Or install everything
-/plugin install complete@policyengine-claude
+/plugin install essential@policyengine-claude
 ```
 
-### Auto-Install for Teams
+**Includes:**
+- `policyengine-user-guide-skill` - Using the platform
+- `policyengine-us-skill` - Understanding US programs
+- `policyengine-writing-skill` - Communication style
 
-Add to your project's `.claude/settings.json`:
+### 📊 For Analysts
+Create policy analyses, build dashboards, and conduct research using PolicyEngine programmatically.
+
+**Install:**
+```bash
+/plugin install analysis-tools@policyengine-claude
+```
+
+**Includes:**
+- `policyengine-python-client-skill` - Programmatic access
+- `policyengine-analysis-skill` - Analysis patterns
+- `microdf-skill` - Data analysis utilities
+- `policyengine-us-skill` - Simulation patterns
+- `policyengine-writing-skill` - Report writing
+
+### 💻 For Contributors
+Develop PolicyEngine software across country models, API, app, and data packages.
+
+**Install:**
+```bash
+# For country model development
+/plugin install country-models@policyengine-claude
+
+# For API development
+/plugin install api-development@policyengine-claude
+
+# For app development
+/plugin install app-development@policyengine-claude
+
+# For data science
+/plugin install data-science@policyengine-claude
+```
+
+## Skills Overview (10 Total)
+
+### User-Facing Skills
+
+**1. policyengine-user-guide** 🆕
+- Using policyengine.org web apps
+- Creating reforms through UI
+- Understanding household and population results
+- Interpreting metrics (Gini, poverty, etc.)
+
+**2. policyengine-python-client** 🆕
+- Programmatic API access
+- Using policyengine.py package
+- Batch calculations
+- Rate limits and authentication
+
+### Core Platform Skills
+
+**3. policyengine-core** 🆕
+- Simulation engine architecture
+- Variable and parameter systems
+- Vectorization requirements
+- Formula patterns
+- Multi-audience: explains what Core is (users), how it works (analysts), how to develop it (contributors)
+
+**4. policyengine-us** ✅ Enhanced
+- US tax and benefit system
+- Situation creation patterns
+- Variable reference (400+ variables)
+- Using axes for parameter sweeps
+- Multi-audience: what's modeled (users), how to use (analysts), how to develop (contributors)
+
+**5. policyengine-api** 🆕
+- Flask REST API patterns
+- Endpoint structure
+- Caching strategy (Redis)
+- Background jobs (RQ)
+- Multi-audience: what API does (users), how to call it (analysts), how to develop (contributors)
+
+**6. policyengine-app** 🆕
+- React application patterns
+- Component structure
+- Routing and state management
+- Chart integration (Plotly)
+- Multi-audience: app features (users), URL structure (analysts), development patterns (contributors)
+
+### Analysis and Data Skills
+
+**7. policyengine-analysis** ✅ Enhanced
+- Impact analysis patterns
+- Streamlit dashboards
+- Jupyter notebooks
+- Plotly visualizations with PolicyEngine branding
+- Multi-audience: how analysis works (users), analysis code patterns (analysts)
+
+**8. microdf** 🆕
+- Weighted pandas DataFrames
+- Inequality metrics (Gini, top shares)
+- Poverty calculations
+- Survey microdata analysis
+- Multi-audience: what microdf does (users), how to use (analysts), how to develop (contributors)
+
+### Standards Skills
+
+**9. policyengine-standards** ✅
+- Code formatting (Black, Prettier)
+- Git workflow
+- Changelog management
+- CI requirements
+- Common AI pitfalls
+
+**10. policyengine-writing** ✅
+- Active voice, quantitative language
+- Sentence case for headings
+- Neutral, objective tone
+- Blog post and PR description patterns
+
+## Agents (18 Total)
+
+### Country Model Agents (15)
+
+**Multi-agent workflow:**
+- `document_collector` - Gather authoritative sources
+- `test-creator` - Write tests from documentation (isolated)
+- `rules-engineer` - Implement variables/parameters (isolated)
+- `rules-reviewer` - Review implementation
+- `parameter-architect` - Design parameter structures
+
+**Validators:**
+- `policy-domain-validator` - Federal/state separation, naming
+- `reference-validator` - Citations and documentation
+- `cross-program-validator` - Cross-program consistency
+- `implementation-validator` - Zero hard-coded values
+- `performance-optimizer` - Vectorization opportunities
+
+**Quality and CI:**
+- `documentation-enricher` - Enhance documentation
+- `edge-case-generator` - Comprehensive test cases
+- `ci-fixer` - Fix CI failures
+- `isolation-setup` - Git worktrees for isolated development
+- `isolation-enforcement` - Ensure test/implementation isolation
+
+### Other Agents (3)
+
+- `api-reviewer` - Review Flask/API code
+- `app-reviewer` - Review React/app code
+
+## Slash Commands (3 Total)
+
+**`/encode-policy <program-name>`**
+- Orchestrate complete multi-agent workflow
+- Implement new government programs
+- Example: `/encode-policy Idaho LIHEAP`
+
+**`/review-pr [pr-number]`**
+- Comprehensive PR review (read-only)
+- Post findings to GitHub
+- Example: `/review-pr 123`
+
+**`/fix-pr [pr-number]`**
+- Apply fixes from review
+- Push updates automatically
+- Example: `/fix-pr 123`
+
+## Available Plugins (6)
+
+| Plugin | Audience | Agents | Commands | Skills |
+|--------|----------|--------|----------|--------|
+| **essential** | Users | 0 | 0 | 3 |
+| **country-models** | Contributors | 15 | 3 | 5 |
+| **api-development** | Contributors | 1 | 0 | 5 |
+| **app-development** | Contributors | 1 | 0 | 5 |
+| **analysis-tools** | Analysts | 0 | 0 | 6 |
+| **data-science** | Analysts/Contributors | 0 | 0 | 4 |
+| **complete** | All | 18 | 3 | 10 |
+
+## Installation
+
+### For End Users
+
+```bash
+# Add marketplace
+/plugin marketplace add PolicyEngine/policyengine-claude
+
+# Install essentials
+/plugin install essential@policyengine-claude
+```
+
+### For Policy Analysts
+
+```bash
+# Add marketplace
+/plugin marketplace add PolicyEngine/policyengine-claude
+
+# Install analysis tools
+/plugin install analysis-tools@policyengine-claude
+```
+
+### For Contributors
+
+**In specific repos (auto-install):**
+
+Each PolicyEngine repo has `.claude/settings.json` that auto-installs the appropriate plugin:
 
 ```json
 {
@@ -47,397 +232,551 @@ Add to your project's `.claude/settings.json`:
 }
 ```
 
-When team members trust the repository, the plugin auto-installs!
+**Result:** When you trust the repo, the plugin auto-installs!
 
-## What's Included
+## Multi-Repo Architecture
 
-### 🤖 Agents (18 Total)
+### The PolicyEngine Ecosystem
 
-#### Country Models (15 agents)
+```
+Layer 1: Core Engine
+├── policyengine-core (simulation engine)
 
-For developing tax and benefit rules in `policyengine-us`, `policyengine-uk`, `policyengine-canada`, etc.
+Layer 2: Country Models
+├── policyengine-us (US tax/benefit system)
+├── policyengine-uk (UK tax/benefit system)
+├── policyengine-canada (Canada system)
+└── [other countries]
 
-**Multi-Agent Workflow:**
-- `document_collector` - Gathers authoritative sources (regulations, state plans)
-- `test-creator` - Creates tests from documentation (isolated from implementation)
-- `rules-engineer` - Implements variables and parameters (isolated from tests)
-- `parameter-architect` - Designs parameter structures
-- `rules-reviewer` - Reviews implementation against documentation
+Layer 3: Services
+├── policyengine-api (REST API)
+└── policyengine.py (Python client)
 
-**Validation & Quality:**
-- `policy-domain-validator` - Validates federal/state separation, naming conventions
-- `reference-validator` - Checks citations and documentation
-- `cross-program-validator` - Ensures consistency across programs
-- `implementation-validator` - Verifies zero hard-coded values
-- `performance-optimizer` - Identifies vectorization opportunities
-- `documentation-enricher` - Enhances code documentation
+Layer 4: Interfaces
+├── policyengine-app (web app)
 
-**CI & Integration:**
-- `ci-fixer` - Fixes continuous integration failures
-- `isolation-setup` - Sets up git worktrees for isolated development
-- `isolation-enforcement` - Ensures test/implementation isolation
-- `edge-case-generator` - Creates comprehensive test cases
+Layer 5: Data
+├── policyengine-us-data (enhanced microdata)
+├── microdf (weighted DataFrames)
+├── synthimpute (ML imputation)
+└── survey-enhance (reweighting)
 
-#### API Development (1 agent)
+Layer 6: Applications
+├── Analysis repos (crfb-tob-impacts, newsletters)
+├── Calculators (givecalc, salt-amt-calculator)
+└── Dashboards (2024-election-dashboard)
+```
 
-For `policyengine-api` (Flask backend):
-- `api-reviewer` - Reviews API implementations for performance, security, REST practices
+### Skills Point to Repos
 
-#### App Development (1 agent)
+Skills use a **pointer pattern** - they provide stable principles and point to current implementation:
 
-For `policyengine-app` (React frontend):
-- `app-reviewer` - Reviews React code for component quality, performance, UX
+```markdown
+## For Contributors
 
-#### Shared (2 agents)
-
-- `policy-domain-validator` - Domain validation across all repos
-- `reference-validator` - Reference checking across all repos
-
-### 🎯 Slash Commands (3 Total)
-
-**`/encode-policy <program-name>`**
-- Orchestrates complete multi-agent workflow to implement new government programs
-- Coordinates: document collection → parallel test/implementation → validation → PR creation
-- Example: `/encode-policy Idaho LIHEAP`
-
-**`/review-pr [pr-number]`**
-- Comprehensive PR review using validation agents (read-only)
-- Posts findings to GitHub without making changes
-- Example: `/review-pr 123` or `/review-pr` (uses current branch)
-
-**`/fix-pr [pr-number]`**
-- Fixes issues found in PR review
-- Applies corrections and pushes updates
-- Example: `/fix-pr 123`
-
-### 📚 Skills (3 Total)
-
-**`policyengine-us-skill`**
-- Situation creation patterns (single, married, families)
-- Common variables reference (income, deductions, benefits, taxes)
-- Using axes for parameter sweeps
-- Policy reform definitions
-- Helper functions and examples
-
-**`policyengine-analysis-skill`**
-- Impact analysis patterns (distributional, case studies)
-- Plotly visualizations with PolicyEngine branding
-- Streamlit dashboard templates
-- Jupyter notebook best practices
-- Reform analysis templates
-
-**`policyengine-standards-skill`**
-- Python standards (Black, 79-char, `uv run`)
-- React standards (Prettier + ESLint)
-- Changelog management (`changelog_entry.yaml`)
-- Git workflow (no forks, issue references)
-- Common AI pitfalls
-
-## Available Plugins
-
-### 1. `country-models` (Recommended for Country Repos)
-
-**Use in:** `policyengine-us`, `policyengine-uk`, `policyengine-canada`, `policyengine-il`, `policyengine-ng`
-
-**Includes:**
-- 15 country model agents
-- 3 slash commands (`/encode-policy`, `/review-pr`, `/fix-pr`)
-- 2 skills (`policyengine-us-skill`, `policyengine-standards-skill`)
-
-**Example workflow:**
+**To see current implementation:**
 ```bash
-# Implement new program
-/encode-policy California EITC
-
-# Review existing PR
-/review-pr 456
-
-# Fix issues
-/fix-pr 456
+cat policyengine_api/endpoints/economy.py
 ```
 
-### 2. `api-development`
-
-**Use in:** `policyengine-api`
-
-**Includes:**
-- 1 API reviewer agent
-- 1 skill (`policyengine-standards-skill`)
-
-### 3. `app-development`
-
-**Use in:** `policyengine-app`
-
-**Includes:**
-- 1 App reviewer agent
-- 1 skill (`policyengine-standards-skill`)
-
-### 4. `analysis-tools`
-
-**Use in:** `crfb-tob-impacts`, `newsletters`, `givecalc`, dashboards, analysis notebooks
-
-**Includes:**
-- 3 skills (all: US patterns, analysis patterns, coding standards)
-- No agents (analysis repos use skills as reference)
-
-**Example usage:**
+**To find patterns:**
+```bash
+grep -r "cache_key" policyengine_api/
 ```
-You: "Create a Streamlit dashboard analyzing CTC reform impacts"
-
-Claude: [Uses policyengine-analysis-skill for dashboard patterns]
-        [Uses policyengine-us-skill for simulation setup]
-        [Uses policyengine-standards-skill for code quality]
 ```
 
-### 5. `complete`
+**Benefits:**
+- ✅ No version drift - skills point to code
+- ✅ Branch-aware - reads from your checkout
+- ✅ Single source of truth - code is documentation
+- ✅ Cross-repo learning - can explore related repos
 
-**Use for:** Full PolicyEngine development across all repo types
+### Multi-Repo Workflows
 
-**Includes:** Everything (all agents, commands, skills)
+**Example: API contributor understanding country models**
+```bash
+# Working in policyengine-api
+cd policyengine-api
 
-## How It Works
+# Claude has policyengine-api-skill installed
+# Need to understand variable structure
 
-### Three-Layer Architecture
+# Claude can add related repo
+/add-dir ../policyengine-us
 
-1. **Skills (Knowledge Layer)** - Reference documentation, automatically loaded
-2. **Agents (Execution Layer)** - Specialized workers, explicitly invoked
-3. **Commands (Orchestration Layer)** - Multi-agent workflows, user-invoked
+# Now Claude can read both repos
+# Uses policyengine-us-skill to understand variables
+# Uses policyengine-api-skill to create endpoint
+```
 
-### Example: Implementing a New Program
+**Example: Analyst debugging data issues**
+```bash
+# Working in analysis repo
+cd crfb-tob-impacts
+
+# Has analysis-tools plugin
+# Includes: microdf-skill, policyengine-us-skill
+
+# Can install additional skills on-demand
+/plugin install policyengine-us-data-skill@policyengine-claude
+
+# Now can understand data pipeline issues
+```
+
+## Repository-Specific Auto-Install
+
+Each repo type installs appropriate plugins:
+
+| Repository | Plugin | What It Includes |
+|------------|--------|------------------|
+| policyengine-us | country-models | 15 agents, 3 commands, 5 skills |
+| policyengine-uk | country-models | 15 agents, 3 commands, 5 skills |
+| policyengine-api | api-development | 1 agent, 5 skills |
+| policyengine-app | app-development | 1 agent, 5 skills |
+| crfb-tob-impacts | analysis-tools | 6 skills |
+| givecalc | analysis-tools | 6 skills |
+| microdf | data-science | 4 skills |
+
+## How Skills Serve Multiple Audiences
+
+Each skill organized with sections:
+
+```markdown
+# Skill Name
+
+## For Users 👥
+[What this is, why it matters]
+
+## For Analysts 📊
+[How to use it programmatically]
+
+## For Contributors 💻
+[How to develop it]
+**Current implementation:**
+```bash
+cat path/to/current/code.py
+```
+```
+
+**Example: policyengine-us-skill**
+
+- **Users** learn what programs are modeled (EITC, CTC, SNAP, etc.)
+- **Analysts** learn situation creation and variable reference
+- **Contributors** learn where to find implementation (`policyengine_us/variables/`)
+
+## Key Innovation: Documentation Pointers
+
+Instead of duplicating code, skills **point to repos**:
+
+**Traditional approach (version drift):**
+```markdown
+## API Endpoint Pattern
+
+```python
+# Hardcoded example from when skill was written
+# Gets outdated as code evolves
+@app.route("/us/calculate")
+def calculate():
+    # Old pattern from 6 months ago
+```
+```
+
+**PolicyEngine approach (always current):**
+```markdown
+## API Endpoint Pattern
+
+**Current implementation:**
+```bash
+cat policyengine_api/endpoints/economy.py
+```
+
+**Pattern demonstrated:**
+- Request validation
+- Cache checking
+- Computation
+- Error handling
+```
+
+**Benefits:**
+- Always shows current code
+- Works with feature branches
+- Single source of truth
+- No maintenance burden
+
+## Use Cases
+
+### Use Case 1: User Learning the Platform
+
+```
+User: "How do I calculate how much I'd save from donating to charity?"
+
+Claude: [Has policyengine-user-guide-skill]
+"Go to policyengine.org/us/household, enter your income and donation amount.
+The calculator shows your tax savings..."
+
+[Points to givecalc for more advanced calculator]
+```
+
+### Use Case 2: Analyst Creating Impact Study
+
+```
+User in crfb-tob-impacts: "Analyze CTC expansion proposal"
+
+Claude: [Has analysis-tools plugin]
+[Uses policyengine-python-client-skill for API access]
+[Uses policyengine-analysis-skill for dashboard patterns]
+[Uses microdf-skill for inequality calculations]
+[Uses policyengine-writing-skill for blog post]
+
+Creates: Analysis notebook + Streamlit dashboard + blog post draft
+```
+
+### Use Case 3: Contributor Implementing New Program
+
+```
+User in policyengine-us: "/encode-policy California EITC"
+
+Claude: [Has country-models plugin]
+[Invokes @document_collector] → Gathers CA EITC regulations
+[Invokes @test-creator + @rules-engineer in parallel] → Isolated development
+[Uses policyengine-core-skill for variable patterns]
+[Uses policyengine-standards-skill for code quality]
+[Uses policyengine-writing-skill for PR description]
+
+Creates: Tests + Implementation + PR
+```
+
+### Use Case 4: Cross-Repo Debugging
+
+```
+User in policyengine-api: "Why is EITC calculation wrong?"
+
+Claude: [Has api-development plugin]
+"Let me check the endpoint... and the variable implementation"
+
+/add-dir ../policyengine-us
+
+[Reads API endpoint code using policyengine-api-skill]
+[Reads EITC variable code using policyengine-us-skill]
+[Compares and identifies discrepancy]
+
+"The API is passing the wrong year parameter to the simulation..."
+```
+
+## Installation by Use Case
+
+### I want to: Use PolicyEngine
 
 ```bash
-# User runs command
-/encode-policy Massachusetts SNAP
-
-# Command orchestrates agents:
-1. @document_collector gathers MA SNAP regulations
-2. @test-creator writes tests (isolated)
-3. @rules-engineer implements rules (isolated)
-4. @policy-domain-validator validates implementation
-5. @ci-fixer fixes any CI issues
-6. Creates PR and posts to GitHub
-
-# Agents reference skills:
-- rules-engineer uses policyengine-us-skill for patterns
-- All agents use policyengine-standards-skill for code quality
+/plugin marketplace add PolicyEngine/policyengine-claude
+/plugin install essential@policyengine-claude
 ```
 
-## Repository-Specific Usage
-
-### Country Models (policyengine-us, policyengine-uk, etc.)
+### I want to: Analyze policies with Python
 
 ```bash
-# Install plugin
-/plugin install country-models@policyengine-claude
-
-# Implement new program
-/encode-policy [program-name]
-
-# Review PR
-/review-pr [pr-number]
-
-# Fix PR issues
-/fix-pr [pr-number]
-```
-
-### Analysis Repos (crfb-tob-impacts, newsletters, etc.)
-
-```bash
-# Install plugin
 /plugin install analysis-tools@policyengine-claude
-
-# Claude auto-uses skills when you ask:
-"Create a policy impact analysis comparing baseline vs reform"
-"Build a Streamlit dashboard for state-by-state comparisons"
-"Write a Jupyter notebook analyzing distributional impacts"
 ```
 
-### API/App Repos
+### I want to: Contribute to policyengine-us
 
 ```bash
-# API
+# Automatic when you trust policyengine-us repo
+# Or manually:
+/plugin install country-models@policyengine-claude
+```
+
+### I want to: Develop the API
+
+```bash
+# Automatic when you trust policyengine-api repo
+# Or manually:
 /plugin install api-development@policyengine-claude
+```
 
-# App
+### I want to: Develop the React app
+
+```bash
+# Automatic when you trust policyengine-app repo
+# Or manually:
 /plugin install app-development@policyengine-claude
-
-# Invoke reviewers explicitly
-"Review this Flask endpoint for performance issues"
-"Review this React component for best practices"
 ```
 
-## Multi-Agent Workflow
+### I want to: Work with data packages
 
-The country-models plugin implements a sophisticated isolated development workflow:
-
-### Phase 1: Documentation
-`@document_collector` gathers authoritative sources and posts to GitHub issue
-
-### Phase 2: Parallel Development (Isolated)
-- `@test-creator` writes tests from documentation ONLY (never sees implementation)
-- `@rules-engineer` implements from documentation ONLY (never sees test expectations)
-
-### Phase 3: Integration & Validation
-- Merge test and implementation branches
-- `@policy-domain-validator` checks federal/state separation
-- `@reference-validator` checks citations
-- `@cross-program-validator` ensures consistency
-
-### Phase 4: CI & PR
-- `@ci-fixer` resolves any CI failures
-- Create/update PR
-- `@rules-reviewer` provides final review
-
-### Why Isolation?
-
-Developing tests and implementation separately prevents implementation bias:
-- Tests verify **what the law says**
-- Implementation codes **what the law says**
-- Both work from the **same authoritative source**
-- Only the reviewer sees both to catch discrepancies
-
-## Key Principles
-
-### Source Authority
-Statutes > Regulations > Official Websites > Secondary Sources
-
-### Zero Hard-Coded Values
-All values must be in parameters, never in code:
-```python
-# ❌ Wrong
-ctc_amount = 2000
-
-# ✅ Correct
-ctc_amount = parameters("gov.irs.credits.ctc.amount.base_amount")
+```bash
+/plugin install data-science@policyengine-claude
 ```
 
-### Vectorization
-No if-elif-else with household data:
-```python
-# ❌ Wrong
-if age < 18:
-    eligible = True
-else:
-    eligible = False
+### I want to: Everything
 
-# ✅ Correct
-eligible = age < 18  # NumPy array operation
+```bash
+/plugin install complete@policyengine-claude
 ```
 
-### Documentation
-Every parameter must trace to primary source:
-```yaml
-reference:
-  - title: "IRC Section 24(a)"
-    href: "https://www.law.cornell.edu/uscode/text/26/24"
+## Skills Catalog
+
+| Skill | Users | Analysts | Contributors | Key Topics |
+|-------|-------|----------|--------------|------------|
+| policyengine-user-guide | ✅ | ⚪ | ⚪ | Web app usage, understanding results |
+| policyengine-python-client | ⚪ | ✅ | ⚪ | API access, policyengine.py package |
+| policyengine-core | ✅ | ✅ | ✅ | Simulation engine, architecture |
+| policyengine-us | ✅ | ✅ | ✅ | US tax/benefit system, variables |
+| policyengine-api | ⚪ | ✅ | ✅ | REST endpoints, caching, services |
+| policyengine-app | ⚪ | ⚪ | ✅ | React components, routing, charts |
+| policyengine-analysis | ✅ | ✅ | ⚪ | Impact studies, dashboards, notebooks |
+| microdf | ✅ | ✅ | ✅ | Inequality, poverty, weighted stats |
+| policyengine-standards | ⚪ | ⚪ | ✅ | Code formatting, Git, CI |
+| policyengine-writing | ✅ | ✅ | ✅ | Active voice, quantitative, neutral |
+
+## Team Setup
+
+### Auto-Install in Repositories
+
+Add to `.claude/settings.json` in each repo:
+
+**policyengine-us:**
+```json
+{
+  "plugins": {
+    "marketplaces": ["PolicyEngine/policyengine-claude"],
+    "auto_install": ["country-models@policyengine-claude"]
+  }
+}
 ```
+
+**policyengine-api:**
+```json
+{
+  "plugins": {
+    "marketplaces": ["PolicyEngine/policyengine-claude"],
+    "auto_install": ["api-development@policyengine-claude"]
+  }
+}
+```
+
+**crfb-tob-impacts (analysis repo):**
+```json
+{
+  "plugins": {
+    "marketplaces": ["PolicyEngine/policyengine-claude"],
+    "auto_install": ["analysis-tools@policyengine-claude"]
+  }
+}
+```
+
+**Result:** Team members trust repo → plugin auto-installs → everyone has same knowledge base!
+
+## Plugin Distribution Strategy
+
+### Essential (For Everyone)
+- **Target:** All PolicyEngine users
+- **What:** Basic platform knowledge
+- **Skills:** user-guide, policyengine-us, writing
+
+### Country Models (For Country Package Development)
+- **Target:** Contributors to policyengine-us, policyengine-uk, etc.
+- **What:** Multi-agent workflow + simulation knowledge
+- **Agents:** 15 specialized agents
+- **Commands:** /encode-policy, /review-pr, /fix-pr
+- **Skills:** user-guide, core, us, standards, writing
+
+### API Development (For API Contributors)
+- **Target:** policyengine-api contributors
+- **What:** API patterns and review
+- **Agents:** api-reviewer
+- **Skills:** api, core, us, standards, writing
+
+### App Development (For App Contributors)
+- **Target:** policyengine-app contributors
+- **What:** React patterns and review
+- **Agents:** app-reviewer
+- **Skills:** app, api, us, standards, writing
+
+### Analysis Tools (For Policy Analysts)
+- **Target:** Analysis repos, researchers
+- **What:** Analysis patterns and tools
+- **Skills:** user-guide, python-client, us, analysis, microdf, writing
+
+### Data Science (For Data Package Contributors)
+- **Target:** Data package contributors
+- **What:** Data analysis utilities
+- **Skills:** microdf, us, standards, writing
+
+## Multi-Repo Best Practices
+
+### Working Across Repositories
+
+**Use /add-dir to work with multiple repos:**
+
+```bash
+# Start in one repo
+cd policyengine-us
+
+# Add related repo
+/add-dir ../policyengine-core
+
+# Claude can now read files from both repos
+# Skills point to files in both repos
+```
+
+**Benefits:**
+- Single Claude session across repos
+- Skills work across repo boundaries
+- Understand dependencies
+- Debug cross-repo issues
+
+### Hierarchical CLAUDE.md Files
+
+You can have CLAUDE.md in parent directory:
+
+```
+/Users/you/PolicyEngine/
+├── CLAUDE.md                    # Loaded when in any child repo
+├── policyengine-us/
+│   └── CLAUDE.md                # Also loaded when in this repo
+├── policyengine-api/
+│   └── CLAUDE.md                # Also loaded when in this repo
+└── crfb-tob-impacts/
+    └── CLAUDE.md                # Also loaded when in this repo
+```
+
+**Claude loads:**
+- Parent CLAUDE.md (if exists)
+- Current repo CLAUDE.md (if exists)
+- Plugin skills (based on auto_install)
 
 ## Migrating from Submodules
 
 ### Old Way (Deprecated)
 ```bash
 git submodule add https://github.com/PolicyEngine/.claude.git .claude
+git submodule update --init --recursive
 ```
 
-**Problems:** Git complexity, update synchronization, symlink issues
+**Problems:**
+- Git submodule complexity
+- Update synchronization
+- Symlink issues
+- Per-repo configuration
 
 ### New Way (Plugin System)
 ```bash
+# Just add settings.json
+{
+  "plugins": {
+    "marketplaces": ["PolicyEngine/policyengine-claude"],
+    "auto_install": ["country-models@policyengine-claude"]
+  }
+}
+```
+
+**Benefits:**
+- No Git complexity
+- Auto-install for team
+- Easy updates
+- Works globally
+
+### Migration PRs Filed
+
+- PolicyEngine/policyengine-us#6692
+- PolicyEngine/policyengine-uk#1362
+- PolicyEngine/crfb-tob-impacts#24
+- PolicyEngine/givecalc#43
+
+## Contributing
+
+### Adding New Skills
+
+1. **Create skill directory:**
+   ```bash
+   mkdir skills/my-new-skill
+   ```
+
+2. **Create SKILL.md with sections:**
+   ```markdown
+   ---
+   name: my-skill
+   description: Brief description
+   ---
+
+   # Skill Name
+
+   ## For Users 👥
+   [What it is]
+
+   ## For Analysts 📊
+   [How to use it]
+
+   ## For Contributors 💻
+   [How to develop it]
+   **Current implementation:**
+   ```bash
+   cat path/to/code.py
+   ```
+   ```
+
+3. **Add to marketplace.json**
+
+4. **Test with Claude Code**
+
+5. **Submit PR with changelog_entry.yaml**
+
+### Skill Guidelines
+
+**DO include:**
+- ✅ Multi-audience sections (users, analysts, contributors)
+- ✅ Stable principles and patterns
+- ✅ Pointers to current implementation (file paths)
+- ✅ Commands to explore repos (cat, grep, tree, ls)
+- ✅ Cross-references to related skills
+- ✅ Real examples from PolicyEngine repos
+
+**DON'T include:**
+- ❌ Hardcoded file contents (point to files instead)
+- ❌ Version-specific implementation details
+- ❌ Duplicate information from other skills
+- ❌ Unstable, rapidly-changing patterns
+
+### Testing Skills
+
+```bash
+# Install locally
 /plugin marketplace add PolicyEngine/policyengine-claude
-/plugin install country-models@policyengine-claude
+/plugin install my-plugin@policyengine-claude
+
+# Ask Claude to use the skill
+"Use the my-skill to help me with X"
+
+# Verify Claude can find and use it
 ```
 
-**Benefits:** No Git complexity, global installation, easy updates, selective installation
+## Version History
 
-### Migration Steps
+**v2.0.0** - Comprehensive multi-audience skills
+- Added 6 new skills (user-guide, python-client, core, api, app, microdf)
+- Enhanced existing skills with multi-audience sections
+- Added essential and data-science plugins
+- Introduced documentation pointer pattern
 
-1. **Remove submodule:**
-   ```bash
-   git submodule deinit -f .claude
-   git rm -f .claude
-   rm -rf .git/modules/.claude
-   ```
-
-2. **Add plugin auto-install:**
-   Create/update `.claude/settings.json`:
-   ```json
-   {
-     "plugins": {
-       "marketplaces": ["PolicyEngine/policyengine-claude"],
-       "auto_install": ["country-models@policyengine-claude"]
-     }
-   }
-   ```
-
-3. **Commit and push:**
-   ```bash
-   git add .claude/settings.json
-   git commit -m "Migrate from .claude submodule to policyengine-claude plugin"
-   git push
-   ```
-
-4. **Team members:** Trust repo and plugin auto-installs!
-
-## Development
-
-### Contributing
-
-To improve agents, commands, or skills:
-
-1. Fork this repository
-2. Make changes to the appropriate files
-3. Test with Claude Code
-4. Submit PR with `changelog_entry.yaml`:
-   ```yaml
-   - bump: patch
-     changes:
-       changed:
-       - Improved X agent to handle Y case
-   ```
-
-### Plugin Structure
-
-```
-policyengine-claude/
-├── .claude-plugin/
-│   └── marketplace.json       # Plugin configuration
-├── agents/
-│   ├── country-models/        # Country package agents
-│   ├── api/                   # API agents
-│   ├── app/                   # App agents
-│   └── shared/                # Shared resources
-├── commands/
-│   ├── encode-policy.md       # Main workflow
-│   ├── review-pr.md           # PR review
-│   └── fix-pr.md              # PR fixes
-├── skills/
-│   ├── policyengine-us-skill/
-│   ├── policyengine-analysis-skill/
-│   └── policyengine-standards-skill/
-└── README.md
-```
-
-## Versioning
-
-Follows semantic versioning:
-- **Major**: Breaking changes to agent/command/skill structure
-- **Minor**: New agents, commands, or skills
-- **Patch**: Improvements, bug fixes, clarifications
-
-Current version: **1.0.0**
+**v1.0.0** - Initial release
+- 18 agents for country model development
+- 3 slash commands
+- 4 skills (us, analysis, standards, writing)
 
 ## Support
 
-- **Issues**: https://github.com/PolicyEngine/policyengine-claude/issues
-- **Discussions**: https://github.com/PolicyEngine/policyengine-claude/discussions
-- **Email**: hello@policyengine.org
+- **Issues:** https://github.com/PolicyEngine/policyengine-claude/issues
+- **Discussions:** https://github.com/PolicyEngine/policyengine-claude/discussions
+- **Email:** hello@policyengine.org
 
 ## Related Resources
 
-- **PolicyEngine Main**: https://github.com/PolicyEngine
-- **Documentation**: https://policyengine.org/docs
-- **Claude Code Docs**: https://docs.claude.com/en/docs/claude-code
-- **Plugin Documentation**: https://docs.claude.com/en/docs/claude-code/plugins
+- **PolicyEngine Main:** https://github.com/PolicyEngine
+- **Website:** https://policyengine.org
+- **Documentation:** https://policyengine.org/us/docs
+- **Claude Code Docs:** https://docs.claude.com/en/docs/claude-code
+- **Plugin Docs:** https://docs.claude.com/en/docs/claude-code/plugins
 
 ## License
 
@@ -447,4 +786,4 @@ MIT License - see LICENSE file for details.
 
 **PolicyEngine** - Computing the impact of public policy for everyone
 
-Maintained by the PolicyEngine team with ❤️
+**Note:** This may be the first comprehensive multi-repo, multi-audience Claude Code plugin marketplace. If you're building a similar multi-repo system, feel free to use this as a reference!

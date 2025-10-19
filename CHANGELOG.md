@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-10-18
+
+### Added
+- **6 new skills** for comprehensive PolicyEngine knowledge base:
+  - `policyengine-user-guide-skill` - Using PolicyEngine web apps for all users
+  - `policyengine-python-client-skill` - Programmatic access via Python/API
+  - `policyengine-core-skill` - Core simulation engine architecture and patterns
+  - `policyengine-api-skill` - Flask API development and integration patterns
+  - `policyengine-app-skill` - React app development and component patterns
+  - `microdf-skill` - Weighted DataFrames for inequality and poverty analysis
+- **2 new plugins:**
+  - `essential` - For all PolicyEngine users (user-guide, us, writing skills)
+  - `data-science` - For data package contributors (microdf, us, standards, writing)
+
+### Changed
+- **Multi-audience approach** - All skills now organized with "For Users", "For Analysts", "For Contributors" sections
+- **Enhanced existing skills:**
+  - `policyengine-us-skill` - Added user and analyst sections explaining what's modeled and how to use
+  - `policyengine-analysis-skill` - Added user section explaining how analysis works
+  - `policyengine-standards-skill` - Removed writing content (moved to dedicated skill)
+- **Documentation pointer pattern** - Skills now point to current repo code instead of duplicating it
+- **Marketplace reorganization:**
+  - Renamed/reorganized plugins for clarity (country-models, api-development, app-development, analysis-tools, data-science, complete)
+  - Updated descriptions to reflect multi-audience purpose
+  - Version bump to 2.0.0 across all plugins
+- **README rewrite** - Comprehensive documentation of multi-repo, multi-audience approach
+
+### Breaking Changes
+- Plugin structure changed - users need to reinstall from marketplace
+- Some plugin names changed (e.g., skills separated by audience)
+- Marketplace version bumped to 2.0.0
+
 ## [1.0.0] - 2025-10-18
 
 ### Added
