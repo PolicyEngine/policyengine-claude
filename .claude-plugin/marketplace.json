@@ -11,11 +11,14 @@
     {
       "name": "essential",
       "description": "Essential PolicyEngine knowledge for all users - understanding the platform, using the web app, and basic concepts",
-      "source": ".",
+      "source": "./",
       "category": "getting-started",
       "version": "2.0.0",
       "keywords": ["beginner", "users", "guide", "basics"],
-      "author": "PolicyEngine",
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
       "license": "MIT",
       "skills": [
         "./skills/policyengine-user-guide-skill",
@@ -26,11 +29,14 @@
     {
       "name": "country-models",
       "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages",
-      "source": ".",
+      "source": "./",
       "category": "development",
       "version": "2.0.0",
       "keywords": ["tax", "benefits", "microsimulation", "country-models", "rules", "testing"],
-      "author": "PolicyEngine",
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
       "license": "MIT",
       "agents": [
         "./agents/country-models/rules-engineer.md",
@@ -66,11 +72,14 @@
     {
       "name": "api-development",
       "description": "API development - Flask endpoints, caching, services, and integration patterns",
-      "source": ".",
+      "source": "./",
       "category": "development",
       "version": "2.0.0",
       "keywords": ["api", "flask", "backend", "rest", "endpoints"],
-      "author": "PolicyEngine",
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
       "license": "MIT",
       "agents": [
         "./agents/api/api-reviewer.md"
@@ -92,11 +101,14 @@
     {
       "name": "app-development",
       "description": "React app development - components, routing, charts, and PolicyEngine-specific patterns",
-      "source": ".",
+      "source": "./",
       "category": "development",
       "version": "2.0.0",
       "keywords": ["react", "frontend", "app", "ui", "components"],
-      "author": "PolicyEngine",
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
       "license": "MIT",
       "agents": [
         "./agents/app/app-reviewer.md"
@@ -118,11 +130,14 @@
     {
       "name": "analysis-tools",
       "description": "Policy analysis and research - impact studies, dashboards, notebooks, and visualizations",
-      "source": ".",
+      "source": "./",
       "category": "analysis",
       "version": "2.0.0",
       "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly", "notebooks"],
-      "author": "PolicyEngine",
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
       "license": "MIT",
       "skills": [
         "./skills/policyengine-user-guide-skill",
@@ -137,11 +152,14 @@
     {
       "name": "data-science",
       "description": "Data analysis, survey enhancement, imputation, calibration, and microdata utilities",
-      "source": ".",
+      "source": "./",
       "category": "data",
       "version": "2.0.0",
       "keywords": ["data", "microdata", "survey", "imputation", "calibration", "inequality", "poverty", "ml"],
-      "author": "PolicyEngine",
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
       "license": "MIT",
       "skills": [
         "./skills/microdf-skill",
@@ -157,11 +175,14 @@
     {
       "name": "complete",
       "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
-      "source": ".",
+      "source": "./",
       "category": "complete",
       "version": "2.0.0",
       "keywords": ["complete", "all", "comprehensive"],
-      "author": "PolicyEngine",
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
       "license": "MIT",
       "agents": [
         "./agents/country-models/rules-engineer.md",

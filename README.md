@@ -15,9 +15,15 @@ PolicyEngine Claude provides agents, slash commands, and skills for working with
 ### 👥 For Users
 Learn to use PolicyEngine web apps, understand calculations, and interpret results.
 
-**Install:**
+**Install (run these commands separately):**
+
+**Step 1: Add marketplace**
 ```bash
 /plugin marketplace add PolicyEngine/policyengine-claude
+```
+
+**Step 2: Install plugin**
+```bash
 /plugin install essential@policyengine-claude
 ```
 
@@ -29,7 +35,14 @@ Learn to use PolicyEngine web apps, understand calculations, and interpret resul
 ### 📊 For Analysts
 Create policy analyses, build dashboards, and conduct research using PolicyEngine programmatically.
 
-**Install:**
+**Install (run separately):**
+
+**Step 1: Add marketplace** (if not already added)
+```bash
+/plugin marketplace add PolicyEngine/policyengine-claude
+```
+
+**Step 2: Install plugin**
 ```bash
 /plugin install analysis-tools@policyengine-claude
 ```
@@ -233,21 +246,25 @@ Develop PolicyEngine software across country models, API, app, and data packages
 
 ### For End Users
 
+**Step 1:** Add marketplace
 ```bash
-# Add marketplace
 /plugin marketplace add PolicyEngine/policyengine-claude
+```
 
-# Install essentials
+**Step 2:** Install essentials
+```bash
 /plugin install essential@policyengine-claude
 ```
 
 ### For Policy Analysts
 
+**Step 1:** Add marketplace (if not already added)
 ```bash
-# Add marketplace
 /plugin marketplace add PolicyEngine/policyengine-claude
+```
 
-# Install analysis tools
+**Step 2:** Install analysis tools
+```bash
 /plugin install analysis-tools@policyengine-claude
 ```
 
@@ -532,10 +549,16 @@ Claude: [Has api-development plugin]
 
 ## Installation by Use Case
 
+**First:** Add the marketplace (run once)
+```bash
+/plugin marketplace add PolicyEngine/policyengine-claude
+```
+
+**Then:** Install the plugin you need (separate command)
+
 ### I want to: Use PolicyEngine
 
 ```bash
-/plugin marketplace add PolicyEngine/policyengine-claude
 /plugin install essential@policyengine-claude
 ```
 
