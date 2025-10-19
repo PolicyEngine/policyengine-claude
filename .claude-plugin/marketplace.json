@@ -98,6 +98,7 @@
         "./skills/policyengine-app-skill",
         "./skills/policyengine-api-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]
@@ -117,6 +118,7 @@
         "./skills/policyengine-us-skill",
         "./skills/policyengine-analysis-skill",
         "./skills/microdf-skill",
+        "./skills/policyengine-design-skill",
         "./skills/policyengine-writing-skill"
       ]
     },
@@ -132,6 +134,7 @@
       "skills": [
         "./skills/microdf-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]
@@ -176,6 +179,7 @@
         "./skills/policyengine-app-skill",
         "./skills/policyengine-analysis-skill",
         "./skills/microdf-skill",
+        "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
       ]

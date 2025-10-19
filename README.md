@@ -8,7 +8,7 @@ PolicyEngine Claude provides agents, slash commands, and skills for working with
 
 - **🤖 18 Specialized Agents** - Automated workflows for development
 - **🎯 3 Slash Commands** - Multi-agent orchestration
-- **📚 10 Skills** - Knowledge base for users, analysts, and contributors
+- **📚 11 Skills** - Knowledge base for users, analysts, and contributors
 
 ## Three Audiences, One Plugin
 
@@ -59,7 +59,7 @@ Develop PolicyEngine software across country models, API, app, and data packages
 /plugin install data-science@policyengine-claude
 ```
 
-## Skills Overview (10 Total)
+## Skills Overview (11 Total)
 
 ### User-Facing Skills
 
@@ -121,16 +121,23 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Survey microdata analysis
 - Multi-audience: what microdf does (users), how to use (analysts), how to develop (contributors)
 
-### Standards Skills
+### Design and Standards Skills
 
-**9. policyengine-standards** ✅
+**9. policyengine-design** 🆕
+- PolicyEngine visual identity (colors, fonts, logos)
+- Chart branding (Plotly format_fig pattern)
+- Streamlit theme configuration
+- Color palette and usage guidelines
+- Multi-audience: recognizing brand (users), applying branding (analysts/contributors)
+
+**10. policyengine-standards** ✅
 - Code formatting (Black, Prettier)
 - Git workflow
 - Changelog management
 - CI requirements
 - Common AI pitfalls
 
-**10. policyengine-writing** ✅
+**11. policyengine-writing** ✅
 - Active voice, quantitative language
 - Sentence case for headings
 - Neutral, objective tone
@@ -526,6 +533,7 @@ Claude: [Has api-development plugin]
 | policyengine-app | ⚪ | ⚪ | ✅ | React components, routing, charts |
 | policyengine-analysis | ✅ | ✅ | ⚪ | Impact studies, dashboards, notebooks |
 | microdf | ✅ | ✅ | ✅ | Inequality, poverty, weighted stats |
+| policyengine-design | ✅ | ✅ | ✅ | Colors, fonts, logos, branding |
 | policyengine-standards | ⚪ | ⚪ | ✅ | Code formatting, Git, CI |
 | policyengine-writing | ✅ | ✅ | ✅ | Active voice, quantitative, neutral |
 

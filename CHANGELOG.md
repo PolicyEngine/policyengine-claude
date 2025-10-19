@@ -8,16 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2025-10-18
 
 ### Added
-- **6 new skills** for comprehensive PolicyEngine knowledge base:
+- **7 new skills** for comprehensive PolicyEngine knowledge base:
   - `policyengine-user-guide-skill` - Using PolicyEngine web apps for all users
   - `policyengine-python-client-skill` - Programmatic access via Python/API
   - `policyengine-core-skill` - Core simulation engine architecture and patterns
   - `policyengine-api-skill` - Flask API development and integration patterns
   - `policyengine-app-skill` - React app development and component patterns
   - `microdf-skill` - Weighted DataFrames for inequality and poverty analysis
+  - `policyengine-design-skill` - Visual identity, colors, fonts, logos, and branding (references both app v1 and v2)
 - **2 new plugins:**
   - `essential` - For all PolicyEngine users (user-guide, us, writing skills)
-  - `data-science` - For data package contributors (microdf, us, standards, writing)
+  - `data-science` - For data package contributors (microdf, us, design, standards, writing)
 
 ### Changed
 - **Multi-audience approach** - All skills now organized with "For Users", "For Analysts", "For Contributors" sections
