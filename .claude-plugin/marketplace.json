@@ -43,7 +43,8 @@
       ],
       "skills": [
         "./skills/policyengine-us-skill",
-        "./skills/policyengine-standards-skill"
+        "./skills/policyengine-standards-skill",
+        "./skills/policyengine-writing-skill"
       ]
     },
     {
@@ -59,7 +60,8 @@
         "./agents/api/api-reviewer.md"
       ],
       "skills": [
-        "./skills/policyengine-standards-skill"
+        "./skills/policyengine-standards-skill",
+        "./skills/policyengine-writing-skill"
       ]
     },
     {
@@ -75,7 +77,8 @@
         "./agents/app/app-reviewer.md"
       ],
       "skills": [
-        "./skills/policyengine-standards-skill"
+        "./skills/policyengine-standards-skill",
+        "./skills/policyengine-writing-skill"
       ]
     },
     {
@@ -90,7 +93,7 @@
       "skills": [
         "./skills/policyengine-us-skill",
         "./skills/policyengine-analysis-skill",
-        "./skills/policyengine-standards-skill"
+        "./skills/policyengine-writing-skill"
       ]
     },
     {
@@ -129,7 +132,8 @@
       "skills": [
         "./skills/policyengine-us-skill",
         "./skills/policyengine-analysis-skill",
-        "./skills/policyengine-standards-skill"
+        "./skills/policyengine-standards-skill",
+        "./skills/policyengine-writing-skill"
       ]
     }
   ]

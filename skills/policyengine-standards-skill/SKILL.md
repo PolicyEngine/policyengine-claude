@@ -446,6 +446,7 @@ git push
 - **Python Style**: PEP 8, Black documentation
 - **React Style**: Airbnb React/JSX Style Guide
 - **Testing**: pytest documentation, Jest/RTL documentation
+- **Writing Style**: See policyengine-writing-skill for blog posts, PR descriptions, and documentation
 
 ## Examples
 
