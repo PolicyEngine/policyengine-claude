@@ -265,8 +265,8 @@ Layer 4: Interfaces
 Layer 5: Data
 ├── policyengine-us-data (enhanced microdata)
 ├── microdf (weighted DataFrames)
-├── synthimpute (ML imputation)
-└── survey-enhance (reweighting)
+├── microimpute (ML imputation)
+└── microcalibrate (survey calibration and reweighting)
 
 Layer 6: Applications
 ├── Analysis repos (crfb-tob-impacts, newsletters)
