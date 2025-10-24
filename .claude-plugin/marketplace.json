@@ -45,8 +45,6 @@
         "./agents/country-models/document_collector.md",
         "./agents/country-models/rules-reviewer.md",
         "./agents/country-models/parameter-architect.md",
-        "./agents/country-models/policy-domain-validator.md",
-        "./agents/country-models/reference-validator.md",
         "./agents/country-models/cross-program-validator.md",
         "./agents/country-models/implementation-validator.md",
         "./agents/country-models/documentation-enricher.md",
