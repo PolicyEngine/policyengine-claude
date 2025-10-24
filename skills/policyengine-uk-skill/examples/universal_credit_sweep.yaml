@@ -1,0 +1,38 @@
+# Example: Analyzing Universal Credit with income variation
+# Single parent with 2 children in North West
+# Sweeps employment income from £0 to £50,000
+
+people:
+  parent:
+    age:
+      2025: 30
+  child_1:
+    age:
+      2025: 8
+  child_2:
+    age:
+      2025: 5
+
+benunits:
+  benunit:
+    members:
+      - parent
+      - child_1
+      - child_2
+
+households:
+  household:
+    members:
+      - parent
+      - child_1
+      - child_2
+    region:
+      2025: NORTH_WEST
+
+# Axes: Vary employment income from £0 to £50,000
+axes:
+  - - name: employment_income
+      count: 1001
+      min: 0
+      max: 50000
+      period: 2025

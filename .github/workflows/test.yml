@@ -145,7 +145,7 @@ jobs:
             fi
 
             # Extract frontmatter and validate required fields
-            FRONTMATTER=$(awk '/^---$/,/^---$/{if (NR>1) print}' "$SKILL_FILE" | sed '$d')
+            FRONTMATTER=$(awk 'BEGIN{p=0} /^---$/{p++; next} p==1{print}' "$SKILL_FILE")
 
             # Check for name field
             if ! echo "$FRONTMATTER" | grep -q "^name:"; then
