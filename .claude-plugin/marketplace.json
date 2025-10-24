@@ -23,6 +23,7 @@
       "skills": [
         "./skills/policyengine-user-guide-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-writing-skill"
       ]
     },
@@ -64,6 +65,7 @@
       "skills": [
         "./skills/policyengine-user-guide-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-core-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -93,6 +95,7 @@
         "./skills/policyengine-api-skill",
         "./skills/policyengine-core-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -122,6 +125,7 @@
         "./skills/policyengine-app-skill",
         "./skills/policyengine-api-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -143,6 +147,7 @@
         "./skills/policyengine-user-guide-skill",
         "./skills/policyengine-python-client-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-analysis-skill",
         "./skills/microdf-skill",
         "./skills/policyengine-design-skill",
@@ -167,6 +172,7 @@
         "./skills/microcalibrate-skill",
         "./skills/l0-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -212,6 +218,7 @@
         "./skills/policyengine-python-client-skill",
         "./skills/policyengine-core-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-api-skill",
         "./skills/policyengine-app-skill",
         "./skills/policyengine-analysis-skill",
