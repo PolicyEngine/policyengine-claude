@@ -155,6 +155,82 @@ cat givecalc/ui/visualization.py
 cat policyengine-app/src/pages/policy/output/...
 ```
 
+#### Blog Post Charts (Standalone HTML)
+
+When creating standalone Plotly HTML files for blog posts, use these specific settings:
+
+**Font:** Use "Roboto" (not "Roboto Serif") with Google Fonts embed:
+```python
+FONT_FAMILY = "Roboto, Arial, sans-serif"
+
+# After generating HTML, embed font
+html = fig.to_html(include_plotlyjs='cdn')
+html_with_font = html.replace('</head>',
+    '<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"></head>')
+with open('chart.html', 'w') as f:
+    f.write(html_with_font)
+```
+
+**Background:** LIGHT_GRAY (#F2F2F2) for better blog integration:
+```python
+fig.update_layout(
+    plot_bgcolor="#F2F2F2",
+    paper_bgcolor="#F2F2F2"
+)
+```
+
+**Logo positioning:** x=0.95, y=-0.2 avoids cutoff:
+```python
+images=[{
+    "source": "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+    "xref": "paper", "yref": "paper",
+    "x": 0.95,  # Not 1.0 - prevents cutoff
+    "y": -0.2,
+    "sizex": 0.15, "sizey": 0.15,
+    "xanchor": "right", "yanchor": "bottom"
+}]
+```
+
+**Margins:** Increase right margin when x-axis extends to boundary:
+```python
+# For charts showing $0-$2B or similar
+margin=dict(t=120, b=120, l=120, r=80)  # r=80 ensures last tick visible
+```
+
+**Grid and axes:**
+```python
+xaxis=dict(
+    gridcolor="#FFFFFF",      # White grid on LIGHT_GRAY background
+    zerolinecolor="#FFFFFF",
+    tickformat='$,.1f',       # Units in tick labels
+    ticksuffix='B'            # Not in axis title
+),
+yaxis=dict(
+    gridcolor="#FFFFFF",
+    zerolinecolor="#FFFFFF",
+    ticksuffix='%'
+)
+```
+
+**Colors for reference lines:** Use GRAY (#808080), not red:
+```python
+# Reference/statutory lines
+line=dict(color="#808080", width=2, dash='dash')
+```
+
+**Stepwise patterns:** Use 10,000+ points for discrete boundaries:
+```python
+# For charts showing $2M increments
+wealth = np.linspace(0, 2.0, 10000)  # Fine granularity
+line=dict(shape='hv')  # Horizontal-vertical steps
+```
+
+**Legend:** Position inside chart when needed:
+```python
+legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+# Or remove entirely if obvious: showlegend=False
+```
+
 #### Chart Colors
 
 **For line charts:**
