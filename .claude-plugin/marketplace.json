@@ -23,6 +23,7 @@
       "skills": [
         "./skills/policyengine-user-guide-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-writing-skill"
       ]
     },
@@ -44,8 +45,6 @@
         "./agents/country-models/document_collector.md",
         "./agents/country-models/rules-reviewer.md",
         "./agents/country-models/parameter-architect.md",
-        "./agents/country-models/policy-domain-validator.md",
-        "./agents/country-models/reference-validator.md",
         "./agents/country-models/cross-program-validator.md",
         "./agents/country-models/implementation-validator.md",
         "./agents/country-models/documentation-enricher.md",
@@ -64,6 +63,7 @@
       "skills": [
         "./skills/policyengine-user-guide-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-core-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -93,6 +93,7 @@
         "./skills/policyengine-api-skill",
         "./skills/policyengine-core-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -122,6 +123,7 @@
         "./skills/policyengine-app-skill",
         "./skills/policyengine-api-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -143,6 +145,7 @@
         "./skills/policyengine-user-guide-skill",
         "./skills/policyengine-python-client-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-analysis-skill",
         "./skills/microdf-skill",
         "./skills/policyengine-design-skill",
@@ -167,6 +170,7 @@
         "./skills/microcalibrate-skill",
         "./skills/l0-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-design-skill",
         "./skills/policyengine-standards-skill",
         "./skills/policyengine-writing-skill"
@@ -212,6 +216,7 @@
         "./skills/policyengine-python-client-skill",
         "./skills/policyengine-core-skill",
         "./skills/policyengine-us-skill",
+        "./skills/policyengine-uk-skill",
         "./skills/policyengine-api-skill",
         "./skills/policyengine-app-skill",
         "./skills/policyengine-analysis-skill",
