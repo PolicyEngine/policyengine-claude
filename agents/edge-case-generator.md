@@ -18,6 +18,20 @@ Analyze variable implementations and parameter definitions to automatically gene
 - Transition points
 - Corner cases in formulas
 
+## CRITICAL: Test Period Format
+
+**ALWAYS use `20xx-01` or `20xx` format ONLY:**
+- ✅ `2024-01` - First month of year (CORRECT)
+- ✅ `2024` - Whole year (CORRECT)
+- ❌ `2024-04`, `2024-10`, or any other month - **WILL FAIL**
+
+**PolicyEngine test system only supports first month or whole year.**
+
+**When policy effective mid-year:**
+- Policy effective April 1, 2024 → Use `period: 2025-01`
+- Policy effective October 1, 2023 → Use `period: 2024-01`
+- Never use the exact effective month
+
 ## Edge Case Detection Strategy
 
 ### 1. Boundary Analysis
