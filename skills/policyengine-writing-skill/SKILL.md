@@ -204,6 +204,53 @@ Use tables liberally to present data clearly. Always include units and context.
 | 2027    | 14.7                      |
 | 2025-34 | 143.7                     |
 
+## Showing Calculations and Sourcing Claims
+
+**Show your work:** When presenting derived values, spell out the calculation explicitly.
+
+**✅ Correct:**
+```
+An individual accumulating wealth from $1.0 billion to $1.1 billion pays $55 million in tax on that $100 million increase: $55 million / $100 million = 55% average marginal rate.
+
+At $2.0 billion, the tax is $100 million ($2.0B × 5% = $100M).
+```
+
+**❌ Wrong:**
+```
+An individual accumulating wealth from $1.0 billion to $1.1 billion pays $55 million in tax, representing a 55% average marginal rate.
+
+At $2.0 billion, the tax is $100 million.
+```
+
+**Tables before charts:** For complex calculations, show worked examples in a table before displaying the full chart.
+
+**Example: Marginal rate calculation table**
+
+| Initial wealth | Initial rate | Initial tax | New wealth | New rate | New tax | Change in wealth | Change in tax | Marginal rate |
+|----------------|--------------|-------------|------------|----------|---------|------------------|---------------|---------------|
+| $1.000B        | 0.0%         | $0M         | $1.1B      | 5.0%     | $55.0M  | $100M            | $55.0M        | 55%           |
+| $1.000B        | 0.0%         | $0M         | $1.002B    | 0.1%     | $1.0M   | $2M              | $1.0M         | 50%           |
+
+After showing the calculation in the table, present the full visualization.
+
+**Source all claims:** Every numerical claim needs a source.
+
+**✅ Correct:**
+```
+Based on an estimated $2 trillion in combined wealth held by California's roughly 200 billionaires, a 5% tax would raise approximately $100 billion.
+(Links to source with wealth estimate)
+
+The marginal tax rate calculations derive from the statutory text of California Initiative 25-0024, specifically Section 50301(b).
+```
+
+**❌ Wrong:**
+```
+Proponents estimate the tax would raise approximately $100 billion from roughly 200 California billionaires.
+(No source provided for estimate)
+```
+
+**If no primary source exists:** Drop the claim entirely rather than citing secondary sources without methodology.
+
 ## Avoid Superlatives
 
 Replace superlative claims with specific comparisons.
