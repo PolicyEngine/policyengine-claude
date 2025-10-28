@@ -206,17 +206,33 @@ description: Idaho limits crisis heating assistance payments to this maximum amo
 ```
 
 **References - Must directly support the value**:
+- Exactly **two references** required:
+  1. Legal code/regulation (ARM, CFR, USC, State Admin Code)
+  2. Policy manual/handbook
+- Only include references that **contain the actual parameter value**
+- **Legal code references MUST include subsection numbers**
+  - Examples: `ARM 37.78.103(35)`, `7 CFR 273.9(d)(3)`, `42 USC 601(a)(1)`
+- **PDF references MUST include page anchors**
+  - Format: `document.pdf#page=10`
+  - Example: `https://dphhs.mt.gov/tanf-manual.pdf#page=15`
+- **Manual/handbook titles MUST include section and page**
+  - Format: "[Title] Section [X], page [Y]"
+  - Example: "TANF Policy Manual Section 5.2, page 10"
+- Only `title` and `href` fields (no `description` field)
+- If a reference doesn't show the value when clicked, remove it
+
 ```yaml
-# ❌ BAD - Generic reference
+# ❌ BAD - Generic reference, no subsection
 reference:
   - title: Federal LIHEAP regulations
     href: https://www.acf.hhs.gov/ocs/programs/liheap
 
-# ✅ GOOD - Specific reference
+# ✅ GOOD - Specific reference with subsection and page
 reference:
-  - title: Program Implementation Plan FY 2025, Page 12, Section 3.2
-    href: https://official.source.url/document.pdf
-    publication_date: 2024-08-01
+  - title: Idaho Admin Code 16.05.03.205(3)
+    href: https://adminrules.idaho.gov/rules/current/16/160503.pdf#page=14
+  - title: Idaho LIHEAP Crisis Assistance Guidelines, Section 3, page 8
+    href: https://healthandwelfare.idaho.gov/crisis-guidelines.pdf#page=8
 ```
 
 ### 5. CHECK FOR SCALE PARAMETERS

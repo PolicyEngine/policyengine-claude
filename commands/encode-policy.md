@@ -6,30 +6,7 @@ description: Orchestrates multi-agent workflow to implement new government benef
 
 Coordinate the multi-agent workflow to implement $ARGUMENTS as a complete, production-ready government benefit program.
 
-## Experimental Mode Detection
-
-**If $ARGUMENTS contains "experiment"** (case-insensitive):
-- This is an experimental implementation for workflow testing
-- Use simplified Phase 1 (skip @issue-manager agent)
-- Create branch from current branch instead of master
-- Create draft PR with current branch as base
-
 ## Phase 1: Issue and PR Setup
-
-### For Experimental Implementations (when $ARGUMENTS contains "experiment"):
-
-**Simplified workflow:**
-1. Extract program name from $ARGUMENTS (remove "experiment" keyword)
-2. Create new branch from current branch:
-   - Branch name: `[state-abbreviation]-tanf-experiment` (e.g., `ct-tanf-experiment`)
-3. Create draft PR:
-   - Base branch: Current branch (e.g., `claude-experiments`)
-   - Title: `[State] TANF implementation experiment`
-   - Body: Simple description noting this is experimental workflow testing
-4. Skip GitHub issue creation
-5. Proceed to Phase 2
-
-### For Production Implementations:
 
 Invoke @issue-manager agent to:
 - Search for existing issue or create new one for $ARGUMENTS
@@ -40,8 +17,7 @@ Invoke @issue-manager agent to:
 Invoke @naming-coordinator agent to:
 - Analyze existing naming patterns in the codebase
 - Establish variable naming convention for $ARGUMENTS
-- **For production:** Post naming decisions to GitHub issue for all agents to reference
-- **For experiments:** Post naming decisions to PR description or save to a local file
+- Post naming decisions to GitHub issue for all agents to reference
 
 **Quality Gate**: Naming convention must be documented before proceeding to ensure consistency across parallel development.
 
@@ -49,9 +25,7 @@ Invoke @naming-coordinator agent to:
 
 **Phase 3A: Initial Document Gathering**
 
-Invoke @document-collector agent to gather official $ARGUMENTS documentation:
-- **For production:** Post to GitHub issue
-- **For experiments:** Save as `working_references.md` in the repository
+Invoke @document-collector agent to gather official $ARGUMENTS documentation, save as `working_references.md` in the repository, and post to GitHub issue
 
 **After agent completes:**
 1. Check the agent's report for "📄 PDFs Requiring Extraction" section
@@ -187,8 +161,6 @@ Invoke @ci-fixer agent to:
 - Code properly formatted
 - Implementation complete and working
 - Clean commit history
-
-**Note:** For experimental implementations, CI monitoring is optional. Focus on local test success.
 
 
 ## Anti-Patterns This Workflow Prevents

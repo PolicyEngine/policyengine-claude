@@ -171,9 +171,10 @@ period: 2024     # Whole year (CORRECT)
 
 **Never use:**
 ```yaml
-period: 2024-04  # April (WRONG - will fail)
-period: 2024-01  # October (WRONG - will fail)
-period: 2025-07  # July (WRONG - will fail)
+period: 2024-04     # April (WRONG - will fail)
+period: 2024-10     # October (WRONG - will fail)
+period: 2025-07     # July (WRONG - will fail)
+period: 2024-01-01  # Full date format (WRONG - will fail)
 ```
 
 **When policy changes mid-year:**
@@ -527,6 +528,7 @@ Integration tests should meet high quality standards. Use IL TANF as the referen
         members: [person1, person2]
         childcare_expenses: 2_400  # $200/month
   output:
+    # Person-level (arrays)
     tx_tanf_gross_earned_income: [250, 0]
     # Person1: 3,000 / 12 = 250, Person2: 0
 
@@ -536,6 +538,7 @@ Integration tests should meet high quality standards. Use IL TANF as the referen
     #   Disregard = 130 / 3 = 43.33
     #   After disregard = 130 - 43.33 = 86.67 ≈ 87.1
 
+    # SPM unit or tax unit or household level (single values)
     tx_tanf_dependent_care_deduction: 200
     # Child age 1 → $200/month cap
 
@@ -573,13 +576,17 @@ Integration tests should meet high quality standards. Use IL TANF as the referen
 
 ```yaml
 output:
+  # SPM unit or tax unit or household level (single values)
   # Assistance unit
   program_assistance_unit_size: 2
   program_caretaker_type: CARETAKER_WITHOUT_SECOND_PARENT
 
+  # Person-level (arrays)
   # Income calculation
   program_gross_earned_income: [250, 0]
   program_earned_income_after_disregard: [87.1, 0]
+
+  # SPM unit or tax unit or household level (single values)
   program_dependent_care_deduction: 200
   program_countable_earned_income: 0
   program_countable_income: 0
