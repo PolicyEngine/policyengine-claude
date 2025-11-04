@@ -17,11 +17,7 @@ Invoke @complete:issue-manager agent to:
 Invoke @complete:naming-coordinator agent to:
 - Analyze existing naming patterns in the codebase
 - Establish variable naming convention for $ARGUMENTS
-- Recommend proper folder structure following DC/IL TANF pattern:
-  - income/earned (for earned income variables)
-  - income/unearned (for unearned income variables)
-  - income/deductions (for deduction variables)
-  - eligibility (for eligibility determination variables)
+- Analyze existing folder structure patterns in the codebase
 - Post naming decisions and folder structure to GitHub issue for all agents to reference
 
 **Quality Gate**: Naming convention and folder structure must be documented before proceeding to ensure consistency across parallel development.
@@ -63,10 +59,6 @@ Invoke @complete:document-collector agent to gather official $ARGUMENTS document
 After documentation is ready, invoke BOTH agents IN PARALLEL:
 - @complete:test-creator: Create integration tests from documentation only
 - @complete:rules-engineer: Implement rules from documentation (will internally use @complete:parameter-architect if needed)
-
-After all variables are created, the rules-engineer agent must:
-- Double check that the folder structure matches the naming convention from Phase 2
-- Reorganize variables into proper folders if needed (income/earned, income/unearned, income/deductions, eligibility)
 
 **CRITICAL**: These must run simultaneously in separate conversations to maintain isolation. Neither can see the other's work.
 
