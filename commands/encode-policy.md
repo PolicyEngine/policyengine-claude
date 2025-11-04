@@ -8,24 +8,25 @@ Coordinate the multi-agent workflow to implement $ARGUMENTS as a complete, produ
 
 ## Phase 1: Issue and PR Setup
 
-Invoke @issue-manager agent to:
+Invoke @complete:issue-manager agent to:
 - Search for existing issue or create new one for $ARGUMENTS
-- Create draft PR immediately for early visibility
+- Create draft PR immediately in PolicyEngine/policyengine-us repository (NOT personal fork)
 - Return issue number and PR URL for tracking
 
 ## Phase 2: Variable Naming Convention
-Invoke @naming-coordinator agent to:
+Invoke @complete:naming-coordinator agent to:
 - Analyze existing naming patterns in the codebase
 - Establish variable naming convention for $ARGUMENTS
-- Post naming decisions to GitHub issue for all agents to reference
+- Analyze existing folder structure patterns in the codebase
+- Post naming decisions and folder structure to GitHub issue for all agents to reference
 
-**Quality Gate**: Naming convention must be documented before proceeding to ensure consistency across parallel development.
+**Quality Gate**: Naming convention and folder structure must be documented before proceeding to ensure consistency across parallel development.
 
 ## Phase 3: Document Collection
 
 **Phase 3A: Initial Document Gathering**
 
-Invoke @document-collector agent to gather official $ARGUMENTS documentation, save as `working_references.md` in the repository, and post to GitHub issue
+Invoke @complete:document-collector agent to gather official $ARGUMENTS documentation, save as `working_references.md` in the repository, and post to GitHub issue
 
 **After agent completes:**
 1. Check the agent's report for "📄 PDFs Requiring Extraction" section
@@ -41,7 +42,7 @@ Invoke @document-collector agent to gather official $ARGUMENTS documentation, sa
 **Phase 3B: PDF Extraction & Complete Documentation** (Only if PDFs were found)
 
 1. After receiving extracted PDF content from user:
-2. Relaunch @document-collector agent with:
+2. Relaunch @complete:document-collector agent with:
    - Original task description
    - Extracted PDF content included in prompt
    - Instruction: "You are in Phase 2 - integrate this PDF content with your HTML research"
@@ -56,8 +57,8 @@ Invoke @document-collector agent to gather official $ARGUMENTS documentation, sa
 
 ## Phase 4: Parallel Development (SIMULTANEOUS)
 After documentation is ready, invoke BOTH agents IN PARALLEL:
-- @test-creator: Create integration tests from documentation only
-- @rules-engineer: Implement rules from documentation (will internally use @parameter-architect if needed)
+- @complete:test-creator: Create integration tests from documentation only
+- @complete:rules-engineer: Implement rules from documentation (will internally use @complete:parameter-architect if needed)
 
 **CRITICAL**: These must run simultaneously in separate conversations to maintain isolation. Neither can see the other's work.
 
@@ -66,7 +67,7 @@ After documentation is ready, invoke BOTH agents IN PARALLEL:
 - test-creator: Use only existing PolicyEngine variables, test realistic calculations
 
 ## Phase 5: Branch Integration
-Invoke @integration-agent to:
+Invoke @complete:integration-agent to:
 - Merge test and implementation branches
 - Fix basic integration issues (entity mismatches, naming)
 - Discard uv.lock changes (always)
@@ -77,7 +78,7 @@ Invoke @integration-agent to:
 **Why Critical**: The next phases need to work on integrated code to catch real issues.
 
 ## Phase 6: Pre-Push Validation
-Invoke @pr-pusher agent to:
+Invoke @complete:pr-pusher agent to:
 - Ensure changelog entry exists
 - Run formatters (black, isort)
 - Fix any linting issues
@@ -90,7 +91,7 @@ Invoke @pr-pusher agent to:
 
 **For simplified TANF implementations:** Create unit tests with edge cases
 
-Invoke @test-creator to:
+Invoke @complete:test-creator to:
 - Create unit test files for each variable with formula (follow DC TANF pattern)
 - Test file name matches variable name (e.g., `ct_tanf_income_eligible.yaml`)
 - Include edge cases in unit tests (boundary conditions at thresholds)
@@ -108,18 +109,18 @@ Invoke @test-creator to:
 **OPTIONAL (for production implementations only):**
 
 ### Step 2: Cross-Program Validation (SKIP for simplified TANF)
-- @cross-program-validator: Check interactions with other benefits
+- @complete:cross-program-validator: Check interactions with other benefits
 
 ### Step 3: Documentation Enhancement (SKIP for simplified TANF)
-- @documentation-enricher: Add examples and regulatory citations
+- @complete:documentation-enricher: Add examples and regulatory citations
 
 ### Step 4: Performance Optimization (SKIP for simplified TANF)
-- @performance-optimizer: Vectorize and optimize calculations
+- @complete:performance-optimizer: Vectorize and optimize calculations
 
 **Note:** For experimental/simplified TANF implementations, only edge case testing is required. The other steps are optional enhancements for production implementations.
 
 ## Phase 8: Implementation Validation
-Invoke @implementation-validator agent to check for:
+Invoke @complete:implementation-validator agent to check for:
 - Hard-coded values in variables
 - Placeholder or incomplete implementations
 - Federal/state parameter organization
@@ -129,7 +130,7 @@ Invoke @implementation-validator agent to check for:
 **Quality Gate**: Must pass ALL critical validations before proceeding
 
 ## Phase 9: Review
-Invoke @rules-reviewer to validate the complete implementation against documentation.
+Invoke @complete:rules-reviewer to validate the complete implementation against documentation.
 
 **Review Criteria**:
 - Accuracy to source documents
@@ -139,9 +140,9 @@ Invoke @rules-reviewer to validate the complete implementation against documenta
 - **Folder structure optimization:** Review and optimize folder organization for clarity and consistency
 
 ## Phase 10: Local Testing & Fixes
-**CRITICAL: ALWAYS invoke @ci-fixer agent - do NOT manually fix issues**
+**CRITICAL: ALWAYS invoke @complete:ci-fixer agent - do NOT manually fix issues**
 
-Invoke @ci-fixer agent to:
+Invoke @complete:ci-fixer agent to:
 - Run all tests locally: `policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/[PROGRAM] -c policyengine_us -v`
 - Identify ALL failing tests
 - For each failing test:
