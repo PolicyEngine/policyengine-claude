@@ -133,8 +133,8 @@ BRANCH=$(git branch --show-current)
 git push -u origin $BRANCH
 
 # If PR doesn't exist, create it
-if ! gh pr view &>/dev/null; then
-  gh pr create --draft \
+if ! gh pr view --repo PolicyEngine/policyengine-us &>/dev/null; then
+  gh pr create --repo PolicyEngine/policyengine-us --draft \
     --title "[Draft] $TITLE" \
     --body "## Summary
 $DESCRIPTION
@@ -158,7 +158,7 @@ fi
 sleep 5
 
 # Check initial status
-gh pr checks --watch --interval 10 &
+gh pr checks --repo PolicyEngine/policyengine-us --watch --interval 10 &
 CI_PID=$!
 
 # Give it 2 minutes to see initial results
@@ -166,7 +166,7 @@ sleep 120
 kill $CI_PID 2>/dev/null
 
 # Get final status
-gh pr checks > ci_status.txt
+gh pr checks --repo PolicyEngine/policyengine-us > ci_status.txt
 
 # Report results
 if grep -q "fail" ci_status.txt; then
