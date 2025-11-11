@@ -130,6 +130,17 @@ Invoke @complete:implementation-validator agent to check for:
 **Quality Gate**: Must pass ALL critical validations before proceeding
 
 ## Phase 9: Review
+
+**For TANF/benefit program implementations:**
+Invoke @complete:tanf-program-reviewer agent to:
+- Learn from PA TANF and OH OWF reference implementations first
+- Validate code formulas against regulations
+- Verify test coverage with manual calculations
+- Check parameter structure and references
+- Report findings in structured format
+- Wait for user approval before updating Issue/PR descriptions
+
+**For other program implementations:**
 Invoke @complete:rules-reviewer to validate the complete implementation against documentation.
 
 **Review Criteria**:
@@ -137,6 +148,7 @@ Invoke @complete:rules-reviewer to validate the complete implementation against 
 - Complete coverage of all rules
 - Proper parameter usage
 - Edge case handling
+- Test coverage and manual calculation verification
 - **Folder structure optimization:** Review and optimize folder organization for clarity and consistency
 
 ## Phase 10: Local Testing & Fixes
