@@ -7,6 +7,46 @@ description: PolicyEngine code review patterns - validation checklist, common is
 
 Comprehensive patterns for reviewing PolicyEngine implementations.
 
+## Understanding WHY, Not Just WHAT
+
+### Pattern Analysis Before Review
+
+When reviewing implementations that reference other states:
+
+**🔴 CRITICAL: Check WHY Variables Exist**
+
+Before approving any state-specific variable, verify:
+1. **Does it have state-specific logic?** - Read the formula
+2. **Are state parameters used?** - Check for `parameters(period).gov.states.XX`
+3. **Is there transformation beyond aggregation?** - Look for calculations
+4. **Would removing it break functionality?** - Test dependencies
+
+**Example Analysis:**
+```python
+# IL TANF has this variable:
+class il_tanf_assistance_unit_size(Variable):
+    adds = ["il_tanf_payment_eligible_child", "il_tanf_payment_eligible_parent"]
+    # ✅ VALID: IL-specific eligibility rules
+
+# But IN TANF shouldn't copy it blindly:
+class in_tanf_assistance_unit_size(Variable):
+    def formula(spm_unit, period):
+        return spm_unit("spm_unit_size", period)
+    # ❌ INVALID: No IN-specific logic, just wrapper
+```
+
+### Wrapper Variable Detection
+
+**Red Flags - Variables that shouldn't exist:**
+- Formula is just `return entity("federal_variable", period)`
+- Aggregates federal baseline with no transformation
+- No state parameters accessed
+- Comment says "use federal" but creates variable anyway
+
+**Action:** Request deletion of unnecessary wrapper variables
+
+---
+
 ## Priority Review Checklist
 
 ### 🔴 CRITICAL - Automatic Failures

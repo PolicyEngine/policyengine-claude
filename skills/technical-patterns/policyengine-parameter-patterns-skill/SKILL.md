@@ -80,15 +80,18 @@ income/threshold.yaml                          # 30_000
 - `uses`
 
 ```yaml
-✅ GOOD:
-description: Illinois excludes this share of earnings from TANF countable income.
-description: Montana provides this amount as the minimum TANF benefit.
-description: Texas limits resources to this amount for TANF eligibility.
+✅ GOOD (MATCH PRODUCTION):
+description: Illinois excludes this share of earnings from countable income under the Temporary Assistance for Needy Families program.
+description: Montana provides this amount as the payment standard under the Temporary Assistance for Needy Families program.
+description: Texas limits resources to this amount under the Temporary Assistance for Needy Families program.
 
 ❌ BAD:
 description: Crisis benefit maximum  # Too short
 description: Illinois allows eligibility when income is below...  # Too complex
+description: Indiana provides up to this payment standard amount under TANF, based on household size.  # Too wordy
 ```
+
+**CRITICAL: Always spell out full program names in descriptions!**
 
 ---
 
@@ -302,13 +305,72 @@ values:
 
 ---
 
+## Real-World Examples from Production Code
+
+**CRITICAL: Study actual parameter files, not just examples!**
+
+Before writing ANY parameter:
+1. Open and READ 3+ similar parameter files from TX/IL/DC
+2. COPY their exact description pattern
+3. Replace state name and specific details only
+
+### Payment Standards
+```yaml
+# Texas (actual production)
+description: Texas provides this amount as the payment standard under the Temporary Assistance for Needy Families program.
+
+# Pennsylvania (actual production)
+description: Pennsylvania limits TANF benefits to households with resources at or below this amount.
+```
+
+### Income Limits
+```yaml
+# Indiana (should be)
+description: Indiana limits gross income to this amount under the Temporary Assistance for Needy Families program.
+
+# Texas (actual production)
+description: Texas limits countable resources to this amount under the Temporary Assistance for Needy Families program.
+```
+
+### Disregards
+```yaml
+# Indiana (should be)
+description: Indiana excludes this share of earnings from countable income under the Temporary Assistance for Needy Families program.
+
+# Texas (actual production)
+description: Texas deducts this standard work expense amount from gross earned income for Temporary Assistance for Needy Families program calculations.
+```
+
+### Pattern Analysis
+- **ALWAYS** spell out full program name
+- Use "under the [Program] program" or "for [Program] program calculations"
+- One simple verb (limits, provides, excludes, deducts)
+- One "this X" placeholder
+- NO extra explanation ("based on X", "This is Y")
+
+### Authoritative Source Requirements
+
+**ONLY use official government sources:**
+- ✅ State codes and administrative regulations
+- ✅ Official state agency websites (.gov domains)
+- ✅ Federal regulations (CFR, USC)
+- ✅ State plans and official manuals (.gov PDFs)
+
+**NEVER use:**
+- ❌ Third-party guides (singlemotherguide.com, benefits.gov descriptions)
+- ❌ Wikipedia
+- ❌ Nonprofit summaries (unless no official source exists)
+- ❌ News articles
+
+---
+
 ## For Agents
 
 When creating parameters:
-1. **Study existing implementations** for patterns
+1. **READ ACTUAL FILES** - Study TX/IL/DC parameter files, not just skill examples
 2. **Include ALL metadata fields** - missing any causes errors
 3. **Use exact effective dates** from sources
 4. **Follow naming conventions** (amount/rate/threshold)
-5. **Write simple descriptions** with "this" placeholders
-6. **Include specific references** with subsections and pages
+5. **Write simple descriptions** with "this" placeholders and full program names
+6. **Include ONLY official government references** with subsections and pages
 7. **Format values properly** (underscores, no trailing zeros)

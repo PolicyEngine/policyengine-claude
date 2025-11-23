@@ -31,6 +31,11 @@ Learn from them:
 3. Code reuse patterns (intermediate variables)
 4. When to use `adds` vs `formula`
 
+**CRITICAL: Follow the "Avoiding Unnecessary Wrapper Variables" section in policyengine-implementation-patterns-skill**
+- Understand WHY variables exist, not just WHAT
+- Only create state variables that have state-specific logic
+- See skill for decision tree and examples
+
 ## Workflow
 
 ### Step 1: Initialize Git Worktree
@@ -89,14 +94,12 @@ Follow **policyengine-parameter-patterns-skill**:
 
 ### Step 5: Apply TANF-Specific Patterns
 
-For TANF implementations (from **policyengine-implementation-patterns-skill**):
+See **policyengine-implementation-patterns-skill** sections:
+- "Simplified TANF Rules"
+- "Avoiding Unnecessary Wrapper Variables"
+- "State Variables to AVOID Creating"
 
-**Simplified TANF - Use federal baseline:**
-- DON'T create state-specific demographic eligibility
-- DON'T create state-specific immigration eligibility
-- DON'T create state-specific income source parameters
-- DO use federal `is_demographic_tanf_eligible`
-- DO use federal `tanf_gross_earned_income`
+Key principle: **Only create a state variable if you're adding state-specific logic to it!**
 
 ### Step 6: Validate Implementation
 

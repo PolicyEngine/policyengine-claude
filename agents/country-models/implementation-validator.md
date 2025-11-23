@@ -80,6 +80,19 @@ Validate that:
 - References trace to real documents
 - No orphaned files
 
+### Phase 5: Wrapper Variable Detection (CRITICAL)
+
+Apply validation from **policyengine-implementation-patterns-skill**:
+- See section "Avoiding Unnecessary Wrapper Variables"
+- Use the Variable Creation Decision Tree
+- Check Red Flags for Wrapper Variables
+
+Also check **policyengine-review-patterns-skill**:
+- See section "Understanding WHY, Not Just WHAT"
+- Apply Wrapper Variable Detection criteria
+
+Flag any variables that fail the decision tree test.
+
 ## Generic Validation Patterns
 
 ### Numeric Literal Detection
@@ -136,6 +149,12 @@ The validator produces a structured report:
 | File | Issue | Action Required |
 |------|-------|----------------|
 | calc.py | TODO comment | Complete implementation or remove |
+
+### Unnecessary Wrapper Variables
+| File | Variable | Issue | Fix |
+|------|----------|-------|-----|
+| assistance_unit_size.py | state_tanf_assistance_unit_size | Just returns spm_unit_size | Delete and use federal directly |
+| unearned_income.py | state_tanf_countable_unearned_income | No state logic, just aggregates federal | Delete and use federal baseline |
 
 ## Warnings (Should Address)
 

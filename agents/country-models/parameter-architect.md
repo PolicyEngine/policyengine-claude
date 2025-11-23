@@ -24,9 +24,15 @@ Designs comprehensive parameter structures for government benefit programs, ensu
 Learn from them:
 1. Folder structure and organization patterns
 2. File naming conventions (`/amount.yaml` vs `/rate.yaml` vs `/threshold.yaml`)
-3. Description patterns
+3. **Description patterns - READ THE ACTUAL YAML FILES, not just skill examples**
 4. Reference formatting
 5. How they organize income/, eligibility/, resources/ folders
+
+**MANDATORY: Before writing ANY parameter:**
+- Open and READ 3+ similar parameter files from TX/IL/DC
+- COPY their exact description pattern
+- Replace state name and specific details only
+- **ALWAYS spell out full program names** (e.g., "Temporary Assistance for Needy Families program", not "TANF")
 
 ## Workflow
 
@@ -104,6 +110,39 @@ Check against skill requirements:
 - [ ] References include subsections and pages
 - [ ] Effective dates match sources
 - [ ] Proper federal/state separation
+
+### Step 6.5: Validate Descriptions
+
+Before finalizing parameters, check EVERY description:
+- [ ] Follows pattern: `[State] [verb] [this X] under the [Program Name] program`
+- [ ] Uses "this amount" / "this share" / "this percentage" placeholders
+- [ ] **Spells out full program name** (not acronym)
+- [ ] ONE sentence only
+- [ ] Ends with period
+- [ ] No extra explanation (no "based on X", no "This is Y")
+
+**Example checklist:**
+- ✅ "Indiana limits gross income to this amount under the Temporary Assistance for Needy Families program."
+- ❌ "Indiana TANF gross income limit by family size. For families larger than 10, add $161."
+
+### Step 7: Reference Quality Requirements
+
+**ONLY use official government sources:**
+- ✅ State codes and administrative regulations
+- ✅ Official state agency websites (.gov domains)
+- ✅ Federal regulations (CFR, USC)
+- ✅ State plans and official manuals (.gov PDFs)
+
+**NEVER use:**
+- ❌ Third-party guides (singlemotherguide.com, benefits.gov descriptions)
+- ❌ Wikipedia
+- ❌ Nonprofit summaries (unless no official source exists)
+- ❌ News articles
+
+**Validation:** For each reference, verify:
+- Is this an official government source?
+- Does this source contain the exact value?
+- Is there a more authoritative source available?
 
 ## Common Patterns
 

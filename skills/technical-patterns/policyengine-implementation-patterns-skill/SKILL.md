@@ -207,6 +207,90 @@ is_demographic_tanf_eligible
 tanf_gross_earned_income
 ```
 
+### Avoiding Unnecessary Wrapper Variables (CRITICAL)
+
+**Golden Rule: Only create a state variable if you're adding state-specific logic to it!**
+
+#### Understand WHY Variables Exist, Not Just WHAT
+
+When studying reference implementations:
+1. **Note which variables they have**
+2. **READ THE CODE inside each variable**
+3. **Ask: "Does this variable have state-specific logic?"**
+4. **If it just returns federal baseline → DON'T copy it**
+
+#### Variable Creation Decision Tree
+
+Before creating ANY state-specific variable, ask:
+1. Does federal baseline already calculate this?
+2. Does my state do it DIFFERENTLY than federal?
+3. Can I write the difference in 1+ lines of state-specific logic?
+
+- If YES/NO/NO → **DON'T create the variable**, use federal directly
+- If YES/YES/YES → **CREATE the variable** with state logic
+
+#### Red Flags for Unnecessary Wrapper Variables
+
+```python
+❌ INVALID - Pure wrapper, no state logic:
+class in_tanf_assistance_unit_size(Variable):
+    def formula(spm_unit, period):
+        return spm_unit("spm_unit_size", period)  # Just returns federal
+
+❌ INVALID - Aggregation without transformation:
+class in_tanf_countable_unearned_income(Variable):
+    def formula(tax_unit, period):
+        return tax_unit.sum(person("tanf_gross_unearned_income", period))
+
+❌ INVALID - Pass-through with no modification:
+class in_tanf_gross_income(Variable):
+    def formula(entity, period):
+        return entity("tanf_gross_income", period)
+```
+
+#### Examples of VALID State Variables
+
+```python
+✅ VALID - Has state-specific disregard:
+class in_tanf_countable_earned_income(Variable):
+    def formula(spm_unit, period, parameters):
+        p = parameters(period).gov.states.in.tanf.income
+        earned = spm_unit("tanf_gross_earned_income", period)
+        return earned * (1 - p.earned_income_disregard_rate)  # STATE LOGIC
+
+✅ VALID - Uses state-specific limits:
+class in_tanf_income_eligible(Variable):
+    def formula(spm_unit, period, parameters):
+        p = parameters(period).gov.states.in.tanf
+        income = spm_unit("tanf_countable_income", period)
+        size = spm_unit("spm_unit_size", period.this_year)
+        limit = p.income_limit[min_(size, p.max_household_size)]  # STATE PARAMS
+        return income <= limit
+
+✅ VALID - IL has different counting rules:
+class il_tanf_assistance_unit_size(Variable):
+    adds = [
+        "il_tanf_payment_eligible_child",  # STATE-SPECIFIC
+        "il_tanf_payment_eligible_parent",  # STATE-SPECIFIC
+    ]
+```
+
+#### State Variables to AVOID Creating
+
+For TANF implementations:
+
+**❌ DON'T create these (use federal directly):**
+- `state_tanf_assistance_unit_size` (unless different counting rules like IL)
+- `state_tanf_countable_unearned_income` (unless state has disregards)
+- `state_tanf_gross_income` (just use federal baseline)
+- Any variable that's just `return entity("federal_variable", period)`
+
+**✅ DO create these (when state has unique rules):**
+- `state_tanf_countable_earned_income` (if unique disregard %)
+- `state_tanf_income_eligible` (state income limits)
+- `state_tanf_maximum_benefit` (state payment standards)
+- `state_tanf` (final benefit calculation)
+
 ### Demographic Eligibility Pattern
 
 **Option 1: Use Federal (Simplified)**
