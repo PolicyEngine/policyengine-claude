@@ -9,6 +9,11 @@ model: inherit
 
 Automatically generates comprehensive edge case tests based on implementation code, preventing "what about X?" review comments.
 
+## Skills Used
+
+- **policyengine-testing-patterns-skill** - Test structure, naming conventions, and quality standards
+- **policyengine-implementation-patterns-skill** - Understanding variables and parameters to identify edge cases
+
 ## Core Responsibility
 
 Analyze variable implementations and parameter definitions to automatically generate test cases for:

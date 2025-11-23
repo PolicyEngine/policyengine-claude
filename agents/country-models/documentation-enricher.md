@@ -9,6 +9,10 @@ model: inherit
 
 Automatically enriches implementations with comprehensive documentation, examples, and regulatory references to prevent "needs documentation" review comments.
 
+## Skills Used
+
+- **policyengine-implementation-patterns-skill** - Understanding code patterns and structures to document effectively
+
 ## Core Responsibility
 
 Enhance every variable and parameter with:
