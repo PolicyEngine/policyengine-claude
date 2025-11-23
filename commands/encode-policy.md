@@ -6,6 +6,20 @@ description: Orchestrates multi-agent workflow to implement new government benef
 
 Coordinate the multi-agent workflow to implement $ARGUMENTS as a complete, production-ready government benefit program.
 
+## Program Type Detection
+
+This workflow adapts based on the type of program being implemented:
+
+**TANF/Benefit Programs** (e.g., state TANF, SNAP, WIC):
+- Phase 4: test-creator creates both unit and integration tests
+- Phase 7: Uses specialized @complete:tanf-program-reviewer agent in parallel validation
+- Optional phases: May be skipped for simplified implementations
+
+**Other Government Programs** (e.g., tax credits, deductions):
+- Phase 4: test-creator creates both unit and integration tests
+- Phase 7: Uses general @complete:rules-reviewer agent in parallel validation
+- Optional phases: Include based on production requirements
+
 ## Phase 1: Issue and PR Setup
 
 Invoke @complete:issue-manager agent to:
@@ -30,16 +44,20 @@ Invoke @complete:document-collector agent to gather official $ARGUMENTS document
 
 **After agent completes:**
 1. Check the agent's report for "📄 PDFs Requiring Extraction" section
-2. **If PDFs are listed:**
-   - Ask the user: "Please send me these PDF URLs so I can extract their content:"
-   - List each PDF URL on a separate line
-   - Wait for user to send the URLs (they will auto-extract)
-   - Proceed to Phase 3B
+2. **Decision Point:**
+   - **If PDFs are CRITICAL** (State Plans with benefit formulas, calculation methodology):
+     - Ask the user: "Please send me these PDF URLs so I can extract their content:"
+     - List each PDF URL on a separate line
+     - Wait for user to send the URLs (they will auto-extract)
+     - Proceed to Phase 3B
+   - **If PDFs are SUPPLEMENTARY** (additional reference, not essential):
+     - Note them for future reference
+     - Proceed directly to Phase 4 with current documentation
 
 3. **If no PDFs listed:**
    - Skip to Phase 4 (documentation complete)
 
-**Phase 3B: PDF Extraction & Complete Documentation** (Only if PDFs were found)
+**Phase 3B: PDF Extraction & Complete Documentation** (Only if CRITICAL PDFs found)
 
 1. After receiving extracted PDF content from user:
 2. Relaunch @complete:document-collector agent with:
@@ -53,18 +71,32 @@ Invoke @complete:document-collector agent to gather official $ARGUMENTS document
 - Income limits and benefit schedules
 - Eligibility criteria and priority groups
 - Seasonal/temporal rules if applicable
-- ✅ All critical PDFs extracted and integrated
+- ✅ All critical PDFs extracted and integrated (if applicable)
 
 ## Phase 4: Parallel Development (SIMULTANEOUS)
 After documentation is ready, invoke BOTH agents IN PARALLEL:
-- @complete:test-creator: Create integration tests from documentation only
-- @complete:rules-engineer: Implement rules from documentation (will internally use @complete:parameter-architect if needed)
+
+**@complete:test-creator (single invocation):**
+- Create comprehensive INTEGRATION tests from documentation
+- Create UNIT tests for each variable that will have a formula
+- Both test types created in ONE invocation
+- Use only existing PolicyEngine variables
+- Test realistic calculations based on documentation
+
+**@complete:rules-engineer (two-step process):**
+- **Step 1:** Create all parameters first using embedded parameter-architect patterns
+  - Complete parameter structure with all thresholds, amounts, rates
+  - Include proper references from documentation
+- **Step 2:** Implement variables using the parameters
+  - Zero hard-coded values
+  - Complete implementations only
+  - Document two-step process in commit messages
 
 **CRITICAL**: These must run simultaneously in separate conversations to maintain isolation. Neither can see the other's work.
 
 **Quality Requirements**:
-- rules-engineer: ZERO hard-coded values, complete implementations only
-- test-creator: Use only existing PolicyEngine variables, test realistic calculations
+- rules-engineer: ZERO hard-coded values, parameters created before variables
+- test-creator: All tests (unit + integration) created together, based purely on documentation
 
 ## Phase 5: Branch Integration
 Invoke @complete:integration-agent to:
@@ -85,73 +117,64 @@ Invoke @complete:pr-pusher agent to:
 - Run local tests for quick validation
 - Push branch and report initial CI status
 
-**Quality Gate**: Branch must be properly formatted and have changelog before continuing.
+**Quality Gate**: Branch must be properly formatted with changelog before continuing.
 
-## Phase 7: Unit Test Creation
+## Optional Enhancement Phases
 
-**For simplified TANF implementations:** Create unit tests with edge cases
+**These phases are OPTIONAL and should be considered based on implementation type:**
 
-Invoke @complete:test-creator to:
-- Create unit test files for each variable with formula (follow DC TANF pattern)
-- Test file name matches variable name (e.g., `ct_tanf_income_eligible.yaml`)
-- Include edge cases in unit tests (boundary conditions at thresholds)
-- Remove excessive edge cases from integration.yaml (keep integration tests realistic)
-- Organize tests in folder structure matching variables
-- Commit unit tests
+### For Production-Ready Implementations:
+The following enhancements may be applied to ensure production quality:
 
-**Quality Requirements**:
-- One unit test file per variable with formula
-- Edge cases in unit tests, not integration tests
-- Integration tests only test realistic end-to-end scenarios
+1. **Cross-Program Validation**
+   - @complete:cross-program-validator: Check interactions with other benefits
+   - Prevents benefit cliffs and unintended interactions
 
----
+2. **Documentation Enhancement**
+   - @complete:documentation-enricher: Add examples and regulatory citations
+   - Improves maintainability and compliance verification
 
-**OPTIONAL (for production implementations only):**
+3. **Performance Optimization**
+   - @complete:performance-optimizer: Vectorize and optimize calculations
+   - Ensures scalability for large-scale simulations
 
-### Step 2: Cross-Program Validation (SKIP for simplified TANF)
-- @complete:cross-program-validator: Check interactions with other benefits
+**Decision Criteria:**
+- **Simplified/Experimental TANF**: Skip these optional phases
+- **Production TANF**: Include based on specific requirements
+- **Full Production Deployment**: Include all enhancements
 
-### Step 3: Documentation Enhancement (SKIP for simplified TANF)
-- @complete:documentation-enricher: Add examples and regulatory citations
+## Phase 7: Parallel Validation (SIMULTANEOUS)
 
-### Step 4: Performance Optimization (SKIP for simplified TANF)
-- @complete:performance-optimizer: Vectorize and optimize calculations
+**Run ALL validators IN PARALLEL for maximum efficiency:**
 
-**Note:** For experimental/simplified TANF implementations, only edge case testing is required. The other steps are optional enhancements for production implementations.
+### Invoke simultaneously:
 
-## Phase 8: Implementation Validation
-Invoke @complete:implementation-validator agent to check for:
-- Hard-coded values in variables
-- Placeholder or incomplete implementations
-- Federal/state parameter organization
-- Test quality and coverage
-- Performance and vectorization issues
+**@complete:implementation-validator:**
+- Check for hard-coded values in variables
+- Verify placeholder or incomplete implementations
+- Check federal/state parameter organization
+- Assess test quality and coverage
+- Identify performance and vectorization issues
 
-**Quality Gate**: Must pass ALL critical validations before proceeding
+**Choose ONE based on program type:**
 
-## Phase 9: Review
-
-**For TANF/benefit program implementations:**
-Invoke @complete:tanf-program-reviewer agent to:
+**For TANF/Benefit Programs → @complete:tanf-program-reviewer:**
 - Learn from PA TANF and OH OWF reference implementations first
 - Validate code formulas against regulations
 - Verify test coverage with manual calculations
 - Check parameter structure and references
-- Report findings in structured format
-- Wait for user approval before updating Issue/PR descriptions
+- Focus on: eligibility rules, income disregards, benefit formulas
 
-**For other program implementations:**
-Invoke @complete:rules-reviewer to validate the complete implementation against documentation.
+**For Other Programs → @complete:rules-reviewer:**
+- Validate implementation against documentation
+- Check for compliance with PolicyEngine standards
+- Verify parameterization and test coverage
 
-**Review Criteria**:
-- Accuracy to source documents
-- Complete coverage of all rules
-- Proper parameter usage
-- Edge case handling
-- Test coverage and manual calculation verification
-- **Folder structure optimization:** Review and optimize folder organization for clarity and consistency
+**Output:** Each validator provides independent report
+**Time Savings:** ~50% reduction (parallel vs sequential validation)
+**Quality Gate:** Review all validator reports before proceeding
 
-## Phase 10: Local Testing & Fixes
+## Phase 8: Local Testing & Fixes
 **CRITICAL: ALWAYS invoke @complete:ci-fixer agent - do NOT manually fix issues**
 
 Invoke @complete:ci-fixer agent to:
@@ -166,15 +189,30 @@ Invoke @complete:ci-fixer agent to:
     - If implementation is wrong: fix the variable/parameter code
   - Re-run tests to verify fix
 - Iterate until ALL tests pass locally
+- **NEW: Reference Verification**
+  - Verify all parameters have reference metadata
+  - Verify all variables have reference fields
+  - If all references embedded: Delete `working_references.md` with commit message "Clean up working references - all citations now in metadata"
+  - If references missing: Create todos for adding them
 - Run `make format` before committing fixes
 - Push final fixes to PR branch
 
 **Success Metrics**:
 - All tests pass locally (green output)
+- All references embedded in code metadata
+- `working_references.md` deleted after embedding
 - Code properly formatted
 - Implementation complete and working
 - Clean commit history
 
+## Phase 9: Final Review & PR Ready
+
+After all tests pass and references are embedded:
+- Mark PR as ready for review (remove draft status)
+- Update PR description with final implementation status
+- Add summary of what was implemented
+- Tag appropriate reviewers if needed
+- **WORKFLOW COMPLETE**
 
 ## Anti-Patterns This Workflow Prevents
 
@@ -221,7 +259,7 @@ Execute each phase sequentially and **STOP after each phase** to wait for user i
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-4. **Phase 4**: Parallel Development
+4. **Phase 4**: Parallel Development (Test + Implementation)
    - Complete the phase
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
@@ -236,30 +274,25 @@ Execute each phase sequentially and **STOP after each phase** to wait for user i
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-7. **Phase 7**: Required Fixes and Validations (SEQUENTIAL)
+7. **Phase 7**: Parallel Validation (All Validators Simultaneously)
+   - Complete the phase
+   - Report results from all validators
+   - **STOP - Wait for user to say "continue" or provide adjustments**
+
+8. **Phase 8**: Local Testing & Fixes (Including Reference Verification)
    - Complete the phase
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-8. **Phase 8**: Implementation Validation
+9. **Phase 9**: Final Review & PR Ready
    - Complete the phase
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
-
-9. **Phase 9**: Review
-   - Complete the phase
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
-
-10. **Phase 10**: Local Testing & CI Finalization
-    - Complete the phase
-    - Report final results
-    - **WORKFLOW COMPLETE**
+   - Report final results
+   - **WORKFLOW COMPLETE**
 
 **CRITICAL RULES**:
 - Do NOT proceed to the next phase until user explicitly says to continue
 - After each phase, summarize what was accomplished
 - If user provides adjustments, incorporate them before continuing
-- All 10 phases are still REQUIRED - pausing doesn't mean skipping
+- All 9 phases are REQUIRED - pausing doesn't mean skipping
 
 If any agent fails, report the failure but DO NOT attempt to fix it yourself. Wait for user instructions.

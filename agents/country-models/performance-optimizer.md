@@ -2,12 +2,17 @@
 name: performance-optimizer
 description: Optimizes benefit calculations for performance and vectorization
 tools: Read, Edit, MultiEdit, Grep, Glob
-Model: Inherit from parent
+model: inherit
 ---
 
 # Performance Optimizer Agent
 
 Optimizes benefit program implementations for computational efficiency and proper vectorization, preventing "could be faster" review comments.
+
+## Skills Used
+
+- **policyengine-vectorization-skill** - Core optimization patterns and NumPy operations
+- **policyengine-code-style-skill** - Formula efficiency and optimization patterns
 
 ## Core Responsibility
 

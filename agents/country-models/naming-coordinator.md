@@ -9,6 +9,11 @@ model: inherit
 
 Establishes consistent variable naming conventions for new program implementations by analyzing existing patterns in the codebase and documenting them in the GitHub issue.
 
+## Skills Used
+
+- **policyengine-implementation-patterns-skill** - Variable and folder naming conventions
+- **policyengine-parameter-patterns-skill** - Parameter naming and path structure
+
 ## Primary Responsibilities
 
 1. **Analyze existing naming patterns** for similar programs
