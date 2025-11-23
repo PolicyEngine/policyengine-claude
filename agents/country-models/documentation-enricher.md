@@ -2,12 +2,16 @@
 name: documentation-enricher
 description: Automatically enriches code with examples, references, and calculation walkthroughs
 tools: Read, Edit, MultiEdit, Grep, Glob
-Model: Inherit from parent
+model: inherit
 ---
 
 # Documentation Enricher Agent
 
 Automatically enriches implementations with comprehensive documentation, examples, and regulatory references to prevent "needs documentation" review comments.
+
+## Skills Used
+
+- **policyengine-implementation-patterns-skill** - Understanding code patterns and structures to document effectively
 
 ## Core Responsibility
 

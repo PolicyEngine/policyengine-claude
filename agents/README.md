@@ -6,20 +6,48 @@ This repository contains specialized Claude agents for PolicyEngine development 
 
 ```
 agents/
-├── country-models/     # Agents for country packages (policyengine-us, policyengine-uk, etc.)
-│   ├── rules-reviewer.md      # Reviews rules implementations
-│   ├── test_creator.md         # Creates tests from documentation
-│   ├── rules_engineer.md      # Implements rules from documentation
-│   ├── document_collector.md   # Collects authoritative sources
-│   ├── supervisor.md           # Orchestrates multi-agent development
-│   └── workflow.md            # Multi-agent workflow documentation
-├── api/               # Agents for policyengine-api
-│   └── api-reviewer.md        # Reviews API implementations
-├── app/               # Agents for policyengine-app
-│   └── app-reviewer.md        # Reviews React app code
-└── shared/            # Shared resources across all repos
-    ├── policyengine-standards.md  # Common standards and patterns
-    └── model-evaluator.md         # Evaluates model outputs
+├── country-models/              # Agents for country packages (policyengine-us, policyengine-uk, etc.)
+│   ├── ci-fixer.md              # Fixes CI issues iteratively
+│   ├── cross-program-validator.md # Validates program interactions
+│   ├── document_collector.md    # Collects authoritative sources
+│   ├── documentation-enricher.md # Enriches code with examples
+│   ├── edge-case-generator.md   # Generates edge case tests
+│   ├── implementation-validator.md # Validates implementations
+│   ├── isolation-enforcement.md # Enforces agent isolation
+│   ├── isolation-setup.md       # Sets up isolation environment
+│   ├── parameter-architect.md   # Designs parameter structures
+│   ├── performance-optimizer.md # Optimizes calculations
+│   ├── rules-engineer.md        # Implements rules from documentation
+│   ├── rules-reviewer.md        # Reviews rules implementations
+│   ├── test-creator.md          # Creates tests from documentation
+│   └── workflow.md              # Multi-agent workflow documentation
+├── api/                         # Agents for policyengine-api
+│   └── api-reviewer.md          # Reviews API implementations
+├── app/                         # Agents for policyengine-app
+│   └── app-reviewer.md          # Reviews React app code
+├── shared/                      # Shared resources across all repos
+│   ├── policyengine-standards.md # Common standards and patterns
+│   └── model-evaluator.md       # Evaluates model outputs
+├── branch-comparator.md         # Compares branches for differences
+├── ci-fixer.md                  # Creates PR, monitors CI, fixes issues
+├── cross-program-validator.md   # Validates benefit program interactions
+├── document_collector.md        # Gathers authoritative documentation
+├── documentation-enricher.md    # Enriches code with examples and references
+├── edge-case-generator.md       # Generates comprehensive edge case tests
+├── implementation-validator.md  # Validates implementations for quality
+├── integration-agent.md         # Merges branches and fixes integration issues
+├── issue-manager.md             # Manages GitHub issues for implementations
+├── legislation-statute-analyzer.md # Analyzes legislative text
+├── naming-coordinator.md        # Establishes naming conventions
+├── parameter-architect.md       # Designs parameter structures
+├── performance-optimizer.md     # Optimizes benefit calculations
+├── policy-domain-validator.md   # Validates domain-specific patterns
+├── pr-pusher.md                 # Ensures PRs are properly formatted
+├── reference-validator.md       # Validates parameter references
+├── rules-engineer.md            # Implements government benefit rules
+├── rules-reviewer.md            # Reviews PolicyEngine implementations
+├── tanf-program-reviewer.md    # Reviews state TANF implementations
+└── test-creator.md              # Creates integration tests
 ```
 
 ## Usage
@@ -55,6 +83,72 @@ For country model development, we use an isolated multi-agent approach:
 5. **Supervisor** orchestrates and ensures quality
 
 See `country-models/workflow.md` for detailed workflow documentation.
+
+## Complete Agent Directory
+
+### Core Agents
+
+| Agent | Description | Primary Use Case |
+|-------|-------------|------------------|
+| **branch-comparator** | Compares branches for differences | Identifying changes between development branches |
+| **ci-fixer** | Creates PR, monitors CI, fixes issues iteratively | Automated CI/CD pipeline fixing |
+| **cross-program-validator** | Validates interactions between benefit programs | Preventing integration issues |
+| **document_collector** | Gathers authoritative documentation | Research and documentation collection |
+| **documentation-enricher** | Enriches code with examples and references | Improving code documentation |
+| **edge-case-generator** | Generates comprehensive edge case tests | Test coverage improvement |
+| **implementation-validator** | Validates implementations for quality | Code quality assurance |
+| **integration-agent** | Merges branches and fixes integration issues | Branch management |
+| **issue-manager** | Finds or creates GitHub issues | Issue tracking and management |
+| **legislation-statute-analyzer** | Analyzes legislative text and identifies statutes | Legal document analysis |
+| **naming-coordinator** | Establishes variable naming conventions | Code consistency |
+| **parameter-architect** | Designs comprehensive parameter structures | System design |
+| **performance-optimizer** | Optimizes benefit calculations for performance | Performance tuning |
+| **policy-domain-validator** | Validates domain-specific patterns | Domain compliance |
+| **pr-pusher** | Ensures PRs are properly formatted | PR quality control |
+| **reference-validator** | Validates that all parameters have proper references | Documentation validation |
+| **rules-engineer** | Implements government benefit program rules | Policy implementation |
+| **rules-reviewer** | Reviews and validates PolicyEngine implementations | Code review |
+| **tanf-program-reviewer** | Reviews state TANF/benefit program implementations | TANF compliance |
+| **test-creator** | Creates comprehensive integration tests | Test development |
+
+### API-Specific Agents
+
+| Agent | Description | Location |
+|-------|-------------|----------|
+| **api-reviewer** | Reviews API implementations for REST best practices | `api/` |
+
+### App-Specific Agents
+
+| Agent | Description | Location |
+|-------|-------------|----------|
+| **app-reviewer** | Reviews React app code for quality and performance | `app/` |
+
+### Country Models Agents
+
+These agents are specifically designed for country-specific implementations (policyengine-us, policyengine-uk, etc.):
+
+| Agent | Description | Special Focus |
+|-------|-------------|---------------|
+| **ci-fixer** | Country-specific CI fixing | Policy logic understanding |
+| **cross-program-validator** | Validates program interactions | Federal/state interactions |
+| **document_collector** | Collects country-specific sources | Legal documents |
+| **documentation-enricher** | Adds policy-specific examples | Regulation references |
+| **edge-case-generator** | Generates policy edge cases | Benefit scenarios |
+| **implementation-validator** | Validates against standards | PolicyEngine patterns |
+| **isolation-enforcement** | Enforces test/implementation isolation | Multi-agent workflow |
+| **isolation-setup** | Sets up isolation environment | Development environment |
+| **parameter-architect** | Designs federal/state parameters | Hierarchical structure |
+| **performance-optimizer** | Optimizes vectorized calculations | NumPy operations |
+| **rules-engineer** | Implements with zero hard-coding | Parameterization |
+| **rules-reviewer** | Reviews against documentation | Accuracy validation |
+| **test-creator** | Creates realistic test scenarios | Manual calculations |
+
+### Shared Resources
+
+| Resource | Description | Purpose |
+|----------|-------------|---------|
+| **policyengine-standards** | Common standards and patterns | Code consistency |
+| **model-evaluator** | Evaluates model outputs | Quality assurance |
 
 ## Key Principles
 

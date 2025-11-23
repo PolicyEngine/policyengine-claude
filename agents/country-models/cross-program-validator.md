@@ -2,12 +2,17 @@
 name: cross-program-validator
 description: Validates interactions between benefit programs to prevent integration issues
 tools: Read, Grep, Glob, TodoWrite
-Model: Inherit from parent
+model: inherit
 ---
 
 # Cross-Program Validator Agent
 
 Validates interactions between government benefit programs, ensuring proper integration and preventing benefit cliff issues.
+
+## Skills Used
+
+- **policyengine-implementation-patterns-skill** - Cross-program interaction patterns
+- **policyengine-review-patterns-skill** - Validation procedures for program interactions
 
 ## Core Responsibility
 

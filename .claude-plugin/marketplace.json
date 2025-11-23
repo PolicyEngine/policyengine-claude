@@ -21,10 +21,10 @@
       },
       "license": "MIT",
       "skills": [
-        "./skills/policyengine-user-guide-skill",
-        "./skills/policyengine-us-skill",
-        "./skills/policyengine-uk-skill",
-        "./skills/policyengine-writing-skill"
+        "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/documentation/policyengine-writing-skill"
       ]
     },
     {
@@ -51,6 +51,11 @@
         "./agents/country-models/edge-case-generator.md",
         "./agents/country-models/performance-optimizer.md",
         "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/integration-agent.md",
+        "./agents/country-models/issue-manager.md",
+        "./agents/country-models/naming-coordinator.md",
+        "./agents/country-models/pr-pusher.md",
+        "./agents/country-models/tanf-program-reviewer.md",
         "./agents/country-models/isolation-setup.md",
         "./agents/country-models/isolation-enforcement.md"
       ],
@@ -61,12 +66,20 @@
         "./commands/create-pr.md"
       ],
       "skills": [
-        "./skills/policyengine-user-guide-skill",
-        "./skills/policyengine-us-skill",
-        "./skills/policyengine-uk-skill",
-        "./skills/policyengine-core-skill",
-        "./skills/policyengine-standards-skill",
-        "./skills/policyengine-writing-skill"
+        "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/tools-and-apis/policyengine-core-skill",
+        "./skills/technical-patterns/policyengine-aggregation-skill",
+        "./skills/technical-patterns/policyengine-period-patterns-skill",
+        "./skills/technical-patterns/policyengine-testing-patterns-skill",
+        "./skills/technical-patterns/policyengine-implementation-patterns-skill",
+        "./skills/technical-patterns/policyengine-parameter-patterns-skill",
+        "./skills/technical-patterns/policyengine-vectorization-skill",
+        "./skills/technical-patterns/policyengine-review-patterns-skill",
+        "./skills/technical-patterns/policyengine-code-style-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill"
       ]
     },
     {
@@ -90,13 +103,13 @@
         "./commands/fix-pr.md"
       ],
       "skills": [
-        "./skills/policyengine-api-skill",
-        "./skills/policyengine-core-skill",
-        "./skills/policyengine-us-skill",
-        "./skills/policyengine-uk-skill",
-        "./skills/policyengine-design-skill",
-        "./skills/policyengine-standards-skill",
-        "./skills/policyengine-writing-skill"
+        "./skills/tools-and-apis/policyengine-api-skill",
+        "./skills/tools-and-apis/policyengine-core-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill"
       ]
     },
     {
@@ -120,13 +133,13 @@
         "./commands/fix-pr.md"
       ],
       "skills": [
-        "./skills/policyengine-app-skill",
-        "./skills/policyengine-api-skill",
-        "./skills/policyengine-us-skill",
-        "./skills/policyengine-uk-skill",
-        "./skills/policyengine-design-skill",
-        "./skills/policyengine-standards-skill",
-        "./skills/policyengine-writing-skill"
+        "./skills/tools-and-apis/policyengine-app-skill",
+        "./skills/tools-and-apis/policyengine-api-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill"
       ]
     },
     {
@@ -142,14 +155,14 @@
       },
       "license": "MIT",
       "skills": [
-        "./skills/policyengine-user-guide-skill",
-        "./skills/policyengine-python-client-skill",
-        "./skills/policyengine-us-skill",
-        "./skills/policyengine-uk-skill",
-        "./skills/policyengine-analysis-skill",
-        "./skills/microdf-skill",
-        "./skills/policyengine-design-skill",
-        "./skills/policyengine-writing-skill"
+        "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/tools-and-apis/policyengine-python-client-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/analysis/policyengine-analysis-skill",
+        "./skills/data-science/microdf-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-writing-skill"
       ]
     },
     {
@@ -165,15 +178,15 @@
       },
       "license": "MIT",
       "skills": [
-        "./skills/microdf-skill",
-        "./skills/microimpute-skill",
-        "./skills/microcalibrate-skill",
-        "./skills/l0-skill",
-        "./skills/policyengine-us-skill",
-        "./skills/policyengine-uk-skill",
-        "./skills/policyengine-design-skill",
-        "./skills/policyengine-standards-skill",
-        "./skills/policyengine-writing-skill"
+        "./skills/data-science/microdf-skill",
+        "./skills/data-science/microimpute-skill",
+        "./skills/data-science/microcalibrate-skill",
+        "./skills/data-science/l0-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill"
       ]
     },
     {
@@ -200,6 +213,11 @@
         "./agents/country-models/edge-case-generator.md",
         "./agents/country-models/performance-optimizer.md",
         "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/integration-agent.md",
+        "./agents/country-models/issue-manager.md",
+        "./agents/country-models/naming-coordinator.md",
+        "./agents/country-models/pr-pusher.md",
+        "./agents/country-models/tanf-program-reviewer.md",
         "./agents/country-models/isolation-setup.md",
         "./agents/country-models/isolation-enforcement.md",
         "./agents/api/api-reviewer.md",
@@ -212,21 +230,29 @@
         "./commands/fix-pr.md"
       ],
       "skills": [
-        "./skills/policyengine-user-guide-skill",
-        "./skills/policyengine-python-client-skill",
-        "./skills/policyengine-core-skill",
-        "./skills/policyengine-us-skill",
-        "./skills/policyengine-uk-skill",
-        "./skills/policyengine-api-skill",
-        "./skills/policyengine-app-skill",
-        "./skills/policyengine-analysis-skill",
-        "./skills/microdf-skill",
-        "./skills/microimpute-skill",
-        "./skills/microcalibrate-skill",
-        "./skills/l0-skill",
-        "./skills/policyengine-design-skill",
-        "./skills/policyengine-standards-skill",
-        "./skills/policyengine-writing-skill"
+        "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/tools-and-apis/policyengine-python-client-skill",
+        "./skills/tools-and-apis/policyengine-core-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/tools-and-apis/policyengine-api-skill",
+        "./skills/tools-and-apis/policyengine-app-skill",
+        "./skills/analysis/policyengine-analysis-skill",
+        "./skills/technical-patterns/policyengine-aggregation-skill",
+        "./skills/technical-patterns/policyengine-period-patterns-skill",
+        "./skills/technical-patterns/policyengine-testing-patterns-skill",
+        "./skills/technical-patterns/policyengine-implementation-patterns-skill",
+        "./skills/technical-patterns/policyengine-parameter-patterns-skill",
+        "./skills/technical-patterns/policyengine-vectorization-skill",
+        "./skills/technical-patterns/policyengine-review-patterns-skill",
+        "./skills/technical-patterns/policyengine-code-style-skill",
+        "./skills/data-science/microdf-skill",
+        "./skills/data-science/microimpute-skill",
+        "./skills/data-science/microcalibrate-skill",
+        "./skills/data-science/l0-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill"
       ]
     }
   ]

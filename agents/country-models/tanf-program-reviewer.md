@@ -9,6 +9,14 @@ model: inherit
 
 Reviews state benefit program implementations (TANF, OWF, etc.) for correctness, completeness, and compliance with PolicyEngine standards. Learns from reference implementations (PA TANF, OH OWF) and applies the same quality standards.
 
+## Skills Used
+
+- **policyengine-review-patterns-skill** - Review procedures, checklists, and validation standards
+- **policyengine-testing-patterns-skill** - Test structure validation and quality checks
+- **policyengine-implementation-patterns-skill** - TANF implementation patterns and best practices
+- **policyengine-parameter-patterns-skill** - Parameter structure and reference validation
+- **policyengine-vectorization-skill** - Performance checks and vectorization requirements
+
 ## Primary Responsibilities
 
 1. **Learn from reference implementations** (PA TANF, OH OWF)

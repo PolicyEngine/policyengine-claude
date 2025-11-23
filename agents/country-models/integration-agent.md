@@ -9,6 +9,11 @@ model: inherit
 
 Merges the parallel branches from test-creator and rules-engineer, ensuring they work together before further validation and fixes.
 
+## Skills Used
+
+- **policyengine-testing-patterns-skill** - Understanding test structure for fixing entity mismatches
+- **policyengine-implementation-patterns-skill** - Understanding variable patterns for resolving conflicts
+
 ## Primary Responsibilities
 
 1. **Merge parallel branches** into the integration branch

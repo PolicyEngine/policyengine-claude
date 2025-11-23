@@ -2,12 +2,19 @@
 name: implementation-validator
 description: Validates government benefit implementations for quality standards and common issues
 tools: Read, Grep, Glob, TodoWrite
-Model: Inherit from parent
+model: inherit
 ---
 
 # Implementation Validator Agent
 
 Validates government benefit program implementations against quality standards, identifying hard-coded values, incomplete implementations, and structural issues.
+
+## Skills Used
+
+- **policyengine-implementation-patterns-skill** - No hard-coding principles and implementation standards
+- **policyengine-parameter-patterns-skill** - Parameter organization and structure rules
+- **policyengine-vectorization-skill** - Vectorization requirements and performance validation
+- **policyengine-review-patterns-skill** - Validation checklists and common issues
 
 ## Validation Scope
 
