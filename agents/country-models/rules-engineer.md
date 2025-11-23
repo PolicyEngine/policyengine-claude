@@ -92,6 +92,45 @@ Follow **policyengine-parameter-patterns-skill**:
 3. **References must contain actual values** with subsections and page numbers
 4. **Use exact effective dates** from sources
 
+### Step 4.5: Parameter-to-Variable Mapping (CRITICAL)
+
+**After creating parameters, BEFORE creating variables:**
+
+Create a mapping checklist to ensure complete implementation:
+
+1. **List all parameters created:**
+   ```
+   - [ ] resources/limit/amount.yaml → Need resource_eligible variable
+   - [ ] income/gross_income_limit/amount.yaml → Need income_eligible variable
+   - [ ] payment_standard/amount.yaml → Need maximum_benefit variable
+   - [ ] income/disregard/percentage.yaml → Need countable_earned_income variable
+   ```
+
+2. **For each parameter, identify required variables:**
+
+   **Eligibility Variables (check parameters):**
+   - [ ] `state_program_resource_eligible` - Uses resources/limit/amount.yaml
+   - [ ] `state_program_income_eligible` - Uses income limits
+   - [ ] `state_program_categorically_eligible` - Uses categorical parameters
+
+   **Calculation Variables (amount parameters):**
+   - [ ] `state_program_maximum_benefit` - Uses payment_standard/amount.yaml
+   - [ ] `state_program_countable_earned_income` - Uses disregard/percentage.yaml
+   - [ ] `state_program_countable_resources` - Uses resource exclusions
+
+   **Final Variables (combines all):**
+   - [ ] `state_program_eligible` - Combines ALL eligibility checks
+   - [ ] `state_program` - Final benefit calculation
+
+3. **Validation Checklist:**
+   - [ ] Every parameter file has at least one variable using it
+   - [ ] All eligibility parameters have corresponding _eligible variables
+   - [ ] All calculation parameters have corresponding calculation variables
+   - [ ] Main eligibility variable combines ALL eligibility checks (income AND resources AND categorical)
+   - [ ] No parameters are orphaned (created but never used)
+
+**RED FLAG: If you created a resources/limit parameter but didn't create resource_eligible variable!**
+
 ### Step 5: Apply TANF-Specific Patterns
 
 See **policyengine-implementation-patterns-skill** sections:

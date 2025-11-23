@@ -80,6 +80,12 @@ Validate that:
 - References trace to real documents
 - No orphaned files
 
+**CRITICAL: Parameter Usage Validation**
+- Every parameter file MUST be used by at least one variable
+- Resource limit parameters → MUST have resource_eligible variable
+- Income limit parameters → MUST have income_eligible variable
+- Main eligible variable MUST check ALL eligibility types (income AND resources AND categorical)
+
 ### Phase 5: Wrapper Variable Detection (CRITICAL)
 
 Apply validation from **policyengine-implementation-patterns-skill**:
@@ -155,6 +161,18 @@ The validator produces a structured report:
 |------|----------|-------|-----|
 | assistance_unit_size.py | state_tanf_assistance_unit_size | Just returns spm_unit_size | Delete and use federal directly |
 | unearned_income.py | state_tanf_countable_unearned_income | No state logic, just aggregates federal | Delete and use federal baseline |
+
+### Orphaned Parameters (Parameters Without Variables)
+| Parameter File | Expected Variable | Status | Fix |
+|---------------|------------------|---------|-----|
+| resources/limit/amount.yaml | state_tanf_resource_eligible | MISSING | Create resource eligibility variable |
+| resources/vehicle_exemption.yaml | state_tanf_countable_resources | MISSING | Create countable resources variable |
+
+### Incomplete Eligibility Checks
+| Eligibility Variable | Missing Check | Fix |
+|---------------------|---------------|-----|
+| state_tanf_eligible | resource_eligible | Add resource check to eligibility formula |
+| state_tanf_eligible | categorical_eligible | Add categorical check if applicable |
 
 ## Warnings (Should Address)
 

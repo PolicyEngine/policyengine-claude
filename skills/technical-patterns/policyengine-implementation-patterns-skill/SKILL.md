@@ -407,13 +407,52 @@ Before creating any variable:
 
 ---
 
+## Parameter-to-Variable Mapping Requirements
+
+### Every Parameter Must Have a Variable
+
+**CRITICAL: Complete implementation means every parameter is used!**
+
+When you create parameters, you MUST create corresponding variables:
+
+| Parameter Type | Required Variable(s) |
+|---------------|---------------------|
+| resources/limit | `state_program_resource_eligible` |
+| income/limit | `state_program_income_eligible` |
+| payment_standard | `state_program_maximum_benefit` |
+| income/disregard | `state_program_countable_earned_income` |
+| categorical/requirements | `state_program_categorically_eligible` |
+
+### Complete Eligibility Formula
+
+The main eligibility variable MUST combine ALL checks:
+
+```python
+class state_program_eligible(Variable):
+    def formula(spm_unit, period, parameters):
+        income_eligible = spm_unit("state_program_income_eligible", period)
+        resource_eligible = spm_unit("state_program_resource_eligible", period)  # DON'T FORGET!
+        categorical = spm_unit("state_program_categorically_eligible", period)
+
+        return income_eligible & resource_eligible & categorical
+```
+
+**Common Implementation Failures:**
+- ❌ Created resource limit parameter but no resource_eligible variable
+- ❌ Main eligible variable only checks income, ignores resources
+- ❌ Parameters created but never referenced in any formula
+
+---
+
 ## For Agents
 
 When implementing variables:
 1. **Study reference implementations** (DC, IL, TX TANF)
 2. **Never hard-code values** - use parameters
-3. **Reuse existing variables** - avoid duplication
-4. **Use `adds` when possible** - cleaner than formula
-5. **Create intermediate variables** for complex logic
-6. **Follow metadata standards** exactly
-7. **Complete implementation** or delete the file
+3. **Map every parameter to a variable** - no orphaned parameters
+4. **Complete ALL eligibility checks** - income AND resources AND categorical
+5. **Reuse existing variables** - avoid duplication
+6. **Use `adds` when possible** - cleaner than formula
+7. **Create intermediate variables** for complex logic
+8. **Follow metadata standards** exactly
+9. **Complete implementation** or delete the file
