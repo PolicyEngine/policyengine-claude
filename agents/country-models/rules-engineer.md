@@ -124,29 +124,13 @@ For states with truly unique definitions, create state-specific variables as nee
 
 ## Workflow
 
-### Step 1: Initialize Git Worktree
+### Step 1: Access Documentation
 
-```bash
-# Create a new worktree for rules implementation with a unique branch
-git worktree add ../policyengine-rules-engineer -b impl-<program>-<date>
+Read `sources/working_references.md` in the repository for program documentation.
 
-# Navigate to your worktree
-cd ../policyengine-rules-engineer
+**CRITICAL**: Embed references from `sources/working_references.md` into your parameter/variable metadata.
 
-# Pull latest changes from master
-git pull origin master
-```
-
-### Step 2: Access Documentation
-
-```bash
-# From your worktree, reference the main repo's working file
-cat ../policyengine-us/working_references.md
-```
-
-**CRITICAL**: Embed references from `working_references.md` into your parameter/variable metadata.
-
-### Step 3: Implement Variables
+### Step 2: Implement Variables
 
 **CRITICAL: Follow policyengine-implementation-patterns-skill sections:**
 - "Avoiding Unnecessary Wrapper Variables" - Variable Creation Decision Tree
@@ -358,6 +342,53 @@ Consult these skills for detailed patterns:
 - **policyengine-aggregation-skill** - Variable summation patterns
 - **policyengine-period-patterns-skill** - Period conversion
 
+## Code Comment Standards
+
+**MINIMAL COMMENTS - Let the code speak for itself!**
+
+### ❌ DON'T - Verbose explanatory comments
+```python
+def formula(spm_unit, period, parameters):
+    # Wisconsin disregards all earned income of dependent children (< 18)
+    # Calculate earned income for adults only
+    is_adult = spm_unit.members("age", period.this_year) >= 18  # ❌ Hard-coded!
+    adult_earned = spm_unit.sum(
+        spm_unit.members("tanf_gross_earned_income", period) * is_adult
+    )
+
+    # All unearned income is counted (including children's)
+    gross_unearned = add(spm_unit, period, ["tanf_gross_unearned_income"])
+
+    # NOTE: Wisconsin disregards many additional income sources that
+    # are not separately tracked in PolicyEngine (educational aid, etc.)
+    # EITC and other tax credits are NOT included in gross income...
+    return max_(total_income - disregards, 0)
+```
+
+### ✅ DO - Clean self-documenting code
+```python
+def formula(spm_unit, period, parameters):
+    p = parameters(period).gov.states.wi.dcf.tanf.income
+
+    is_adult = spm_unit.members("age", period.this_year) >= p.adult_age_threshold
+    adult_earned = spm_unit.sum(
+        spm_unit.members("tanf_gross_earned_income", period) * is_adult
+    )
+    gross_unearned = add(spm_unit, period, ["tanf_gross_unearned_income"])
+    child_support = add(spm_unit, period, ["child_support_received"])
+
+    return max_(adult_earned + gross_unearned - child_support, 0)
+```
+
+### Comment Rules
+1. **NO comments explaining what code does** - variable names should be self-documenting
+2. **OK: Brief NOTE about PolicyEngine limitations** (one line):
+   ```python
+   # NOTE: Time limit cannot be tracked in PolicyEngine
+   ```
+3. **NO multi-line explanations** of what the code calculates
+4. **Parameterize ALL thresholds** including age (18 → `p.adult_age_threshold`)
+
 ## Quality Standards
 
 Implementation must have:
@@ -367,3 +398,4 @@ Implementation must have:
 - All parameters with required metadata
 - Federal/state separation maintained
 - References to authoritative sources
+- Minimal comments (code should be self-documenting)

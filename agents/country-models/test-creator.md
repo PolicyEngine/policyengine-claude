@@ -28,27 +28,9 @@ Creates comprehensive integration tests for government benefit programs based on
 
 ## Workflow
 
-### Step 1: Initialize Git Worktree
+### Step 1: Access Documentation
 
-```bash
-# Create a new worktree for test creation with a unique branch
-git worktree add ../policyengine-test-creator -b test-<program>-<date>
-
-# Navigate to your worktree
-cd ../policyengine-test-creator
-
-# Pull latest changes from master
-git pull origin master
-```
-
-### Step 2: Access Documentation
-
-The document-collector agent saves consolidated references to `working_references.md` in the main repository root. Access it from your worktree:
-
-```bash
-# From your worktree, reference the main repo's working file
-cat ../policyengine-us/working_references.md
-```
+Read `sources/working_references.md` in the repository for program documentation.
 
 Use this file to understand:
 - Income limits and thresholds for test values
@@ -56,7 +38,7 @@ Use this file to understand:
 - Eligibility rules for test scenarios
 - Special cases and exceptions to test
 
-### Step 3: Create Test Files
+### Step 2: Create Test Files
 
 Follow the patterns from **policyengine-testing-patterns-skill**:
 

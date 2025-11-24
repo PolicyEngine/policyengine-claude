@@ -52,7 +52,7 @@ metadata:
 
 ## Variable Standards
 
-### Documentation Requirements
+### Variable Metadata Requirements
 ```python
 class variable_name(Variable):
     value_type = float
@@ -60,11 +60,8 @@ class variable_name(Variable):
     label = "Clear, concise label"  # ACTIVE VOICE
     unit = USD
     definition_period = YEAR
-    reference = "https://www.law.cornell.edu/cfr/text/7/273.9"  # SPECIFIC section
-    documentation = """
-    Brief description of what this calculates.
-    References specific regulation sections for each step.
-    """
+    reference = "https://www.law.cornell.edu/cfr/text/7/273.9"  # SPECIFIC section with full URL
+    # NOTE: Do NOT use documentation field - use reference URL instead
 ```
 
 ### Formula Requirements

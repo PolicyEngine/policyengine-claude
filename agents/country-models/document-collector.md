@@ -149,7 +149,7 @@ Documentation should be saved in TWO locations:
    - Permanent reference for future use
    - Organized by document type (eligibility.md, benefit_calculation.md, etc.)
 
-2. **Working Summary**: `working_references.md` in repository root
+2. **Working Summary**: `sources/working_references.md`
    - Consolidated summary of key implementation details
    - Temporary file for current implementation sprint
    - Accessible to other agents working in git worktrees
@@ -157,7 +157,7 @@ Documentation should be saved in TWO locations:
 
 ### Working References Format
 
-Append to `working_references.md` a concise summary for implementation:
+Append to `sources/working_references.md` a concise summary for implementation:
 
 ```markdown
 # Collected Documentation
@@ -194,8 +194,8 @@ reference:
 ```
 ```python
 # For variables:
-reference = "[Legal citation]"
-documentation = "[URL or detailed reference]"
+reference = "https://www.law.cornell.edu/..."  # Full clickable URL
+# NOTE: Do NOT use documentation field - use reference URL instead
 ```
 
 ---
@@ -296,7 +296,7 @@ Your task is complete when you have:
 1. Located all relevant legal authorities
 2. Extracted all rules, formulas, and thresholds
 3. Organized information into structured documents in `docs/agents/sources/<program>/`
-4. Created consolidated `working_references.md` in repository root
+4. Created consolidated `sources/working_references.md`
 5. Verified currency and accuracy of sources
 6. Committed your documentation to the main branch
 
@@ -307,7 +307,7 @@ After gathering all documentation:
 ```bash
 # Stage all documentation files
 git add docs/agents/sources/
-git add working_references.md
+mkdir -p sources && git add sources/working_references.md
 
 # Commit with clear message
 git commit -m "Add documentation for <program> implementation
@@ -327,7 +327,7 @@ git push origin master
 After you commit documentation:
 1. **test-creator** agent will work in parallel in `test-<program>-<date>` branch
 2. **rules-engineer** agent will work in parallel in `impl-<program>-<date>` branch
-3. Both agents will reference your `working_references.md` file
+3. Both agents will reference your `sources/working_references.md` file
 4. **ci-fixer** agent will merge all branches and run CI checks
 
 ## Special Rules for TANF Programs
@@ -369,7 +369,7 @@ After you commit documentation:
    - State policy manual definitions section
    - State exclusions section (what's NOT counted)
 
-4. **Include in working_references.md:**
+4. **Include in sources/working_references.md:**
 ```markdown
 ## Demographic Eligibility
 
