@@ -72,12 +72,36 @@ Check all variable files for:
 - Improper vectorization patterns
 
 ### Phase 2: Parameter Audit
+
+**CRITICAL CHECKS (must all pass):**
+- ✅ **Description field present** - EVERY parameter MUST have description
+- ✅ **Description follows template** - Uses active voice, state name, "this X" pattern
+- ✅ **Full program names** - No acronyms (e.g., "Temporary Assistance for Needy Families program" not "TANF")
+- ✅ **Exactly ONE sentence** - Description ends with single period
+
 Verify parameter files have:
-- Complete metadata (description, unit, period)
+- Complete metadata (description, unit, period, label, reference)
 - Valid references to source documents
 - Proper organizational hierarchy
 - Effective dates
 - Active voice descriptions
+
+**CRITICAL ERROR if missing:**
+```yaml
+# ❌ CRITICAL - Missing description
+values:
+  1991-01-01: 90
+metadata:
+  unit: currency-USD
+  # ... (missing description field)
+
+# ✅ CORRECT - Has proper description
+description: Missouri deducts this earned income disregard amount from gross earned income for Temporary Assistance for Needy Families program calculations.
+values:
+  1991-01-01: 90
+metadata:
+  unit: currency-USD
+```
 
 ### Phase 3: Test Validation
 Ensure test files:

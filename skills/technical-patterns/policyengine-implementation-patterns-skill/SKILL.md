@@ -192,6 +192,123 @@ def formula(entity, period, parameters):
 
 ---
 
+## TANF Countable Income Pattern
+
+### Critical: Verify Calculation Order from Legal Code
+
+**MOST IMPORTANT:** Always check the state's legal code or policy manual for the exact calculation order. The pattern below is typical but not universal.
+
+**The Typical Pattern:**
+1. Apply deductions/disregards to **earned income only**
+2. Use `max_()` to prevent negative earned income
+3. Add unearned income (which typically has no deductions)
+
+**This pattern is based on how MOST TANF programs work, but you MUST verify with the specific state's legal code.**
+
+### ❌ WRONG - Applying deductions to total income
+
+```python
+def formula(spm_unit, period, parameters):
+    gross_earned = spm_unit("tanf_gross_earned_income", period)
+    unearned = spm_unit("tanf_gross_unearned_income", period)
+    deductions = spm_unit("tanf_earned_income_deductions", period)
+
+    # ❌ WRONG: Deductions applied to total income
+    total_income = gross_earned + unearned
+    countable = total_income - deductions
+
+    return max_(countable, 0)
+```
+
+**Why this is wrong:**
+- Deductions should ONLY reduce earned income
+- Unearned income (SSI, child support, etc.) is not subject to work expense deductions
+- This incorrectly reduces unearned income when earned income is low
+
+**Example error:**
+- Earned: $100, Unearned: $500, Deductions: $200
+- Wrong result: `max_($100 + $500 - $200, 0) = $400` (reduces unearned!)
+- Correct result: `max_($100 - $200, 0) + $500 = $500`
+
+### ✅ CORRECT - Apply deductions to earned only, then add unearned
+
+```python
+def formula(spm_unit, period, parameters):
+    gross_earned = spm_unit("tanf_gross_earned_income", period)
+    unearned = spm_unit("tanf_gross_unearned_income", period)
+    deductions = spm_unit("tanf_earned_income_deductions", period)
+
+    # ✅ CORRECT: Deductions applied to earned only, then add unearned
+    return max_(gross_earned - deductions, 0) + unearned
+```
+
+### Pattern Variations
+
+**With multiple deduction steps:**
+```python
+def formula(spm_unit, period, parameters):
+    p = parameters(period).gov.states.xx.tanf.income
+    gross_earned = spm_unit("tanf_gross_earned_income", period)
+    unearned = spm_unit("tanf_gross_unearned_income", period)
+
+    # Step 1: Apply work expense deduction
+    work_expense = min_(gross_earned * p.work_expense_rate, p.work_expense_max)
+    after_work_expense = max_(gross_earned - work_expense, 0)
+
+    # Step 2: Apply earnings disregard
+    earnings_disregard = after_work_expense * p.disregard_rate
+    countable_earned = max_(after_work_expense - earnings_disregard, 0)
+
+    # Step 3: Add unearned (no deductions applied)
+    return countable_earned + unearned
+```
+
+**With disregard percentage (simplified):**
+```python
+def formula(spm_unit, period, parameters):
+    p = parameters(period).gov.states.xx.tanf.income
+    gross_earned = spm_unit("tanf_gross_earned_income", period)
+    unearned = spm_unit("tanf_gross_unearned_income", period)
+
+    # Apply disregard to earned (keep 33% = disregard 67%)
+    countable_earned = gross_earned * (1 - p.earned_disregard_rate)
+
+    return max_(countable_earned, 0) + unearned
+```
+
+### When Unearned Income HAS Deductions
+
+Some states DO have unearned income deductions (rare). Handle separately:
+
+```python
+def formula(spm_unit, period, parameters):
+    gross_earned = spm_unit("tanf_gross_earned_income", period)
+    gross_unearned = spm_unit("tanf_gross_unearned_income", period)
+    earned_deductions = spm_unit("tanf_earned_income_deductions", period)
+    unearned_deductions = spm_unit("tanf_unearned_income_deductions", period)
+
+    # Apply each type of deduction to its respective income type
+    countable_earned = max_(gross_earned - earned_deductions, 0)
+    countable_unearned = max_(gross_unearned - unearned_deductions, 0)
+
+    return countable_earned + countable_unearned
+```
+
+### Quick Reference
+
+**Standard TANF pattern:**
+```
+Countable Income = max_(Earned - Earned Deductions, 0) + Unearned
+```
+
+**NOT:**
+```
+❌ max_(Earned + Unearned - Deductions, 0)
+❌ max_(Earned - Deductions + Unearned, 0)  # Can go negative
+```
+
+---
+
 ## Federal/State Separation
 
 ### Federal Parameters
@@ -320,9 +437,78 @@ Before creating ANY state-specific variable, ask:
 1. Does federal baseline already calculate this?
 2. Does my state do it DIFFERENTLY than federal?
 3. Can I write the difference in 1+ lines of state-specific logic?
+4. **Will this calculation be used in 2+ other variables?** (Code reuse exception)
 
-- If YES/NO/NO → **DON'T create the variable**, use federal directly
-- If YES/YES/YES → **CREATE the variable** with state logic
+**Decision:**
+- If YES/NO/NO/NO → **DON'T create the variable**, use federal directly
+- If YES/YES/YES/NO → **CREATE the variable** with state logic
+- If YES/NO/NO/YES → **CREATE as intermediate variable** for code reuse (see exception below)
+
+#### EXCEPTION: Code Reuse Justifies Intermediate Variables
+
+**Even without state-specific logic, create a variable if the SAME calculation is used in multiple places.**
+
+❌ **Bad - Duplicating calculation across variables:**
+```python
+# Variable 1 - Income eligibility
+class mo_tanf_income_eligible(Variable):
+    def formula(spm_unit, period, parameters):
+        # Duplicated calculation
+        gross = add(spm_unit, period, ["tanf_gross_earned_income", "tanf_gross_unearned_income"])
+        return gross <= p.income_limit
+
+# Variable 2 - Countable income
+class mo_tanf_countable_income(Variable):
+    def formula(spm_unit, period, parameters):
+        # SAME calculation repeated!
+        gross = add(spm_unit, period, ["tanf_gross_earned_income", "tanf_gross_unearned_income"])
+        deductions = spm_unit("mo_tanf_deductions", period)
+        return max_(gross - deductions, 0)
+
+# Variable 3 - Need standard
+class mo_tanf_need_standard(Variable):
+    def formula(spm_unit, period, parameters):
+        # SAME calculation AGAIN!
+        gross = add(spm_unit, period, ["tanf_gross_earned_income", "tanf_gross_unearned_income"])
+        return where(gross < p.threshold, p.high, p.low)
+```
+
+✅ **Good - Extract into reusable intermediate variable:**
+```python
+# Intermediate variable - used in multiple places
+class mo_tanf_gross_income(Variable):
+    adds = ["tanf_gross_earned_income", "tanf_gross_unearned_income"]
+
+# Variable 1 - Reuses intermediate
+class mo_tanf_income_eligible(Variable):
+    def formula(spm_unit, period, parameters):
+        gross = spm_unit("mo_tanf_gross_income", period)  # Reuse
+        return gross <= p.income_limit
+
+# Variable 2 - Reuses intermediate
+class mo_tanf_countable_income(Variable):
+    def formula(spm_unit, period, parameters):
+        gross = spm_unit("mo_tanf_gross_income", period)  # Reuse
+        deductions = spm_unit("mo_tanf_deductions", period)
+        return max_(gross - deductions, 0)
+
+# Variable 3 - Reuses intermediate
+class mo_tanf_need_standard(Variable):
+    def formula(spm_unit, period, parameters):
+        gross = spm_unit("mo_tanf_gross_income", period)  # Reuse
+        return where(gross < p.threshold, p.high, p.low)
+```
+
+**When to create intermediate variables for reuse:**
+- ✅ Same calculation appears in 2+ variables
+- ✅ Represents a meaningful concept (e.g., "gross income", "net resources")
+- ✅ Simplifies maintenance (change once vs many places)
+- ✅ Follows DRY (Don't Repeat Yourself) principle
+
+**When NOT to create (still a wrapper):**
+- ❌ Only used in ONE place
+- ❌ Just passes through another variable unchanged
+- ❌ Adds indirection without code reuse benefit
 
 #### Red Flags for Unnecessary Wrapper Variables
 

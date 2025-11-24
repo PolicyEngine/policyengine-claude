@@ -97,10 +97,20 @@ description: Indiana excludes this share of earned income from TANF calculations
 
 ### Step 3: Create Parameter Files
 
+**CRITICAL: NEVER write a parameter file without a description! This is MANDATORY.**
+
+**Before writing ANY parameter, you MUST:**
+1. ✅ Have the description ready (following skill templates)
+2. ✅ Verify description uses active voice
+3. ✅ Verify full program name is spelled out (not acronym)
+4. ✅ Verify description is exactly ONE sentence
+
+**If you cannot write a proper description, STOP and ask for clarification.**
+
 Follow **policyengine-parameter-patterns-skill** structure:
 
 ```yaml
-description: [State] [verb] [this X] [context].
+description: [State] [verb] [this X] [context].  # REQUIRED - MUST BE FIRST!
 values:
   YYYY-MM-DD: value
 
@@ -113,11 +123,32 @@ metadata:
       href: [url#page=N]
 ```
 
-**Critical Requirements:**
-- ALL 4 metadata fields required (unit, period, label, reference)
-- References must contain actual values
-- Use exact effective dates from sources
-- Include subsections and page anchors
+**Critical Requirements (ALL REQUIRED BEFORE WRITING FILE):**
+- ✅ Description field present and follows template from skill Section 2.2
+- ✅ ALL 4 metadata fields (unit, period, label, reference)
+- ✅ References must contain actual values
+- ✅ Use exact effective dates from sources
+- ✅ Include subsections and page anchors
+
+**Description Templates by Parameter Type:**
+
+**Amount parameters:**
+```yaml
+description: [State] deducts this [type] amount [context].
+# Example: Missouri deducts this work expense amount from gross earned income for Temporary Assistance for Needy Families program calculations.
+```
+
+**Threshold parameters:**
+```yaml
+description: [State] [allows/uses/applies] [what] for [category] at or [above/below] this [threshold type].
+# Example: Missouri allows child care deductions for children at or below this age in the Temporary Assistance for Needy Families program.
+```
+
+**Rate/Percentage parameters:**
+```yaml
+description: [State] [applies/multiplies/uses] this [rate type] [context].
+# Example: Missouri applies this earned income disregard percentage to gross wages for Temporary Assistance for Needy Families program eligibility.
+```
 
 ### Step 4: Apply Naming Conventions
 

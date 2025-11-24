@@ -27,10 +27,15 @@ You are the CI Fixer Agent responsible for running tests, identifying failures, 
 ## Skills Used
 
 - **policyengine-testing-patterns-skill** - Test structure and quality standards
-- **policyengine-implementation-patterns-skill** - Variable implementation patterns
+- **policyengine-implementation-patterns-skill** - Variable implementation patterns, wrapper variable detection
 - **policyengine-vectorization-skill** - Avoiding vectorization errors
 - **policyengine-code-style-skill** - Formula optimization when fixing code
 - **policyengine-period-patterns-skill** - Period handling in tests and formulas
+
+**CRITICAL: When reviewing or fixing code, ALWAYS check for:**
+1. Unnecessary wrapper variables (policyengine-implementation-patterns-skill)
+2. Code style issues (policyengine-code-style-skill)
+3. Vectorization problems (policyengine-vectorization-skill)
 
 ## STEP 0: Read Policy Documentation FIRST
 
@@ -256,6 +261,8 @@ When tests fail, first classify the issue type, then decide whether to fix it yo
 - ✅ Test syntax errors (YAML formatting, typos)
 - ✅ Missing imports
 - ✅ Obvious test mistakes (setting computed variables directly)
+- ✅ Unnecessary wrapper variables (variables that just return another variable with no logic)
+- ✅ Code style issues (single-use intermediate variables, direct parameter access)
 
 **Delegate to Specialist (Policy/Logic Issues):**
 - ❌ Calculation errors (test expects $500, got $300)
@@ -281,6 +288,58 @@ When tests fail, first classify the issue type, then decide whether to fix it yo
    - Document WHY you're making the change
    - Reference the documentation that supports it
    - Never make arbitrary changes just to get tests passing
+
+4. **Apply code style patterns when fixing formulas**:
+   - Use policyengine-code-style-skill to optimize fixed code
+   - Remove single-use intermediate variables
+   - Use direct parameter access (e.g., `p.amount` not `amount = p.amount`)
+   - Apply direct returns when possible
+   - Example:
+     ```python
+     # ❌ Before fix:
+     percentage = p.maximum_benefit.percentage  # Single use
+     return np.floor(standard_of_need * percentage)
+
+     # ✅ After fix:
+     return np.floor(standard_of_need * p.maximum_benefit.percentage)
+     ```
+
+5. **Check for unnecessary wrapper variables (CRITICAL)**:
+   - Use policyengine-implementation-patterns-skill "Avoiding Unnecessary Wrapper Variables" section
+   - Identify variables that just return another variable with no state-specific logic
+   - **Red flag pattern:** `return entity("some_variable", period)` with no transformation
+   - **EXCEPTION:** Variable IS justified if used in 2+ other variables (code reuse/DRY principle)
+   - For simplified TANF, check against the list in rules-engineer.md
+   - Example:
+     ```python
+     # ❌ Unnecessary wrapper - DELETE this variable:
+     class mo_tanf_resources(Variable):
+         def formula(spm_unit, period, parameters):
+             return spm_unit("spm_unit_cash_assets", period.this_year)
+
+     # ✅ Instead, use spm_unit_cash_assets directly in other variables:
+     class mo_tanf_resource_eligible(Variable):
+         def formula(spm_unit, period, parameters):
+             p = parameters(period).gov.states.mo.dss.tanf
+             resources = spm_unit("spm_unit_cash_assets", period.this_year)  # Direct use
+             return resources <= p.resource_limit.amount
+     ```
+   - **Common wrapper variables to delete for simplified TANF:**
+     - `state_tanf_gross_earned_income` → use `tanf_gross_earned_income`
+     - `state_tanf_gross_unearned_income` → use `tanf_gross_unearned_income`
+     - `state_tanf_assistance_unit_size` → use `spm_unit_size`
+     - `state_tanf_resources` → use `spm_unit_cash_assets`
+
+   - **EXCEPTION - Variable justified for code reuse:**
+     ```python
+     # ✅ KEEP - Used in 3+ places, avoids duplication:
+     class mo_tanf_gross_income(Variable):
+         adds = ["tanf_gross_earned_income", "tanf_gross_unearned_income"]
+
+     # Used in: mo_tanf_income_eligible, mo_tanf_countable_income, mo_tanf_need_standard
+     # Without this variable, the add() calculation would be duplicated 3 times
+     # This follows DRY (Don't Repeat Yourself) principle
+     ```
 
 **NEVER:**
 - ❌ Change test expectations without checking `working_references.md`

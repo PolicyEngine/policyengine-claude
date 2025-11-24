@@ -12,23 +12,46 @@ This workflow adapts based on the type of program being implemented:
 
 **TANF/Benefit Programs** (e.g., state TANF, SNAP, WIC):
 - Phase 4: test-creator creates both unit and integration tests
-- Phase 7: Uses specialized @complete:tanf-program-reviewer agent in parallel validation
+- Phase 7: Uses specialized @complete:country-models:tanf-program-reviewer agent in parallel validation
 - Optional phases: May be skipped for simplified implementations
 
 **Other Government Programs** (e.g., tax credits, deductions):
 - Phase 4: test-creator creates both unit and integration tests
-- Phase 7: Uses general @complete:implementation-validator agent in parallel validation
+- Phase 7: Uses general @complete:country-models:implementation-validator agent in parallel validation
 - Optional phases: Include based on production requirements
+
+## Phase 0: Implementation Approach (TANF Programs Only)
+
+**For TANF programs, detect implementation approach from $ARGUMENTS:**
+
+**Auto-detect from user's request:**
+- If $ARGUMENTS contains "simple" or "simplified" → Use **Simplified** approach
+- If $ARGUMENTS contains "full" or "complete" → Use **Full** approach
+- If unclear → Default to **Simplified** approach
+
+**Simplified Implementation:**
+- Use federal baseline for gross income, demographic eligibility, immigration eligibility
+- Faster implementation
+- Suitable for most states that follow federal definitions
+- Only creates state-specific variables for: income limits, disregards, benefit amounts, final calculation
+
+**Full Implementation:**
+- Create state-specific income definitions, eligibility criteria
+- More detailed implementation
+- Required when state has unique income definitions or eligibility rules
+- Creates all state-specific variables
+
+**Record the detected approach and pass it to Phase 4 (rules-engineer).**
 
 ## Phase 1: Issue and PR Setup
 
-Invoke @complete:issue-manager agent to:
+Invoke @complete:country-models:issue-manager agent to:
 - Search for existing issue or create new one for $ARGUMENTS
 - Create draft PR immediately in PolicyEngine/policyengine-us repository (NOT personal fork)
 - Return issue number and PR URL for tracking
 
 ## Phase 2: Variable Naming Convention
-Invoke @complete:naming-coordinator agent to:
+Invoke @complete:country-models:naming-coordinator agent to:
 - Analyze existing naming patterns in the codebase
 - Establish variable naming convention for $ARGUMENTS
 - Analyze existing folder structure patterns in the codebase
@@ -40,7 +63,7 @@ Invoke @complete:naming-coordinator agent to:
 
 **Phase 3A: Initial Document Gathering**
 
-Invoke @complete:document-collector agent to gather official $ARGUMENTS documentation, save as `working_references.md` in the repository, and post to GitHub issue
+Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation, save as `working_references.md` in the repository, and post to GitHub issue
 
 **After agent completes:**
 1. Check the agent's report for "📄 PDFs Requiring Extraction" section
@@ -60,7 +83,7 @@ Invoke @complete:document-collector agent to gather official $ARGUMENTS document
 **Phase 3B: PDF Extraction & Complete Documentation** (Only if CRITICAL PDFs found)
 
 1. After receiving extracted PDF content from user:
-2. Relaunch @complete:document-collector agent with:
+2. Relaunch @complete:country-models:document-collector agent with:
    - Original task description
    - Extracted PDF content included in prompt
    - Instruction: "You are in Phase 2 - integrate this PDF content with your HTML research"
@@ -76,20 +99,24 @@ Invoke @complete:document-collector agent to gather official $ARGUMENTS document
 ## Phase 4: Parallel Development (SIMULTANEOUS)
 After documentation is ready, invoke BOTH agents IN PARALLEL:
 
-**@complete:test-creator (single invocation):**
+**@complete:country-models:test-creator (single invocation):**
 - Create comprehensive INTEGRATION tests from documentation
 - Create UNIT tests for each variable that will have a formula
 - Both test types created in ONE invocation
 - Use only existing PolicyEngine variables
 - Test realistic calculations based on documentation
 
-**@complete:rules-engineer (two-step process):**
+**@complete:country-models:rules-engineer (two-step process):**
+- **Implementation Approach:** [Pass the decision from Phase 0: "simplified" or "full"]
+  - **If Simplified TANF:** Do NOT create state-specific gross income variables - use federal baseline (`tanf_gross_earned_income`, `tanf_gross_unearned_income`)
+  - **If Full TANF:** Create complete state-specific income definitions as needed
 - **Step 1:** Create all parameters first using embedded parameter-architect patterns
   - Complete parameter structure with all thresholds, amounts, rates
   - Include proper references from documentation
 - **Step 2:** Implement variables using the parameters
   - Zero hard-coded values
   - Complete implementations only
+  - Follow simplified/full approach from Phase 0
   - Document two-step process in commit messages
 
 **CRITICAL**: These must run simultaneously in separate conversations to maintain isolation. Neither can see the other's work.
@@ -99,7 +126,7 @@ After documentation is ready, invoke BOTH agents IN PARALLEL:
 - test-creator: All tests (unit + integration) created together, based purely on documentation
 
 ## Phase 5: Branch Integration
-Invoke @complete:integration-agent to:
+Invoke @complete:country-models:integration-agent to:
 - Merge test and implementation branches
 - Fix basic integration issues (entity mismatches, naming)
 - Discard uv.lock changes (always)
@@ -110,7 +137,7 @@ Invoke @complete:integration-agent to:
 **Why Critical**: The next phases need to work on integrated code to catch real issues.
 
 ## Phase 6: Pre-Push Validation
-Invoke @complete:pr-pusher agent to:
+Invoke @complete:country-models:pr-pusher agent to:
 - Ensure changelog entry exists
 - Run formatters (black, isort)
 - Fix any linting issues
@@ -127,15 +154,15 @@ Invoke @complete:pr-pusher agent to:
 The following enhancements may be applied to ensure production quality:
 
 1. **Cross-Program Validation**
-   - @complete:cross-program-validator: Check interactions with other benefits
+   - @complete:country-models:cross-program-validator: Check interactions with other benefits
    - Prevents benefit cliffs and unintended interactions
 
 2. **Documentation Enhancement**
-   - @complete:documentation-enricher: Add examples and regulatory citations
+   - @complete:country-models:documentation-enricher: Add examples and regulatory citations
    - Improves maintainability and compliance verification
 
 3. **Performance Optimization**
-   - @complete:performance-optimizer: Vectorize and optimize calculations
+   - @complete:country-models:performance-optimizer: Vectorize and optimize calculations
    - Ensures scalability for large-scale simulations
 
 **Decision Criteria:**
@@ -149,7 +176,7 @@ The following enhancements may be applied to ensure production quality:
 
 ### Invoke simultaneously:
 
-**@complete:implementation-validator:**
+**@complete:country-models:implementation-validator:**
 - Check for hard-coded values in variables
 - Verify placeholder or incomplete implementations
 - Check federal/state parameter organization
@@ -158,14 +185,14 @@ The following enhancements may be applied to ensure production quality:
 
 **Choose ONE based on program type:**
 
-**For TANF/Benefit Programs → @complete:tanf-program-reviewer:**
+**For TANF/Benefit Programs → @complete:country-models:tanf-program-reviewer:**
 - Learn from PA TANF and OH OWF reference implementations first
 - Validate code formulas against regulations
 - Verify test coverage with manual calculations
 - Check parameter structure and references
 - Focus on: eligibility rules, income disregards, benefit formulas
 
-**For Other Programs → @complete:implementation-validator:**
+**For Other Programs → @complete:country-models:implementation-validator:**
 - Validate implementation against documentation
 - Check for compliance with PolicyEngine standards
 - Verify parameterization and test coverage
@@ -175,9 +202,9 @@ The following enhancements may be applied to ensure production quality:
 **Quality Gate:** Review all validator reports before proceeding
 
 ## Phase 8: Local Testing & Fixes
-**CRITICAL: ALWAYS invoke @complete:ci-fixer agent - do NOT manually fix issues**
+**CRITICAL: ALWAYS invoke @complete:country-models:ci-fixer agent - do NOT manually fix issues**
 
-Invoke @complete:ci-fixer agent to:
+Invoke @complete:country-models:ci-fixer agent to:
 - Run all tests locally: `policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/[PROGRAM] -c policyengine_us -v`
 - Identify ALL failing tests
 - For each failing test:
@@ -244,6 +271,12 @@ After all tests pass and references are embedded:
 
 Execute each phase sequentially and **STOP after each phase** to wait for user instructions:
 
+0. **Phase 0**: Implementation Approach (TANF Programs Only)
+   - Auto-detect from $ARGUMENTS ("simple"/"simplified" vs. "full"/"complete")
+   - Default to Simplified if unclear
+   - Inform user of detected approach
+   - **STOP - Wait for user to say "continue" or provide adjustments**
+
 1. **Phase 1**: Issue and PR Setup
    - Complete the phase
    - Report results
@@ -260,6 +293,7 @@ Execute each phase sequentially and **STOP after each phase** to wait for user i
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
 4. **Phase 4**: Parallel Development (Test + Implementation)
+   - Pass simplified/full decision to rules-engineer
    - Complete the phase
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
