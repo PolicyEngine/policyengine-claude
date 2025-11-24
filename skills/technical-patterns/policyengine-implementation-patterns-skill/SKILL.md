@@ -7,6 +7,101 @@ description: PolicyEngine implementation patterns - variable creation, no hard-c
 
 Essential patterns for implementing government benefit program rules in PolicyEngine.
 
+## PolicyEngine Architecture Constraints
+
+### What CANNOT Be Simulated (Single-Period Limitation)
+
+**CRITICAL: PolicyEngine uses single-period simulation architecture**
+
+The following CANNOT be implemented and should be SKIPPED when found in documentation:
+
+#### 1. Time Limits and Lifetime Counters
+**Cannot simulate:**
+- ANY lifetime benefit limits (X months total)
+- ANY time windows (X months within Y period)
+- Benefit clocks and countable months
+- Cumulative time tracking
+
+**Why:** Requires tracking benefit history across multiple periods. PolicyEngine simulates one period at a time with no state persistence.
+
+**What to do:** Document in comments but DON'T parameterize or implement:
+```python
+# NOTE: [State] has [X]-month lifetime limit on [Program] benefits
+# This cannot be simulated in PolicyEngine's single-period architecture
+```
+
+#### 2. Work History Requirements
+**Cannot simulate:**
+- "Must have worked 6 of last 12 months"
+- "Averaged 30 hours/week over past quarter"
+- Prior employment verification
+- Work participation rate tracking
+
+**Why:** Requires historical data from previous periods.
+
+#### 3. Waiting Periods and Benefit Delays
+**Cannot simulate:**
+- "3-month waiting period for new residents"
+- "Benefits start month after application"
+- Retroactive eligibility
+- Benefit recertification cycles
+
+**Why:** Requires tracking application dates and eligibility history.
+
+#### 4. Progressive Sanctions and Penalties
+**Cannot simulate:**
+- "First violation: 1-month sanction, Second: 3-month, Third: permanent"
+- Graduated penalties
+- Strike systems
+
+**Why:** Requires tracking violation history.
+
+#### 5. Asset Spend-Down Over Time
+**Cannot simulate:**
+- Medical spend-down across months
+- Resource depletion tracking
+- Accumulated medical expenses
+
+**Why:** Requires tracking expenses and resources across periods.
+
+### What CAN Be Simulated (With Caveats)
+
+PolicyEngine CAN simulate point-in-time eligibility and benefits:
+- ✅ Current month income limits
+- ✅ Current month resource limits
+- ✅ Current benefit calculations
+- ✅ Current household composition
+- ✅ Current deductions and disregards
+
+### Time-Limited Benefits That Affect Current Calculations
+
+**Special Case: Time-limited deductions/disregards**
+
+When a deduction or disregard is only available for X months:
+- **DO implement the deduction** (assume it applies)
+- **DO add a comment** explaining the time limitation
+- **DON'T try to track or enforce the time limit**
+
+Example:
+```python
+class state_tanf_countable_earned_income(Variable):
+    def formula(spm_unit, period, parameters):
+        p = parameters(period).gov.states.xx.tanf.income
+        earned = spm_unit("tanf_gross_earned_income", period)
+
+        # NOTE: In reality, this 75% disregard only applies for first 4 months
+        # of employment. PolicyEngine cannot track employment duration, so we
+        # apply the disregard assuming the household qualifies.
+        # Actual rule: [State Code Citation]
+        disregard_rate = p.earned_income_disregard_rate  # 0.75
+
+        return earned * (1 - disregard_rate)
+```
+
+**Rule: If it requires history or future tracking, it CANNOT be fully simulated - but implement what we can and document limitations**
+
+---
+
 ## Critical Principles
 
 ### 1. ZERO Hard-Coded Values

@@ -63,32 +63,61 @@ income/threshold.yaml                          # 30_000
 
 ## 2. Description Field
 
-**Pattern:** `[State] [verb] [this X] [context].`
-
-**Use generic placeholders:**
-- `this amount`
-- `this share`
-- `this percentage`
-- `this threshold`
-- `these sources`
-
-**Common verbs:**
-- `excludes`
-- `deducts`
-- `provides`
-- `limits`
-- `uses`
+### The ONLY Acceptable Formula
 
 ```yaml
-✅ GOOD (MATCH PRODUCTION):
-description: Illinois excludes this share of earnings from countable income under the Temporary Assistance for Needy Families program.
-description: Montana provides this amount as the payment standard under the Temporary Assistance for Needy Families program.
-description: Texas limits resources to this amount under the Temporary Assistance for Needy Families program.
+description: [State] [verb] [category] to [this X] under the [Full Program Name] program.
+```
 
-❌ BAD:
-description: Crisis benefit maximum  # Too short
-description: Illinois allows eligibility when income is below...  # Too complex
-description: Indiana provides up to this payment standard amount under TANF, based on household size.  # Too wordy
+**Components:**
+1. **[State]**: Full state name (Indiana, Texas, California)
+2. **[verb]**: ONLY use: limits, provides, sets, excludes, deducts, uses
+3. **[category]**: What's being limited/provided (gross income, resources, payment standard)
+4. **[this X]**: ALWAYS use generic placeholder
+   - `this amount` (for currency-USD)
+   - `this share` or `this percentage` (for rates/percentages)
+   - `this threshold` (for age/counts)
+5. **[Full Program Name]**: ALWAYS spell out (Temporary Assistance for Needy Families, NOT TANF)
+
+### Copy These Exact Templates
+
+**For income limits:**
+```yaml
+description: [State] limits gross income to this amount under the Temporary Assistance for Needy Families program.
+```
+
+**For resource limits:**
+```yaml
+description: [State] limits resources to this amount under the Temporary Assistance for Needy Families program.
+```
+
+**For payment standards:**
+```yaml
+description: [State] provides this amount as the payment standard under the Temporary Assistance for Needy Families program.
+```
+
+**For disregards:**
+```yaml
+description: [State] excludes this share of earnings from countable income under the Temporary Assistance for Needy Families program.
+```
+
+### Description Validation Checklist
+
+Run this check on EVERY description:
+```python
+# Pseudo-code validation
+def validate_description(desc):
+    checks = [
+        desc.count('.') == 1,  # Exactly one sentence
+        'TANF' not in desc,     # No acronyms
+        'SNAP' not in desc,     # No acronyms
+        'this amount' in desc or 'this share' in desc or 'this percentage' in desc,
+        'under the' in desc and 'program' in desc,
+        'by household size' not in desc,  # No explanatory text
+        'based on' not in desc,           # No explanatory text
+        'for eligibility' not in desc,    # Redundant
+    ]
+    return all(checks)
 ```
 
 **CRITICAL: Always spell out full program names in descriptions!**
@@ -347,6 +376,41 @@ description: Texas deducts this standard work expense amount from gross earned i
 - One simple verb (limits, provides, excludes, deducts)
 - One "this X" placeholder
 - NO extra explanation ("based on X", "This is Y")
+
+### Common Description Mistakes to AVOID
+
+**❌ WRONG - Using acronyms:**
+```yaml
+description: Indiana sets this gross income limit for TANF eligibility by household size.
+# Problems: "TANF" not spelled out, unnecessary "by household size"
+```
+
+**✅ CORRECT:**
+```yaml
+description: Indiana limits gross income to this amount under the Temporary Assistance for Needy Families program.
+```
+
+**❌ WRONG - Adding explanatory text:**
+```yaml
+description: Indiana provides this payment standard amount based on household size.
+# Problem: "based on household size" is unnecessary (evident from breakdown)
+```
+
+**✅ CORRECT:**
+```yaml
+description: Indiana provides this amount as the payment standard under the Temporary Assistance for Needy Families program.
+```
+
+**❌ WRONG - Missing program context:**
+```yaml
+description: Indiana sets the gross income limit.
+# Problem: No program name, no "this amount"
+```
+
+**✅ CORRECT:**
+```yaml
+description: Indiana limits gross income to this amount under the Temporary Assistance for Needy Families program.
+```
 
 ### Authoritative Source Requirements
 

@@ -2,8 +2,18 @@
 name: rules-engineer
 description: Implements government benefit program rules with zero hard-coded values and complete parameterization
 tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, TodoWrite
-model: inherit
+model: sonnet
 ---
+
+## Thinking Mode
+
+**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
+1. What the user is asking for
+2. What existing patterns and standards apply
+3. What potential issues or edge cases might arise
+4. The best approach to solve the problem
+
+Take time to analyze thoroughly before implementing solutions.
 
 # Rules Engineer Agent
 
@@ -62,23 +72,42 @@ cat ../policyengine-us/working_references.md
 
 ### Step 3: Implement Variables
 
-Follow patterns from **policyengine-implementation-patterns-skill**:
+**CRITICAL: Follow policyengine-implementation-patterns-skill sections:**
+- "Avoiding Unnecessary Wrapper Variables" - Variable Creation Decision Tree
+- "When to Use `adds` vs `formula`" - Choosing implementation method
+- "State Variables to AVOID Creating" - What NOT to implement
 
-1. **NO hard-coded values** - Everything must be parameterized
-2. **NO placeholder implementations** - Complete or don't create file
-3. **Proper federal/state separation**
-4. **Create intermediate variables** to avoid code duplication
-5. **Use `adds` when possible** - cleaner than formula for simple sums
+**Quick Decision Process:**
+1. Should this variable exist? (Check decision tree in skill)
+2. If yes, use `adds` or `formula`? (Check skill guidance)
+3. Apply vectorization patterns from policyengine-vectorization-skill
 
-From **policyengine-vectorization-skill**:
-- Never use if-elif-else with entity data
-- Use `where()` and `select()` for conditions
-- Use NumPy operators (&, |, ~) not Python (and, or, not)
+### Step 3.5: Filter Out Non-Simulatable Rules (CRITICAL)
 
-From **policyengine-code-style-skill**:
-- Eliminate single-use intermediate variables
-- Use direct parameter access and returns
-- Combine boolean logic when possible
+**Check policyengine-implementation-patterns-skill section "PolicyEngine Architecture Constraints"**
+
+Before parameterizing ANYTHING, verify it CAN be simulated:
+
+**DO NOT parameterize or implement:**
+- ❌ Time limits (lifetime benefit limits)
+- ❌ Work history requirements (ANY historical requirement)
+- ❌ Waiting periods (ANY delayed eligibility)
+- ❌ Progressive sanctions (ANY escalating rules)
+- ❌ Enforcement of time-limited rules
+
+**DO implement with comments:**
+- ⚠️ Time-limited deductions (implement but note the limitation)
+- ⚠️ First X months disregards (apply as if always available)
+
+Example for time-limited deductions:
+```python
+def formula(spm_unit, period, parameters):
+    # NOTE: This disregard only applies for first 4 months of employment
+    # PolicyEngine cannot track employment duration, so we apply it always
+    # Actual rule: [State Code Citation]
+    disregard = p.earned_income_disregard_rate
+    return earned * (1 - disregard)
+```
 
 ### Step 4: Create Parameters
 

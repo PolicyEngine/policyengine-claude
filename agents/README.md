@@ -18,7 +18,6 @@ agents/
 │   ├── parameter-architect.md   # Designs parameter structures
 │   ├── performance-optimizer.md # Optimizes calculations
 │   ├── rules-engineer.md        # Implements rules from documentation
-│   ├── rules-reviewer.md        # Reviews rules implementations
 │   ├── test-creator.md          # Creates tests from documentation
 │   └── workflow.md              # Multi-agent workflow documentation
 ├── api/                         # Agents for policyengine-api
@@ -41,11 +40,9 @@ agents/
 ├── naming-coordinator.md        # Establishes naming conventions
 ├── parameter-architect.md       # Designs parameter structures
 ├── performance-optimizer.md     # Optimizes benefit calculations
-├── policy-domain-validator.md   # Validates domain-specific patterns
 ├── pr-pusher.md                 # Ensures PRs are properly formatted
 ├── reference-validator.md       # Validates parameter references
 ├── rules-engineer.md            # Implements government benefit rules
-├── rules-reviewer.md            # Reviews PolicyEngine implementations
 ├── tanf-program-reviewer.md    # Reviews state TANF implementations
 └── test-creator.md              # Creates integration tests
 ```
@@ -79,7 +76,7 @@ For country model development, we use an isolated multi-agent approach:
 1. **Document Collector** gathers authoritative sources
 2. **Test Creator** writes tests (without seeing implementation)
 3. **Rules Engineer** implements rules (without seeing test expectations)
-4. **Rules Reviewer** verifies implementation matches documentation
+4. **Implementation Validator** verifies implementation quality and compliance
 5. **Supervisor** orchestrates and ensures quality
 
 See `country-models/workflow.md` for detailed workflow documentation.
@@ -103,11 +100,9 @@ See `country-models/workflow.md` for detailed workflow documentation.
 | **naming-coordinator** | Establishes variable naming conventions | Code consistency |
 | **parameter-architect** | Designs comprehensive parameter structures | System design |
 | **performance-optimizer** | Optimizes benefit calculations for performance | Performance tuning |
-| **policy-domain-validator** | Validates domain-specific patterns | Domain compliance |
 | **pr-pusher** | Ensures PRs are properly formatted | PR quality control |
 | **reference-validator** | Validates that all parameters have proper references | Documentation validation |
 | **rules-engineer** | Implements government benefit program rules | Policy implementation |
-| **rules-reviewer** | Reviews and validates PolicyEngine implementations | Code review |
 | **tanf-program-reviewer** | Reviews state TANF/benefit program implementations | TANF compliance |
 | **test-creator** | Creates comprehensive integration tests | Test development |
 
@@ -140,7 +135,6 @@ These agents are specifically designed for country-specific implementations (pol
 | **parameter-architect** | Designs federal/state parameters | Hierarchical structure |
 | **performance-optimizer** | Optimizes vectorized calculations | NumPy operations |
 | **rules-engineer** | Implements with zero hard-coding | Parameterization |
-| **rules-reviewer** | Reviews against documentation | Accuracy validation |
 | **test-creator** | Creates realistic test scenarios | Manual calculations |
 
 ### Shared Resources

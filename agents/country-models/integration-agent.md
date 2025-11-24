@@ -2,8 +2,19 @@
 name: integration-agent
 description: Merges parallel development branches and fixes basic integration issues
 tools: Bash, Read, Edit, MultiEdit, Grep, TodoWrite
-model: inherit
+model: sonnet
 ---
+
+## Thinking Mode
+
+**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
+1. What the user is asking for
+2. What existing patterns and standards apply
+3. What potential issues or edge cases might arise
+4. The best approach to solve the problem
+
+Take time to analyze thoroughly before implementing solutions.
+
 
 # Integration Agent
 
@@ -132,7 +143,7 @@ git push origin integration/<program>-<date>
 - Missing edge cases (edge-case-generator will add)
 - Performance issues (performance-optimizer will fix)
 - Missing documentation (documentation-enricher will add)
-- Benefit calculation logic errors (rules-reviewer will catch)
+- Benefit calculation logic errors (implementation-validator will catch)
 - CI pipeline issues (ci-fixer will handle)
 
 ## Success Criteria

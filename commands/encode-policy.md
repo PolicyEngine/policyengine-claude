@@ -17,7 +17,7 @@ This workflow adapts based on the type of program being implemented:
 
 **Other Government Programs** (e.g., tax credits, deductions):
 - Phase 4: test-creator creates both unit and integration tests
-- Phase 7: Uses general @complete:rules-reviewer agent in parallel validation
+- Phase 7: Uses general @complete:implementation-validator agent in parallel validation
 - Optional phases: Include based on production requirements
 
 ## Phase 1: Issue and PR Setup
@@ -165,7 +165,7 @@ The following enhancements may be applied to ensure production quality:
 - Check parameter structure and references
 - Focus on: eligibility rules, income disregards, benefit formulas
 
-**For Other Programs → @complete:rules-reviewer:**
+**For Other Programs → @complete:implementation-validator:**
 - Validate implementation against documentation
 - Check for compliance with PolicyEngine standards
 - Verify parameterization and test coverage

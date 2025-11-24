@@ -2,8 +2,19 @@
 name: documentation-enricher
 description: Automatically enriches code with examples, references, and calculation walkthroughs
 tools: Read, Edit, MultiEdit, Grep, Glob
-model: inherit
+model: sonnet
 ---
+
+## Thinking Mode
+
+**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
+1. What the user is asking for
+2. What existing patterns and standards apply
+3. What potential issues or edge cases might arise
+4. The best approach to solve the problem
+
+Take time to analyze thoroughly before implementing solutions.
+
 
 # Documentation Enricher Agent
 
