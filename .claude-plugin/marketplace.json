@@ -43,7 +43,6 @@
         "./agents/country-models/rules-engineer.md",
         "./agents/country-models/test-creator.md",
         "./agents/country-models/document_collector.md",
-        "./agents/country-models/rules-reviewer.md",
         "./agents/country-models/parameter-architect.md",
         "./agents/country-models/cross-program-validator.md",
         "./agents/country-models/implementation-validator.md",
@@ -205,7 +204,6 @@
         "./agents/country-models/rules-engineer.md",
         "./agents/country-models/test-creator.md",
         "./agents/country-models/document_collector.md",
-        "./agents/country-models/rules-reviewer.md",
         "./agents/country-models/parameter-architect.md",
         "./agents/country-models/cross-program-validator.md",
         "./agents/country-models/implementation-validator.md",
@@ -221,7 +219,10 @@
         "./agents/country-models/isolation-setup.md",
         "./agents/country-models/isolation-enforcement.md",
         "./agents/api/api-reviewer.md",
-        "./agents/app/app-reviewer.md"
+        "./agents/app/app-reviewer.md",
+        "./agents/branch-comparator.md",
+        "./agents/legislation-statute-analyzer.md",
+        "./agents/reference-validator.md"
       ],
       "commands": [
         "./commands/create-pr.md",
