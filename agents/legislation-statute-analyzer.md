@@ -1,7 +1,7 @@
 ---
 name: legislation-statute-analyzer
 description: Use this agent when you need to analyze legislative text to identify and explain key statutes, their references, cross-references, and implications. This includes reviewing bills, acts, regulations, or legal documents to extract statutory provisions, understand their relationships, and summarize their legal significance. <example>Context: The user wants to analyze a piece of legislation to understand its key provisions. user: "Please review this tax reform bill and identify the main statutes" assistant: "I'll use the legislation-statute-analyzer agent to review this bill and identify the key statutes and their references" <commentary>Since the user wants to analyze legislation for statutory content, use the Task tool to launch the legislation-statute-analyzer agent.</commentary></example> <example>Context: The user needs help understanding regulatory text. user: "Can you review Section 401(k) of the Internal Revenue Code and tell me what it refers to?" assistant: "Let me use the legislation-statute-analyzer agent to analyze this section and identify what it refers to" <commentary>The user is asking for analysis of specific statutory provisions, so use the legislation-statute-analyzer agent.</commentary></example>
-model: opus
+model: sonnet
 color: purple
 ---
 

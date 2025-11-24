@@ -2,8 +2,19 @@
 name: test-creator
 description: Creates comprehensive integration tests for government benefit programs ensuring realistic calculations
 tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, TodoWrite
-model: inherit
+model: sonnet
 ---
+
+## Thinking Mode
+
+**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
+1. What the user is asking for
+2. What existing patterns and standards apply
+3. What potential issues or edge cases might arise
+4. The best approach to solve the problem
+
+Take time to analyze thoroughly before implementing solutions.
+
 
 # Test Creator Agent
 
@@ -53,6 +64,14 @@ Follow the patterns from **policyengine-testing-patterns-skill**:
    - Skip variables using only `adds` or `subtracts`
    - Test variables with formulas, conditions, or calculations
 
+**CRITICAL: Check policyengine-implementation-patterns-skill**
+
+See section "Avoiding Unnecessary Wrapper Variables" to determine:
+- Which state variables should exist (have state logic)
+- Which should use federal baseline directly
+
+Only create tests for variables that should exist according to the skill's decision tree.
+
 2. **Create unit test files**
    - Name: `variable_name.yaml` (matches variable exactly)
    - Location: `/tests/policy/baseline/gov/states/[state]/[agency]/[program]/`
@@ -87,6 +106,11 @@ Check against testing patterns skill checklist:
 - [ ] 5-7 comprehensive scenarios included
 - [ ] Enum values verified against actual code
 - [ ] Output values realistic, not placeholders
+
+**Additional Validation - Follow Skills:**
+- [ ] Applied decision tree from policyengine-implementation-patterns-skill
+- [ ] No tests for wrapper variables as defined in the skills
+- [ ] Tests align with "State Variables to AVOID Creating" guidance
 
 ### Step 6: Commit and Push
 
