@@ -160,28 +160,16 @@ if is_elderly | is_disabled:
 
 ## Documentation Templates
 
-### Variable Documentation Template
+### Variable Metadata Template
 ```python
 class [variable_name](Variable):
     value_type = [type]
     entity = [entity]
     definition_period = [period]
     label = "[Human-readable name]"
-    documentation = """
-    [One-sentence description from regulation]
-    
-    Detailed explanation:
-    [2-3 sentences explaining purpose and context]
-    
-    Calculation method:
-    [Step-by-step formula explanation]
-    
-    Special cases:
-    - [Edge case 1]: [How handled]
-    - [Edge case 2]: [How handled]
-    """
-    reference = [regulatory citations]
+    reference = "https://www.law.cornell.edu/..."  # Full clickable URL
     unit = [unit if applicable]
+    # NOTE: Do NOT use documentation field - use reference URL instead
 ```
 
 ### Parameter Documentation Template

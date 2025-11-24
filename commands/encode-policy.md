@@ -96,17 +96,18 @@ Invoke @complete:country-models:document-collector agent to gather official $ARG
 - Seasonal/temporal rules if applicable
 - ✅ All critical PDFs extracted and integrated (if applicable)
 
-## Phase 4: Parallel Development (SIMULTANEOUS)
-After documentation is ready, invoke BOTH agents IN PARALLEL:
+## Phase 4: Development (Parallel on Same Branch)
 
-**@complete:country-models:test-creator (single invocation):**
+Run both agents IN PARALLEL - they work on different folders so no conflicts:
+
+**@complete:country-models:test-creator** → works in `tests/` folder:
 - Create comprehensive INTEGRATION tests from documentation
 - Create UNIT tests for each variable that will have a formula
 - Both test types created in ONE invocation
 - Use only existing PolicyEngine variables
 - Test realistic calculations based on documentation
 
-**@complete:country-models:rules-engineer (two-step process):**
+**@complete:country-models:rules-engineer** → works in `variables/` + `parameters/` folders:
 - **Implementation Approach:** [Pass the decision from Phase 0: "simplified" or "full"]
   - **If Simplified TANF:** Do NOT create state-specific gross income variables - use federal baseline (`tanf_gross_earned_income`, `tanf_gross_unearned_income`)
   - **If Full TANF:** Create complete state-specific income definitions as needed
@@ -117,26 +118,12 @@ After documentation is ready, invoke BOTH agents IN PARALLEL:
   - Zero hard-coded values
   - Complete implementations only
   - Follow simplified/full approach from Phase 0
-  - Document two-step process in commit messages
-
-**CRITICAL**: These must run simultaneously in separate conversations to maintain isolation. Neither can see the other's work.
 
 **Quality Requirements**:
 - rules-engineer: ZERO hard-coded values, parameters created before variables
 - test-creator: All tests (unit + integration) created together, based purely on documentation
 
-## Phase 5: Branch Integration
-Invoke @complete:country-models:integration-agent to:
-- Merge test and implementation branches
-- Fix basic integration issues (entity mismatches, naming)
-- Discard uv.lock changes (always)
-- Prepare unified codebase for validation
-
-**Note:** Test verification happens in Phase 6, not Phase 5. This phase just merges code and fixes basic conflicts.
-
-**Why Critical**: The next phases need to work on integrated code to catch real issues.
-
-## Phase 6: Pre-Push Validation
+## Phase 5: Pre-Push Validation
 Invoke @complete:country-models:pr-pusher agent to:
 - Ensure changelog entry exists
 - Run formatters (black, isort)
@@ -170,11 +157,9 @@ The following enhancements may be applied to ensure production quality:
 - **Production TANF**: Include based on specific requirements
 - **Full Production Deployment**: Include all enhancements
 
-## Phase 7: Parallel Validation (SIMULTANEOUS)
+## Phase 6: Validation
 
-**Run ALL validators IN PARALLEL for maximum efficiency:**
-
-### Invoke simultaneously:
+**Run validators to check implementation quality:**
 
 **@complete:country-models:implementation-validator:**
 - Check for hard-coded values in variables
@@ -183,25 +168,16 @@ The following enhancements may be applied to ensure production quality:
 - Assess test quality and coverage
 - Identify performance and vectorization issues
 
-**Choose ONE based on program type:**
-
-**For TANF/Benefit Programs → @complete:country-models:tanf-program-reviewer:**
+**For TANF/Benefit Programs, also run @complete:country-models:tanf-program-reviewer:**
 - Learn from PA TANF and OH OWF reference implementations first
 - Validate code formulas against regulations
 - Verify test coverage with manual calculations
 - Check parameter structure and references
 - Focus on: eligibility rules, income disregards, benefit formulas
 
-**For Other Programs → @complete:country-models:implementation-validator:**
-- Validate implementation against documentation
-- Check for compliance with PolicyEngine standards
-- Verify parameterization and test coverage
+**Quality Gate:** Review validator reports before proceeding
 
-**Output:** Each validator provides independent report
-**Time Savings:** ~50% reduction (parallel vs sequential validation)
-**Quality Gate:** Review all validator reports before proceeding
-
-## Phase 8: Local Testing & Fixes
+## Phase 7: Local Testing & Fixes
 **CRITICAL: ALWAYS invoke @complete:country-models:ci-fixer agent - do NOT manually fix issues**
 
 Invoke @complete:country-models:ci-fixer agent to:
@@ -216,10 +192,10 @@ Invoke @complete:country-models:ci-fixer agent to:
     - If implementation is wrong: fix the variable/parameter code
   - Re-run tests to verify fix
 - Iterate until ALL tests pass locally
-- **NEW: Reference Verification**
+- **Reference Verification**
   - Verify all parameters have reference metadata
   - Verify all variables have reference fields
-  - If all references embedded: Delete `working_references.md` with commit message "Clean up working references - all citations now in metadata"
+  - Keep `sources/` folder files for future reference
   - If references missing: Create todos for adding them
 - Run `make format` before committing fixes
 - Push final fixes to PR branch
@@ -227,18 +203,18 @@ Invoke @complete:country-models:ci-fixer agent to:
 **Success Metrics**:
 - All tests pass locally (green output)
 - All references embedded in code metadata
-- `working_references.md` deleted after embedding
+- `sources/` folder kept for future reference
 - Code properly formatted
 - Implementation complete and working
 - Clean commit history
 
-## Phase 9: Final Review & PR Ready
+## Phase 8: Final Summary
 
 After all tests pass and references are embedded:
-- Mark PR as ready for review (remove draft status)
 - Update PR description with final implementation status
 - Add summary of what was implemented
-- Tag appropriate reviewers if needed
+- Report completion to user
+- **Keep PR as draft** - user will mark ready when they choose
 - **WORKFLOW COMPLETE**
 
 ## Anti-Patterns This Workflow Prevents
@@ -292,41 +268,36 @@ Execute each phase sequentially and **STOP after each phase** to wait for user i
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-4. **Phase 4**: Parallel Development (Test + Implementation)
+4. **Phase 4**: Development (Test + Implementation)
    - Pass simplified/full decision to rules-engineer
+   - Run test-creator and rules-engineer in parallel (different folders)
+   - Report results
+   - **STOP - Wait for user to say "continue" or provide adjustments**
+
+5. **Phase 5**: Pre-Push Validation
    - Complete the phase
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-5. **Phase 5**: Branch Integration
+6. **Phase 6**: Validation
+   - Run validators
+   - Report results
+   - **STOP - Wait for user to say "continue" or provide adjustments**
+
+7. **Phase 7**: Local Testing & Fixes (Including Reference Verification)
    - Complete the phase
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-6. **Phase 6**: Pre-Push Validation
-   - Complete the phase
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
-
-7. **Phase 7**: Parallel Validation (All Validators Simultaneously)
-   - Complete the phase
-   - Report results from all validators
-   - **STOP - Wait for user to say "continue" or provide adjustments**
-
-8. **Phase 8**: Local Testing & Fixes (Including Reference Verification)
-   - Complete the phase
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
-
-9. **Phase 9**: Final Review & PR Ready
-   - Complete the phase
-   - Report final results
+8. **Phase 8**: Final Summary
+   - Update PR description
+   - Report final results (keep PR as draft)
    - **WORKFLOW COMPLETE**
 
 **CRITICAL RULES**:
 - Do NOT proceed to the next phase until user explicitly says to continue
 - After each phase, summarize what was accomplished
 - If user provides adjustments, incorporate them before continuing
-- All 9 phases are REQUIRED - pausing doesn't mean skipping
+- All 8 phases are REQUIRED - pausing doesn't mean skipping
 
 If any agent fails, report the failure but DO NOT attempt to fix it yourself. Wait for user instructions.

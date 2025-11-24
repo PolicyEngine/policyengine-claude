@@ -146,9 +146,10 @@ if [ "$ISSUE_ACTION" == "created_new" ]; then
   # Create integration branch
   git checkout -b integration/<program>-<date>
 
-  # Create initial commit (small placeholder file)
-  echo "# <State> <Program> Implementation" > .implementation_<program>.md
-  git add .implementation_<program>.md
+  # Create initial commit (small placeholder file in sources folder)
+  mkdir -p sources
+  echo "# <State> <Program> Implementation" > sources/implementation_<program>.md
+  git add sources/implementation_<program>.md
   git commit -m "Initial commit for <State> <Program> implementation
 
   Starting implementation of <State> <Program>.

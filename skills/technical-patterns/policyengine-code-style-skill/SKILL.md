@@ -287,6 +287,58 @@ def formula(person, period, parameters):
 
 ---
 
+## Pattern 7: Minimal Comments
+
+### Code Should Be Self-Documenting
+
+**Variable names and structure should explain the code - not comments.**
+
+### ❌ Bad - Verbose explanatory comments
+
+```python
+def formula(spm_unit, period, parameters):
+    # Wisconsin disregards all earned income of dependent children (< 18)
+    # Calculate earned income for adults only
+    is_adult = spm_unit.members("age", period.this_year) >= 18  # Hard-coded!
+    adult_earned = spm_unit.sum(
+        spm_unit.members("tanf_gross_earned_income", period) * is_adult
+    )
+
+    # All unearned income is counted (including children's)
+    gross_unearned = add(spm_unit, period, ["tanf_gross_unearned_income"])
+
+    # NOTE: Wisconsin disregards many additional income sources that
+    # are not separately tracked in PolicyEngine (educational aid, etc.)
+    return max_(total_income - disregards, 0)
+```
+
+### ✅ Good - Clean self-documenting code
+
+```python
+def formula(spm_unit, period, parameters):
+    p = parameters(period).gov.states.wi.dcf.tanf.income
+
+    is_adult = spm_unit.members("age", period.this_year) >= p.adult_age_threshold
+    adult_earned = spm_unit.sum(
+        spm_unit.members("tanf_gross_earned_income", period) * is_adult
+    )
+    gross_unearned = add(spm_unit, period, ["tanf_gross_unearned_income"])
+    child_support = add(spm_unit, period, ["child_support_received"])
+
+    return max_(adult_earned + gross_unearned - child_support, 0)
+```
+
+### Comment Rules
+
+1. **NO comments explaining what code does** - variable names should be clear
+2. **OK: Brief NOTE about PolicyEngine limitations** (one line):
+   ```python
+   # NOTE: Time limit cannot be tracked in PolicyEngine
+   ```
+3. **NO multi-line explanations** of what the code calculates
+
+---
+
 ## Quick Checklist
 
 Before finalizing code:
@@ -298,6 +350,7 @@ Before finalizing code:
 - [ ] Direct parameter access (`p.amount` not `amount = p.amount`)
 - [ ] Direct returns when possible
 - [ ] Combined boolean logic when possible
+- [ ] Minimal comments (code should be self-documenting)
 
 ---
 

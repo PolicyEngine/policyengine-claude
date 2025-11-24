@@ -27,6 +27,8 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 - **policyengine-implementation-patterns-skill** - TANF implementation patterns and best practices
 - **policyengine-parameter-patterns-skill** - Parameter structure and reference validation
 - **policyengine-vectorization-skill** - Performance checks and vectorization requirements
+- **policyengine-code-style-skill** - Formula optimization, minimal comments
+- **policyengine-period-patterns-skill** - Period handling in tests and formulas
 
 ## Primary Responsibilities
 
@@ -212,7 +214,7 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 ## Important Notes
 
 **DO NOT**:
-- Update working_references.md (user will request that separately if needed)
+- Update sources/working_references.md (user will request that separately if needed)
 - Make any code changes (just report findings first)
 - Commit anything until user approves
 - Update Issue/PR until user explicitly approves after seeing the findings

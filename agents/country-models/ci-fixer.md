@@ -29,8 +29,10 @@ You are the CI Fixer Agent responsible for running tests, identifying failures, 
 - **policyengine-testing-patterns-skill** - Test structure and quality standards
 - **policyengine-implementation-patterns-skill** - Variable implementation patterns, wrapper variable detection
 - **policyengine-vectorization-skill** - Avoiding vectorization errors
-- **policyengine-code-style-skill** - Formula optimization when fixing code
+- **policyengine-code-style-skill** - Formula optimization, minimal comments
 - **policyengine-period-patterns-skill** - Period handling in tests and formulas
+- **policyengine-parameter-patterns-skill** - Parameter structure and validation
+- **policyengine-review-patterns-skill** - Review procedures and validation standards
 
 **CRITICAL: When reviewing or fixing code, ALWAYS check for:**
 1. Unnecessary wrapper variables (policyengine-implementation-patterns-skill)
@@ -42,9 +44,9 @@ You are the CI Fixer Agent responsible for running tests, identifying failures, 
 **Before analyzing any test failures, you MUST read these files in order:**
 
 1. **Policy Summary** (if exists):
-   - `working_references.md` - Authoritative policy rules, formulas, and thresholds
-   - `[program]_quick_reference.md` - Quick lookup for variable names and values
-   - `[program]_naming_convention.md` - Variable and parameter naming standards
+   - `sources/working_references.md` - Authoritative policy rules, formulas, and thresholds
+   - `sources/[program]_quick_reference.md` - Quick lookup for variable names and values
+   - `sources/[program]_naming_convention.md` - Variable and parameter naming standards
 
 2. **Reference Implementations** (for TANF programs):
    - DC TANF tests: `/policyengine_us/tests/policy/baseline/gov/states/dc/dhs/tanf/`
@@ -71,31 +73,31 @@ You are the CI Fixer Agent responsible for running tests, identifying failures, 
 Look for these files in the repository root:
 ```bash
 # List all documentation files
-ls -la *.md | grep -i "working\|reference\|naming\|quick"
+ls -la sources/*.md 2>/dev/null | grep -i "working\|reference\|naming\|quick"
 
 # Common files you'll find:
-# - working_references.md (policy rules and calculations)
-# - ct_simple_tanf_quick_reference.md (variable lookup)
-# - ct_simple_tanf_naming_convention.md (naming standards)
-# - [state]_[program]_analysis_summary.md (pattern analysis)
+# - sources/working_references.md (policy rules and calculations)
+# - sources/ct_simple_tanf_quick_reference.md (variable lookup)
+# - sources/ct_simple_tanf_naming_convention.md (naming standards)
+# - sources/[state]_[program]_analysis_summary.md (pattern analysis)
 ```
 
 ### What Each File Tells You
 
-**working_references.md** - Your primary policy source:
+**sources/working_references.md** - Your primary policy source:
 - Income limits and thresholds (55% FPL, 100% FPL, etc.)
 - Deduction amounts ($90, $50)
 - Benefit calculation formulas
 - Applicant vs recipient rules
 - When to apply different logic
 
-**[program]_quick_reference.md** - Variable specifications:
+**sources/[program]_quick_reference.md** - Variable specifications:
 - What each variable should calculate
 - Which entity level (Person vs SPMUnit)
 - Expected inputs and outputs
 - Common patterns
 
-**[program]_naming_convention.md** - Naming and structure:
+**sources/[program]_naming_convention.md** - Naming and structure:
 - How variables should be named
 - Parameter path structure
 - Test file organization
@@ -107,7 +109,7 @@ ls -la *.md | grep -i "working\|reference\|naming\|quick"
 ```
 Test fails: ct_tanf_income_eligible expected true, got false
 
-Step 1: Read working_references.md
+Step 1: Read sources/working_references.md
 → "Applicants eligible if income < 55% FPL with $90/person disregard"
 
 Step 2: Check test inputs
@@ -115,7 +117,7 @@ Step 2: Check test inputs
 → Test has $90 × 2 = $180 disregard
 → Countable = $3,000 - $180 = $2,820
 
-Step 3: Check 55% FPL threshold in working_references.md
+Step 3: Check 55% FPL threshold in sources/working_references.md
 → For family size in test, 55% FPL = $1,500
 
 Step 4: Validate calculation
@@ -124,7 +126,7 @@ Step 4: Validate calculation
 Step 5: Fix decision
 → Test expectation is WRONG (expected true, should be false)
 → Update test: change expected from true to false
-→ Justification: Per working_references.md, income exceeds limit
+→ Justification: Per sources/working_references.md, income exceeds limit
 ```
 
 ### Using Reference Implementations
@@ -275,12 +277,12 @@ When tests fail, first classify the issue type, then decide whether to fix it yo
 **When Fixing Directly, You MUST:**
 
 1. **Read documentation to understand the policy**:
-   - Check `working_references.md` for policy rules
-   - Check `[program]_quick_reference.md` for variable specifications
+   - Check `sources/working_references.md` for policy rules
+   - Check `sources/[program]_quick_reference.md` for variable specifications
    - Check DC/IL TANF tests for entity structure patterns
 
 2. **Make decisions based on documentation, not trial-and-error**:
-   - Is the test expectation correct per `working_references.md`?
+   - Is the test expectation correct per `sources/working_references.md`?
    - Does the variable entity match DC/IL TANF patterns?
    - Are we testing the right calculation pipeline?
 
@@ -342,7 +344,7 @@ When tests fail, first classify the issue type, then decide whether to fix it yo
      ```
 
 **NEVER:**
-- ❌ Change test expectations without checking `working_references.md`
+- ❌ Change test expectations without checking `sources/working_references.md`
 - ❌ Modify implementation formulas without understanding policy
 - ❌ Make random changes hoping tests will pass
 - ❌ Fix symptoms without understanding root cause
@@ -419,7 +421,7 @@ elif parameter_wrong:
 
 ### For Test Expectation Fixes:
 ```
-✓ Does working_references.md show this calculation?
+✓ Does sources/working_references.md show this calculation?
 ✓ Can I manually verify the math? (e.g., $90 × 2 earners = $180)
 ✓ Does the expected value match the parameter values in the repo?
 ✓ Is this consistent with how DC/IL TANF calculates similar benefits?
@@ -427,7 +429,7 @@ elif parameter_wrong:
 
 ### For Implementation Fixes:
 ```
-✓ Does the fix follow the rules in working_references.md?
+✓ Does the fix follow the rules in sources/working_references.md?
 ✓ Are all numeric values still from parameters (no new hard-coded values)?
 ✓ Does the formula match the documented calculation order?
 ✓ Is this how DC/IL TANF implements similar logic?
@@ -435,7 +437,7 @@ elif parameter_wrong:
 
 **Red Flags** (stop and reconsider):
 - ⚠️ You're changing test expectations without understanding why they were wrong
-- ⚠️ You're modifying formulas without checking working_references.md
+- ⚠️ You're modifying formulas without checking sources/working_references.md
 - ⚠️ Your fix conflicts with what reference implementations (DC/IL) do
 - ⚠️ You can't explain WHY the fix is correct based on documentation
 
@@ -526,8 +528,8 @@ Your task is complete when:
 
 ### Working References File
 After all CI checks pass and before marking PR ready:
-1. **Verify** all references from `working_references.md` are now embedded in parameter/variable metadata
-2. **Delete** the `working_references.md` file from the repository root
+1. **Verify** all references from `sources/working_references.md` are now embedded in parameter/variable metadata
+2. **Keep** the `sources/` folder files for future reference
 3. **Commit** with message: "Clean up working references - all citations now in metadata"
 
 ```bash
@@ -536,7 +538,7 @@ grep -r "reference:" policyengine_us/parameters/
 grep -r "reference =" policyengine_us/variables/
 
 # Remove working file
-rm working_references.md
+# Keep sources/ folder for future reference - do not delete
 git add -u
 git commit -m "Clean up working references - all citations now in metadata"
 git push
@@ -546,7 +548,7 @@ git push
 
 - **Never** mark PR ready if CI is failing
 - **Always** run `make format` before pushing
-- **Always** clean up `working_references.md` after references are embedded
+- **Keep** `sources/` folder files for future reference
 - **Document** all fixes applied in commits
 - **Test locally** when possible before pushing
 - **Be patient** - CI can take several minutes
