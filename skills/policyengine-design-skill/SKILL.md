@@ -120,7 +120,7 @@ def format_fig(fig):
     # Add PolicyEngine logo (bottom right)
     fig.add_layout_image(
         dict(
-            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
             xref="paper",
             yref="paper",
             x=1.0,
@@ -182,7 +182,7 @@ fig.update_layout(
 **Logo positioning:** x=0.95, y=-0.2 avoids cutoff:
 ```python
 images=[{
-    "source": "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+    "source": "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
     "xref": "paper", "yref": "paper",
     "x": 0.95,  # Not 1.0 - prevents cutoff
     "y": -0.2,
@@ -298,18 +298,19 @@ cat salt-amt-calculator/.streamlit/config.toml  # Other calculators
 
 ### Logo Usage
 
-**Logo URLs:**
+**Logo URLs (app-v2 - current):**
 
 ```python
-# Blue logo (for light backgrounds)
-LOGO_BLUE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png"
+# Teal logo (for light backgrounds) - PREFERRED
+LOGO_TEAL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png"
+LOGO_TEAL_SQUARE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal-square.png"
 
 # White logo (for dark backgrounds)
-LOGO_WHITE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.png"
+LOGO_WHITE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.png"
 
 # SVG versions (scalable)
-LOGO_BLUE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.svg"
-LOGO_WHITE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.svg"
+LOGO_TEAL_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.svg"
+LOGO_WHITE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.svg"
 ```
 
 **Logo placement in charts:**
@@ -319,7 +320,11 @@ LOGO_WHITE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-ap
 
 **Current logos:**
 ```bash
-ls policyengine-app/src/images/logos/policyengine/
+ls policyengine-app-v2/app/public/assets/logos/policyengine/
+# teal.png, teal.svg (wide)
+# teal-square.png, teal-square.svg (square)
+# white.png, white.svg (wide)
+# white-square.svg (square)
 ```
 
 ### Complete Example: Branded Chart
@@ -370,7 +375,7 @@ fig.update_layout(
 # Add logo
 fig.add_layout_image(
     dict(
-        source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+        source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
         xref="paper",
         yref="paper",
         x=1.0,
@@ -554,7 +559,7 @@ def format_fig(fig: go.Figure) -> go.Figure:
     # Logo
     fig.add_layout_image(
         dict(
-            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
             xref="paper",
             yref="paper",
             x=1.0,
@@ -868,7 +873,7 @@ policyengine-app/src/images/logos/policyengine/
 **Raw URLs for direct use:**
 ```python
 # Use these URLs in code
-LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png"
+LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png"
 ```
 
 ### Font Files
@@ -938,10 +943,10 @@ WHITE = "#FFFFFF"
 
 | Background | Format | URL |
 |------------|--------|-----|
-| Light | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png |
-| Light | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.svg |
-| Dark | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.png |
-| Dark | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.svg |
+| Light | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png |
+| Light | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.svg |
+| Dark | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.png |
+| Dark | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.svg |
 
 ## Related Skills
 
