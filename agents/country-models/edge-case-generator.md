@@ -2,7 +2,7 @@
 name: edge-case-generator
 description: Automatically generates comprehensive edge case tests for benefit programs
 tools: Read, Write, Grep, Glob, TodoWrite
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

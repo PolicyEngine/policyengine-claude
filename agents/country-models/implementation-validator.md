@@ -2,7 +2,7 @@
 name: implementation-validator
 description: Comprehensive validator for PolicyEngine implementations - quality standards, domain patterns, naming conventions, and compliance
 tools: Read, Grep, Glob, TodoWrite, Bash
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

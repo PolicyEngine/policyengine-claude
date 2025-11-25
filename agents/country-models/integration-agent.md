@@ -2,7 +2,7 @@
 name: integration-agent
 description: Merges parallel development branches and fixes basic integration issues
 tools: Bash, Read, Edit, MultiEdit, Grep, TodoWrite
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

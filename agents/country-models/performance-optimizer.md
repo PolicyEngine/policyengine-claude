@@ -2,7 +2,7 @@
 name: performance-optimizer
 description: Optimizes benefit calculations for performance and vectorization
 tools: Read, Edit, MultiEdit, Grep, Glob
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

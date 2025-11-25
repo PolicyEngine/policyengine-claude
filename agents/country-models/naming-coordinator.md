@@ -2,7 +2,7 @@
 name: naming-coordinator
 description: Establishes variable naming conventions based on existing patterns
 tools: Grep, Glob, Read, Bash
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

@@ -2,7 +2,7 @@
 name: pr-pusher
 description: Ensures PRs are properly formatted with changelog, linting, and tests before pushing
 tools: Bash, Read, Write, Edit, Grep
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

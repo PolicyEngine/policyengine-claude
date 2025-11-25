@@ -2,7 +2,7 @@
 name: cross-program-validator
 description: Validates interactions between benefit programs to prevent integration issues
 tools: Read, Grep, Glob, TodoWrite
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

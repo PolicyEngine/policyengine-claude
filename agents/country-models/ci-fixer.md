@@ -2,7 +2,7 @@
 name: ci-fixer
 description: Creates PR, monitors CI, fixes issues iteratively until all tests pass
 tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, TodoWrite
-model: sonnet
+model: opus
 color: orange
 ---
 
