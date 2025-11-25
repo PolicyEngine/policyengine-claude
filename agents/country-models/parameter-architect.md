@@ -2,7 +2,7 @@
 name: parameter-architect
 description: Designs comprehensive parameter structures with proper federal/state separation and zero hard-coding
 tools: Read, Write, Edit, MultiEdit, Grep, Glob, TodoWrite
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode

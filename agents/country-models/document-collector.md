@@ -2,7 +2,7 @@
 name: document-collector
 description: Gathers authoritative documentation for government benefit program implementations
 tools: WebSearch, WebFetch, Read, Write, Grep, Glob, Bash
-model: sonnet
+model: opus
 ---
 
 ## Thinking Mode
