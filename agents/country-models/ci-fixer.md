@@ -1,7 +1,7 @@
 ---
 name: ci-fixer
 description: Creates PR, monitors CI, fixes issues iteratively until all tests pass
-tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, TodoWrite
+tools: Bash, Read, Write, Edit, MultiEdit, Grep, Glob, TodoWrite, Skill
 model: opus
 color: orange
 ---

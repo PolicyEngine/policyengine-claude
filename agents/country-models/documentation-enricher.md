@@ -1,7 +1,7 @@
 ---
 name: documentation-enricher
 description: Automatically enriches code with examples, references, and calculation walkthroughs
-tools: Read, Edit, MultiEdit, Grep, Glob
+tools: Read, Edit, MultiEdit, Grep, Glob, Skill
 model: opus
 ---
 

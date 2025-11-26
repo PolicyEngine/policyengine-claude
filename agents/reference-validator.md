@@ -1,7 +1,7 @@
 ---
 name: reference-validator
 description: Validates that all parameters and variables have proper references that actually corroborate the values
-tools: Read, Grep, Glob, WebFetch, TodoWrite
+tools: Read, Grep, Glob, WebFetch, TodoWrite, Skill
 model: sonnet
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: tanf-program-reviewer
 description: Reviews state TANF/benefit program implementations by learning from PA TANF and OH OWF examples, then validating code, regulations, tests, and documentation
-tools: Bash, Read, Grep, Glob, WebFetch, TodoWrite
+tools: Bash, Read, Grep, Glob, WebFetch, TodoWrite, Skill
 model: opus
 ---
 

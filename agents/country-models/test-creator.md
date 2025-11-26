@@ -1,7 +1,7 @@
 ---
 name: test-creator
 description: Creates comprehensive integration tests for government benefit programs ensuring realistic calculations
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, TodoWrite
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, TodoWrite, Skill
 model: opus
 ---
 
