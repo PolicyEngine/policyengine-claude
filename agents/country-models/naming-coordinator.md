@@ -1,7 +1,7 @@
 ---
 name: naming-coordinator
 description: Establishes variable naming conventions based on existing patterns
-tools: Grep, Glob, Read, Bash
+tools: Grep, Glob, Read, Bash, Skill
 model: opus
 ---
 

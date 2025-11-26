@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2025-11-25
+
+### Fixed
+- Added `Skill` tool to 16 agents that reference skills but couldn't invoke them:
+  - **Country-models agents (15):** rules-engineer, tanf-program-reviewer, ci-fixer, test-creator, parameter-architect, implementation-validator, edge-case-generator, documentation-enricher, cross-program-validator, document-collector, performance-optimizer, naming-coordinator, integration-agent, issue-manager, pr-pusher
+  - **Other agents (1):** reference-validator
+- Agents can now dynamically load PolicyEngine skills (policyengine-implementation-patterns-skill, policyengine-parameter-patterns-skill, etc.) instead of just referencing them in documentation
+
+## [3.1.0] - 2025-11-25
+
+### Changed
+- Upgraded all 15 country-models agents from `model: sonnet` to `model: opus` (Opus 4.5)
+
+## [3.0.1] - 2025-11-25
+
+### Fixed
+- Fix duplicate agent registration by removing explicit `agents` arrays from country-models and complete plugins
+- Claude Code auto-discovers agents from the `agents/` directory, so listing them explicitly caused duplicates
+
+## [3.0.0] - 2025-11-25
+
+### Changed
+- Simplified encode-policy workflow from 9 phases to 8 (removed branch merging phase)
+- All agents now work on same branch (no git worktrees needed)
+- Keep PR as draft (don't auto-mark ready)
+- Working files now saved to `sources/` folder for reference
+- Renamed `document_collector.md` to `document-collector.md` for consistent naming
+- Added shared/ agents and workflow.md to marketplace.json
+
+### Added
+- Added all 7 technical pattern skills to ci-fixer and tanf-program-reviewer agents
+- Added minimal comments guidance to rules-engineer and code-style-skill
+
+### Removed
+- Removed `documentation` field from templates (use `reference` URL instead)
+
 ## [2.0.0] - 2025-10-18
 
 ### Added

@@ -1,7 +1,7 @@
 ---
 name: parameter-architect
 description: Designs comprehensive parameter structures with proper federal/state separation and zero hard-coding
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, TodoWrite
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, TodoWrite, Skill
 model: opus
 ---
 

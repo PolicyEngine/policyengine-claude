@@ -1,7 +1,7 @@
 ---
 name: performance-optimizer
 description: Optimizes benefit calculations for performance and vectorization
-tools: Read, Edit, MultiEdit, Grep, Glob
+tools: Read, Edit, MultiEdit, Grep, Glob, Skill
 model: opus
 ---
 
