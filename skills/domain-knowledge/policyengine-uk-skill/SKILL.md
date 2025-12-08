@@ -650,6 +650,81 @@ See `examples/` for complete working examples:
 - `family_with_children.yaml` - Family with dependents
 - `universal_credit_sweep.yaml` - Analyzing UC with axes
 
+## UK Legislation References
+
+**All UK parameters MUST have legislation.gov.uk references** with exact section links.
+
+### Finding Legislation References
+
+UK legislation is consolidated at [legislation.gov.uk](https://www.legislation.gov.uk/). Key sources:
+
+**Primary legislation (Acts of Parliament):**
+- Welfare Reform Act 2012 - Universal Credit
+- Social Security Contributions and Benefits Act 1992
+- Income Tax Act 2007
+- Taxation of Chargeable Gains Act 1992
+
+**Secondary legislation (Statutory Instruments):**
+- Universal Credit Regulations 2013 (SI 2013/376)
+- The Social Security (Claims and Payments) Regulations 1987
+- Income Tax (Earnings and Pensions) Act 2003
+
+### Reference Format for UK Parameters
+
+```yaml
+metadata:
+  reference:
+    - title: Universal Credit Regulations 2013, Schedule 4, Table 3
+      href: https://www.legislation.gov.uk/uksi/2013/376/schedule/4
+    - title: Welfare Reform Act 2012, Section 8
+      href: https://www.legislation.gov.uk/ukpga/2012/5/section/8
+```
+
+### Universal Credit Legislation References
+
+Universal Credit parameters are primarily in:
+- **The Universal Credit Regulations 2013 (SI 2013/376)**
+  - Schedule 1: Capital limits and disregards
+  - Schedule 4: Standard allowances and amounts
+  - Schedule 5: Work capability amounts
+  - Regulation 22: Work allowance
+
+**Example - Standard Allowance:**
+```yaml
+# parameters/gov/dwp/universal_credit/standard_allowance/single/under_25.yaml
+description: Standard allowance for single claimants under 25.
+values:
+  2024-04-01: 311.68
+metadata:
+  unit: currency-GBP
+  period: month
+  label: UC standard allowance (single, under 25)
+  reference:
+    - title: Universal Credit Regulations 2013, Schedule 4, Table 3
+      href: https://www.legislation.gov.uk/uksi/2013/376/schedule/4
+```
+
+### Uprating Orders
+
+UK benefits are uprated annually via Statutory Instruments. Current rates are in:
+- **The Social Security Benefits Up-rating Order** (annual)
+- **The Universal Credit (Transitional Provisions) (Amendment) Regulations** (as needed)
+
+When updating parameter values, reference the specific uprating order:
+```yaml
+reference:
+  - title: The Social Security Benefits Up-rating Order 2024, Schedule, Part II
+    href: https://www.legislation.gov.uk/uksi/2024/217/schedule/part/II
+```
+
+### Finding the Right Section
+
+1. Go to legislation.gov.uk
+2. Search for the regulation (e.g., "Universal Credit Regulations 2013")
+3. Navigate to the relevant section/schedule
+4. Use the URL which includes the section (e.g., `/schedule/4` or `/section/8`)
+5. Include section details in the title for clarity
+
 ## Key Differences from US System
 
 1. **Benefit Units:** UK uses `benunits` (single/couple + children) instead of US multiple entity types
