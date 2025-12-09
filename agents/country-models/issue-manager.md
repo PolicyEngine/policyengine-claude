@@ -94,12 +94,6 @@ Implementation tracking issue for <State> <Program>.
 ### Test Files
 <!-- List of test files created -->
 
-## Branches
-- Documentation: \`master\`
-- Tests: \`test-<program>-<date>\`
-- Implementation: \`impl-<program>-<date>\`
-- Integration: \`integration-<program>-<date>\`
-
 ## Related PRs
 <!-- PRs will be linked here -->
 
@@ -143,28 +137,44 @@ If a new issue was created, immediately create a draft PR:
 ```bash
 # Only if we created a new issue
 if [ "$ISSUE_ACTION" == "created_new" ]; then
-  # Create integration branch
-  git checkout -b integration/<program>-<date>
+  # ============================================
+  # FIX 1: Simple branch name (no prefix, no date)
+  # ============================================
+  # BEFORE: git checkout -b integration/<program>-<date>
+  # AFTER:
+  git checkout -b <state-code>-<program>
+  # Example: or-tanf, ky-tanf, az-liheap
 
-  # Create initial commit (small placeholder file in sources folder)
-  mkdir -p sources
-  echo "# <State> <Program> Implementation" > sources/implementation_<program>.md
-  git add sources/implementation_<program>.md
-  git commit -m "Initial commit for <State> <Program> implementation
+  # ============================================
+  # FIX 2: Empty commit instead of placeholder file
+  # ============================================
+  # BEFORE:
+  # mkdir -p sources
+  # echo "# <State> <Program> Implementation" > sources/implementation_<program>.md
+  # git add sources/implementation_<program>.md
+  # git commit -m "Initial commit..."
 
-  Starting implementation of <State> <Program>.
-  Documentation and parallel development will follow."
+  # AFTER: Use --allow-empty to create commit without files
+  git commit --allow-empty -m "Initial commit for <State> <Program> implementation
 
-  # Push branch
-  git push -u origin integration/<program>-<date>
+Starting implementation of <State> <Program>.
+Documentation and parallel development will follow."
 
-  # Create draft PR linked to issue
+  # Push to origin (user's fork)
+  git push -u origin <state-code>-<program>
+
+  # ============================================
+  # FIX 3: Explicitly target upstream repo
+  # ============================================
+  # BEFORE: gh pr create --draft --title "..." --base master
+  # AFTER: Add --repo to explicitly create PR in upstream
   gh pr create --draft \
-    --title "Implement <State> <Program>" \
+    --repo PolicyEngine/policyengine-us \
+    --title "Add <State> <Program> Program" \
     --body "## Summary
 Work in progress implementation of <State> <Program>.
 
-Fixes #<issue-number>
+Closes #<issue-number>
 
 ## Status
 - [ ] Documentation collected
@@ -172,11 +182,6 @@ Fixes #<issue-number>
 - [ ] Variables implemented
 - [ ] Tests written
 - [ ] CI passing
-
-## Branches
-This PR will integrate:
-- \`test-<program>-<date>\`: Test suite (pending)
-- \`impl-<program>-<date>\`: Implementation (pending)
 
 ---
 *This is a draft PR created automatically. Implementation work is in progress.*" \
@@ -198,7 +203,7 @@ ISSUE_URL: https://github.com/PolicyEngine/policyengine-us/issues/<number>
 ISSUE_ACTION: <"found_existing" | "created_new">
 PR_NUMBER: <number-if-created>
 PR_URL: <url-if-created>
-INTEGRATION_BRANCH: integration/<program>-<date>
+BRANCH: <state-code>-<program>
 ```
 
 ## Usage by Other Agents
@@ -225,8 +230,8 @@ gh issue view <issue-number>
 
 ### CI Fixer
 ```bash
-# Link PR to issue
-gh pr create --body "Fixes #<issue-number>"
+# Link PR to issue (use --repo for cross-fork PR)
+gh pr create --repo PolicyEngine/policyengine-us --body "Fixes #<issue-number>"
 ```
 
 ## Search Patterns
@@ -251,3 +256,6 @@ Common search variations to try:
 ✅ Returns consistent format for other agents
 ✅ Avoids duplicate issues
 ✅ Provides clear issue URL for reference
+✅ Uses simple branch names (`<state-code>-<program>`)
+✅ Creates PR from fork to upstream explicitly
+✅ No unnecessary placeholder files

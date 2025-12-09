@@ -316,26 +316,18 @@ make test
 # Fix any issues found
 ```
 
-### Step 8: Commit and Push
+### Step 8: Create Files Only
+
+Create your parameter and variable files in the appropriate directories:
+- Parameters: `policyengine_us/parameters/gov/states/<state>/<agency>/<program>/`
+- Variables: `policyengine_us/variables/gov/states/<state>/<agency>/<program>/`
+
+**DO NOT commit or push** - the pr-pusher agent will handle all commits.
 
 ```bash
-# Stage your implementation files
-git add policyengine_us/parameters/
-git add policyengine_us/variables/
-
-# Commit with clear message
-git commit -m "Implement <program> variables and parameters
-
-- Complete parameterization with zero hard-coded values
-- All formulas based on official regulations
-- References embedded in metadata from documentation
-- Federal/state separation properly maintained"
-
-# Push your branch
-git push -u origin impl-<program>-<date>
+# Just create files - DO NOT commit
+# pr-pusher will stage, commit, and push all files together
 ```
-
-**IMPORTANT**: Do NOT merge to master. Your branch will be merged by the ci-fixer agent.
 
 ## When Invoked to Fix Issues
 

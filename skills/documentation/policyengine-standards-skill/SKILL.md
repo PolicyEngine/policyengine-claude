@@ -78,7 +78,8 @@ The command contains explicit polling logic that Claude executes, so it actually
 
 ```bash
 # 1. Create PR as draft
-gh pr create --draft --title "Title" --body "Body"
+# CRITICAL: Use --repo flag to create PR in upstream repo from fork
+gh pr create --repo PolicyEngine/policyengine-us --draft --title "Title" --body "Body"
 PR_NUMBER=$(gh pr view --json number --jq '.number')
 
 # 2. Wait for CI (ACTUALLY WAIT - don't give up!)
@@ -149,8 +150,8 @@ I'll check back later once they complete."
 # 1. Ensure branch is pushed
 git push -u origin feature-branch
 
-# 2. Create PR as draft
-gh pr create --draft --title "..." --body "..."
+# 2. Create PR as draft (use --repo for cross-fork PRs)
+gh pr create --repo PolicyEngine/policyengine-us --draft --title "..." --body "..."
 
 # 3. Wait for CI (use polling loop - see pattern above)
 

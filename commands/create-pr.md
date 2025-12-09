@@ -102,7 +102,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ```bash
 # Create PR as draft
-gh pr create \
+# CRITICAL: Use --repo flag to create PR in upstream repo from fork
+# This creates cross-fork PR: your-fork:branch → PolicyEngine:master
+gh pr create --repo PolicyEngine/policyengine-us \
   --title "PR Title Here" \
   --body "$(cat <<'EOF'
 PR body here
