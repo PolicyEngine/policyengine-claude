@@ -47,8 +47,9 @@ This workflow adapts based on the type of program being implemented:
 
 Invoke @complete:country-models:issue-manager agent to:
 - Search for existing issue or create new one for $ARGUMENTS
-- Create draft PR immediately in PolicyEngine/policyengine-us repository (NOT personal fork)
-- Return issue number and PR URL for tracking
+- Create branch with simple name: `<state-code>-<program>` (e.g., `or-tanf`, `ky-tanf`)
+- Push to fork, then create draft PR to upstream using `--repo PolicyEngine/policyengine-us`
+- Return issue number, PR URL, and branch name for tracking
 
 ## Phase 2: Variable Naming Convention
 Invoke @complete:country-models:naming-coordinator agent to:
@@ -63,7 +64,7 @@ Invoke @complete:country-models:naming-coordinator agent to:
 
 **Phase 3A: Initial Document Gathering**
 
-Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation, save as `working_references.md` in the repository, and post to GitHub issue
+Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation, save as `sources/working_references.md`, and post to GitHub issue
 
 **After agent completes:**
 1. Check the agent's report for "📄 PDFs Requiring Extraction" section
@@ -98,7 +99,9 @@ Invoke @complete:country-models:document-collector agent to gather official $ARG
 
 ## Phase 4: Development (Parallel on Same Branch)
 
-Run both agents IN PARALLEL - they work on different folders so no conflicts:
+Run both agents IN PARALLEL on branch `<state-code>-<program>` (e.g., `or-tanf`) - they work on different folders so no conflicts.
+
+**IMPORTANT:** Both agents create files only - they do NOT commit. pr-pusher in Phase 5 handles all commits.
 
 **@complete:country-models:test-creator** → works in `tests/` folder:
 - Create comprehensive INTEGRATION tests from documentation
