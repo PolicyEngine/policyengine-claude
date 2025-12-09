@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.3] - 2025-12-09
+
+### Added
+- **Skill loading instructions** for all 13 country-models agents - agents now explicitly load required skills before starting work
+- **Balanced code comments** guidance in rules-engineer - regulation references, step numbers, non-obvious logic (aim for 2-4 comments per formula)
+- **State program naming** guidance in naming-coordinator - use state's actual program names (e.g., `nc_workfirst` not `nc_tanf`, `oh_owf` not `oh_tanf`)
+- **Derived values guidance** in document-collector and parameter-architect - store rates not dollar amounts when value is percentage of FPL/SMI, must have legal proof
+- **Variable reference format** in rules-engineer - PDF links must include `#page=XX`
+
+### Changed
+- **Unified commit strategy** - document-collector, test-creator, and rules-engineer now create files only; pr-pusher handles all commits
+- **Cross-fork PR workflow** - issue-manager, create-pr command, and policyengine-standards-skill now use `--repo PolicyEngine/policyengine-us` for cross-fork PRs
+- **Simple branch naming** - issue-manager now uses `<state-code>-<program>` (e.g., `or-tanf`) instead of `integration/<program>-<date>`
+- **Single folder storage** - document-collector now saves all documentation to `sources/working_references.md` only (removed dual storage)
+- **Reference format** in policyengine-parameter-patterns-skill - title must include full section path with all subsections, PDF links must include `#page=XX`
+
+### Fixed
+- encode-policy command now references correct folder path (`sources/working_references.md`) and branch naming convention
+- Clarified that unused `parameters` in formulas is OK if there's state-specific logic (not a sign of unnecessary wrapper)
+
 ## [3.1.2] - 2025-12-08
 
 ### Added

@@ -99,10 +99,38 @@ description: Indiana excludes this share of earned income from TANF calculations
 - ✅ Categories (priority groups, eligible expenses)
 - ✅ Current period rates and amounts
 
-**Critical:** Investigate if table values are formula-based:
-- Check for "X% of FPL" notations
-- Calculate backwards to find percentages
-- Check State Plans for formulas
+**CRITICAL: Store RATES, not derived dollar amounts!**
+
+Always check if a value is a percentage of another value:
+- Federal Poverty Level (FPL) - "185% of FPL"
+- State Median Income (SMI) - "60% of SMI"
+- Another program value - "50% of payment standard"
+
+**MUST have legal proof - don't guess based on math!**
+
+```yaml
+# ❌ WRONG - Storing dollar amount OR guessing it's a percentage:
+income_limit/amount.yaml:
+  values:
+    2024-01-01: 2_430  # Outdated when FPL changes!
+# Also wrong: "This looks like 185% of FPL" without legal citation
+
+# ✅ CORRECT - Storing rate WITH legal proof:
+income_limit/rate.yaml:
+  description: Oregon limits gross income to this share of the federal poverty level under the Temporary Assistance for Needy Families program.
+  values:
+    2024-01-01: 1.85  # 185% of FPL
+  metadata:
+    reference:
+      - title: OAR 461-155-0180(2)(a)  # Legal proof that it's 185% of FPL!
+        href: https://oregon.public.law/rules/oar_461-155-0180
+```
+
+**How to verify the rate:**
+- Find the legal code section that EXPLICITLY states "X% of FPL"
+- Quote the exact text: "gross income cannot exceed 185 percent of the federal poverty level"
+- If legal code only shows dollar amounts (no percentage), then store the dollar amount
+- **Never assume a percentage relationship without legal citation**
 
 ### Step 3: Create Parameter Files
 

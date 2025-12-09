@@ -190,21 +190,54 @@ label: California SNAP resource limit
 **Requirements:**
 1. At least one source (prefer two)
 2. Must contain the actual value
-3. Legal codes need subsections
-4. PDFs need page anchors
+3. **Title: Include FULL section path** (all subsections and sub-subsections)
+4. **PDF links: Add `#page=XX` at end**
 
+**Title Format - Include ALL subsection levels:**
+```yaml
+# ❌ BAD - Too generic:
+title: OAR 461-155  # Missing subsections!
+title: Section 5    # Which subsection?
+
+# ✅ GOOD - Full section path:
+title: OAR 461-155-0030(2)(a)(B)     # All levels included
+title: 7 CFR § 273.9(d)(6)(ii)(A)    # Federal regulation with all subsections
+title: Indiana Admin Code 12-14-2-3.5(b)(1)  # State admin code
+title: Oregon TANF Policy Manual Section 5.2.3.1, page 15  # Manual with subsection
+```
+
+**PDF Link Format - Always include page:**
+```yaml
+# ❌ BAD - No page number:
+href: https://state.gov/manual.pdf
+
+# ✅ GOOD - Page anchor included:
+href: https://state.gov/manual.pdf#page=14
+href: https://adminrules.idaho.gov/rules/current/16/160503.pdf#page=8
+```
+
+**Complete Examples:**
 ```yaml
 ✅ GOOD:
 reference:
-  - title: Idaho Admin Code 16.05.03.205(3)
-    href: https://adminrules.idaho.gov/rules/current/16/160503.pdf#page=14
-  - title: Idaho LIHEAP Guidelines, Section 3, page 8
-    href: https://healthandwelfare.idaho.gov/guidelines.pdf#page=8
+  - title: OAR 461-155-0030(2)(a)(B)
+    href: https://oregon.public.law/rules/oar_461-155-0030
+  - title: Oregon DHS TANF Policy Manual Section 4.3.2.1, page 23
+    href: https://oregon.gov/dhs/tanf-manual.pdf#page=23
+
+✅ GOOD:
+reference:
+  - title: 7 CFR § 273.9(d)(6)(ii)(A)
+    href: https://www.ecfr.gov/current/title-7/section-273.9#p-273.9(d)(6)(ii)(A)
+  - title: Indiana Admin Code 12-14-2-3.5(b)(1)
+    href: https://www.in.gov/dcs/files/tanf-manual.pdf#page=45
 
 ❌ BAD:
 reference:
-  - title: Federal LIHEAP regulations  # Too generic
-    href: https://www.acf.hhs.gov/ocs  # No specific section
+  - title: Federal LIHEAP regulations  # Too generic - no section!
+    href: https://www.acf.hhs.gov/ocs  # No specific page
+  - title: OAR 461-155  # Missing subsections (2)(a)(B)!
+    href: https://oregon.gov/manual.pdf  # Missing #page=XX
 ```
 
 ---

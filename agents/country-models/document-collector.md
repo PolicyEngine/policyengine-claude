@@ -133,6 +133,39 @@ Mark these clearly in your documentation:
    - Document special cases and exceptions
    - **Prioritize State Plans** - they often have details not in statutes
 
+5. **Identify Derived Values (CRITICAL)**
+
+   **Always check if a value is a PERCENTAGE of another value:**
+   - Federal Poverty Level (FPL) - e.g., "185% of FPL"
+   - State Median Income (SMI) - e.g., "60% of SMI"
+   - Another program value - e.g., "50% of payment standard"
+
+   **MUST have legal proof - don't guess!**
+   ```markdown
+   # ❌ BAD - Guessing it's a percentage:
+   Income limit: $2,430/month (this looks like ~185% of FPL?)
+
+   # ✅ GOOD - Citing the legal source that defines it as a percentage:
+   Income limit: 185% of Federal Poverty Level
+   Source: OAR 461-155-0180(2)(a) states "gross income cannot exceed 185 percent
+   of the federal poverty level"
+   ```
+
+   **Document with proof:**
+   ```markdown
+   ### Income Limit
+   - **Value**: 185% of FPL
+   - **Legal citation**: OAR 461-155-0180(2)(a)
+   - **Quote**: "gross income cannot exceed 185 percent of the federal poverty level"
+   - **Current dollar amount**: $2,430/month for family of 3 (2024)
+   - **Parameter**: Store as rate (1.85), not dollar amount
+   ```
+
+   **Why this matters:**
+   - Dollar amounts change when FPL/SMI updates
+   - Storing the rate ensures automatic updates
+   - **Must cite the legal section that defines the percentage relationship**
+
 ## Sources to Search
 
 ### Federal Programs
