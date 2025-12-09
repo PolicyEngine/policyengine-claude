@@ -334,6 +334,42 @@ pytest policyengine_us/tests/microsimulation/
 3. Performance maintained
 4. Code clarity improved
 
+### Large-Scale Refactoring (Renaming)
+
+**⚠️ CRITICAL: Variable/function renaming has high potential to break things**
+
+When reviewing PRs that rename variables or functions across the codebase:
+
+1. **Test Coverage Requirements**
+   - All existing tests must pass
+   - Run microsimulation tests if available
+   - Consider running notebooks mentioned in repo docs
+   - Check for implicit dependencies (string references, dynamic lookups)
+
+2. **Common Breakage Points**
+   - Variables referenced as strings (e.g., in reforms, API endpoints)
+   - Dynamic variable lookups via `entity(variable_name, period)`
+   - Parameter files that reference variable names
+   - Documentation/examples that hardcode variable names
+   - External tools/APIs that depend on variable naming
+
+3. **Validation Strategy**
+   ```bash
+   # Basic validation
+   pytest  # All unit tests
+
+   # If notebooks exist, run them
+   jupyter nbconvert --execute notebook.ipynb
+
+   # Check for string references to renamed variables
+   grep -r "old_variable_name" --include="*.py" --include="*.yaml"
+   ```
+
+4. **Approval Requirements**
+   - Even if tests pass, require maintainer review
+   - Look for usage in API/web app if variables are exposed
+   - Check if any variables are part of the public interface
+
 ---
 
 ## Quick Review Checklist
