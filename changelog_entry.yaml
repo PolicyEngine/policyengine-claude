@@ -1,0 +1,4 @@
+- bump: patch
+  changes:
+    changed:
+      - Add critical warning against mixing adds/subtracts with custom formulas in implementation patterns skill
