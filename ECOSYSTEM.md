@@ -179,6 +179,24 @@ All depend on: policyengine-core
 - OpenAPI spec generation
 - Auto-generated Python clients
 
+### policyengine-household-api
+**Repository:** PolicyEngine/policyengine-household-api
+**Purpose:** Specialized Flask API for household-level calculations
+**Status:** ✅ Current
+
+**Features:**
+- Runs `calculate` endpoint over household objects
+- Lightweight alternative to full policyengine-api
+- JSON responses with `status` and `message` fields
+- Docker Compose support for local development
+
+**Technology:**
+- Flask
+- Docker + Docker Compose
+- GitHub Actions for CI/CD
+
+**Note:** Does not support branched operations. Use policyengine-api for full policy analysis features.
+
 ### policyengine.py (Python Client)
 **Repository:** PolicyEngine/policyengine.py
 **Purpose:** Python client for programmatic API access
@@ -422,10 +440,11 @@ Analysis repos
 
 ## Complete Repository List
 
-### Core Infrastructure (5)
+### Core Infrastructure (6)
 - policyengine-core ⭐
 - policyengine-api ⭐
 - policyengine-api-v2 🚧
+- policyengine-household-api ⭐
 - policyengine-app ⭐
 - policyengine-app-v2 🚧
 
