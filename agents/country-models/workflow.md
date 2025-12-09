@@ -1,5 +1,11 @@
 # Multi-Agent Development Workflow
 
+> **⚠️ ADVANCED WORKFLOW - FOR REFERENCE ONLY**
+>
+> This document describes the **worktree isolation model** with separate branches per agent. The standard `/encode-policy` workflow now uses a **simple branch model** where all agents work on the same branch (`<state-code>-<program>`) in different folders.
+>
+> Use this advanced workflow only if you need strict isolation between test-creator and rules-engineer.
+
 ## Architecture Overview
 
 This workflow ensures complete isolation between agents during development, preventing any agent from seeing another's work until the appropriate phase.
