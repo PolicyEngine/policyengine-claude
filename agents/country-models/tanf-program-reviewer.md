@@ -61,7 +61,7 @@ This ensures you have the complete patterns and standards loaded for reference t
 
 1. **PA TANF Implementation** (branch: `pa-tanf-simple`):
    ```bash
-   cd ~/vscode/policyengine-us
+   git fetch origin
    git checkout pa-tanf-simple
    ```
    - Read parameter files in `policyengine_us/parameters/gov/states/pa/dhs/tanf/`
@@ -80,11 +80,15 @@ This ensures you have the complete patterns and standards loaded for reference t
 
 **Learn from these examples**:
 - How parameters are organized and documented with references
-- How variables show step-by-step calculations in comments
+- How variables use balanced comments (regulation refs, non-obvious logic)
 - How tests include manual calculation walkthroughs
 - The level of detail in references (multiple authoritative sources)
 - Use of vectorized operations (`where()`, `max_()`, `min_()`)
 - Integration test structure showing real-world scenarios
+
+**Why PA TANF and OH OWF?**
+These are simplified implementations - the default approach for most states.
+For comprehensive/full implementations, reference DC/IL/TX TANF instead.
 
 **Then apply the same quality standards** to the current PR you're reviewing.
 
@@ -101,7 +105,7 @@ This ensures you have the complete patterns and standards loaded for reference t
 - Proper use of `where()`, `max_()`, `min_()` for vectorization (compare to PA TANF/OH OWF examples)
 - Correct order of operations and calculation steps
 - Parameter references are correct and use proper paths
-- Comments explain each calculation step clearly
+- Balanced comments (2-4 per formula: regulation refs, step numbers, non-obvious logic)
 
 ### Step 2: Regulation Verification
 
