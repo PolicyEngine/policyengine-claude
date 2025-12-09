@@ -12,7 +12,7 @@ This command will:
 1. ✅ Create PR as draft
 2. ✅ Wait for CI checks to complete (actually wait, not give up)
 3. ✅ Mark as ready for review if CI passes
-4. ✅ Report failures with links if CI fails
+4. ✅ **Automatically trigger /fix-pr if CI fails** (new!)
 
 ## Step 1: Determine Current Branch and Changes
 
@@ -176,7 +176,7 @@ done
 
 **Important:** No timeout means we actually wait as long as needed. Population simulations can take 30+ minutes.
 
-## Step 6: Mark Ready for Review (If CI Passed)
+## Step 6: Mark Ready for Review (If CI Passed) or Auto-Fix (If CI Failed)
 
 ```bash
 if [ "$FAILED" -eq 0 ] && [ "$COMPLETED" -eq "$TOTAL" ]; then
@@ -191,18 +191,27 @@ if [ "$FAILED" -eq 0 ] && [ "$COMPLETED" -eq "$TOTAL" ]; then
   gh pr checks $PR_NUMBER
 else
   echo ""
-  echo "⚠️ PR remains as draft due to CI issues."
+  echo "❌ CI checks failed. PR remains as draft."
   echo "URL: $(gh pr view $PR_NUMBER --json url --jq '.url')"
   echo ""
-  echo "CI status:"
+  echo "Failed checks:"
   gh pr checks $PR_NUMBER
   echo ""
-  echo "To fix and retry:"
-  echo "1. Fix the failing checks"
-  echo "2. Push changes: git push"
-  echo "3. Run this command again to re-check CI"
+  echo "🔧 Automatically triggering /fix-pr to address CI failures..."
+  echo ""
 fi
 ```
+
+**If CI failed, automatically trigger fix-pr command:**
+
+After detecting CI failures, invoke the `/fix-pr` command to automatically attempt to fix the issues. This ensures the PR doesn't stay broken and saves user intervention.
+
+The `/fix-pr` command will:
+1. Analyze the CI failures
+2. Apply appropriate fixes (formatting, linting, test failures)
+3. Push the fixes
+4. Wait for CI to pass again
+5. Mark PR as ready once all checks pass
 
 
 ## Key Differences from Default Behavior
@@ -214,27 +223,34 @@ Claude: "I've created the PR. CI will take a while, I'll check back later..."
 User: Has to manually check CI and mark ready
 ```
 
-**New way (this command actually waits):**
+**New way (this command waits and auto-fixes):**
 ```
 Claude: "I've created the PR as draft. Now waiting for CI..."
 [Actually polls CI status every 15 seconds]
+
+Scenario A - CI passes:
 Claude: "CI passed! Marking as ready for review."
 [PR is ready, user doesn't have to do anything]
+
+Scenario B - CI fails:
+Claude: "CI failed. Automatically triggering /fix-pr..."
+[Analyzes failures, applies fixes, pushes changes]
+[Waits for CI again, marks ready when passes]
+[User doesn't have to do anything]
 ```
 
 ## Error Handling
 
 **If CI fails:**
-```bash
-echo "❌ CI checks failed. Here are the failures:"
-gh pr checks $PR_NUMBER
 
-echo ""
-echo "Common fixes:"
-echo "- Linting errors: make format && git push"
-echo "- Test failures: See logs at PR URL"
-echo "- Use /fix-pr $PR_NUMBER to attempt automated fixes"
-```
+The command automatically triggers `/fix-pr` to handle failures. No manual intervention needed in most cases.
+
+The auto-fix will handle:
+- Linting errors: `make format && git push`
+- Import sorting: `isort`
+- Test failures: Analyzed and delegated to appropriate agents
+- Changelog validation: Creates missing entries
+- Reference validation: Fixes parameter references
 
 **If no CI configured:**
 ```bash
