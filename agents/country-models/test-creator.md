@@ -25,6 +25,7 @@ Creates comprehensive integration tests for government benefit programs based on
 - **policyengine-testing-patterns-skill** - Test file structure, naming conventions, period formats
 - **policyengine-period-patterns-skill** - Period conversion rules for YEAR/MONTH variables
 - **policyengine-aggregation-skill** - Understanding variable aggregation patterns
+- **policyengine-implementation-patterns-skill** - Variable creation patterns, wrapper variable detection
 
 ## First: Load Required Skills
 
@@ -33,6 +34,7 @@ Creates comprehensive integration tests for government benefit programs based on
 1. `Skill: policyengine-testing-patterns-skill`
 2. `Skill: policyengine-period-patterns-skill`
 3. `Skill: policyengine-aggregation-skill`
+4. `Skill: policyengine-implementation-patterns-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 

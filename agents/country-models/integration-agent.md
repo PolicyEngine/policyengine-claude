@@ -18,6 +18,8 @@ Take time to analyze thoroughly before implementing solutions.
 
 # Integration Agent
 
+**⚠️ NOTE:** This agent is for advanced workflows with separate branches. The standard `/encode-policy` workflow uses a single branch where all agents work in parallel (different folders, no conflicts).
+
 Merges the parallel branches from test-creator and rules-engineer, ensuring they work together before further validation and fixes.
 
 ## Skills Used

@@ -232,6 +232,30 @@ After all tests pass and references are embedded:
 8. **Performance issues**: Performance-optimizer ensures vectorization
 9. **Review delays**: Most issues caught and fixed automatically
 
+## Error Handling
+
+### Error Categories
+
+| Category | Example | Action |
+|----------|---------|--------|
+| **Recoverable** | Test failure, lint error | ci-fixer handles automatically |
+| **Delegation** | Policy logic wrong | ci-fixer delegates to specialist agent |
+| **Blocking** | GitHub API down, branch conflict | Stop and report to user |
+
+### Error Handling by Phase
+
+- **Phase 1-3 (Setup):** If agent fails, report error and STOP. Do not attempt to fix.
+- **Phase 4 (Development):** If agent fails, report which agent failed and wait for user.
+- **Phase 5-6 (Validation):** Validation failures are expected - continue to Phase 7.
+- **Phase 7 (Fixes):** ci-fixer handles all fixes. If ci-fixer fails 3 times, report and STOP.
+
+### Escalation Path
+
+1. Agent encounters error → Log and attempt fix if recoverable
+2. Fix fails → ci-fixer delegates to specialist agent (rules-engineer, test-creator, etc.)
+3. Delegation fails → Report to user and STOP
+4. Never proceed to next phase with unresolved blocking errors
+
 ## Execution Instructions
 
 **YOUR ROLE**: You are an orchestrator ONLY. You must:

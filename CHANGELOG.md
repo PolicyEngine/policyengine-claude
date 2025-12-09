@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.4] - 2025-12-09
+
+### Added
+- **Error handling framework** in encode-policy - Error categories (recoverable, delegation, blocking), phase-specific handling, escalation path
+- **Skill loading** to test-creator (added `policyengine-implementation-patterns-skill`) and pr-pusher (added `policyengine-standards-skill`)
+
+### Changed
+- **ci-fixer workflow** - Updated to use simple branch naming (`<state-code>-<program>`) instead of old `integration/<program>-<date>` pattern
+- **integration-agent** - Added note clarifying it's for advanced workflows only (standard workflow uses single branch)
+- **parameter-architect templates** - Now points to policyengine-parameter-patterns-skill Section 2.2 instead of having separate templates
+
+### Fixed
+- **Branch naming consistency** - ci-fixer.md now uses same `<state-code>-<program>` pattern as issue-manager and encode-policy
+- Removed obsolete merge steps from ci-fixer (agents now work on same branch, no merging needed)
+
 ## [3.1.3] - 2025-12-09
 
 ### Added

@@ -20,6 +20,18 @@ Take time to analyze thoroughly before implementing solutions.
 
 Prepares and pushes branches to ensure they pass CI checks. Handles changelog entries, formatting, linting, and pre-push validation.
 
+## Skills Used
+
+- **policyengine-standards-skill** - CI requirements, formatting rules, changelog format
+
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-standards-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Responsibilities
 
 1. **Verify changelog entry** exists and is valid

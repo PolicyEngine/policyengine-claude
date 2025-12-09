@@ -167,25 +167,15 @@ metadata:
 - ✅ Use exact effective dates from sources
 - ✅ Include subsections and page anchors
 
-**Description Templates by Parameter Type:**
+**Description Templates:** Use the exact templates from **policyengine-parameter-patterns-skill Section 2.2**.
 
-**Amount parameters:**
-```yaml
-description: [State] deducts this [type] amount [context].
-# Example: Missouri deducts this work expense amount from gross earned income for Temporary Assistance for Needy Families program calculations.
-```
+Key templates:
+- **Income limits:** `[State] limits gross income to this amount under the [Program Name] program.`
+- **Resource limits:** `[State] limits resources to this amount under the [Program Name] program.`
+- **Payment standards:** `[State] provides this amount as the payment standard under the [Program Name] program.`
+- **Disregards:** `[State] excludes this share of earnings from countable income under the [Program Name] program.`
 
-**Threshold parameters:**
-```yaml
-description: [State] [allows/uses/applies] [what] for [category] at or [above/below] this [threshold type].
-# Example: Missouri allows child care deductions for children at or below this age in the Temporary Assistance for Needy Families program.
-```
-
-**Rate/Percentage parameters:**
-```yaml
-description: [State] [applies/multiplies/uses] this [rate type] [context].
-# Example: Missouri applies this earned income disregard percentage to gross wages for Temporary Assistance for Needy Families program eligibility.
-```
+**See skill for complete template list.** Copy templates exactly, replacing only state name and program name.
 
 ### Step 4: Apply Naming Conventions
 
