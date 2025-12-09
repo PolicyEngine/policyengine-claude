@@ -120,7 +120,7 @@ def format_fig(fig):
     # Add PolicyEngine logo (bottom right)
     fig.add_layout_image(
         dict(
-            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
             xref="paper",
             yref="paper",
             x=1.0,
@@ -153,6 +153,82 @@ fig = format_fig(fig)
 # See format_fig in action
 cat givecalc/ui/visualization.py
 cat policyengine-app/src/pages/policy/output/...
+```
+
+#### Blog Post Charts (Standalone HTML)
+
+When creating standalone Plotly HTML files for blog posts, use these specific settings:
+
+**Font:** Use "Roboto" (not "Roboto Serif") with Google Fonts embed:
+```python
+FONT_FAMILY = "Roboto, Arial, sans-serif"
+
+# After generating HTML, embed font
+html = fig.to_html(include_plotlyjs='cdn')
+html_with_font = html.replace('</head>',
+    '<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"></head>')
+with open('chart.html', 'w') as f:
+    f.write(html_with_font)
+```
+
+**Background:** LIGHT_GRAY (#F2F2F2) for better blog integration:
+```python
+fig.update_layout(
+    plot_bgcolor="#F2F2F2",
+    paper_bgcolor="#F2F2F2"
+)
+```
+
+**Logo positioning:** x=0.95, y=-0.2 avoids cutoff:
+```python
+images=[{
+    "source": "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
+    "xref": "paper", "yref": "paper",
+    "x": 0.95,  # Not 1.0 - prevents cutoff
+    "y": -0.2,
+    "sizex": 0.15, "sizey": 0.15,
+    "xanchor": "right", "yanchor": "bottom"
+}]
+```
+
+**Margins:** Increase right margin when x-axis extends to boundary:
+```python
+# For charts showing $0-$2B or similar
+margin=dict(t=120, b=120, l=120, r=80)  # r=80 ensures last tick visible
+```
+
+**Grid and axes:**
+```python
+xaxis=dict(
+    gridcolor="#FFFFFF",      # White grid on LIGHT_GRAY background
+    zerolinecolor="#FFFFFF",
+    tickformat='$,.1f',       # Units in tick labels
+    ticksuffix='B'            # Not in axis title
+),
+yaxis=dict(
+    gridcolor="#FFFFFF",
+    zerolinecolor="#FFFFFF",
+    ticksuffix='%'
+)
+```
+
+**Colors for reference lines:** Use GRAY (#808080), not red:
+```python
+# Reference/statutory lines
+line=dict(color="#808080", width=2, dash='dash')
+```
+
+**Stepwise patterns:** Use 10,000+ points for discrete boundaries:
+```python
+# For charts showing $2M increments
+wealth = np.linspace(0, 2.0, 10000)  # Fine granularity
+line=dict(shape='hv')  # Horizontal-vertical steps
+```
+
+**Legend:** Position inside chart when needed:
+```python
+legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+# Or remove entirely if obvious: showlegend=False
 ```
 
 #### Chart Colors
@@ -222,18 +298,19 @@ cat salt-amt-calculator/.streamlit/config.toml  # Other calculators
 
 ### Logo Usage
 
-**Logo URLs:**
+**Logo URLs (app-v2 - current):**
 
 ```python
-# Blue logo (for light backgrounds)
-LOGO_BLUE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png"
+# Teal logo (for light backgrounds) - PREFERRED
+LOGO_TEAL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png"
+LOGO_TEAL_SQUARE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal-square.png"
 
 # White logo (for dark backgrounds)
-LOGO_WHITE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.png"
+LOGO_WHITE = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.png"
 
 # SVG versions (scalable)
-LOGO_BLUE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.svg"
-LOGO_WHITE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.svg"
+LOGO_TEAL_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.svg"
+LOGO_WHITE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.svg"
 ```
 
 **Logo placement in charts:**
@@ -243,7 +320,11 @@ LOGO_WHITE_SVG = "https://raw.githubusercontent.com/PolicyEngine/policyengine-ap
 
 **Current logos:**
 ```bash
-ls policyengine-app/src/images/logos/policyengine/
+ls policyengine-app-v2/app/public/assets/logos/policyengine/
+# teal.png, teal.svg (wide)
+# teal-square.png, teal-square.svg (square)
+# white.png, white.svg (wide)
+# white-square.svg (square)
 ```
 
 ### Complete Example: Branded Chart
@@ -294,7 +375,7 @@ fig.update_layout(
 # Add logo
 fig.add_layout_image(
     dict(
-        source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+        source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
         xref="paper",
         yref="paper",
         x=1.0,
@@ -478,7 +559,7 @@ def format_fig(fig: go.Figure) -> go.Figure:
     # Logo
     fig.add_layout_image(
         dict(
-            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png",
             xref="paper",
             yref="paper",
             x=1.0,
@@ -792,7 +873,7 @@ policyengine-app/src/images/logos/policyengine/
 **Raw URLs for direct use:**
 ```python
 # Use these URLs in code
-LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png"
+LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png"
 ```
 
 ### Font Files
@@ -862,10 +943,10 @@ WHITE = "#FFFFFF"
 
 | Background | Format | URL |
 |------------|--------|-----|
-| Light | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png |
-| Light | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.svg |
-| Dark | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.png |
-| Dark | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.svg |
+| Light | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png |
+| Light | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.svg |
+| Dark | PNG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.png |
+| Dark | SVG | https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.svg |
 
 ## Related Skills
 
