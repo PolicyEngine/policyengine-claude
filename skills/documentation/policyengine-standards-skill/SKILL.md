@@ -499,6 +499,12 @@ export default config;
 
 **CRITICAL**: For PRs, ONLY modify `changelog_entry.yaml`. NEVER manually update `CHANGELOG.md` or `changelog.yaml`.
 
+**Terminology Note:**
+When someone says "add a changelog entry" or "needs a changelog entry" in PolicyEngine context, they mean:
+- ✅ Create/update `changelog_entry.yaml` (the PR-level entry file)
+- ❌ NOT editing `CHANGELOG.md` (the main changelog file)
+- ❌ NOT editing `changelog.yaml` (the compiled changelog)
+
 **Correct Workflow:**
 1. Create `changelog_entry.yaml` at repository root:
    ```yaml

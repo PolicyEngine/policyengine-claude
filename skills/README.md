@@ -89,6 +89,7 @@ Specialized data manipulation and statistical analysis tools.
 | **microcalibrate-skill** | Survey weight calibration | Matching population targets in enhanced microdata |
 | **microdf-skill** | Weighted pandas DataFrames | Survey microdata analysis, inequality, poverty calculations |
 | **microimpute-skill** | ML-based variable imputation | Filling missing values in survey data |
+| **policyengine-uk-data-skill** | UK survey data enhancement | FRS with WAS imputation patterns |
 
 ### 📝 Documentation (`documentation/`)
 
