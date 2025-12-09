@@ -678,6 +678,79 @@ def formula(entity, period, parameters):
 
 ---
 
+## Accessing Baseline Parameters in Reform Simulations
+
+### When You Need Baseline vs Reform Comparison
+
+Some variables need to compare values under current law (baseline) vs a proposed reform. This is common for:
+- Variables calculating the **change** in a value due to a reform
+- Fixed-cost employer variables (e.g., `employer_NI_fixed_employer_cost_change`)
+- Any variable showing "difference from baseline"
+
+### The Pattern for Accessing Baseline Parameters
+
+**CRITICAL:** When a simulation has a baseline (i.e., it's a reform simulation), you must explicitly access baseline parameters:
+
+```python
+def formula(person, period, parameters):
+    simulation = person.simulation
+
+    # Check if this is a reform simulation with a baseline
+    if simulation.baseline is not None:
+        # Access baseline parameters through the baseline's tax benefit system
+        baseline_parameters = simulation.baseline.tax_benefit_system.get_parameters_at_instant(period)
+        baseline_value = baseline_parameters.gov.hmrc.national_insurance.some_rate
+    else:
+        # No baseline exists - use current parameters as baseline
+        baseline_parameters = parameters(period)
+        baseline_value = baseline_parameters.gov.hmrc.national_insurance.some_rate
+
+    # Get reform (current) value
+    reform_value = parameters(period).gov.hmrc.national_insurance.some_rate
+
+    # Calculate difference
+    return reform_value - baseline_value
+```
+
+### Common Mistake
+
+**❌ WRONG - Using current parameters for baseline:**
+```python
+def formula(person, period, parameters):
+    p = parameters(period)
+    # This gets REFORM parameters, not baseline!
+    baseline_rate = p.gov.hmrc.national_insurance.some_rate
+    reform_rate = p.gov.hmrc.national_insurance.some_rate
+    return reform_rate - baseline_rate  # Always returns 0!
+```
+
+**✅ CORRECT - Properly accessing baseline:**
+```python
+def formula(person, period, parameters):
+    simulation = person.simulation
+
+    if simulation.baseline is not None:
+        baseline_p = simulation.baseline.tax_benefit_system.get_parameters_at_instant(period)
+    else:
+        baseline_p = parameters(period)
+
+    baseline_rate = baseline_p.gov.hmrc.national_insurance.some_rate
+    reform_rate = parameters(period).gov.hmrc.national_insurance.some_rate
+
+    return reform_rate - baseline_rate
+```
+
+### When This Matters
+
+This pattern is essential when:
+1. The variable name contains "change", "difference", or "delta"
+2. The variable compares policy scenarios
+3. You're implementing reform impact analysis variables
+
+Without this pattern, reform simulations will incorrectly show zero change because both "baseline" and "reform" values come from the same (reform) parameters.
+
+---
+
 ## Variable Creation Checklist
 
 Before creating any variable:
