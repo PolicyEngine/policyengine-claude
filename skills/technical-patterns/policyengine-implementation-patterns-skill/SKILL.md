@@ -167,15 +167,36 @@ class il_tanf_countable_earned_income(Variable):
 
 ### When to Use `adds` vs `formula`
 
-**Use `adds` when:**
+**CRITICAL: Never use both `adds`/`subtracts` AND a custom `formula` in the same variable!**
+
+This causes bugs when the two get out of sync. Choose one approach:
+
+```python
+❌ FORBIDDEN - Mixing compositional and formula:
+class household_net_income(Variable):
+    subtracts = ["employee_pension_contributions"]  # ❌ Has subtracts
+
+    def formula(household, period):  # ❌ AND has formula
+        gross = household("household_gross_income", period)
+        tax = household("income_tax", period)
+        # BUG: Forgot to subtract employee_pension_contributions!
+        return gross - tax
+```
+
+**Use `adds`/`subtracts` when:**
 - Just summing variables
 - Passing through a single variable
 - No transformations needed
 
 ```python
-✅ BEST - Simple sum:
+✅ BEST - Pure compositional:
 class tanf_gross_income(Variable):
     adds = ["employment_income", "self_employment_income"]
+
+✅ BEST - Compositional with subtracts:
+class household_net_income(Variable):
+    adds = ["household_gross_income"]
+    subtracts = ["income_tax", "employee_pension_contributions"]
 ```
 
 **Use `formula` when:**
@@ -184,7 +205,7 @@ class tanf_gross_income(Variable):
 - Calculations needed
 
 ```python
-✅ CORRECT - Need logic:
+✅ CORRECT - Pure formula:
 def formula(entity, period, parameters):
     income = add(entity, period, ["income1", "income2"])
     return max_(0, income)  # Need max_
