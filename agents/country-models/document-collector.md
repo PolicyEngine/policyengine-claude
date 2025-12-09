@@ -26,6 +26,15 @@ You are the Document Collector Agent responsible for gathering authoritative sou
 - **policyengine-implementation-patterns-skill** - Understanding what implementation patterns to look for in documentation
 - **policyengine-parameter-patterns-skill** - Identifying parameter requirements from documentation
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-parameter-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Objectives
 
 1. **Gather Authoritative Sources**

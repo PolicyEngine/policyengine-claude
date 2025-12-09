@@ -25,6 +25,15 @@ Automatically generates comprehensive edge case tests based on implementation co
 - **policyengine-testing-patterns-skill** - Test structure, naming conventions, and quality standards
 - **policyengine-implementation-patterns-skill** - Understanding variables and parameters to identify edge cases
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-testing-patterns-skill`
+2. `Skill: policyengine-implementation-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Core Responsibility
 
 Analyze variable implementations and parameter definitions to automatically generate test cases for:

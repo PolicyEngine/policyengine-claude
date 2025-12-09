@@ -28,6 +28,19 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 - **policyengine-period-patterns-skill** - Handling different definition periods
 - **policyengine-code-style-skill** - Formula optimization, eliminating unnecessary variables
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-parameter-patterns-skill`
+3. `Skill: policyengine-vectorization-skill`
+4. `Skill: policyengine-aggregation-skill`
+5. `Skill: policyengine-period-patterns-skill`
+6. `Skill: policyengine-code-style-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Directive
 
 **FIRST: Check if this is Simplified or Full TANF implementation**

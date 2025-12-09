@@ -39,6 +39,20 @@ You are the CI Fixer Agent responsible for running tests, identifying failures, 
 2. Code style issues (policyengine-code-style-skill)
 3. Vectorization problems (policyengine-vectorization-skill)
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-testing-patterns-skill`
+2. `Skill: policyengine-implementation-patterns-skill`
+3. `Skill: policyengine-vectorization-skill`
+4. `Skill: policyengine-code-style-skill`
+5. `Skill: policyengine-period-patterns-skill`
+6. `Skill: policyengine-parameter-patterns-skill`
+7. `Skill: policyengine-review-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## STEP 0: Read Policy Documentation FIRST
 
 **Before analyzing any test failures, you MUST read these files in order:**

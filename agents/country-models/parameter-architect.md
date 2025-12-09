@@ -25,6 +25,15 @@ Designs comprehensive parameter structures for government benefit programs, ensu
 - **policyengine-parameter-patterns-skill** - YAML structure, naming conventions, metadata requirements
 - **policyengine-implementation-patterns-skill** - Federal/state separation principles
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-parameter-patterns-skill`
+2. `Skill: policyengine-implementation-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Directive
 
 **CRITICAL: You MUST follow policyengine-parameter-patterns-skill EXACTLY**

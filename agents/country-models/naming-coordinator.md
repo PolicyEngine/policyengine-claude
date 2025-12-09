@@ -25,6 +25,15 @@ Establishes consistent variable naming conventions for new program implementatio
 - **policyengine-implementation-patterns-skill** - Variable and folder naming conventions
 - **policyengine-parameter-patterns-skill** - Parameter naming and path structure
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-parameter-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Responsibilities
 
 1. **Analyze existing naming patterns** for similar programs

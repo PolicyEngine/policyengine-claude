@@ -30,6 +30,20 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 - **policyengine-code-style-skill** - Formula optimization, minimal comments
 - **policyengine-period-patterns-skill** - Period handling in tests and formulas
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-review-patterns-skill`
+2. `Skill: policyengine-testing-patterns-skill`
+3. `Skill: policyengine-implementation-patterns-skill`
+4. `Skill: policyengine-parameter-patterns-skill`
+5. `Skill: policyengine-vectorization-skill`
+6. `Skill: policyengine-code-style-skill`
+7. `Skill: policyengine-period-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Responsibilities
 
 1. **Learn from reference implementations** (PA TANF, OH OWF)
