@@ -66,7 +66,7 @@ Document findings:
 Run validators to COLLECT issues (do not fix):
 
 ### Step 1: Domain Validation
-Invoke **policy-domain-validator** to identify:
+Invoke **implementation-validator** to identify:
 - Federal/state jurisdiction issues
 - Variable naming violations
 - Hard-coded values

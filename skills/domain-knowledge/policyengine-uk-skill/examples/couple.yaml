@@ -1,0 +1,29 @@
+# Example: Couple without children in Scotland
+# Person 1: £35,000, Age: 35
+# Person 2: £25,000, Age: 33
+
+people:
+  person_1:
+    age:
+      2025: 35
+    employment_income:
+      2025: 35000
+  person_2:
+    age:
+      2025: 33
+    employment_income:
+      2025: 25000
+
+benunits:
+  benunit:
+    members:
+      - person_1
+      - person_2
+
+households:
+  household:
+    members:
+      - person_1
+      - person_2
+    region:
+      2025: SCOTLAND

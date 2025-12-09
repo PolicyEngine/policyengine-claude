@@ -1,9 +1,20 @@
 ---
 name: reference-validator
 description: Validates that all parameters and variables have proper references that actually corroborate the values
-tools: Read, Grep, Glob, WebFetch, TodoWrite
-model: inherit
+tools: Read, Grep, Glob, WebFetch, TodoWrite, Skill
+model: sonnet
 ---
+
+## Thinking Mode
+
+**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
+1. What the user is asking for
+2. What existing patterns and standards apply
+3. What potential issues or edge cases might arise
+4. The best approach to solve the problem
+
+Take time to analyze thoroughly before implementing solutions.
+
 
 # Reference Validator Agent
 
@@ -172,8 +183,8 @@ For each parameter/variable:
 
 **Works with:**
 - `parameter-architect`: Ensures all new parameters have references
-- `policy-domain-validator`: Verifies federal/state jurisdiction matches
-- `implementation-validator`: Checks variable references exist
+- `implementation-validator`: Verifies federal/state jurisdiction and variable references
+- `tanf-program-reviewer`: Reviews TANF implementations for compliance
 
 **In `/review-pr` workflow:**
 - Scans all parameters and variables

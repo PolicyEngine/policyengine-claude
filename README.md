@@ -176,22 +176,20 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Neutral, objective tone
 - Blog post and PR description patterns
 
-## Agents (18 Total)
+## Agents (16 Total)
 
-### Country Model Agents (15)
+### Country Model Agents (13)
 
 **Multi-agent workflow:**
 - `document_collector` - Gather authoritative sources
 - `test-creator` - Write tests from documentation (isolated)
 - `rules-engineer` - Implement variables/parameters (isolated)
-- `rules-reviewer` - Review implementation
 - `parameter-architect` - Design parameter structures
 
 **Validators:**
-- `policy-domain-validator` - Federal/state separation, naming
+- `implementation-validator` - Comprehensive validation (quality, domain patterns, hard-coding)
 - `reference-validator` - Citations and documentation
 - `cross-program-validator` - Cross-program consistency
-- `implementation-validator` - Zero hard-coded values
 - `performance-optimizer` - Vectorization opportunities
 
 **Quality and CI:**

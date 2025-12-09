@@ -63,7 +63,7 @@ Document findings:
 Run comprehensive validation using specialized agents:
 
 ### Step 1: Domain-Specific Validation
-Invoke **policy-domain-validator** to check:
+Invoke **implementation-validator** to check:
 - Federal/state jurisdiction separation
 - Variable naming conventions and duplicates
 - Hard-coded value patterns
@@ -111,8 +111,8 @@ Based on issues found, invoke agents IN ORDER to avoid conflicts.
 ```markdown
 YOU MUST INVOKE THESE AGENTS - DO NOT FIX DIRECTLY:
 
-1. First, invoke policy-domain-validator:
-   "Scan all files in this PR and create a comprehensive list of all domain violations"
+1. First, invoke implementation-validator:
+   "Scan all files in this PR and create a comprehensive list of all domain violations and implementation issues"
 
 2. Then invoke parameter-architect (REQUIRED for ANY hard-coded values):
    "Design parameter structure for these hard-coded values found: [list all values]
@@ -223,7 +223,7 @@ Invoke ci-fixer to ensure all checks pass:
    - Lint issues: Apply corrections
 
 ## Phase 7: Final Review & Summary
-Invoke rules-reviewer for final validation:
+Invoke implementation-validator for final validation:
 - All comments addressed?
 - All tests passing?
 - No regressions introduced?

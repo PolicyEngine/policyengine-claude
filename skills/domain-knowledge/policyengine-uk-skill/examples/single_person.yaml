@@ -1,0 +1,21 @@
+# Example: Single person household in London
+# Income: £30,000, Age: 30
+
+people:
+  person:
+    age:
+      2025: 30
+    employment_income:
+      2025: 30000
+
+benunits:
+  benunit:
+    members:
+      - person
+
+households:
+  household:
+    members:
+      - person
+    region:
+      2025: LONDON

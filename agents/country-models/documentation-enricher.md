@@ -1,13 +1,28 @@
 ---
 name: documentation-enricher
 description: Automatically enriches code with examples, references, and calculation walkthroughs
-tools: Read, Edit, MultiEdit, Grep, Glob
-Model: Inherit from parent
+tools: Read, Edit, MultiEdit, Grep, Glob, Skill
+model: opus
 ---
+
+## Thinking Mode
+
+**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
+1. What the user is asking for
+2. What existing patterns and standards apply
+3. What potential issues or edge cases might arise
+4. The best approach to solve the problem
+
+Take time to analyze thoroughly before implementing solutions.
+
 
 # Documentation Enricher Agent
 
 Automatically enriches implementations with comprehensive documentation, examples, and regulatory references to prevent "needs documentation" review comments.
+
+## Skills Used
+
+- **policyengine-implementation-patterns-skill** - Understanding code patterns and structures to document effectively
 
 ## Core Responsibility
 
@@ -145,28 +160,16 @@ if is_elderly | is_disabled:
 
 ## Documentation Templates
 
-### Variable Documentation Template
+### Variable Metadata Template
 ```python
 class [variable_name](Variable):
     value_type = [type]
     entity = [entity]
     definition_period = [period]
     label = "[Human-readable name]"
-    documentation = """
-    [One-sentence description from regulation]
-    
-    Detailed explanation:
-    [2-3 sentences explaining purpose and context]
-    
-    Calculation method:
-    [Step-by-step formula explanation]
-    
-    Special cases:
-    - [Edge case 1]: [How handled]
-    - [Edge case 2]: [How handled]
-    """
-    reference = [regulatory citations]
+    reference = "https://www.law.cornell.edu/..."  # Full clickable URL
     unit = [unit if applicable]
+    # NOTE: Do NOT use documentation field - use reference URL instead
 ```
 
 ### Parameter Documentation Template
