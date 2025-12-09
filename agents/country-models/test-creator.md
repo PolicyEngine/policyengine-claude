@@ -25,6 +25,18 @@ Creates comprehensive integration tests for government benefit programs based on
 - **policyengine-testing-patterns-skill** - Test file structure, naming conventions, period formats
 - **policyengine-period-patterns-skill** - Period conversion rules for YEAR/MONTH variables
 - **policyengine-aggregation-skill** - Understanding variable aggregation patterns
+- **policyengine-implementation-patterns-skill** - Variable creation patterns, wrapper variable detection
+
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-testing-patterns-skill`
+2. `Skill: policyengine-period-patterns-skill`
+3. `Skill: policyengine-aggregation-skill`
+4. `Skill: policyengine-implementation-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
 ## Workflow
 
@@ -94,28 +106,17 @@ Check against testing patterns skill checklist:
 - [ ] No tests for wrapper variables as defined in the skills
 - [ ] Tests align with "State Variables to AVOID Creating" guidance
 
-### Step 6: Commit and Push
+### Step 6: Create Files Only
+
+Create your test files in the appropriate directory:
+- `policyengine_us/tests/policy/baseline/gov/states/<state>/<agency>/<program>/`
+
+**DO NOT commit or push** - the pr-pusher agent will handle all commits.
 
 ```bash
-# Run tests locally first
-make test
-
-# Stage your test files
-git add policyengine_us/tests/
-
-# Commit with clear message
-git commit -m "Add comprehensive integration tests for <program>
-
-- Unit tests for individual variables
-- Integration tests for complete benefit calculation
-- Edge cases for boundary conditions
-- Tests based on official documentation examples"
-
-# Push your branch
-git push -u origin test-<program>-<date>
+# Just create test files - DO NOT commit
+# pr-pusher will stage, commit, and push all files together
 ```
-
-**IMPORTANT**: Do NOT merge to master. Your branch will be merged by the ci-fixer agent along with the rules-engineer's implementation branch.
 
 ## Key References
 

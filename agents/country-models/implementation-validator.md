@@ -27,6 +27,17 @@ Comprehensive validator for government benefit program implementations, checking
 - **policyengine-vectorization-skill** - Vectorization requirements and performance validation
 - **policyengine-review-patterns-skill** - Validation checklists and common issues
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-parameter-patterns-skill`
+3. `Skill: policyengine-vectorization-skill`
+4. `Skill: policyengine-review-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Validation Scope
 
 ### What This Agent Validates

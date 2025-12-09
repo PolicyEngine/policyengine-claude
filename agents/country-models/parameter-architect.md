@@ -25,6 +25,15 @@ Designs comprehensive parameter structures for government benefit programs, ensu
 - **policyengine-parameter-patterns-skill** - YAML structure, naming conventions, metadata requirements
 - **policyengine-implementation-patterns-skill** - Federal/state separation principles
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-parameter-patterns-skill`
+2. `Skill: policyengine-implementation-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Directive
 
 **CRITICAL: You MUST follow policyengine-parameter-patterns-skill EXACTLY**
@@ -90,10 +99,38 @@ description: Indiana excludes this share of earned income from TANF calculations
 - ✅ Categories (priority groups, eligible expenses)
 - ✅ Current period rates and amounts
 
-**Critical:** Investigate if table values are formula-based:
-- Check for "X% of FPL" notations
-- Calculate backwards to find percentages
-- Check State Plans for formulas
+**CRITICAL: Store RATES, not derived dollar amounts!**
+
+Always check if a value is a percentage of another value:
+- Federal Poverty Level (FPL) - "185% of FPL"
+- State Median Income (SMI) - "60% of SMI"
+- Another program value - "50% of payment standard"
+
+**MUST have legal proof - don't guess based on math!**
+
+```yaml
+# ❌ WRONG - Storing dollar amount OR guessing it's a percentage:
+income_limit/amount.yaml:
+  values:
+    2024-01-01: 2_430  # Outdated when FPL changes!
+# Also wrong: "This looks like 185% of FPL" without legal citation
+
+# ✅ CORRECT - Storing rate WITH legal proof:
+income_limit/rate.yaml:
+  description: Oregon limits gross income to this share of the federal poverty level under the Temporary Assistance for Needy Families program.
+  values:
+    2024-01-01: 1.85  # 185% of FPL
+  metadata:
+    reference:
+      - title: OAR 461-155-0180(2)(a)  # Legal proof that it's 185% of FPL!
+        href: https://oregon.public.law/rules/oar_461-155-0180
+```
+
+**How to verify the rate:**
+- Find the legal code section that EXPLICITLY states "X% of FPL"
+- Quote the exact text: "gross income cannot exceed 185 percent of the federal poverty level"
+- If legal code only shows dollar amounts (no percentage), then store the dollar amount
+- **Never assume a percentage relationship without legal citation**
 
 ### Step 3: Create Parameter Files
 
@@ -130,25 +167,15 @@ metadata:
 - ✅ Use exact effective dates from sources
 - ✅ Include subsections and page anchors
 
-**Description Templates by Parameter Type:**
+**Description Templates:** Use the exact templates from **policyengine-parameter-patterns-skill Section 2.2**.
 
-**Amount parameters:**
-```yaml
-description: [State] deducts this [type] amount [context].
-# Example: Missouri deducts this work expense amount from gross earned income for Temporary Assistance for Needy Families program calculations.
-```
+Key templates:
+- **Income limits:** `[State] limits gross income to this amount under the [Program Name] program.`
+- **Resource limits:** `[State] limits resources to this amount under the [Program Name] program.`
+- **Payment standards:** `[State] provides this amount as the payment standard under the [Program Name] program.`
+- **Disregards:** `[State] excludes this share of earnings from countable income under the [Program Name] program.`
 
-**Threshold parameters:**
-```yaml
-description: [State] [allows/uses/applies] [what] for [category] at or [above/below] this [threshold type].
-# Example: Missouri allows child care deductions for children at or below this age in the Temporary Assistance for Needy Families program.
-```
-
-**Rate/Percentage parameters:**
-```yaml
-description: [State] [applies/multiplies/uses] this [rate type] [context].
-# Example: Missouri applies this earned income disregard percentage to gross wages for Temporary Assistance for Needy Families program eligibility.
-```
+**See skill for complete template list.** Copy templates exactly, replacing only state name and program name.
 
 ### Step 4: Apply Naming Conventions
 

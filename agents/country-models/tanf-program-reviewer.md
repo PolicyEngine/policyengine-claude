@@ -30,6 +30,20 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 - **policyengine-code-style-skill** - Formula optimization, minimal comments
 - **policyengine-period-patterns-skill** - Period handling in tests and formulas
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-review-patterns-skill`
+2. `Skill: policyengine-testing-patterns-skill`
+3. `Skill: policyengine-implementation-patterns-skill`
+4. `Skill: policyengine-parameter-patterns-skill`
+5. `Skill: policyengine-vectorization-skill`
+6. `Skill: policyengine-code-style-skill`
+7. `Skill: policyengine-period-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Responsibilities
 
 1. **Learn from reference implementations** (PA TANF, OH OWF)
@@ -47,7 +61,7 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 
 1. **PA TANF Implementation** (branch: `pa-tanf-simple`):
    ```bash
-   cd ~/vscode/policyengine-us
+   git fetch origin
    git checkout pa-tanf-simple
    ```
    - Read parameter files in `policyengine_us/parameters/gov/states/pa/dhs/tanf/`
@@ -66,11 +80,15 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 
 **Learn from these examples**:
 - How parameters are organized and documented with references
-- How variables show step-by-step calculations in comments
+- How variables use balanced comments (regulation refs, non-obvious logic)
 - How tests include manual calculation walkthroughs
 - The level of detail in references (multiple authoritative sources)
 - Use of vectorized operations (`where()`, `max_()`, `min_()`)
 - Integration test structure showing real-world scenarios
+
+**Why PA TANF and OH OWF?**
+These are simplified implementations - the default approach for most states.
+For comprehensive/full implementations, reference DC/IL/TX TANF instead.
 
 **Then apply the same quality standards** to the current PR you're reviewing.
 
@@ -87,7 +105,7 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 - Proper use of `where()`, `max_()`, `min_()` for vectorization (compare to PA TANF/OH OWF examples)
 - Correct order of operations and calculation steps
 - Parameter references are correct and use proper paths
-- Comments explain each calculation step clearly
+- Balanced comments (2-4 per formula: regulation refs, step numbers, non-obvious logic)
 
 ### Step 2: Regulation Verification
 

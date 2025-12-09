@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.4] - 2025-12-09
+
+### Added
+- **Error handling framework** in encode-policy - Error categories (recoverable, delegation, blocking), phase-specific handling, escalation path
+- **Skill loading** to test-creator (added `policyengine-implementation-patterns-skill`) and pr-pusher (added `policyengine-standards-skill`)
+
+### Changed
+- **ci-fixer workflow** - Updated to use simple branch naming (`<state-code>-<program>`) instead of old `integration/<program>-<date>` pattern
+- **integration-agent** - Added note clarifying it's for advanced workflows only (standard workflow uses single branch)
+- **parameter-architect templates** - Now points to policyengine-parameter-patterns-skill Section 2.2 instead of having separate templates
+
+### Fixed
+- **Branch naming consistency** - ci-fixer.md now uses same `<state-code>-<program>` pattern as issue-manager and encode-policy
+- Removed obsolete merge steps from ci-fixer (agents now work on same branch, no merging needed)
+
+## [3.1.3] - 2025-12-09
+
+### Added
+- **Skill loading instructions** for all 13 country-models agents - agents now explicitly load required skills before starting work
+- **Balanced code comments** guidance in rules-engineer - regulation references, step numbers, non-obvious logic (aim for 2-4 comments per formula)
+- **State program naming** guidance in naming-coordinator - use state's actual program names (e.g., `nc_workfirst` not `nc_tanf`, `oh_owf` not `oh_tanf`)
+- **Derived values guidance** in document-collector and parameter-architect - store rates not dollar amounts when value is percentage of FPL/SMI, must have legal proof
+- **Variable reference format** in rules-engineer - PDF links must include `#page=XX`
+
+### Changed
+- **Unified commit strategy** - document-collector, test-creator, and rules-engineer now create files only; pr-pusher handles all commits
+- **Cross-fork PR workflow** - issue-manager, create-pr command, and policyengine-standards-skill now use `--repo PolicyEngine/policyengine-us` for cross-fork PRs
+- **Simple branch naming** - issue-manager now uses `<state-code>-<program>` (e.g., `or-tanf`) instead of `integration/<program>-<date>`
+- **Single folder storage** - document-collector now saves all documentation to `sources/working_references.md` only (removed dual storage)
+- **Reference format** in policyengine-parameter-patterns-skill - title must include full section path with all subsections, PDF links must include `#page=XX`
+
+### Fixed
+- encode-policy command now references correct folder path (`sources/working_references.md`) and branch naming convention
+- Clarified that unused `parameters` in formulas is OK if there's state-specific logic (not a sign of unnecessary wrapper)
+
 ## [3.1.2] - 2025-12-08
 
 ### Added

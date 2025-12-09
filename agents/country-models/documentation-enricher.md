@@ -24,6 +24,14 @@ Automatically enriches implementations with comprehensive documentation, example
 
 - **policyengine-implementation-patterns-skill** - Understanding code patterns and structures to document effectively
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Core Responsibility
 
 Enhance every variable and parameter with:

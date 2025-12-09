@@ -26,6 +26,15 @@ You are the Document Collector Agent responsible for gathering authoritative sou
 - **policyengine-implementation-patterns-skill** - Understanding what implementation patterns to look for in documentation
 - **policyengine-parameter-patterns-skill** - Identifying parameter requirements from documentation
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-parameter-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Objectives
 
 1. **Gather Authoritative Sources**
@@ -100,8 +109,7 @@ Mark these clearly in your documentation:
    **Phase 2: Complete Documentation (If Relaunched with PDF Content)**
    - If your prompt includes extracted PDF content, you are in Phase 2
    - Analyze the PDF content and integrate it with your HTML research
-   - Create complete documentation in `docs/agents/sources/<program>/`
-   - Create consolidated `working_references.md`
+   - Create complete documentation in `sources/working_references.md`
 
    **Why this two-phase approach:**
    - Agents cannot download or extract PDFs directly
@@ -125,6 +133,39 @@ Mark these clearly in your documentation:
    - Document special cases and exceptions
    - **Prioritize State Plans** - they often have details not in statutes
 
+5. **Identify Derived Values (CRITICAL)**
+
+   **Always check if a value is a PERCENTAGE of another value:**
+   - Federal Poverty Level (FPL) - e.g., "185% of FPL"
+   - State Median Income (SMI) - e.g., "60% of SMI"
+   - Another program value - e.g., "50% of payment standard"
+
+   **MUST have legal proof - don't guess!**
+   ```markdown
+   # ❌ BAD - Guessing it's a percentage:
+   Income limit: $2,430/month (this looks like ~185% of FPL?)
+
+   # ✅ GOOD - Citing the legal source that defines it as a percentage:
+   Income limit: 185% of Federal Poverty Level
+   Source: OAR 461-155-0180(2)(a) states "gross income cannot exceed 185 percent
+   of the federal poverty level"
+   ```
+
+   **Document with proof:**
+   ```markdown
+   ### Income Limit
+   - **Value**: 185% of FPL
+   - **Legal citation**: OAR 461-155-0180(2)(a)
+   - **Quote**: "gross income cannot exceed 185 percent of the federal poverty level"
+   - **Current dollar amount**: $2,430/month for family of 3 (2024)
+   - **Parameter**: Store as rate (1.85), not dollar amount
+   ```
+
+   **Why this matters:**
+   - Dollar amounts change when FPL/SMI updates
+   - Storing the rate ensures automatic updates
+   - **Must cite the legal section that defines the percentage relationship**
+
 ## Sources to Search
 
 ### Federal Programs
@@ -141,23 +182,18 @@ Mark these clearly in your documentation:
 
 ## Documentation Format
 
-### Dual Storage Strategy
-Documentation should be saved in TWO locations:
+### Storage Location
 
-1. **Detailed Documentation**: `docs/agents/sources/<program>/`
-   - Full regulatory text and comprehensive documentation
-   - Permanent reference for future use
-   - Organized by document type (eligibility.md, benefit_calculation.md, etc.)
+All documentation should be saved to a single location: `sources/working_references.md`
 
-2. **Working Summary**: `sources/working_references.md`
-   - Consolidated summary of key implementation details
-   - Temporary file for current implementation sprint
-   - Accessible to other agents working in git worktrees
-   - Will be cleared after references are embedded in parameter/variable metadata
+This file serves as:
+- The consolidated source of truth for implementation
+- Reference for other agents (test-creator, rules-engineer)
+- Contains all key rules, formulas, thresholds, and citations
 
 ### Working References Format
 
-Append to `sources/working_references.md` a concise summary for implementation:
+Save to `sources/working_references.md` with this structure:
 
 ```markdown
 # Collected Documentation
@@ -295,40 +331,31 @@ Your documentation package should enable someone to:
 Your task is complete when you have:
 1. Located all relevant legal authorities
 2. Extracted all rules, formulas, and thresholds
-3. Organized information into structured documents in `docs/agents/sources/<program>/`
-4. Created consolidated `sources/working_references.md`
-5. Verified currency and accuracy of sources
-6. Committed your documentation to the main branch
+3. Created comprehensive `sources/working_references.md`
+4. Verified currency and accuracy of sources
 
-## Final Steps - Commit Your Work
+**Note:** Do NOT commit - pr-pusher agent handles all commits.
+
+## Final Steps - Create Files Only
 
 After gathering all documentation:
 
+1. Create the `sources/` directory if it doesn't exist
+2. Write your documentation to `sources/working_references.md`
+3. **DO NOT commit or push** - the pr-pusher agent will handle all commits
+
 ```bash
-# Stage all documentation files
-git add docs/agents/sources/
-mkdir -p sources && git add sources/working_references.md
-
-# Commit with clear message
-git commit -m "Add documentation for <program> implementation
-
-- Federal regulations and statutes
-- State-specific rules and thresholds  
-- Benefit calculation formulas
-- Eligibility requirements
-- References ready for embedding in code"
-
-# Push to main branch
-git push origin master
+# Just create the file - DO NOT commit
+mkdir -p sources
+# Write documentation to sources/working_references.md
 ```
 
 ## Coordination with Other Agents
 
-After you commit documentation:
-1. **test-creator** agent will work in parallel in `test-<program>-<date>` branch
-2. **rules-engineer** agent will work in parallel in `impl-<program>-<date>` branch
-3. Both agents will reference your `sources/working_references.md` file
-4. **ci-fixer** agent will merge all branches and run CI checks
+After you create documentation files:
+1. **test-creator** and **rules-engineer** agents will reference your `sources/working_references.md` file
+2. **pr-pusher** agent will commit all files together
+3. **ci-fixer** agent will handle any CI issues
 
 ## Special Rules for TANF Programs
 

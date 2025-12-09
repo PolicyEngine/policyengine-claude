@@ -47,8 +47,9 @@ This workflow adapts based on the type of program being implemented:
 
 Invoke @complete:country-models:issue-manager agent to:
 - Search for existing issue or create new one for $ARGUMENTS
-- Create draft PR immediately in PolicyEngine/policyengine-us repository (NOT personal fork)
-- Return issue number and PR URL for tracking
+- Create branch with simple name: `<state-code>-<program>` (e.g., `or-tanf`, `ky-tanf`)
+- Push to fork, then create draft PR to upstream using `--repo PolicyEngine/policyengine-us`
+- Return issue number, PR URL, and branch name for tracking
 
 ## Phase 2: Variable Naming Convention
 Invoke @complete:country-models:naming-coordinator agent to:
@@ -63,7 +64,7 @@ Invoke @complete:country-models:naming-coordinator agent to:
 
 **Phase 3A: Initial Document Gathering**
 
-Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation, save as `working_references.md` in the repository, and post to GitHub issue
+Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation, save as `sources/working_references.md`, and post to GitHub issue
 
 **After agent completes:**
 1. Check the agent's report for "📄 PDFs Requiring Extraction" section
@@ -98,7 +99,9 @@ Invoke @complete:country-models:document-collector agent to gather official $ARG
 
 ## Phase 4: Development (Parallel on Same Branch)
 
-Run both agents IN PARALLEL - they work on different folders so no conflicts:
+Run both agents IN PARALLEL on branch `<state-code>-<program>` (e.g., `or-tanf`) - they work on different folders so no conflicts.
+
+**IMPORTANT:** Both agents create files only - they do NOT commit. pr-pusher in Phase 5 handles all commits.
 
 **@complete:country-models:test-creator** → works in `tests/` folder:
 - Create comprehensive INTEGRATION tests from documentation
@@ -228,6 +231,30 @@ After all tests pass and references are embedded:
 7. **Poor documentation**: Documentation-enricher adds examples
 8. **Performance issues**: Performance-optimizer ensures vectorization
 9. **Review delays**: Most issues caught and fixed automatically
+
+## Error Handling
+
+### Error Categories
+
+| Category | Example | Action |
+|----------|---------|--------|
+| **Recoverable** | Test failure, lint error | ci-fixer handles automatically |
+| **Delegation** | Policy logic wrong | ci-fixer delegates to specialist agent |
+| **Blocking** | GitHub API down, branch conflict | Stop and report to user |
+
+### Error Handling by Phase
+
+- **Phase 1-3 (Setup):** If agent fails, report error and STOP. Do not attempt to fix.
+- **Phase 4 (Development):** If agent fails, report which agent failed and wait for user.
+- **Phase 5-6 (Validation):** Validation failures are expected - continue to Phase 7.
+- **Phase 7 (Fixes):** ci-fixer handles all fixes. If ci-fixer fails 3 times, report and STOP.
+
+### Escalation Path
+
+1. Agent encounters error → Log and attempt fix if recoverable
+2. Fix fails → ci-fixer delegates to specialist agent (rules-engineer, test-creator, etc.)
+3. Delegation fails → Report to user and STOP
+4. Never proceed to next phase with unresolved blocking errors
 
 ## Execution Instructions
 

@@ -28,6 +28,19 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 - **policyengine-period-patterns-skill** - Handling different definition periods
 - **policyengine-code-style-skill** - Formula optimization, eliminating unnecessary variables
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-parameter-patterns-skill`
+3. `Skill: policyengine-vectorization-skill`
+4. `Skill: policyengine-aggregation-skill`
+5. `Skill: policyengine-period-patterns-skill`
+6. `Skill: policyengine-code-style-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Directive
 
 **FIRST: Check if this is Simplified or Full TANF implementation**
@@ -54,6 +67,23 @@ Learn from them:
 - Understand WHY variables exist, not just WHAT
 - Only create state variables that have state-specific logic
 - See skill for decision tree and examples
+
+**NOTE: Unused `parameters` is OK if there's state-specific logic:**
+```python
+# ✅ VALID - No parameters, but has state-specific calculation order:
+def formula(spm_unit, period, parameters):  # parameters unused - that's OK!
+    earned = spm_unit("tanf_gross_earned_income", period)
+    unearned = spm_unit("tanf_gross_unearned_income", period)
+    # State-specific: Oregon counts child support differently
+    child_support = spm_unit("child_support_received", period)
+    return earned + unearned - child_support  # State-specific logic!
+
+# ❌ INVALID - No parameters AND no state logic (pure wrapper):
+def formula(spm_unit, period, parameters):
+    return spm_unit("spm_unit_assets", period)  # Just returns federal unchanged
+```
+
+**The test is: "Does this formula do something state-specific?" - NOT "Does it use parameters?"**
 
 ## Implementation Approach: Simplified vs. Full
 
@@ -129,6 +159,35 @@ For states with truly unique definitions, create state-specific variables as nee
 Read `sources/working_references.md` in the repository for program documentation.
 
 **CRITICAL**: Embed references from `sources/working_references.md` into your parameter/variable metadata.
+
+### Variable Reference Format
+
+The `reference` field in variables is a URL string. **For PDF links, always add `#page=XX`:**
+
+```python
+# ❌ BAD - No page number for PDF:
+reference = "https://oregon.gov/dhs/tanf-manual.pdf"
+
+# ✅ GOOD - Page number included:
+reference = "https://oregon.gov/dhs/tanf-manual.pdf#page=23"
+
+# ✅ GOOD - Direct link to regulation section:
+reference = "https://oregon.public.law/rules/oar_461-155-0030"
+
+# ✅ GOOD - eCFR with section anchor:
+reference = "https://www.ecfr.gov/current/title-7/section-273.9#p-273.9(d)(6)"
+```
+
+**Complete variable example:**
+```python
+class or_tanf_income_eligible(Variable):
+    value_type = bool
+    entity = SPMUnit
+    definition_period = MONTH
+    label = "Oregon TANF income eligibility"
+    reference = "https://oregon.gov/dhs/tanf-manual.pdf#page=45"  # Include page!
+    defined_for = StateCode.OR
+```
 
 ### Step 2: Implement Variables
 
@@ -303,26 +362,18 @@ make test
 # Fix any issues found
 ```
 
-### Step 8: Commit and Push
+### Step 8: Create Files Only
+
+Create your parameter and variable files in the appropriate directories:
+- Parameters: `policyengine_us/parameters/gov/states/<state>/<agency>/<program>/`
+- Variables: `policyengine_us/variables/gov/states/<state>/<agency>/<program>/`
+
+**DO NOT commit or push** - the pr-pusher agent will handle all commits.
 
 ```bash
-# Stage your implementation files
-git add policyengine_us/parameters/
-git add policyengine_us/variables/
-
-# Commit with clear message
-git commit -m "Implement <program> variables and parameters
-
-- Complete parameterization with zero hard-coded values
-- All formulas based on official regulations
-- References embedded in metadata from documentation
-- Federal/state separation properly maintained"
-
-# Push your branch
-git push -u origin impl-<program>-<date>
+# Just create files - DO NOT commit
+# pr-pusher will stage, commit, and push all files together
 ```
-
-**IMPORTANT**: Do NOT merge to master. Your branch will be merged by the ci-fixer agent.
 
 ## When Invoked to Fix Issues
 
@@ -344,50 +395,59 @@ Consult these skills for detailed patterns:
 
 ## Code Comment Standards
 
-**MINIMAL COMMENTS - Let the code speak for itself!**
+**BALANCED COMMENTS - Helpful but not verbose**
 
-### ❌ DON'T - Verbose explanatory comments
+### When to Comment
+
+| Comment Type | When to Use | Example |
+|--------------|-------------|---------|
+| **Regulation reference** | Complex calculations | `# Per OAR 461-155-0020(2)(a)` |
+| **Calculation order** | Multi-step formulas | `# Step 1: Gross income before disregards` |
+| **Non-obvious logic** | When code doesn't match intuition | `# Apply disregard BEFORE adding unearned (state-specific)` |
+| **Limitation notes** | Non-simulatable rules | `# NOTE: 4-month limit cannot be tracked` |
+
+### ❌ DON'T - Obvious or verbose comments
 ```python
 def formula(spm_unit, period, parameters):
+    # Calculate earned income  ❌ Obvious from variable name
+    earned = ...
+
+    # Check if eligible  ❌ Obvious
+    eligible = ...
+
     # Wisconsin disregards all earned income of dependent children (< 18)
-    # Calculate earned income for adults only
-    is_adult = spm_unit.members("age", period.this_year) >= 18  # ❌ Hard-coded!
-    adult_earned = spm_unit.sum(
-        spm_unit.members("tanf_gross_earned_income", period) * is_adult
-    )
-
-    # All unearned income is counted (including children's)
-    gross_unearned = add(spm_unit, period, ["tanf_gross_unearned_income"])
-
-    # NOTE: Wisconsin disregards many additional income sources that
-    # are not separately tracked in PolicyEngine (educational aid, etc.)
-    # EITC and other tax credits are NOT included in gross income...
-    return max_(total_income - disregards, 0)
+    # This is because children's income should not count against the family
+    # and the state wants to encourage youth employment...  ❌ Too verbose
 ```
 
-### ✅ DO - Clean self-documenting code
+### ✅ DO - Balanced helpful comments
 ```python
 def formula(spm_unit, period, parameters):
-    p = parameters(period).gov.states.wi.dcf.tanf.income
+    # Per ORS 461.155.0020 - calculation order matters
+    p = parameters(period).gov.states.or.dhs.tanf.income
 
+    # Step 1: Gross income (adults only per state rule)
     is_adult = spm_unit.members("age", period.this_year) >= p.adult_age_threshold
     adult_earned = spm_unit.sum(
         spm_unit.members("tanf_gross_earned_income", period) * is_adult
     )
     gross_unearned = add(spm_unit, period, ["tanf_gross_unearned_income"])
-    child_support = add(spm_unit, period, ["child_support_received"])
 
-    return max_(adult_earned + gross_unearned - child_support, 0)
+    # Step 2: Apply disregards BEFORE combining (state-specific order)
+    net_earned = max_(adult_earned - p.earned_income_disregard, 0)
+
+    # NOTE: 4-month transitional disregard cannot be tracked
+    return net_earned + gross_unearned
 ```
 
 ### Comment Rules
-1. **NO comments explaining what code does** - variable names should be self-documenting
-2. **OK: Brief NOTE about PolicyEngine limitations** (one line):
-   ```python
-   # NOTE: Time limit cannot be tracked in PolicyEngine
-   ```
-3. **NO multi-line explanations** of what the code calculates
-4. **Parameterize ALL thresholds** including age (18 → `p.adult_age_threshold`)
+1. **NO comments explaining what code does** - variable names should be clear
+2. **YES: Regulation references** for complex or non-obvious calculations
+3. **YES: Step numbers** for multi-step formulas (helps reviewers follow logic)
+4. **YES: Non-obvious logic** when calculation order or approach differs from intuition
+5. **YES: Brief NOTE** about PolicyEngine limitations (one line)
+6. **NO multi-paragraph explanations** - keep it to one line per comment
+7. **Aim for 2-4 comments per formula** - not zero, not excessive
 
 ## Quality Standards
 
@@ -398,4 +458,4 @@ Implementation must have:
 - All parameters with required metadata
 - Federal/state separation maintained
 - References to authoritative sources
-- Minimal comments (code should be self-documenting)
+- Balanced comments (2-4 per formula: regulation refs, steps, non-obvious logic)

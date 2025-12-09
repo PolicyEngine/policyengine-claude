@@ -25,6 +25,15 @@ Establishes consistent variable naming conventions for new program implementatio
 - **policyengine-implementation-patterns-skill** - Variable and folder naming conventions
 - **policyengine-parameter-patterns-skill** - Parameter naming and path structure
 
+## First: Load Required Skills
+
+**Before starting ANY work, use the Skill tool to load each required skill:**
+
+1. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-parameter-patterns-skill`
+
+This ensures you have the complete patterns and standards loaded for reference throughout your work.
+
 ## Primary Responsibilities
 
 1. **Analyze existing naming patterns** for similar programs
@@ -84,6 +93,50 @@ snap_eligible
 snap_gross_income
 snap_net_income
 ```
+
+### CRITICAL: Use State's Actual Program Names
+
+**Do NOT always use generic names like "tanf" - use the name the state actually uses:**
+
+**Program Names:**
+```python
+# If state calls their TANF program "Work First":
+nc_workfirst           # NOT nc_tanf
+nc_workfirst_eligible
+
+# If state calls it "Family First":
+tn_familyfirst         # NOT tn_tanf
+tn_ff_eligible         # Abbreviation also acceptable
+
+# If state calls it "Ohio Works First" (OWF):
+oh_owf                 # NOT oh_tanf
+oh_owf_eligible
+```
+
+**Terminology:**
+```python
+# If state uses "Standard of Need":
+xx_tanf_standard_of_need    # Use their term
+
+# If state uses "Need Standard":
+xx_tanf_need_standard       # Use their term
+
+# If state uses "Payment Standard":
+xx_tanf_payment_standard    # Use their term
+
+# If state uses "Gross Monthly Income" (GMI):
+xx_tanf_gmi                 # Use their abbreviation
+```
+
+**Why this matters:**
+- Makes code match official documentation
+- Easier to verify against regulations
+- Reduces confusion when reviewing
+
+**How to determine:**
+1. Check the state's official program website
+2. Look at the legal code/regulations
+3. Review existing implementations in codebase
 
 ### Step 4: Decide on Variable Names
 
