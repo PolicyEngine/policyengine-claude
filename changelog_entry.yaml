@@ -1,10 +1,6 @@
-# Populate this file with your changes, then run `make changelog`
-# Format:
-# - bump: patch/minor/major
-#   changes:
-#     added:
-#       - "Description"
-#     changed:
-#       - "Description"
-#     fixed:
-#       - "Description"
+- bump: patch
+  changes:
+    added:
+      - Document bracket parameter pattern for handling negative values (-.inf vs 0 thresholds) in parameter patterns skill
+    changed:
+      - Add critical warning against mixing adds/subtracts with custom formulas in implementation patterns skill

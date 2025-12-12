@@ -421,6 +421,52 @@ metadata:
   label: State PROGRAM earned income disregard percentage
 ```
 
+### Bracket-Based Parameters
+
+**CRITICAL: Handling Negative Values**
+
+When creating bracket-based parameters (e.g., tax credits based on AGI), the first bracket threshold MUST be `-.inf` if negative values are possible, NOT `0`.
+
+**❌ WRONG - Excludes negative AGI:**
+```yaml
+# threshold.yaml (for single filers)
+brackets:
+  - threshold:
+      2023-01-01: 0      # ❌ Bug: negative AGI excluded!
+    amount:
+      2023-01-01: 300
+  - threshold:
+      2023-01-01: 30_000
+    amount:
+      2023-01-01: 110
+```
+
+**✅ CORRECT - Includes all possible values:**
+```yaml
+# threshold.yaml (for single filers)
+brackets:
+  - threshold:
+      2023-01-01: -.inf  # ✅ Covers negative AGI
+    amount:
+      2023-01-01: 300
+  - threshold:
+      2023-01-01: 30_000
+    amount:
+      2023-01-01: 110
+```
+
+**When to use `-.inf`:**
+- Income-based calculations (AGI can be negative)
+- Any parameter where negative input values are valid
+- Tax credits, deductions, or benefits based on earnings
+
+**When `0` is appropriate:**
+- Age thresholds (always non-negative)
+- Count-based parameters (household size, number of dependents)
+- Resource limits (assets can't be negative)
+
+**Real-world example:** Hawaii Food/Excise Tax Credit uses AGI brackets. The first threshold must be `-.inf` to correctly handle taxpayers with negative AGI (e.g., business losses).
+
 ---
 
 ## 7. Validation Checklist
