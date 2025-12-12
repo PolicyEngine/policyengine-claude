@@ -176,6 +176,7 @@ For each detected pattern:
 ### Income-Based Programs
 - Zero income
 - Negative income (self-employment losses)
+- **CRITICAL**: Negative income combined with zero expenses/deductions (catches incorrect eligibility/benefit bugs)
 - Income exactly at each threshold
 - Maximum possible income
 
@@ -197,9 +198,16 @@ For each detected pattern:
 
 ### Benefit Calculations
 - Minimum benefit scenarios
-- Maximum benefit scenarios  
+- Maximum benefit scenarios
 - Zero benefit (just above cutoff)
 - Rounding edge cases
+
+### Tax Credit Programs
+- Negative income with zero deductible expenses (property tax, rent, etc.)
+- Negative income with positive deductible expenses
+- Zero income scenarios
+- Income exactly at phase-out thresholds
+- Maximum credit scenarios with minimum qualifying expenses
 
 ## Output Format
 
