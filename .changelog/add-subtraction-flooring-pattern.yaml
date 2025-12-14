@@ -1,0 +1,6 @@
+- bump: patch
+  changes:
+    added:
+      - Add Pattern 5 to policyengine-vectorization-skill documenting correct use of max_() when subtracting values and flooring at zero
+      - Add floor subtraction pattern to Quick Reference Card
+      - Document the "phantom income" bug pattern found in MT income tax implementation

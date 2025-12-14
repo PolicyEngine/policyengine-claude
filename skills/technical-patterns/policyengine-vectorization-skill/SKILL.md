@@ -92,6 +92,46 @@ elif amount > maximum:
 # Or: amount = max_(0, min_(amount, maximum))
 ```
 
+### Pattern 5: Flooring Subtraction Results (CRITICAL)
+
+When subtracting values and wanting to floor at zero, you must wrap the **entire subtraction** in `max_()`:
+
+```python
+# Common scenario: income after deductions/losses
+❌ WRONG - Creates phantom negative values:
+income = max_(income, 0) - capital_loss  # If capital_loss > income, result is negative!
+
+✅ CORRECT - Properly floors at zero:
+income = max_(income - capital_loss, 0)  # Entire subtraction floored
+
+# Real example from MT income tax bug:
+❌ WRONG - Tax on phantom negative income:
+def formula(tax_unit, period, parameters):
+    income = tax_unit("adjusted_gross_income", period)
+    capital_gains = tax_unit("capital_gains", period)
+
+    # BUG: If capital_gains is negative (loss), this creates negative income
+    # But max_() only floors income, not the result
+    regular_income = max_(income, 0) - capital_gains
+    return calculate_tax(regular_income)  # Tax on negative number!
+
+✅ CORRECT - No phantom income:
+def formula(tax_unit, period, parameters):
+    income = tax_unit("adjusted_gross_income", period)
+    capital_gains = tax_unit("capital_gains", period)
+
+    # Properly floors the entire result
+    regular_income = max_(income - capital_gains, 0)
+    return calculate_tax(regular_income)  # Never negative
+```
+
+**Why this matters:**
+- If `capital_gains = -3000` (loss), then `income - capital_gains = income + 3000`
+- The wrong pattern `max_(income, 0) - capital_gains` allows the subtraction to make the result negative
+- This creates "phantom income" where none exists, leading to incorrect tax calculations
+
+**Rule:** When the formula is `A - B` and you want the result floored at zero, use `max_(A - B, 0)`, NOT `max_(A, 0) - B`.
+
 ---
 
 ## 3. When if-else IS Acceptable
@@ -287,6 +327,7 @@ def test_vectorization():
 | Boolean OR | `or` | `\|` |
 | Boolean NOT | `not` | `~` |
 | Bounds checking | `if x < 0: x = 0` | `max_(0, x)` |
+| Floor subtraction | `max_(x, 0) - y` ❌ | `max_(x - y, 0)` ✅ |
 | Complex logic | Nested if | Nested where/select |
 
 ---
