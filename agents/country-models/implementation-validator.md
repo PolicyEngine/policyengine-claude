@@ -400,6 +400,30 @@ Implementation passes when:
 - Proper federal/state separation
 - Include effective dates
 
+**CRITICAL: Watch for Modified Income Definitions**
+
+Many state tax credits and benefits use **modified versions** of standard income measures. The statute will specify:
+- "AGI **plus** [certain additions]" (e.g., "AGI plus exemptions")
+- "AGI **minus** [certain subtractions]" (e.g., "AGI less student loan interest")
+- "Income as defined in [other statute section]"
+
+**Example from Arizona Family Tax Credit (ARS 43-1073):**
+```python
+# ❌ WRONG - Uses only AGI
+income = tax_unit("az_agi", period)
+eligible = income <= threshold
+
+# ✅ CORRECT - Uses AGI plus exemptions per statute
+income = tax_unit("az_agi", period) + tax_unit("az_exemptions", period)
+eligible = income <= threshold
+```
+
+**Validation checklist:**
+- [ ] Read the statute's exact income definition language
+- [ ] Check if it references AGI "plus" or "minus" any adjustments
+- [ ] Verify the variable uses the correct modified income measure
+- [ ] Document the specific statute citation that defines the income measure
+
 ### Benefit Calculations
 - All rates from parameters
 - Min/max thresholds parameterized
