@@ -332,6 +332,87 @@ def test_vectorization():
 
 ---
 
+## 8. Debugging Phantom Values in Tax Calculations
+
+### Problem: Non-Zero Tax Despite Zero Taxable Income
+
+When state tax calculations produce small non-zero values (e.g., $277) even though taxable income is zero, check for:
+
+#### Root Cause 1: Implicit Type Conversion in min/max Operations
+
+```python
+# Example from Montana income tax bug
+❌ WRONG - Creates phantom values:
+def formula(tax_unit, period, parameters):
+    regular_tax_before_credits = tax_unit("mt_income_tax_before_credits", period)
+    credits = tax_unit("mt_income_tax_refundable_credits", period)
+
+    # BUG: min() with int 0 converts float array to int, losing precision
+    # When regular_tax_before_credits = 0.0, this can produce non-zero results
+    return max_(regular_tax_before_credits - credits, 0)
+
+✅ CORRECT - Preserves array types:
+def formula(tax_unit, period, parameters):
+    regular_tax_before_credits = tax_unit("mt_income_tax_before_credits", period)
+    credits = tax_unit("mt_income_tax_refundable_credits", period)
+
+    # Use max_() which handles arrays correctly
+    return max_(regular_tax_before_credits - credits, 0)
+```
+
+#### Root Cause 2: Phantom Intermediate Values in Calculation Chains
+
+When taxable income is zero but tax is non-zero, trace the calculation chain:
+
+```python
+# Tax calculation chain (Montana example)
+taxable_income: 0          # ✓ Correct
+rate: 0.0475              # Used despite zero income
+brackets: [15_600]        # Used despite zero income
+tax_before_credits: 277.41 # ❌ PHANTOM VALUE
+
+# The bug: Brackets calculated regular tax even when taxable income was zero
+# due to missing zero-check in bracket calculation
+```
+
+#### Debugging Pattern
+
+When you see phantom tax values:
+
+1. **Check the calculation chain** - Run test with verbose output to see intermediate values:
+   ```bash
+   pytest tests/file.py -vv
+   ```
+
+2. **Verify zero-income handling** - Look for formulas that don't short-circuit on zero income:
+   ```python
+   ✅ GOOD:
+   def formula(entity, period, parameters):
+       taxable_income = entity("taxable_income", period)
+       # Short-circuit when income is zero
+       return where(taxable_income == 0, 0, calculate_tax(...))
+
+   ❌ BAD:
+   def formula(entity, period, parameters):
+       # Always calculates, even when income is zero
+       return calculate_brackets(taxable_income, rates, brackets)
+   ```
+
+3. **Check type consistency** - Ensure operations preserve NumPy array dtypes:
+   ```python
+   ✅ Use: max_(value, 0) or clip(value, 0, None)
+   ❌ Avoid: max(value, 0) - Python's max can cause type issues
+   ```
+
+#### Common Symptoms
+
+- Tax calculated despite zero taxable income
+- Small non-zero values when expecting exactly zero
+- Tax values that don't match manual calculations
+- Capital gains deductions not properly reducing taxable income
+
+---
+
 ## For Agents
 
 When implementing formulas:
@@ -342,3 +423,4 @@ When implementing formulas:
 5. **Test with arrays** to ensure vectorization
 6. **Parameter conditions** can use if-else (scalars)
 7. **Entity data** must use vectorized operations
+8. **Debug phantom values** by tracing calculation chains and checking type preservation
