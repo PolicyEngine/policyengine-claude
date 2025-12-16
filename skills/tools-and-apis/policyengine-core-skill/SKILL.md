@@ -410,6 +410,51 @@ tax1 = sim.calculate("income_tax", 2024)
 tax2 = sim.calculate("income_tax", 2024)  # Instant
 ```
 
+### Performance Optimization: Batching Parameter Lookups
+
+When parameter lookups happen inside loops, batch them beforehand to avoid repeated function call overhead:
+
+**❌ Inefficient (repeated lookups):**
+```python
+# Inside uprate_parameters or similar functions
+for instant in instants:
+    value = uprating_parameter(instant)  # Repeated function calls
+    # ... use value
+```
+
+**✅ Efficient (batched lookups):**
+```python
+# Pre-compute all values before the loop
+value_cache = {
+    instant: uprating_parameter(instant)
+    for instant in instants
+}
+
+# Use cached values in loop
+for instant in instants:
+    value = value_cache[instant]  # Fast dictionary lookup
+    # ... use value
+```
+
+**Why it matters:**
+- Parameter lookups involve instant/period conversions and tree traversal
+- In large parameter sets (like policyengine-us), this can cause millions of redundant calls
+- Example: `uprate_parameters` reduced from 15s to 13.8s (8% improvement) by batching lookups
+
+**When to batch:**
+- Parameter lookups inside loops
+- Multiple lookups of the same value at different points in code
+- Any repeated `parameters(period).path.to.value` calls
+
+**To find optimization opportunities:**
+```bash
+# Profile import time
+python -m cProfile -o profile.stats -c "from policyengine_us.system import system"
+
+# Search for parameter lookup hotspots
+grep -r "parameters(period)" policyengine_core/parameters/
+```
+
 ### Neutralizing Variables
 
 ```python

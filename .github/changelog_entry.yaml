@@ -1,0 +1,4 @@
+- bump: patch
+  changes:
+    added:
+      - Performance optimization guidance in policyengine-core-skill - batching parameter lookups to reduce function call overhead
