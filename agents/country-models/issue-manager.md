@@ -46,7 +46,35 @@ gh issue list --state open --search "in:title <full-state-name> <program>"
 gh issue list --state open --search "in:title <state> energy assistance"
 ```
 
-### Step 3: If No Issue Exists, Create One
+### Step 2.5: Evaluate Found Issues - Create New If Not Exact Match
+
+**CRITICAL: Only connect to an existing issue if it's EXACTLY what we need.**
+
+**Create a NEW issue if the found issue:**
+- Has a specific year/date that doesn't match (e.g., "DC TANF 2017, 2018" ≠ current DC TANF)
+- Is for a different version or variant of the program
+- Is for a historical implementation or update
+- Has been closed or abandoned
+- Is tracking something related but different
+
+**Examples:**
+```
+Found: "DC TANF 2017, 2018 Updates"
+Want: DC TANF (current implementation)
+→ CREATE NEW ISSUE (the old one is for historical updates)
+
+Found: "Implement Arizona TANF"
+Want: Arizona TANF implementation
+→ USE EXISTING (exact match)
+
+Found: "Update OR TANF income limits for 2023"
+Want: OR TANF (full implementation)
+→ CREATE NEW ISSUE (the old one is just for income limit updates)
+```
+
+**When in doubt, create a new issue.** It's better to have a fresh tracking issue than to mix unrelated work.
+
+### Step 3: If No Issue Exists (or no exact match), Create One
 ```bash
 gh issue create --title "Implement <State> <Program>" --body "
 # Implement <Full State Name> <Full Program Name>
@@ -130,9 +158,43 @@ esac
 gh issue edit <issue-number> --add-label "implementation-tracking"
 ```
 
-### Step 4: Create Draft PR (If New Issue)
+### Step 3.5: Check for Existing PRs - Read Before Reusing
 
-If a new issue was created, immediately create a draft PR:
+**Before creating a new PR, search for existing PRs:**
+```bash
+# Search for open PRs with program name and state
+gh pr list --state open --search "in:title <state> <program>"
+```
+
+**CRITICAL: Read the PR carefully before deciding to use it.**
+
+**Create a NEW PR if the found PR:**
+- Only implements part of what we need (e.g., just income limits, not full program)
+- Is for a specific year update, not full implementation
+- Has stale code or outdated approach
+- Is abandoned or has no recent activity
+- Implements a different variant of the program
+
+**Examples:**
+```
+Found PR: "Add DC TANF income parameters"
+Want: Full DC TANF implementation
+→ CREATE NEW PR (existing only has income parameters, not full program)
+
+Found PR: "Implement Arizona TANF" (draft, recent activity)
+Want: Arizona TANF implementation
+→ USE EXISTING (matches what we need)
+
+Found PR: "Update KY TANF for 2022"
+Want: KY TANF (current full implementation)
+→ CREATE NEW PR (existing is just a year update)
+```
+
+**When in doubt, create a new PR.** It's cleaner to start fresh than to build on partial/outdated work.
+
+### Step 4: Create Draft PR (If New Issue or No Suitable PR)
+
+If a new issue was created (or no suitable existing PR), create a draft PR:
 
 ```bash
 # Only if we created a new issue
