@@ -1,4 +1,5 @@
-- bump: patch
+- bump: minor
   changes:
-    changed:
-      - Add critical warning against mixing adds/subtracts with custom formulas in implementation patterns skill
+    added:
+    - New lex-mcp skill documenting how to use Lex MCP tool for finding legislative references
+    - lex-mcp skill added to country-models and complete plugins

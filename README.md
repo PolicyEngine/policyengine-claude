@@ -8,7 +8,7 @@ PolicyEngine Claude provides agents, slash commands, and skills for working with
 
 - **🤖 22 Specialized Agents** - Automated workflows for development
 - **🎯 4 Slash Commands** - Multi-agent orchestration and PR workflows
-- **📚 14 Skills** - Knowledge base for users, analysts, and contributors
+- **📚 15 Skills** - Knowledge base for users, analysts, and contributors
 
 ## Quick Start
 
@@ -72,7 +72,7 @@ Develop PolicyEngine software across country models, API, app, and data packages
 /plugin install data-science@policyengine-claude
 ```
 
-## Skills Overview (14 Total)
+## Skills Overview (15 Total)
 
 ### User-Facing Skills
 
@@ -88,30 +88,36 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Batch calculations
 - Rate limits and authentication
 
+**3. lex-mcp** 🆕
+- Finding legislative references using Lex MCP tool
+- Accessing USC, CFR, and state statutes
+- Validating parameter references
+- Corroborating parameter values with legal sources
+
 ### Core Platform Skills
 
-**3. policyengine-core** 🆕
+**4. policyengine-core** 🆕
 - Simulation engine architecture
 - Variable and parameter systems
 - Vectorization requirements
 - Formula patterns
 - Multi-audience: explains what Core is (users), how it works (analysts), how to develop it (contributors)
 
-**4. policyengine-us** ✅ Enhanced
+**5. policyengine-us** ✅ Enhanced
 - US tax and benefit system
 - Situation creation patterns
 - Variable reference (400+ variables)
 - Using axes for parameter sweeps
 - Multi-audience: what's modeled (users), how to use (analysts), how to develop (contributors)
 
-**5. policyengine-api** 🆕
+**6. policyengine-api** 🆕
 - Flask REST API patterns
 - Endpoint structure
 - Caching strategy (Redis)
 - Background jobs (RQ)
 - Multi-audience: what API does (users), how to call it (analysts), how to develop (contributors)
 
-**6. policyengine-app** 🆕
+**7. policyengine-app** 🆕
 - React application patterns
 - Component structure
 - Routing and state management
@@ -120,14 +126,14 @@ Develop PolicyEngine software across country models, API, app, and data packages
 
 ### Analysis and Data Skills
 
-**7. policyengine-analysis** ✅ Enhanced
+**8. policyengine-analysis** ✅ Enhanced
 - Impact analysis patterns
 - Streamlit dashboards
 - Jupyter notebooks
 - Plotly visualizations with PolicyEngine branding
 - Multi-audience: how analysis works (users), analysis code patterns (analysts)
 
-**8. microdf** 🆕
+**9. microdf** 🆕
 - Weighted pandas DataFrames
 - Inequality metrics (Gini, top shares)
 - Poverty calculations
@@ -136,19 +142,19 @@ Develop PolicyEngine software across country models, API, app, and data packages
 
 ### Data Ecosystem Skills
 
-**9. microimpute** 🆕
+**10. microimpute** 🆕
 - ML-based variable imputation
 - Multiple methods (linear, random forest, quantile forest, XGBoost)
 - Quantile loss benchmarking
 - Used in policyengine-us-data to fill missing survey variables
 
-**10. microcalibrate** 🆕
+**11. microcalibrate** 🆕
 - Survey weight calibration to population targets
 - L0 regularization for dataset sparsification
 - Automatic hyperparameter tuning (Optuna)
 - Interactive dashboard at microcalibrate.vercel.app
 
-**11. l0** 🆕
+**12. l0** 🆕
 - PyTorch L0 regularization for neural networks
 - Intelligent sampling and feature selection
 - Used by microcalibrate for household selection
@@ -156,21 +162,21 @@ Develop PolicyEngine software across country models, API, app, and data packages
 
 ### Design and Standards Skills
 
-**12. policyengine-design** 🆕
+**13. policyengine-design** 🆕
 - PolicyEngine visual identity (colors, fonts, logos)
 - Chart branding (Plotly format_fig pattern)
 - Streamlit theme configuration
 - Color palette and usage guidelines (v1: #39C6C0, v2: #319795)
 - Multi-audience: recognizing brand (users), applying branding (analysts/contributors)
 
-**13. policyengine-standards** ✅
+**14. policyengine-standards** ✅
 - Code formatting (Black, Prettier)
 - Git workflow
 - Changelog management
 - CI requirements
 - Common AI pitfalls
 
-**14. policyengine-writing** ✅
+**15. policyengine-writing** ✅
 - Active voice, quantitative language
 - Sentence case for headings
 - Neutral, objective tone
@@ -249,12 +255,12 @@ Develop PolicyEngine software across country models, API, app, and data packages
 | Plugin | Audience | Agents | Commands | Skills |
 |--------|----------|--------|----------|--------|
 | **essential** | Users | 0 | 0 | 4 |
-| **country-models** | Contributors | 17 | 4 | 14 |
+| **country-models** | Contributors | 17 | 4 | 15 |
 | **api-development** | Contributors | 1 | 3 | 7 |
 | **app-development** | Contributors | 1 | 3 | 7 |
 | **analysis-tools** | Analysts | 0 | 0 | 8 |
 | **data-science** | Analysts/Contributors | 0 | 0 | 9 |
-| **complete** | All | 22 | 4 | 14 |
+| **complete** | All | 22 | 4 | 15 |
 
 ## Installation
 
@@ -405,8 +411,8 @@ Each repo type installs appropriate plugins:
 
 | Repository | Plugin | What It Includes |
 |------------|--------|------------------|
-| policyengine-us | country-models | 17 agents, 4 commands, 14 skills |
-| policyengine-uk | country-models | 17 agents, 4 commands, 14 skills |
+| policyengine-us | country-models | 17 agents, 4 commands, 15 skills |
+| policyengine-uk | country-models | 17 agents, 4 commands, 15 skills |
 | policyengine-api | api-development | 1 agent, 3 commands, 7 skills |
 | policyengine-app | app-development | 1 agent, 3 commands, 7 skills |
 | crfb-tob-impacts | analysis-tools | 8 skills |
@@ -597,6 +603,7 @@ Claude: [Has api-development plugin]
 |-------|-------|----------|--------------|------------|
 | policyengine-user-guide | ✅ | ⚪ | ⚪ | Web app usage, understanding results |
 | policyengine-python-client | ⚪ | ✅ | ⚪ | API access, policyengine.py package |
+| lex-mcp | ⚪ | ⚪ | ✅ | Legislative references, USC, CFR, statutes |
 | policyengine-core | ✅ | ✅ | ✅ | Simulation engine, architecture |
 | policyengine-us | ✅ | ✅ | ✅ | US tax/benefit system, variables |
 | policyengine-api | ⚪ | ✅ | ✅ | REST endpoints (v1), caching, services |
