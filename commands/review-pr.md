@@ -103,6 +103,15 @@ Invoke **documentation-enricher** to find:
 - Missing regulatory references
 - Unclear variable descriptions
 
+### Step 6: Regulatory Review
+Invoke **program-reviewer** to check:
+- Research regulations FIRST (independent of code)
+- Compare implementation to legal requirements
+- Identify discrepancies between code and law
+- Flag missing program components
+
+**IMPORTANT**: This step researches regulations independently before looking at code to prevent confirmation bias.
+
 ## Phase 3: Collect and Organize Findings
 
 Aggregate all issues into structured format:
@@ -224,6 +233,7 @@ gh pr comment $PR_NUMBER --body "## 📋 Review Summary
 - **Implementation Validation**: X issues
 - **Test Coverage**: X gaps identified
 - **Documentation**: X improvements suggested
+- **Regulatory Review**: X discrepancies found
 
 ### 🚀 Next Steps
 

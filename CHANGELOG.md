@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.4] - 2025-12-18
+
+### Changed
+- **Renamed tanf-program-reviewer to program-reviewer** - Generalized for any government program, not just TANF
+- **encode-policy Phase 4 restructured** - Split into 4A (parameter-architect) then 4B (test-creator + rules-engineer in parallel)
+- **encode-policy Phase 5 simplified** - Just changelog, `make format`, push (testing moved to Phase 6)
+- **encode-policy Phase 6 restructured** - Step 6A (implementation-validator) → Step 6B (ci-fixer runs tests locally)
+- **ci-fixer runs tests locally** - No longer waits for GitHub CI (30+ min), uses `policyengine-core test` directly
+- **implementation-validator check order** - Now checks Parameters → Variables → Tests (foundation first)
+- **issue-manager hybrid approach** - Stops and asks user if existing issue/PR found; proceeds autonomously if none found
+- **document-collector PDF handling** - Notes PDFs in sources.md for future reference, doesn't block workflow
+
+### Added
+- **Bracket-style age eligibility parameters** - Single file with thresholds instead of separate min/max files
+- **PDF page number clarification** - `#page=XX` is FILE position (not printed page number)
+- **State-specific program naming** - TEA (Arkansas), OWF (Ohio), CalWORKs (California), etc.
+- **State-specific terminology** - Need standard vs payment standard variations
+- **"Legal Code is Source of Truth" principle** - Law comes first, patterns are tools
+- **`adds` vs `add()` enforcement** - Use `adds = [...]` for pure sums, `add()` for sum + operations, never manual `a + b`
+- **`add() > 0` pattern** - Instead of `spm_unit.members` + `spm_unit.any()`
+- **"Break out complex expressions"** - Named variables for clarity (e.g., `benefit_amount = max_(...)`)
+- **Person vs Group entity verification** - Check if amounts apply per-person or per-group
+- **Reference format rules** - Use tuple `()` not list `[]`, no `documentation` field
+- **Test coverage rule** - Variables with `formula` need tests; `adds` variables don't
+- **Test input mismatch guidance** - Fix test inputs to match federal baseline, don't create wrapper variables
+
 ## [3.1.4] - 2025-12-09
 
 ### Added
@@ -54,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Added `Skill` tool to 16 agents that reference skills but couldn't invoke them:
-  - **Country-models agents (15):** rules-engineer, tanf-program-reviewer, ci-fixer, test-creator, parameter-architect, implementation-validator, edge-case-generator, documentation-enricher, cross-program-validator, document-collector, performance-optimizer, naming-coordinator, integration-agent, issue-manager, pr-pusher
+  - **Country-models agents (15):** rules-engineer, program-reviewer, ci-fixer, test-creator, parameter-architect, implementation-validator, edge-case-generator, documentation-enricher, cross-program-validator, document-collector, performance-optimizer, naming-coordinator, integration-agent, issue-manager, pr-pusher
   - **Other agents (1):** reference-validator
 - Agents can now dynamically load PolicyEngine skills (policyengine-implementation-patterns-skill, policyengine-parameter-patterns-skill, etc.) instead of just referencing them in documentation
 
@@ -80,7 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added shared/ agents and workflow.md to marketplace.json
 
 ### Added
-- Added all 7 technical pattern skills to ci-fixer and tanf-program-reviewer agents
+- Added all 7 technical pattern skills to ci-fixer and program-reviewer agents
 - Added minimal comments guidance to rules-engineer and code-style-skill
 
 ### Removed

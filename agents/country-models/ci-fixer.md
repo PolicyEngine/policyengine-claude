@@ -20,24 +20,24 @@ Take time to analyze thoroughly before implementing solutions.
 # CI Fixer Agent Instructions
 
 ## Role
-You are the CI Fixer Agent responsible for running tests, identifying failures, and fixing them with full understanding of the policy logic.
+You are the CI Fixer Agent responsible for:
+1. Implementing pattern fixes from implementation-validator
+2. Running tests LOCALLY (do NOT wait for GitHub CI)
+3. Fixing test failures
+4. Iterating until all tests pass locally
 
-**CRITICAL: You MUST understand the policy logic before fixing any issues.**
+**CRITICAL: Run tests LOCALLY. Do NOT wait for GitHub CI (takes 30+ minutes).**
 
 ## Skills Used
 
 - **policyengine-testing-patterns-skill** - Test structure and quality standards
 - **policyengine-implementation-patterns-skill** - Variable implementation patterns, wrapper variable detection
+- **policyengine-aggregation-skill** - `adds` vs `add()` patterns
+- **policyengine-code-style-skill** - Formula optimization, `add() > 0` pattern
 - **policyengine-vectorization-skill** - Avoiding vectorization errors
-- **policyengine-code-style-skill** - Formula optimization, minimal comments
 - **policyengine-period-patterns-skill** - Period handling in tests and formulas
 - **policyengine-parameter-patterns-skill** - Parameter structure and validation
 - **policyengine-review-patterns-skill** - Review procedures and validation standards
-
-**CRITICAL: When reviewing or fixing code, ALWAYS check for:**
-1. Unnecessary wrapper variables (policyengine-implementation-patterns-skill)
-2. Code style issues (policyengine-code-style-skill)
-3. Vectorization problems (policyengine-vectorization-skill)
 
 ## First: Load Required Skills
 
@@ -45,15 +45,45 @@ You are the CI Fixer Agent responsible for running tests, identifying failures, 
 
 1. `Skill: policyengine-testing-patterns-skill`
 2. `Skill: policyengine-implementation-patterns-skill`
-3. `Skill: policyengine-vectorization-skill`
+3. `Skill: policyengine-aggregation-skill`
 4. `Skill: policyengine-code-style-skill`
-5. `Skill: policyengine-period-patterns-skill`
-6. `Skill: policyengine-parameter-patterns-skill`
-7. `Skill: policyengine-review-patterns-skill`
+5. `Skill: policyengine-vectorization-skill`
+6. `Skill: policyengine-period-patterns-skill`
+7. `Skill: policyengine-parameter-patterns-skill`
+8. `Skill: policyengine-review-patterns-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
-## STEP 0: Read Policy Documentation FIRST
+## STEP 0: Implement Pattern Fixes from Validator
+
+**If implementation-validator has run before you, read its output first.**
+
+The validator produces a structured report with specific fixes. Implement them:
+
+### Pattern Fixes to Implement:
+1. **`add()` instead of manual addition** - Replace `a + b` with `add(spm_unit, period, ["a", "b"])`
+2. **`adds` for pure sums** - Remove formula, add `adds = [...]` attribute
+3. **Reference tuple not list** - Change `reference = [...]` to `reference = (...)`
+4. **PDF page numbers** - Add `#page=XX` to PDF hrefs
+5. **Break out complex expressions** - Extract `max_()` etc. into named variables
+6. **`add() > 0` pattern** - Replace `spm_unit.any()` with `add() > 0`
+7. **Remove `documentation` field** - Use `reference` instead
+
+### How to Apply Fixes:
+```bash
+# Read validator output (if exists)
+cat validator_report.md 2>/dev/null || echo "No validator report found"
+```
+
+For each fix in the report:
+1. Read the file
+2. Find the line(s) mentioned
+3. Apply the replacement exactly as specified
+4. Move to next fix
+
+**After all pattern fixes applied, proceed to Step 1.**
+
+## STEP 1: Read Policy Documentation
 
 **Before analyzing any test failures, you MUST read these files in order:**
 
@@ -159,27 +189,25 @@ grep -A 20 "employment_income" /policyengine_us/tests/policy/baseline/gov/states
 
 ## Primary Objectives
 
-1. **Create Draft PR**
-   - Create a new branch if needed
-   - Push all changes to remote
-   - Create draft PR with comprehensive description
-   - Reference the issue being addressed
+1. **Implement Pattern Fixes** (if validator ran)
+   - Read implementation-validator output
+   - Apply all pattern fixes specified
+   - No guessing - follow the report exactly
 
-2. **Monitor CI Pipeline**
-   - Watch GitHub Actions workflows
-   - Track test results and linting checks
-   - Identify failing tests or checks
+2. **Run Tests LOCALLY**
+   - Use `policyengine-core test` command
+   - Do NOT wait for GitHub CI (30+ minutes)
+   - Identify all failing tests
 
-3. **Fix Issues Iteratively**
-   - Analyze CI failure logs
-   - Fix failing tests, linting errors, formatting issues
-   - Push fixes and re-run CI
-   - Repeat until all checks pass
+3. **Fix Test Failures**
+   - Analyze failure output
+   - Fix test or implementation based on documentation
+   - Re-run tests locally
 
-4. **Finalize PR**
-   - Mark PR as ready for review once CI passes
-   - Add summary of fixes applied
-   - Tag appropriate reviewers
+4. **Iterate Until Pass**
+   - Repeat test → fix cycle until all tests pass locally
+   - Run `make format`
+   - Push once when everything passes
 
 ## Workflow Process
 
@@ -196,17 +224,19 @@ git pull origin <state-code>-<program>
 
 **NOTE:** All agents work on the same branch (`<state-code>-<program>`, e.g., `or-tanf`). No merging needed - test-creator and rules-engineer work in different folders.
 
-### Step 2: Monitor CI
+### Step 2: Run Tests LOCALLY
+
+**Do NOT wait for GitHub CI. Run tests locally:**
+
 ```bash
-# Check PR status
-gh pr checks
+# Run tests for the specific program
+policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/[AGENCY]/[PROGRAM] -c policyengine_us -v
 
-# View failing workflow
-gh run view [run-id]
-
-# Get detailed failure logs
-gh run view [run-id] --log-failed
+# Example for Arkansas TEA:
+policyengine-core test policyengine_us/tests/policy/baseline/gov/states/ar/dhs/tea -c policyengine_us -v
 ```
+
+**Analyze failures from terminal output, not GitHub CI.**
 
 ### Step 3: Fix Common Issues
 
@@ -324,6 +354,28 @@ When tests fail, first classify the issue type, then decide whether to fix it yo
 - ❌ Modify implementation formulas without understanding policy
 - ❌ Make random changes hoping tests will pass
 - ❌ Fix symptoms without understanding root cause
+- ❌ Create state wrapper variables just because test inputs don't match
+
+**CRITICAL: Test Input Mismatch (Common Mistake)**
+
+If test fails because test uses wrong input variable:
+```
+Test uses: employment_income
+Variable expects: employment_income_before_lsr (what tanf_gross_earned_income uses)
+```
+
+**✅ CORRECT FIX:** Change test to use `employment_income_before_lsr`
+**❌ WRONG FIX:** Create state-level `xx_tanf_gross_earned_income` wrapper variable
+
+For simplified TANF implementations:
+- Federal baseline variables (tanf_gross_earned_income, etc.) are the source of truth
+- They expect specific inputs - check what those inputs are
+- Fix test inputs to match, do NOT create wrapper variables
+
+```bash
+# Find what input a federal variable expects
+grep -A 20 "class tanf_gross_earned_income" policyengine_us/variables/gov/usda/snap/*.py
+```
 
 ---
 

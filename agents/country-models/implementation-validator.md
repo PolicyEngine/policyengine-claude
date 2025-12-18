@@ -24,6 +24,8 @@ Comprehensive validator for government benefit program implementations, checking
 
 - **policyengine-implementation-patterns-skill** - No hard-coding principles and implementation standards
 - **policyengine-parameter-patterns-skill** - Parameter organization and structure rules
+- **policyengine-aggregation-skill** - `adds` vs `add()` patterns
+- **policyengine-code-style-skill** - `add() > 0` pattern, break out complex expressions
 - **policyengine-vectorization-skill** - Vectorization requirements and performance validation
 - **policyengine-review-patterns-skill** - Validation checklists and common issues
 
@@ -33,8 +35,10 @@ Comprehensive validator for government benefit program implementations, checking
 
 1. `Skill: policyengine-implementation-patterns-skill`
 2. `Skill: policyengine-parameter-patterns-skill`
-3. `Skill: policyengine-vectorization-skill`
-4. `Skill: policyengine-review-patterns-skill`
+3. `Skill: policyengine-aggregation-skill`
+4. `Skill: policyengine-code-style-skill`
+5. `Skill: policyengine-vectorization-skill`
+6. `Skill: policyengine-review-patterns-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -74,15 +78,11 @@ No TODO comments or placeholder returns:
 
 ## Validation Process
 
-### Phase 1: Variable Scan
-Check all variable files for:
-- Numeric literals that should be parameters
-- TODO or FIXME comments
-- Placeholder implementations
-- Missing parameter references
-- Improper vectorization patterns
+**Order: Parameters → Variables → Tests** (foundation first, then logic, then verification)
 
-### Phase 2: Parameter Audit
+### Phase 1: Parameter Audit
+
+**Check all parameter files for:**
 
 **CRITICAL CHECKS (must all pass):**
 - ✅ **Description field present** - EVERY parameter MUST have description
@@ -90,12 +90,17 @@ Check all variable files for:
 - ✅ **Full program names** - No acronyms (e.g., "Temporary Assistance for Needy Families program" not "TANF")
 - ✅ **Exactly ONE sentence** - Description ends with single period
 
-Verify parameter files have:
+**Reference checks:**
+- ✅ Reference has `title` and `href`
+- ✅ PDF links include `#page=XX` (file page number)
+- ✅ Title includes full subsection (e.g., `OAR 461-155-0030(2)(a)(B)`)
+- ✅ Link shows actual parameter value when clicked
+
+**Structure checks:**
 - Complete metadata (description, unit, period, label, reference)
-- Valid references to source documents
-- Proper organizational hierarchy
-- Effective dates
-- Active voice descriptions
+- Proper organizational hierarchy (federal/state separation)
+- Effective dates present
+- Bracket-style for age-based eligibility (not separate min/max files)
 
 **CRITICAL ERROR if missing:**
 ```yaml
@@ -114,18 +119,55 @@ metadata:
   unit: currency-USD
 ```
 
+### Phase 2: Variable Scan
+
+**Check all variable files for:**
+
+**Pattern checks:**
+- ✅ Uses `adds` for pure sums (no formula needed)
+- ✅ Uses `add()` for sum + operations (not manual `a + b`)
+- ✅ Uses `add() > 0` instead of `spm_unit.any()`
+- ✅ Complex expressions broken out into named variables
+- ✅ Correct entity level (Person vs SPMUnit/TaxUnit/Household)
+
+**Reference checks:**
+- ✅ Has `reference` field (not `documentation`)
+- ✅ Multiple references use tuple `()` not list `[]`
+- ✅ PDF links include `#page=XX`
+
+**Other checks:**
+- No hard-coded numeric values (except 0, 1)
+- No TODO or FIXME comments
+- No placeholder implementations
+- All referenced parameters exist
+
 ### Phase 3: Test Validation
-Ensure test files:
+
+**Check test folder structure:**
+
+**CRITICAL: Every variable with a `formula` needs a test file.**
+- Variables with `adds` attribute do NOT need tests (just sums)
+- Variables with `formula` method MUST have corresponding test
+
+```
+# Check for missing tests
+Variable: ar_tea_eligible (has formula) → Needs test file ✅
+Variable: ar_tea_gross_income (has adds) → No test needed ✅
+Variable: ar_tea_benefit (has formula) → Needs test file ✅
+```
+
+**Test quality checks:**
 - Use only existing variables
 - Have realistic expected values
-- Document calculation basis
+- Document calculation basis in comments
 - Cover edge cases
-- Don't assume specific implementations
+- Integration test exists for end-to-end scenarios
 
 ### Phase 4: Cross-Reference Check
 Validate that:
 - All parameters referenced in variables exist
 - All variables used in tests exist
+- All variables with formulas have tests
 - References trace to real documents
 - No orphaned files
 
@@ -229,46 +271,94 @@ month >= 10     # Flag: 10 should be parameter
 
 ## Report Generation
 
-The validator produces a structured report:
+The validator produces a **structured report with specific fixes** that ci-fixer can implement.
+
+**CRITICAL: Output must be actionable - ci-fixer will read this and implement the fixes.**
 
 ```markdown
 # Implementation Validation Report for [Program Name]
 
 ## Summary
 - Files Scanned: X
-- Critical Issues: Y
-- Warnings: Z
+- Critical Issues: Y (must fix)
+- Warnings: Z (should fix)
 
-## Critical Issues (Must Fix Before Merge)
+## Fixes Required (ci-fixer will implement these)
 
-### Hard-Coded Values
-| File | Line | Value | Suggested Fix |
-|------|------|-------|---------------|
-| benefit.py | 23 | 0.3 | Create parameter 'benefit_rate' |
-| eligible.py | 15 | 60 | Use parameter 'minimum_age' |
+### Pattern Fixes
 
-### Incomplete Implementations
-| File | Issue | Action Required |
-|------|-------|----------------|
-| calc.py | TODO comment | Complete implementation or remove |
+#### Fix 1: Use `add()` instead of manual addition
+- **File:** `policyengine_us/variables/gov/states/ar/dhs/tea/ar_tea_gross_income.py`
+- **Line:** 15-17
+- **Current:**
+  ```python
+  earned = spm_unit("tanf_gross_earned_income", period)
+  unearned = spm_unit("tanf_gross_unearned_income", period)
+  return earned + unearned
+  ```
+- **Replace with:**
+  ```python
+  return add(spm_unit, period, ["tanf_gross_earned_income", "tanf_gross_unearned_income"])
+  ```
 
-### Unnecessary Wrapper Variables
-| File | Variable | Issue | Fix |
-|------|----------|-------|-----|
-| assistance_unit_size.py | state_tanf_assistance_unit_size | Just returns spm_unit_size | Delete and use federal directly |
-| unearned_income.py | state_tanf_countable_unearned_income | No state logic, just aggregates federal | Delete and use federal baseline |
+#### Fix 2: Use `adds` for pure sum variable
+- **File:** `policyengine_us/variables/gov/states/ar/dhs/tea/ar_tea_countable_income.py`
+- **Line:** 8-12
+- **Current:** Has formula that just sums variables
+- **Replace with:** Remove formula, add `adds = ["var1", "var2"]` attribute
 
-### Orphaned Parameters (Parameters Without Variables)
-| Parameter File | Expected Variable | Status | Fix |
-|---------------|------------------|---------|-----|
-| resources/limit/amount.yaml | state_tanf_resource_eligible | MISSING | Create resource eligibility variable |
-| resources/vehicle_exemption.yaml | state_tanf_countable_resources | MISSING | Create countable resources variable |
+#### Fix 3: Reference format - use tuple not list
+- **File:** `policyengine_us/variables/gov/states/ar/dhs/tea/ar_tea_eligible.py`
+- **Line:** 10
+- **Current:**
+  ```python
+  reference = [
+      "https://example.gov/page1",
+      "https://example.gov/page2",
+  ]
+  ```
+- **Replace with:**
+  ```python
+  reference = (
+      "https://example.gov/page1",
+      "https://example.gov/page2",
+  )
+  ```
 
-### Incomplete Eligibility Checks
-| Eligibility Variable | Missing Check | Fix |
-|---------------------|---------------|-----|
-| state_tanf_eligible | resource_eligible | Add resource check to eligibility formula |
-| state_tanf_eligible | categorical_eligible | Add categorical check if applicable |
+#### Fix 4: Add page number to PDF reference
+- **File:** `policyengine_us/parameters/gov/states/ar/dhs/tea/income_limit.yaml`
+- **Line:** 12
+- **Current:** `href: https://example.gov/manual.pdf`
+- **Replace with:** `href: https://example.gov/manual.pdf#page=XX` (find correct page)
+
+#### Fix 5: Break out complex expression
+- **File:** `policyengine_us/variables/gov/states/ar/dhs/tea/ar_tea_benefit.py`
+- **Line:** 25-30
+- **Current:**
+  ```python
+  return where(
+      eligible,
+      max_(payment_standard - countable_income, 0),
+      0,
+  )
+  ```
+- **Replace with:**
+  ```python
+  benefit_amount = max_(payment_standard - countable_income, 0)
+  return where(eligible, benefit_amount, 0)
+  ```
+
+### Hard-Coded Values (need parameters)
+| File | Line | Value | Create Parameter |
+|------|------|-------|------------------|
+| benefit.py | 23 | 0.3 | `benefit_rate.yaml` with value 0.3 |
+| eligible.py | 15 | 60 | `age_threshold.yaml` with value 60 |
+
+### Missing References
+| File | Issue | Fix |
+|------|-------|-----|
+| ar_tea_eligible.py | No reference field | Add `reference = "https://..."` |
+| income_limit.yaml | Missing page number | Add `#page=XX` to href |
 
 ## Warnings (Should Address)
 
@@ -277,15 +367,10 @@ The validator produces a structured report:
 |-------|----------|---------------|
 | State rule in federal path | /gov/agency/state_specific.yaml | Move to /states/ |
 
-### Test Issues
-| Test File | Variable | Status |
-|-----------|----------|---------|
-| test.yaml | heating_cost | Does not exist |
-
-## Recommendations
-1. Create X parameter files for hard-coded values
-2. Complete Y placeholder implementations
-3. Reorganize Z parameter files
+## Summary for ci-fixer
+- **Pattern fixes:** X files need code pattern fixes (see above)
+- **Hard-coded values:** Y values need parameters
+- **Reference fixes:** Z references need updates
 ```
 
 ## Success Criteria

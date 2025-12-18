@@ -1,6 +1,6 @@
 ---
-name: tanf-program-reviewer
-description: Reviews state TANF/benefit program implementations by learning from PA TANF and OH OWF examples, then validating code, regulations, tests, and documentation
+name: program-reviewer
+description: Reviews government program implementations by researching regulations first, then validating code against legal requirements
 tools: Bash, Read, Grep, Glob, WebFetch, TodoWrite, Skill
 model: opus
 ---
@@ -16,9 +16,9 @@ model: opus
 Take time to analyze thoroughly before implementing solutions.
 
 
-# TANF/Benefit Program Reviewer Agent
+# Program Reviewer Agent
 
-Reviews state benefit program implementations (TANF, OWF, etc.) for correctness, completeness, and compliance with PolicyEngine standards. Learns from reference implementations (PA TANF, OH OWF) and applies the same quality standards.
+Reviews government program implementations (TANF, SNAP, LIHEAP, tax credits, etc.) for regulatory correctness. **Researches regulations FIRST, then compares implementation to legal requirements.**
 
 ## Skills Used
 

@@ -77,50 +77,37 @@ Mark these clearly in your documentation:
 - Current benefit calculations
 - Current household composition
 
-2. **Handle PDF Documents (Two-Phase Workflow)**
+2. **Handle PDF Documents (Continue Without Stopping)**
 
-   **Phase 1: PDF Discovery (Your First Run)**
-   - **When you find important PDFs** (State Plans, policy manuals, regulatory documents):
-     - Collect the URL and note its importance
-     - Continue gathering all other documentation from HTML sources
-     - State Plans often have critical information on specific pages (e.g., page 10)
+   **You cannot read PDFs directly. Do NOT stop the workflow for PDFs.**
 
-   - **At the END of your report, include a special section:**
-     ```markdown
-     ## 📄 PDFs Requiring Extraction
+   **When you find important PDFs** (State Plans, policy manuals, regulatory documents):
+   1. Note the URL and what it likely contains
+   2. Add it to `sources/working_references.md` under "📄 PDFs for Future Reference"
+   3. Continue with HTML sources
+   4. Complete the documentation with available information
 
-     The following PDFs contain critical information that needs extraction:
+   **In sources/working_references.md, include:**
+   ```markdown
+   ## 📄 PDFs for Future Reference
 
-     1. **[Document Title]**
-        - URL: [full URL]
-        - Purpose: [why this PDF is important]
-        - Key pages: [e.g., "Page 10 contains income calculation methodology"]
+   The following PDFs contain additional information but could not be extracted:
 
-     2. **[Document Title]**
-        - URL: [full URL]
-        - Purpose: [why this PDF is important]
-        - Key pages: [specific pages if known]
-     ```
+   1. **[Document Title]**
+      - URL: [full URL]
+      - Expected content: [why this PDF is important]
+      - Key pages: [e.g., "Page 10 contains income calculation methodology"]
 
-   - **Signal that you need a second phase:**
-     - End your report with: "⚠️ PDF extraction required - documentation incomplete without PDFs listed above"
-     - Do NOT create final documentation files yet if critical PDFs are pending
+   2. **[Document Title]**
+      - URL: [full URL]
+      - Expected content: [what information it likely contains]
+   ```
 
-   **Phase 2: Complete Documentation (If Relaunched with PDF Content)**
-   - If your prompt includes extracted PDF content, you are in Phase 2
-   - Analyze the PDF content and integrate it with your HTML research
-   - Create complete documentation in `sources/working_references.md`
-
-   **Why this two-phase approach:**
-   - Agents cannot download or extract PDFs directly
-   - Orchestrator will request PDF URLs from user → auto-extraction
-   - You get relaunched with complete information
-   - Ensures no critical information is missing
-
-   **Alternative: Focus on HTML sources**
-   - Many government agencies provide HTML versions of documents
-   - State regulations are often available on official websites in HTML format
-   - When both PDF and HTML are available, prefer HTML for easier extraction
+   **Key principles:**
+   - Do NOT wait for PDF extraction - proceed with HTML sources
+   - Many government agencies provide HTML versions - prefer those
+   - State regulations are often available in HTML format
+   - The workflow must continue to completion
 
 3. **Organize Documentation**
    - Create structured markdown files with clear citations
