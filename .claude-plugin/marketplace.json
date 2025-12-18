@@ -250,6 +250,7 @@
         "./skills/tools-and-apis/policyengine-simulation-mechanics-skill",
         "./skills/tools-and-apis/policyengine-microsimulation-skill",
         "./skills/tools-and-apis/policyengine-core-skill",
+        "./skills/tools-and-apis/policyengine-github-agent-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/tools-and-apis/policyengine-api-skill",
