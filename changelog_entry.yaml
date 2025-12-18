@@ -1,4 +1,4 @@
 - bump: patch
   changes:
-    changed:
-      - Add critical warning against mixing adds/subtracts with custom formulas in implementation patterns skill
+    added:
+      - policyengine-simulation-mechanics-skill for advanced policyengine.py patterns (ensure(), output_dataset.data, map_to_entity())
