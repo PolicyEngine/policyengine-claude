@@ -84,6 +84,7 @@
       ],
       "skills": [
         "./skills/tools-and-apis/policyengine-api-skill",
+        "./skills/tools-and-apis/policyengine-api-v2-skill",
         "./skills/tools-and-apis/policyengine-core-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
@@ -194,6 +195,7 @@
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/tools-and-apis/policyengine-api-skill",
+        "./skills/tools-and-apis/policyengine-api-v2-skill",
         "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/analysis/policyengine-analysis-skill",
         "./skills/technical-patterns/policyengine-aggregation-skill",
