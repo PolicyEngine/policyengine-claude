@@ -22,9 +22,11 @@ skills/
 │
 ├── tools-and-apis/         # PolicyEngine tools and APIs
 │   ├── policyengine-api-skill/
+│   ├── policyengine-api-v2-skill/
 │   ├── policyengine-app-skill/
 │   ├── policyengine-core-skill/
-│   └── policyengine-python-client-skill/
+│   ├── policyengine-python-client-skill/
+│   └── policyengine-simulation-mechanics-skill/
 │
 ├── data-science/           # Data manipulation and analysis libraries
 │   ├── l0-skill/
@@ -75,9 +77,11 @@ Knowledge about PolicyEngine's core tools, APIs, and applications.
 | Skill | Description | Focus Area |
 |-------|-------------|------------|
 | **policyengine-api-skill** | PolicyEngine API | Flask REST service powering policyengine.org |
+| **policyengine-api-v2-skill** | PolicyEngine API v2 (alpha) | FastAPI microservices architecture with common gotchas |
 | **policyengine-app-skill** | PolicyEngine React web application | User interface at policyengine.org |
 | **policyengine-core-skill** | PolicyEngine Core simulation engine | The foundation powering all PolicyEngine calculations |
 | **policyengine-python-client-skill** | Python client usage | Programmatic access via Python or REST API |
+| **policyengine-simulation-mechanics-skill** | Core simulation mechanics | Entities, simulations, variables, parameters, formulas |
 
 ### 📊 Data Science (`data-science/`)
 
