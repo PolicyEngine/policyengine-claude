@@ -26,8 +26,9 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 - **policyengine-testing-patterns-skill** - Test structure validation and quality checks
 - **policyengine-implementation-patterns-skill** - TANF implementation patterns and best practices
 - **policyengine-parameter-patterns-skill** - Parameter structure and reference validation
+- **policyengine-aggregation-skill** - `adds` vs `add()` patterns
 - **policyengine-vectorization-skill** - Performance checks and vectorization requirements
-- **policyengine-code-style-skill** - Formula optimization, minimal comments
+- **policyengine-code-style-skill** - Formula optimization, `add() > 0` pattern
 - **policyengine-period-patterns-skill** - Period handling in tests and formulas
 
 ## First: Load Required Skills
@@ -38,9 +39,10 @@ Reviews state benefit program implementations (TANF, OWF, etc.) for correctness,
 2. `Skill: policyengine-testing-patterns-skill`
 3. `Skill: policyengine-implementation-patterns-skill`
 4. `Skill: policyengine-parameter-patterns-skill`
-5. `Skill: policyengine-vectorization-skill`
-6. `Skill: policyengine-code-style-skill`
-7. `Skill: policyengine-period-patterns-skill`
+5. `Skill: policyengine-aggregation-skill`
+6. `Skill: policyengine-vectorization-skill`
+7. `Skill: policyengine-code-style-skill`
+8. `Skill: policyengine-period-patterns-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -55,77 +57,93 @@ This ensures you have the complete patterns and standards loaded for reference t
 
 ## Workflow
 
-### Step 0: Learn from Reference Implementations First
+### Step 1: Research Regulations FIRST (Before Looking at Code)
 
-**Before reviewing, study these reference implementations**:
+**CRITICAL: Form an independent understanding of the program BEFORE seeing the implementation.**
 
-1. **PA TANF Implementation** (branch: `pa-tanf-simple`):
-   ```bash
-   git fetch origin
-   git checkout pa-tanf-simple
-   ```
-   - Read parameter files in `policyengine_us/parameters/gov/states/pa/dhs/tanf/`
-   - Read variable files in `policyengine_us/variables/gov/states/pa/dhs/tanf/`
-   - Read test files in `policyengine_us/tests/policy/baseline/gov/states/pa/dhs/tanf/`
-   - Note: Parameter structure, YAML format with references, variable documentation style, test organization with manual calculation comments
+This prevents confirmation bias - you need to know what the program SHOULD do before seeing what was coded.
 
-2. **OH OWF Implementation** (branch: `oh-tanf-simple`):
-   ```bash
-   git checkout oh-tanf-simple
-   ```
-   - Read parameter files in `policyengine_us/parameters/gov/states/oh/odjfs/owf/`
-   - Read variable files in `policyengine_us/variables/gov/states/oh/odjfs/owf/`
-   - Read test files in `policyengine_us/tests/policy/baseline/gov/states/oh/odjfs/owf/`
-   - Pay special attention to `integration.yaml` for comprehensive integration test patterns
+**Use WebFetch to gather regulatory sources:**
+- State TANF policy manual
+- State administrative code/regulations
+- State agency website
+- State Plan (if available)
 
-**Learn from these examples**:
-- How parameters are organized and documented with references
-- How variables use balanced comments (regulation refs, non-obvious logic)
-- How tests include manual calculation walkthroughs
-- The level of detail in references (multiple authoritative sources)
-- Use of vectorized operations (`where()`, `max_()`, `min_()`)
-- Integration test structure showing real-world scenarios
+**Document the complete picture of what the program requires:**
 
-**Why PA TANF and OH OWF?**
-These are simplified implementations - the default approach for most states.
-For comprehensive/full implementations, reference DC/IL/TX TANF instead.
+1. **Income Eligibility Tests**
+   - Gross income test (threshold, who's counted)
+   - Net income test (threshold, who's counted)
+   - Any other income tests
 
-**Then apply the same quality standards** to the current PR you're reviewing.
+2. **Income Deductions & Exemptions**
+   - Work expense deductions (amount, per-person or per-household?)
+   - Earned income disregards (percentage, flat amount?)
+   - Dependent care deductions
+   - Child support exclusions
+   - Any other deductions
 
-### Step 1: Code Analysis
+3. **Income Standards**
+   - Payment standards by family size
+   - Need standards by family size (if different)
+   - How standards are determined (fixed amounts vs % of FPL)
 
-**Review these files and verify formulas**:
-- Main benefit calculation variable
-- Income calculation variables (earned, unearned, countable)
-- Eligibility variables (overall, income, resource if applicable)
-- Any special calculation variables (deductions, disregards, standards)
+4. **Benefit Calculation**
+   - Formula (payment standard - countable income?)
+   - Minimum benefit amount
+   - Maximum benefit amount
+   - Rounding rules
 
-**For each variable, check**:
-- Formula matches the regulation cited in references
-- Proper use of `where()`, `max_()`, `min_()` for vectorization (compare to PA TANF/OH OWF examples)
-- Correct order of operations and calculation steps
-- Parameter references are correct and use proper paths
-- Balanced comments (2-4 per formula: regulation refs, step numbers, non-obvious logic)
+5. **Other Requirements**
+   - Age thresholds
+   - Immigration requirements
+   - Resource limits
 
-### Step 2: Regulation Verification
+**Save your findings in a structured format before proceeding.**
 
-**Compare implementation against official sources**:
-- Read the actual statutes/regulations cited in variable references
-- Verify the order of deductions/calculations
-- Check if there are separate rules for:
-  - New applicants vs enrolled recipients
-  - Eligibility determination vs benefit calculation
-  - Different household types
+### Step 2: Compare PR Implementation to Regulations
 
-**Look for issues like**:
-- Deductions applied in wrong order (e.g., whether initial work expense deduction is applied before or after percentage disregards - review PA TANF for an example of this)
-- Misunderstanding of "eligibility test only" vs "benefit calculation" (some deductions apply only to eligibility determination, not to benefit amount)
-- Static parameter values when they should be dynamic/indexed (e.g., using fixed FPL values instead of dynamic federal parameters)
-- Hard-coded values that should be parameters
-- Missing conditions or special cases (new applicants vs enrolled recipients, pregnant individuals, etc.)
-- Incorrect vectorization (using if/else instead of `where()`, `max_()`, `min_()`)
+**NOW read the PR code (variables, parameters, tests).**
 
-### Step 3: Test Verification
+**Check alignment AND completeness:**
+
+1. **Is what's implemented correct?**
+   - Do formulas match the regulations you researched?
+   - Are deductions applied in the correct order?
+   - Are thresholds and amounts correct?
+
+2. **Is anything missing that should be there?**
+   - Missing eligibility tests?
+   - Missing deductions?
+   - Missing special cases?
+
+**Also check code quality (from skills):**
+- Uses `adds` or `add()` instead of manual `a + b`
+- Uses `add() > 0` instead of `spm_unit.any()`
+- Reference format: tuple `()` not list `[]`, no `documentation` field
+- Complex expressions broken out into named variables
+- Person vs group entity level is correct
+- Proper vectorization (`where()`, `max_()`, `min_()`)
+
+**Optional: Compare to reference implementations for code patterns:**
+- PA TANF (branch: `pa-tanf-simple`) - simplified implementation example
+- OH OWF (branch: `oh-tanf-simple`) - simplified implementation example
+- DC/IL/TX TANF - comprehensive implementation examples
+
+### Step 3: Take Action Based on Findings
+
+**IF aligned and complete:**
+- Document what's correct
+- Proceed to Step 4 (Test Verification)
+
+**IF misaligned OR missing components:**
+- List the specific issues found
+- Cite what the regulation says vs. what the code does (or what's missing)
+- **DO NOT edit code** - just report findings
+- Wait for user decision on how to proceed
+- Once resolved, proceed to Step 4
+
+### Step 4: Test Verification
 
 **Check all test files**:
 - Manually verify calculations in integration tests (like the detailed examples in OH OWF `integration.yaml`)
@@ -141,7 +159,7 @@ For comprehensive/full implementations, reference DC/IL/TX TANF instead.
 - Multiple household types
 - Geographic variations (if applicable)
 
-### Step 4: Parameter Validation
+### Step 5: Parameter Validation
 
 **Verify parameter values**:
 - Cross-check against official sources (government websites, regulations)
@@ -150,14 +168,14 @@ For comprehensive/full implementations, reference DC/IL/TX TANF instead.
 - Confirm YAML structure matches the standard format (description, values, metadata with unit/period/label/reference)
 - Look for any hardcoded values that should be parameters
 
-### Step 5: Real-World Validation
+### Step 6: Real-World Validation
 
 **If possible**:
 - Find real-world examples from government websites, legal aid orgs, etc.
 - Verify calculations match published examples
 - Check if formulas produce reasonable results
 
-### Step 6: Report Findings
+### Step 7: Report Findings
 
 **Provide findings in this structure**:
 
@@ -188,7 +206,7 @@ For comprehensive/full implementations, reference DC/IL/TX TANF instead.
 - Production readiness
 - Test coverage score
 
-### Step 7: After Review is Approved
+### Step 8: After Review is Approved
 
 **Once user approves the findings, then**:
 

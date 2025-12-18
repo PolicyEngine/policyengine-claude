@@ -43,42 +43,113 @@ This ensures you have the complete patterns and standards loaded for reference t
 
 ## Workflow
 
-### Step 1: Identify Program Type and Jurisdiction
+### Step 1: Load Skills and Get Standard Patterns
+
+**Use the Skill tool to load naming conventions:**
+
+```
+Skill: policyengine-implementation-patterns-skill
+Skill: policyengine-parameter-patterns-skill
+```
+
+These skills contain the authoritative naming patterns. Use them as the **primary source of truth**.
+
+### Step 2: Identify Program Type and Jurisdiction
 
 Parse the program details:
 - State code (e.g., "AZ", "CA", "NY")
 - Program type (e.g., "LIHEAP", "TANF", "SNAP")
 - Federal vs state program
 
-### Step 2: Search for Similar Programs
+### Step 3: Determine State's Official Program Name
 
-```bash
-# Find existing similar programs to understand naming patterns
-# For LIHEAP programs:
-find policyengine_us/variables -name "*liheap*.py" | head -20
+**CRITICAL RULE: Use the state's actual program name, NOT generic federal names.**
 
-# For state programs:
-find policyengine_us/variables/gov/states -name "*.py" | grep -E "(benefit|assistance|credit)" | head -20
+Many states have their own names for federal programs. You MUST use the state's official name:
 
-# Check existing state program patterns
-ls -la policyengine_us/variables/gov/states/*/
+| State | Federal Program | State Name | Variable Prefix |
+|-------|----------------|------------|-----------------|
+| Arkansas | TANF | Transitional Employment Assistance | `ar_tea` |
+| North Carolina | TANF | Work First | `nc_workfirst` |
+| Tennessee | TANF | Families First | `tn_familiesfirst` |
+| Ohio | TANF | Ohio Works First | `oh_owf` |
+| California | TANF | CalWORKs | `ca_calworks` |
+| Texas | TANF | TANF (uses generic) | `tx_tanf` |
+
+**How to determine the state's program name:**
+1. Check the state agency's official website
+2. Look at the legal code/administrative rules header
+3. Search for "what is [state] TANF called"
+
+**Examples:**
+```python
+# Arkansas calls TANF "Transitional Employment Assistance (TEA)"
+ar_tea                    # NOT ar_tanf
+ar_tea_eligible
+ar_tea_income_eligible
+ar_tea_payment_standard
+
+# Ohio calls TANF "Ohio Works First (OWF)"
+oh_owf                    # NOT oh_tanf
+oh_owf_eligible
+
+# Texas uses generic "TANF"
+tx_tanf                   # OK - state uses this name
+tx_tanf_eligible
 ```
 
-### Step 3: Analyze Naming Patterns
+**Why this matters:**
+- Code matches official documentation exactly
+- Easier to verify against regulations
+- Reduces confusion when cross-referencing state manuals
 
-Common patterns to look for:
+### Step 4: Use State-Specific Terminology
+
+**CRITICAL RULE: Use the terminology from the state's legal code or policy manual.**
+
+States use different terms for the same concepts. Always match the state's official terminology:
+
+| Concept | Possible State Terms | Example |
+|---------|---------------------|---------|
+| Benefit amount | Payment Standard, Need Standard, Standard of Need, Grant Amount | `ar_tea_need_standard` |
+| Income threshold | Gross Income Limit, Countable Income Limit, GMI (Gross Monthly Income) | `oh_owf_gmi_limit` |
+| Earnings deduction | Earned Income Disregard, Work Expense Deduction, Employment Deduction | `tx_tanf_earned_income_disregard` |
+
+**Examples:**
+```python
+# If Arkansas TEA manual says "Need Standard":
+ar_tea_need_standard          # Use their term
+
+# If Ohio OWF manual says "Standard of Need":
+oh_owf_standard_of_need       # Use their term
+
+# If Texas TANF manual says "Payment Standard":
+tx_tanf_payment_standard      # Use their term
+
+# If state uses abbreviation "GMI" for Gross Monthly Income:
+xx_tanf_gmi_limit             # Use their abbreviation
+```
+
+**How to determine:**
+1. Search the state's policy manual for the exact term used
+2. Check the legal code section headers
+3. If multiple terms used, prefer the one in legal code over policy manual
+
+### Step 5: Apply Standard Naming Patterns from Skills
+
+Use patterns from **policyengine-implementation-patterns-skill** (already loaded in Step 1):
 
 **State Programs:**
 ```python
 # Pattern: {state}_{program}
-ny_heap  # New York Home Energy Assistance Program
-ca_care  # California Alternate Rates for Energy
-ma_liheap  # Massachusetts LIHEAP
+ar_tea      # Arkansas Transitional Employment Assistance
+ca_calworks # California CalWORKs
+ma_liheap   # Massachusetts LIHEAP
 
-# Sub-variables follow: {state}_{program}_{component}
-ny_heap_eligible
-ny_heap_income_limit
-ny_heap_benefit_amount
+# Sub-variables: {state}_{program}_{component}
+ar_tea_eligible
+ar_tea_income_limit
+ar_tea_benefit_amount
 ```
 
 **Federal Programs:**
@@ -91,54 +162,20 @@ wic
 # Sub-variables: {program}_{component}
 snap_eligible
 snap_gross_income
-snap_net_income
 ```
 
-### CRITICAL: Use State's Actual Program Names
+### Step 6: Verify Against Codebase (Optional)
 
-**Do NOT always use generic names like "tanf" - use the name the state actually uses:**
+Only if needed, search for similar existing implementations:
+```bash
+# Check if state already has implementations
+ls policyengine_us/variables/gov/states/ar/
 
-**Program Names:**
-```python
-# If state calls their TANF program "Work First":
-nc_workfirst           # NOT nc_tanf
-nc_workfirst_eligible
-
-# If state calls it "Family First":
-tn_familyfirst         # NOT tn_tanf
-tn_ff_eligible         # Abbreviation also acceptable
-
-# If state calls it "Ohio Works First" (OWF):
-oh_owf                 # NOT oh_tanf
-oh_owf_eligible
+# Find similar program patterns
+grep -r "class ar_" policyengine_us/variables/gov/states/ar/ | head -5
 ```
 
-**Terminology:**
-```python
-# If state uses "Standard of Need":
-xx_tanf_standard_of_need    # Use their term
-
-# If state uses "Need Standard":
-xx_tanf_need_standard       # Use their term
-
-# If state uses "Payment Standard":
-xx_tanf_payment_standard    # Use their term
-
-# If state uses "Gross Monthly Income" (GMI):
-xx_tanf_gmi                 # Use their abbreviation
-```
-
-**Why this matters:**
-- Makes code match official documentation
-- Easier to verify against regulations
-- Reduces confusion when reviewing
-
-**How to determine:**
-1. Check the state's official program website
-2. Look at the legal code/regulations
-3. Review existing implementations in codebase
-
-### Step 4: Decide on Variable Names
+### Step 7: Decide on Variable Names
 
 Based on analysis, establish the naming convention:
 
@@ -160,7 +197,7 @@ Intermediate calculations:
 - Priority group: {state}_{program}_priority_group
 ```
 
-### Step 5: Post to GitHub Issue
+### Step 8: Post to GitHub Issue
 
 ```bash
 # Get the issue number from previous agent or search
@@ -172,48 +209,59 @@ gh issue comment $ISSUE_NUMBER --body "## Variable Naming Convention
 **ALL AGENTS MUST USE THESE EXACT NAMES:**
 
 ### Primary Variables
-- **Main benefit**: \`az_liheap\`
-- **Eligibility**: \`az_liheap_eligible\`
-- **Income eligible**: \`az_liheap_income_eligible\`
-- **Categorical eligible**: \`az_liheap_categorical_eligible\`
+- **Main benefit**: \`ar_tea\`
+- **Eligibility**: \`ar_tea_eligible\`
+- **Income eligible**: \`ar_tea_income_eligible\`
+- **Categorical eligible**: \`ar_tea_categorical_eligible\`
 
 ### Supporting Variables (if needed)
-- **Income level points**: \`az_liheap_income_level_points\`
-- **Energy burden points**: \`az_liheap_energy_burden_points\`
-- **Vulnerable household points**: \`az_liheap_vulnerable_household_points\`
-- **Total points**: \`az_liheap_total_points\`
-- **Base benefit**: \`az_liheap_base_benefit\`
-- **Crisis assistance**: \`az_liheap_crisis_assistance\`
+- **Payment standard**: \`ar_tea_payment_standard\`
+- **Need standard**: \`ar_tea_need_standard\`
+- **Earned income disregard**: \`ar_tea_earned_income_disregard\`
 
 ### Test File Names
-- Unit tests: \`az_liheap.yaml\`, \`az_liheap_eligible.yaml\`, etc.
-- Integration test: \`integration.yaml\` (NOT \`az_liheap_integration.yaml\`)
+- Unit tests: \`ar_tea.yaml\`, \`ar_tea_eligible.yaml\`, etc.
+- Integration test: \`integration.yaml\` (NOT \`ar_tea_integration.yaml\`)
+
+### Note on Program Name
+Arkansas calls their TANF program 'Transitional Employment Assistance (TEA)', so we use \`ar_tea\` prefix, NOT \`ar_tanf\`.
 
 ---
-*These names are based on existing patterns in the codebase. All agents must reference this naming convention.*"
+*These names follow patterns from policyengine-implementation-patterns-skill. All agents must reference this naming convention.*"
 ```
 
 ## Examples of Naming Decisions
 
-### Example 1: Arizona LIHEAP
+### Example 1: Arkansas TANF (TEA)
+```
+Program: Arkansas Transitional Employment Assistance
+State Name: TEA (Transitional Employment Assistance)
+Decision: ar_tea (NOT ar_tanf - use state's official name)
+Variables: ar_tea, ar_tea_eligible, ar_tea_payment_standard
+```
+
+### Example 2: Ohio TANF (OWF)
+```
+Program: Ohio Works First
+State Name: OWF (Ohio Works First)
+Decision: oh_owf (NOT oh_tanf - use state's official name)
+Variables: oh_owf, oh_owf_eligible, oh_owf_income_eligible
+```
+
+### Example 3: Texas TANF
+```
+Program: Texas TANF
+State Name: TANF (state uses generic name)
+Decision: tx_tanf (OK - state uses this name officially)
+Variables: tx_tanf, tx_tanf_eligible
+```
+
+### Example 4: Arizona LIHEAP
 ```
 Program: Arizona Low Income Home Energy Assistance Program
-Analysis: Found ma_liheap, ny_heap patterns
+State Name: LIHEAP (uses federal name)
 Decision: az_liheap (not arizona_liheap, not az_heap)
-```
-
-### Example 2: California Child Care
-```
-Program: California Child Care Assistance Program
-Analysis: Found ca_care, ca_eitc patterns
-Decision: ca_ccap (not ca_childcare, not ca_cca)
-```
-
-### Example 3: New York SNAP Supplement
-```
-Program: New York SNAP Enhancement
-Analysis: State supplements to federal programs use state_program_component
-Decision: ny_snap_supplement (not snap_ny_supplement)
+Variables: az_liheap, az_liheap_eligible
 ```
 
 ## What NOT to Do

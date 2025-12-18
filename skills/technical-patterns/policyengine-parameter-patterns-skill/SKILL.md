@@ -191,48 +191,60 @@ label: California SNAP resource limit
 1. At least one source (prefer two)
 2. Must contain the actual value
 3. **Title: Include FULL section path** (all subsections and sub-subsections)
-4. **PDF links: Add `#page=XX` at end**
+4. **PDF links: Add `#page=XX` at end of href ONLY** (never in title)
 
-**Title Format - Include ALL subsection levels:**
+**Title Format - Include ALL subsection levels (NO page numbers):**
 ```yaml
 # ❌ BAD - Too generic:
 title: OAR 461-155  # Missing subsections!
 title: Section 5    # Which subsection?
+title: TEA Manual, page 13  # Page number belongs in href, not title!
 
-# ✅ GOOD - Full section path:
+# ✅ GOOD - Full section path, no page number:
 title: OAR 461-155-0030(2)(a)(B)     # All levels included
 title: 7 CFR § 273.9(d)(6)(ii)(A)    # Federal regulation with all subsections
 title: Indiana Admin Code 12-14-2-3.5(b)(1)  # State admin code
-title: Oregon TANF Policy Manual Section 5.2.3.1, page 15  # Manual with subsection
+title: Arkansas TEA Manual Section 5.2.3    # Manual with section (page in href)
 ```
 
-**PDF Link Format - Always include page:**
+**PDF Link Format - Always include page in href:**
+
+**CRITICAL: Use the PDF file page number, NOT the printed page number inside the document.**
+- The `#page=XX` value is the page position in the PDF file (1st page = 1, 2nd page = 2, etc.)
+- This may differ from the page number printed on the document itself
+- **Why?** When users click the link, they must land directly on the page showing the referenced values
+
 ```yaml
 # ❌ BAD - No page number:
 href: https://state.gov/manual.pdf
 
-# ✅ GOOD - Page anchor included:
-href: https://state.gov/manual.pdf#page=14
+# ✅ GOOD - Page anchor in href (file page number):
+href: https://humanservices.arkansas.gov/wp-content/uploads/TEA_MANUAL.pdf#page=13
 href: https://adminrules.idaho.gov/rules/current/16/160503.pdf#page=8
 ```
 
 **Complete Examples:**
 ```yaml
-✅ GOOD:
+✅ GOOD (page number in href only):
 reference:
   - title: OAR 461-155-0030(2)(a)(B)
     href: https://oregon.public.law/rules/oar_461-155-0030
-  - title: Oregon DHS TANF Policy Manual Section 4.3.2.1, page 23
+  - title: Oregon DHS TANF Policy Manual Section 4.3.2
     href: https://oregon.gov/dhs/tanf-manual.pdf#page=23
 
 ✅ GOOD:
 reference:
   - title: 7 CFR § 273.9(d)(6)(ii)(A)
     href: https://www.ecfr.gov/current/title-7/section-273.9#p-273.9(d)(6)(ii)(A)
-  - title: Indiana Admin Code 12-14-2-3.5(b)(1)
-    href: https://www.in.gov/dcs/files/tanf-manual.pdf#page=45
+  - title: Arkansas TEA Manual Section 2100
+    href: https://humanservices.arkansas.gov/wp-content/uploads/TEA_MANUAL.pdf#page=45
 
-❌ BAD:
+❌ BAD (page number in title):
+reference:
+  - title: Arkansas TEA Manual, page 13  # Page belongs in href!
+    href: https://humanservices.arkansas.gov/wp-content/uploads/TEA_MANUAL.pdf
+
+❌ BAD (missing info):
 reference:
   - title: Federal LIHEAP regulations  # Too generic - no section!
     href: https://www.acf.hhs.gov/ocs  # No specific page
@@ -288,7 +300,7 @@ metadata:
   label: State PROGRAM payment standard amount
 ```
 
-### Age Thresholds
+### Age Thresholds (Simple)
 ```yaml
 # age_threshold/minor_child.yaml
 description: State defines minor children as under this age for program eligibility.
@@ -300,6 +312,78 @@ metadata:
   period: eternity
   label: State PROGRAM minor child age threshold
 ```
+
+### Age-Based Eligibility (Bracket Style) - PREFERRED
+
+**When eligibility depends on age ranges, use a single bracket-style parameter instead of separate min/max files.**
+
+```yaml
+# eligibility/by_age.yaml
+description: Massachusetts determines eligibility for the Bay Transportation reduced fare program based on age.
+
+metadata:
+  threshold_unit: year
+  amount_unit: bool
+  period: year
+  type: single_amount
+  label: Massachusetts Bay Transportation reduced fare age eligibility
+  reference:
+    - title: MBTA Reduced Fare Program
+      href: https://www.mbta.com/fares/reduced
+
+brackets:
+  - threshold:
+      2024-01-01: 0
+    amount:
+      2024-01-01: false    # Under 18: not eligible
+  - threshold:
+      2024-01-01: 18
+    amount:
+      2024-01-01: true     # Ages 18-64: eligible
+  - threshold:
+      2024-01-01: 65
+    amount:
+      2024-01-01: false    # 65+: not eligible (different program)
+```
+
+**Federal example (SNAP student eligibility):**
+```yaml
+# parameters/gov/usda/snap/student_age_eligibility_threshold.yaml
+description: The United States includes students in this age range for SNAP eligibility.
+
+brackets:
+  - threshold:
+      2018-01-01: 0
+    amount:
+      2018-01-01: true     # Under 18: eligible
+  - threshold:
+      2018-01-01: 18
+    amount:
+      2018-01-01: false    # Ages 18-49: not eligible (student restrictions)
+  - threshold:
+      2018-01-01: 50
+    amount:
+      2018-01-01: true     # 50+: eligible
+
+metadata:
+  type: single_amount
+  threshold_unit: year
+  amount_unit: bool
+  label: SNAP student age eligibility threshold
+  reference:
+    - title: 7 U.S. Code § 2015 - Eligibility disqualifications
+      href: https://www.law.cornell.edu/uscode/text/7/2015
+```
+
+**When to use bracket-style:**
+- ✅ Eligibility varies by age range (eligible for ages X-Y only)
+- ✅ Multiple age cutoffs affect the same benefit
+- ✅ Boolean eligibility that changes at different thresholds
+- ✅ Non-contiguous eligibility (e.g., eligible under 18 AND over 50, but not 18-49)
+
+**When NOT to use bracket-style:**
+- ❌ Single threshold (just use simple `threshold.yaml`)
+- ❌ Non-boolean values that scale with age (use `single_amount` brackets with currency amounts)
 
 ### Disregard Percentages
 ```yaml

@@ -449,6 +449,21 @@ When building a state TANF program, follow this systematic approach:
     - **Unearned income deductions:**
       - **Child support passthrough/exclusion** (commonly $50-$150/month) - CHECK STATE PLAN page 10
       - Usually dollar-for-dollar counting otherwise
+    - **⚠️ CRITICAL: Verify PERSON vs GROUP level for ALL deductions/amounts:**
+      ```
+      "$50 work expense deduction" could mean:
+      - $50 per PERSON (each working member gets $50)
+      - $50 per GROUP (entire unit/household gets $50 total)
+      ```
+      - **Person level:** "per recipient" / "per individual" / "for each person" / "per taxpayer"
+      - **Group level:** "per assistance unit" / "per household" / "per tax unit" / "for the family"
+      - **Document this explicitly** in working_references.md:
+        ```markdown
+        ### Work Expense Deduction
+        - Amount: $50
+        - **Level: Per PERSON** (each working individual)
+        - Source: [citation]
+        ```
   - Immigration status requirements
   - Payment standards
   - **NOTE: Skip work requirements** - TANF implementations only model eligibility and benefit calculation, not work participation requirements
