@@ -1,4 +1,4 @@
-- bump: patch
+- bump: minor
   changes:
-    changed:
-      - Add critical warning against mixing adds/subtracts with custom formulas in implementation patterns skill
+    added:
+      - Add policyengine-api-v2-skill for working with the next-generation microservices API
