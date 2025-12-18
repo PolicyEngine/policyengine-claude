@@ -418,9 +418,54 @@ ls -la
 
 ### Color Definitions
 
-**⚠️ IMPORTANT: App V2 Transition**
+**⚠️ IMPORTANT: Design System Package**
 
-PolicyEngine is transitioning to policyengine-app-v2 with updated design tokens. Use app-v2 colors for new projects.
+PolicyEngine has a centralized design system package: `@policyengine/design-system` (available on npm). This package provides design tokens (colors, spacing, typography) for consistent styling across all PolicyEngine projects.
+
+**For new projects (API v2, documentation sites, etc.):**
+- Install: `npm install @policyengine/design-system`
+- Import tokens from the package instead of hardcoding colors
+- See the package README for usage patterns
+
+**For legacy projects:**
+- Use app-v2 colors for new projects not yet using the design system package
+- Gradually migrate to use `@policyengine/design-system` when possible
+
+### Using @policyengine/design-system Package
+
+**Installation:**
+```bash
+npm install @policyengine/design-system
+```
+
+**Usage in documentation sites (Docusaurus, etc.):**
+```javascript
+// Import design tokens
+import { tokens } from '@policyengine/design-system';
+
+// Use in custom CSS
+:root {
+  --primary-color: var(--pe-color-primary-500);
+  --secondary-color: var(--pe-color-blue-700);
+}
+
+// Or import CSS directly
+import '@policyengine/design-system/dist/tokens.css';
+```
+
+**Current implementation:**
+```bash
+# See how API v2 uses design tokens
+cat policyengine-api-v2/docs/docusaurus.config.js
+cat policyengine-api-v2/docs/src/css/custom.css
+```
+
+**Package repository:**
+```bash
+# For reference implementation and available tokens
+# See: https://www.npmjs.com/package/@policyengine/design-system
+# Source: PolicyEngine/design-system (GitHub)
+```
 
 **Current colors (policyengine-app-v2):**
 
