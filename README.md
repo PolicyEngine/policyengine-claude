@@ -6,7 +6,7 @@ Official Claude Code plugin for PolicyEngine - a comprehensive knowledge base fo
 
 PolicyEngine Claude provides agents, slash commands, and skills for working with PolicyEngine's 40+ repository ecosystem:
 
-- **🤖 18 Specialized Agents** - Automated workflows for development
+- **🤖 22 Specialized Agents** - Automated workflows for development
 - **🎯 4 Slash Commands** - Multi-agent orchestration and PR workflows
 - **📚 14 Skills** - Knowledge base for users, analysts, and contributors
 
@@ -18,7 +18,7 @@ PolicyEngine Claude provides agents, slash commands, and skills for working with
 /plugin install complete@policyengine-claude
 ```
 
-This gives you all 18 agents, 4 commands, and 14 skills for the entire PolicyEngine ecosystem.
+This gives you all 22 agents, 4 commands, and 14 skills for the entire PolicyEngine ecosystem.
 
 **Or install selectively by use case:**
 
@@ -176,31 +176,45 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Neutral, objective tone
 - Blog post and PR description patterns
 
-## Agents (16 Total)
+## Agents (22 Total)
 
-### Country Model Agents (13)
+### Country Model Agents (17)
 
-**Multi-agent workflow:**
-- `document_collector` - Gather authoritative sources
-- `test-creator` - Write tests from documentation (isolated)
-- `rules-engineer` - Implement variables/parameters (isolated)
+**Workflow agents:**
+- `document-collector` - Gather authoritative sources
+- `naming-coordinator` - Establish naming conventions
+- `issue-manager` - Manage GitHub issues and PRs
 - `parameter-architect` - Design parameter structures
+- `test-creator` - Write tests from documentation
+- `rules-engineer` - Implement variables/parameters
+- `pr-pusher` - Format and push PRs
 
 **Validators:**
-- `implementation-validator` - Comprehensive validation (quality, domain patterns, hard-coding)
-- `reference-validator` - Citations and documentation
+- `implementation-validator` - Quality, patterns, hard-coding checks
 - `cross-program-validator` - Cross-program consistency
 - `performance-optimizer` - Vectorization opportunities
+- `program-reviewer` - Regulatory compliance review (researches law first)
 
 **Quality and CI:**
 - `documentation-enricher` - Enhance documentation
 - `edge-case-generator` - Comprehensive test cases
-- `ci-fixer` - Fix CI failures
+- `ci-fixer` - Fix CI failures (runs tests locally)
+
+**Isolation:**
 - `isolation-setup` - Git worktrees for isolated development
 - `isolation-enforcement` - Ensure test/implementation isolation
 
-### Other Agents (3)
+**Other:**
+- `integration-agent` - Advanced merge workflows
 
+### Other Agents (5)
+
+**Root-level:**
+- `branch-comparator` - Compare branches for differences
+- `legislation-statute-analyzer` - Analyze legislative text
+- `reference-validator` - Validate parameter references
+
+**API/App:**
 - `api-reviewer` - Review Flask/API code
 - `app-reviewer` - Review React/app code
 
@@ -220,6 +234,8 @@ Develop PolicyEngine software across country models, API, app, and data packages
 
 **`/review-pr [pr-number]`**
 - Comprehensive PR review (read-only)
+- 6 validators: domain, reference, implementation, test coverage, documentation, regulatory
+- Includes regulatory review with `program-reviewer` (researches law first)
 - Post findings to GitHub
 - Example: `/review-pr 123`
 
@@ -228,17 +244,17 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Push updates automatically
 - Example: `/fix-pr 123`
 
-## Available Plugins (6)
+## Available Plugins (7)
 
 | Plugin | Audience | Agents | Commands | Skills |
 |--------|----------|--------|----------|--------|
-| **essential** | Users | 0 | 0 | 3 |
-| **country-models** | Contributors | 15 | 4 | 5 |
-| **api-development** | Contributors | 1 | 3 | 6 |
-| **app-development** | Contributors | 1 | 3 | 6 |
-| **analysis-tools** | Analysts | 0 | 0 | 7 |
-| **data-science** | Analysts/Contributors | 0 | 0 | 8 |
-| **complete** | All | 18 | 4 | 14 |
+| **essential** | Users | 0 | 0 | 4 |
+| **country-models** | Contributors | 17 | 4 | 14 |
+| **api-development** | Contributors | 1 | 3 | 7 |
+| **app-development** | Contributors | 1 | 3 | 7 |
+| **analysis-tools** | Analysts | 0 | 0 | 8 |
+| **data-science** | Analysts/Contributors | 0 | 0 | 9 |
+| **complete** | All | 22 | 4 | 14 |
 
 ## Installation
 
@@ -389,13 +405,13 @@ Each repo type installs appropriate plugins:
 
 | Repository | Plugin | What It Includes |
 |------------|--------|------------------|
-| policyengine-us | country-models | 15 agents, 3 commands, 5 skills |
-| policyengine-uk | country-models | 15 agents, 3 commands, 5 skills |
-| policyengine-api | api-development | 1 agent, 5 skills |
-| policyengine-app | app-development | 1 agent, 5 skills |
-| crfb-tob-impacts | analysis-tools | 6 skills |
-| givecalc | analysis-tools | 6 skills |
-| microdf | data-science | 4 skills |
+| policyengine-us | country-models | 17 agents, 4 commands, 14 skills |
+| policyengine-uk | country-models | 17 agents, 4 commands, 14 skills |
+| policyengine-api | api-development | 1 agent, 3 commands, 7 skills |
+| policyengine-app | app-development | 1 agent, 3 commands, 7 skills |
+| crfb-tob-impacts | analysis-tools | 8 skills |
+| givecalc | analysis-tools | 8 skills |
+| microdf | data-science | 9 skills |
 
 ## How Skills Serve Multiple Audiences
 
@@ -497,13 +513,16 @@ Creates: Analysis notebook + Streamlit dashboard + blog post draft
 User in policyengine-us: "/encode-policy California EITC"
 
 Claude: [Has country-models plugin]
-[Invokes @document_collector] → Gathers CA EITC regulations
-[Invokes @test-creator + @rules-engineer in parallel] → Isolated development
-[Uses policyengine-core-skill for variable patterns]
-[Uses policyengine-standards-skill for code quality]
-[Uses policyengine-writing-skill for PR description]
+Phase 1: [Invokes @issue-manager] → Creates issue, branch, draft PR
+Phase 2: [Invokes @naming-coordinator] → Establishes naming conventions
+Phase 3: [Invokes @document-collector] → Gathers CA EITC regulations
+Phase 4A: [Invokes @parameter-architect] → Creates parameters
+Phase 4B: [Invokes @test-creator + @rules-engineer in parallel] → Tests + Variables
+Phase 5: [Invokes @pr-pusher] → Format and push
+Phase 6: [Invokes @implementation-validator → @ci-fixer] → Validate and fix locally
+Phase 7: [Invokes @program-reviewer] → Regulatory compliance review
 
-Creates: Tests + Implementation + PR
+Creates: Issue + Tests + Implementation + PR with full documentation
 ```
 
 ### Use Case 4: Creating PR That Waits for CI
@@ -552,7 +571,7 @@ Claude: [Has api-development plugin]
 /plugin install complete@policyengine-claude
 ```
 
-**Includes:** All 18 agents, 4 commands, 14 skills for the entire PolicyEngine ecosystem.
+**Includes:** All 22 agents, 4 commands, 14 skills for the entire PolicyEngine ecosystem.
 
 ### Selective Installation
 
@@ -639,9 +658,9 @@ Add to `.claude/settings.json` in each repo:
 ### Country Models (For Country Package Development)
 - **Target:** Contributors to policyengine-us, policyengine-uk, etc.
 - **What:** Multi-agent workflow + simulation knowledge
-- **Agents:** 15 specialized agents
-- **Commands:** /encode-policy, /review-pr, /fix-pr
-- **Skills:** user-guide, core, us, standards, writing
+- **Agents:** 17 specialized agents
+- **Commands:** /encode-policy, /review-pr, /fix-pr, /create-pr
+- **Skills:** All 14 technical pattern and documentation skills
 
 ### API Development (For API Contributors)
 - **Target:** policyengine-api contributors
@@ -814,6 +833,24 @@ git submodule update --init --recursive
 ```
 
 ## Version History
+
+**v3.2.4** - Workflow improvements and program-reviewer
+- Renamed `tanf-program-reviewer` to `program-reviewer` (generalized for any program)
+- Added `program-reviewer` to `/review-pr` command (Step 6: Regulatory Review)
+- Restructured encode-policy phases (4A/4B split, local testing in Phase 6)
+- `ci-fixer` now runs tests locally instead of waiting for GitHub CI
+- Added code pattern enforcement (`adds` vs `add()`, reference formats, etc.)
+- Added "Legal Code is Source of Truth" principle
+
+**v3.1.x** - Skill loading and error handling
+- Added skill loading instructions to all agents
+- Added error handling framework to encode-policy
+- State-specific program naming (TEA, OWF, CalWORKs)
+
+**v3.0.0** - Simplified workflow
+- Simplified encode-policy from 9 to 8 phases
+- All agents work on same branch (no git worktrees needed)
+- Keep PR as draft (user decides when ready)
 
 **v2.0.0** - Comprehensive multi-audience skills
 - Added 6 new skills (user-guide, python-client, core, api, app, microdf)

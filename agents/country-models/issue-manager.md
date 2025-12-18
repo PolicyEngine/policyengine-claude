@@ -46,7 +46,43 @@ gh issue list --state open --search "in:title <full-state-name> <program>"
 gh issue list --state open --search "in:title <state> energy assistance"
 ```
 
-### Step 3: If No Issue Exists, Create One
+### Step 2.5: Evaluate Found Issues
+
+**If NO issues found** → Proceed to Step 3 (create new issue) and continue workflow autonomously.
+
+**If issues ARE found** → STOP and present to user for decision.
+
+```bash
+# For each found issue, read its details
+gh issue view <issue-number> --repo PolicyEngine/policyengine-us
+```
+
+**Present to user:**
+```
+## Found Existing Issue(s)
+
+### Issue #1234: "DC TANF 2017, 2018 Updates"
+- **Status:** Open
+- **Last activity:** 2023-06-20
+- **Summary:** [Brief description of what the issue covers]
+
+### Issue #5678: "Implement DC TANF"
+- **Status:** Open
+- **Last activity:** 2024-02-15
+- **Summary:** [Brief description of what the issue covers]
+
+---
+**Options:**
+1. Use Issue #5678
+2. Use Issue #1234
+3. Create a NEW issue (ignore existing)
+
+Which would you like? Or say "continue" to create new.
+```
+
+**Wait for user response before proceeding.**
+
+### Step 3: Create Issue (If None Found or User Chooses New)
 ```bash
 gh issue create --title "Implement <State> <Program>" --body "
 # Implement <Full State Name> <Full Program Name>
@@ -130,9 +166,54 @@ esac
 gh issue edit <issue-number> --add-label "implementation-tracking"
 ```
 
-### Step 4: Create Draft PR (If New Issue)
+### Step 3.5: Check for Existing PRs
 
-If a new issue was created, immediately create a draft PR:
+**Before creating a new PR, search for existing PRs:**
+```bash
+# Search for open PRs with program name and state
+gh pr list --state open --search "in:title <state> <program>"
+```
+
+**If NO PRs found** → Proceed to Step 4 (create new PR) and continue workflow autonomously.
+
+**If PRs ARE found** → STOP and present to user for decision.
+
+```bash
+# For each found PR, read its details and files
+gh pr view <pr-number> --repo PolicyEngine/policyengine-us
+gh pr diff <pr-number> --repo PolicyEngine/policyengine-us --stat
+```
+
+**Present to user:**
+```
+## Found Existing PR(s)
+
+### PR #1234: "Add DC TANF income parameters"
+- **Status:** Draft
+- **Last activity:** 2023-07-20
+- **Files:** 5 parameter files
+- **Summary:** [Brief description of what the PR covers]
+
+### PR #5678: "Implement DC TANF"
+- **Status:** Draft
+- **Last activity:** 2024-02-15
+- **Files:** 12 files (parameters, variables, tests)
+- **Summary:** [Brief description of what the PR covers]
+
+---
+**Options:**
+1. Continue on PR #5678
+2. Continue on PR #1234
+3. Create a NEW PR (ignore existing)
+
+Which would you like? Or say "continue" to create new.
+```
+
+**Wait for user response before proceeding.**
+
+### Step 4: Create Draft PR (If None Found or User Chooses New)
+
+If a new issue was created (or no suitable existing PR), create a draft PR:
 
 ```bash
 # Only if we created a new issue

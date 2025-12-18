@@ -184,7 +184,7 @@ For each parameter/variable:
 **Works with:**
 - `parameter-architect`: Ensures all new parameters have references
 - `implementation-validator`: Verifies federal/state jurisdiction and variable references
-- `tanf-program-reviewer`: Reviews TANF implementations for compliance
+- `program-reviewer`: Reviews government program implementations for compliance
 
 **In `/review-pr` workflow:**
 - Scans all parameters and variables

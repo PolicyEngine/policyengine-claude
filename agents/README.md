@@ -43,7 +43,7 @@ agents/
 ├── pr-pusher.md                 # Ensures PRs are properly formatted
 ├── reference-validator.md       # Validates parameter references
 ├── rules-engineer.md            # Implements government benefit rules
-├── tanf-program-reviewer.md    # Reviews state TANF implementations
+├── program-reviewer.md         # Reviews government program implementations
 └── test-creator.md              # Creates integration tests
 ```
 
@@ -103,7 +103,7 @@ See `country-models/workflow.md` for detailed workflow documentation.
 | **pr-pusher** | Ensures PRs are properly formatted | PR quality control |
 | **reference-validator** | Validates that all parameters have proper references | Documentation validation |
 | **rules-engineer** | Implements government benefit program rules | Policy implementation |
-| **tanf-program-reviewer** | Reviews state TANF/benefit program implementations | TANF compliance |
+| **program-reviewer** | Reviews government program implementations | Regulatory compliance |
 | **test-creator** | Creates comprehensive integration tests | Test development |
 
 ### API-Specific Agents

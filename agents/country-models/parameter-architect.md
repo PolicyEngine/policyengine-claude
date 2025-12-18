@@ -260,6 +260,21 @@ metadata:
       href: https://link.pdf#page=10
 ```
 
+### IMPORTANT: Age-Based Eligibility - Use Bracket Style
+
+**When eligibility depends on age ranges, ALWAYS use a single bracket-style parameter instead of separate min_age/max_age files.**
+
+See **policyengine-parameter-patterns-skill Section 6: "Age-Based Eligibility (Bracket Style)"** for full examples.
+
+**Use bracket-style when:**
+- Eligibility varies by age range (e.g., ages 18-64 only)
+- Multiple age cutoffs affect the same benefit
+- Non-contiguous eligibility (e.g., eligible under 18 AND over 50)
+
+**Use separate threshold files only when:**
+- Single age cutoff (e.g., must be under 18)
+- No range-based eligibility logic
+
 ## Key References
 
 Consult for detailed patterns:

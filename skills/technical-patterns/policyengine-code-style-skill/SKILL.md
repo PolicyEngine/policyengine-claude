@@ -237,6 +237,86 @@ def formula(spm_unit, period, parameters):
     return max_(0, countable_earned - dependent_care)
 ```
 
+### ✅ Break out complex expressions inside function calls
+
+**Don't inline complex calculations inside `where()`, `max_()`, or other function calls - give them descriptive names.**
+
+```python
+# ❌ BAD - Complex expression inlined in where()
+return where(
+    above_trigger,
+    reduced_payment,
+    max_(maximum_benefit - countable_income, 0),  # Hard to read
+)
+
+# ✅ GOOD - Break out into named variable
+standard_payment = max_(maximum_benefit - countable_income, 0)
+return where(
+    above_trigger,
+    reduced_payment,
+    standard_payment,  # Clear what this represents
+)
+```
+
+**Another example:**
+
+```python
+# ❌ BAD - Multiple complex inlined expressions
+return where(
+    income > add(spm_unit, period, ["earned", "unearned"]) * p.rate,
+    max_(benefit - (income * p.reduction_rate), 0),
+    benefit,
+)
+
+# ✅ GOOD - Named variables explain the logic
+gross_income = add(spm_unit, period, ["earned", "unearned"])
+income_threshold = gross_income * p.rate
+reduced_benefit = max_(benefit - (income * p.reduction_rate), 0)
+
+return where(
+    income > income_threshold,
+    reduced_benefit,
+    benefit,
+)
+```
+
+**Rule: If it's more than a simple variable or parameter access, give it a name.**
+
+---
+
+## Pattern 8: Use `add() > 0` Instead of `spm_unit.any()`
+
+**When checking if ANY member has a boolean property, use `add() > 0` instead of `spm_unit.members` + `spm_unit.any()`.**
+
+```python
+# ❌ LESS PREFERRED - verbose pattern:
+person = spm_unit.members
+has_citizen = spm_unit.any(
+    person("is_citizen_or_legal_immigrant", period)
+)
+
+# ✅ BETTER - cleaner add() > 0 pattern:
+immigration_eligible = add(spm_unit, period, ["is_citizen_or_legal_immigrant"]) > 0
+```
+
+**Why this is better:**
+- Avoids intermediate `person = spm_unit.members` variable
+- Consistent with `add()` patterns used elsewhere
+- More descriptive variable name (`immigration_eligible` vs `has_citizen`)
+- Single line instead of multiple
+
+**More examples:**
+```python
+# Check if any member is disabled
+has_disabled_member = add(spm_unit, period, ["is_disabled"]) > 0
+
+# Check if any member is elderly
+has_elderly_member = add(spm_unit, period, ["is_elderly"]) > 0
+
+# Check if any child is present
+has_child = add(spm_unit, period, ["is_child"]) > 0
+```
+
 ---
 
 ## Complete Example: Before vs After
@@ -346,7 +426,8 @@ Before finalizing code:
 - [ ] Correct period access:
   - Income/flows use `period`
   - Age/assets/counts/booleans use `period.this_year`
-- [ ] No single-use intermediate variables
+- [ ] No single-use intermediate variables FOR SIMPLE VALUES
+- [ ] BUT: Break out complex expressions inside `where()`, `max_()` into named variables
 - [ ] Direct parameter access (`p.amount` not `amount = p.amount`)
 - [ ] Direct returns when possible
 - [ ] Combined boolean logic when possible

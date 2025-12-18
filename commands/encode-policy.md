@@ -12,7 +12,7 @@ This workflow adapts based on the type of program being implemented:
 
 **TANF/Benefit Programs** (e.g., state TANF, SNAP, WIC):
 - Phase 4: test-creator creates both unit and integration tests
-- Phase 7: Uses specialized @complete:country-models:tanf-program-reviewer agent in parallel validation
+- Phase 7: Uses specialized @complete:country-models:program-reviewer agent in parallel validation
 - Optional phases: May be skipped for simplified implementations
 
 **Other Government Programs** (e.g., tax credits, deductions):
@@ -62,46 +62,52 @@ Invoke @complete:country-models:naming-coordinator agent to:
 
 ## Phase 3: Document Collection
 
-**Phase 3A: Initial Document Gathering**
+Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation and save as `sources/working_references.md`.
 
-Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation, save as `sources/working_references.md`, and post to GitHub issue
+**Agent behavior for PDFs:**
+- Agent cannot read PDFs directly
+- Agent MUST add all PDF links to `sources/working_references.md` under a "📄 PDFs for Future Reference" section
+- Agent continues with HTML sources and proceeds with available information
+- Do NOT stop the workflow for PDFs
 
-**After agent completes:**
-1. Check the agent's report for "📄 PDFs Requiring Extraction" section
-2. **Decision Point:**
-   - **If PDFs are CRITICAL** (State Plans with benefit formulas, calculation methodology):
-     - Ask the user: "Please send me these PDF URLs so I can extract their content:"
-     - List each PDF URL on a separate line
-     - Wait for user to send the URLs (they will auto-extract)
-     - Proceed to Phase 3B
-   - **If PDFs are SUPPLEMENTARY** (additional reference, not essential):
-     - Note them for future reference
-     - Proceed directly to Phase 4 with current documentation
+**Example in sources/working_references.md:**
+```markdown
+## 📄 PDFs for Future Reference
 
-3. **If no PDFs listed:**
-   - Skip to Phase 4 (documentation complete)
+The following PDFs contain additional information but could not be extracted:
 
-**Phase 3B: PDF Extraction & Complete Documentation** (Only if CRITICAL PDFs found)
+1. **State Plan**
+   - URL: https://state.gov/tanf-state-plan.pdf
+   - Expected content: Benefit calculation methodology, page 10
 
-1. After receiving extracted PDF content from user:
-2. Relaunch @complete:country-models:document-collector agent with:
-   - Original task description
-   - Extracted PDF content included in prompt
-   - Instruction: "You are in Phase 2 - integrate this PDF content with your HTML research"
-3. Agent creates complete documentation
+2. **Policy Manual**
+   - URL: https://state.gov/tanf-manual.pdf
+   - Expected content: Income deduction details
+```
 
 **Quality Gate**: Documentation must include:
-- Official program guidelines or state plan
+- Official program guidelines from HTML sources
 - Income limits and benefit schedules
 - Eligibility criteria and priority groups
-- Seasonal/temporal rules if applicable
-- ✅ All critical PDFs extracted and integrated (if applicable)
+- PDF links saved for future reference (if found)
+- Continue to Phase 4 after documentation is complete
 
-## Phase 4: Development (Parallel on Same Branch)
+## Phase 4: Development
 
-Run both agents IN PARALLEL on branch `<state-code>-<program>` (e.g., `or-tanf`) - they work on different folders so no conflicts.
+**IMPORTANT:** All agents create files only - they do NOT commit. pr-pusher in Phase 5 handles all commits.
 
-**IMPORTANT:** Both agents create files only - they do NOT commit. pr-pusher in Phase 5 handles all commits.
+### Step 4A: Create Parameters
+
+**@complete:country-models:parameter-architect** → works in `parameters/` folder:
+- Create complete parameter structure from documentation
+- All thresholds, amounts, rates, income limits
+- Include proper references with PDF page numbers
+- Use bracket-style for age-based eligibility
+- Verify person vs group level for all amounts
+
+### Step 4B: Create Variables and Tests (Parallel)
+
+Run both agents IN PARALLEL - they work on different folders so no conflicts.
 
 **@complete:country-models:test-creator** → works in `tests/` folder:
 - Create comprehensive INTEGRATION tests from documentation
@@ -110,31 +116,27 @@ Run both agents IN PARALLEL on branch `<state-code>-<program>` (e.g., `or-tanf`)
 - Use only existing PolicyEngine variables
 - Test realistic calculations based on documentation
 
-**@complete:country-models:rules-engineer** → works in `variables/` + `parameters/` folders:
+**@complete:country-models:rules-engineer** → works in `variables/` folder:
 - **Implementation Approach:** [Pass the decision from Phase 0: "simplified" or "full"]
   - **If Simplified TANF:** Do NOT create state-specific gross income variables - use federal baseline (`tanf_gross_earned_income`, `tanf_gross_unearned_income`)
   - **If Full TANF:** Create complete state-specific income definitions as needed
-- **Step 1:** Create all parameters first using embedded parameter-architect patterns
-  - Complete parameter structure with all thresholds, amounts, rates
-  - Include proper references from documentation
-- **Step 2:** Implement variables using the parameters
-  - Zero hard-coded values
-  - Complete implementations only
-  - Follow simplified/full approach from Phase 0
+- Use the parameters created in Step 4A
+- Zero hard-coded values - reference parameters only
+- Use `adds` for pure sums, `add()` for sum + operations
+- Verify person vs group entity level
 
 **Quality Requirements**:
-- rules-engineer: ZERO hard-coded values, parameters created before variables
+- parameter-architect: Complete parameters with references before variables
+- rules-engineer: ZERO hard-coded values, use parameters from Step 4A
 - test-creator: All tests (unit + integration) created together, based purely on documentation
 
-## Phase 5: Pre-Push Validation
+## Phase 5: Format and Push
 Invoke @complete:country-models:pr-pusher agent to:
 - Ensure changelog entry exists
-- Run formatters (black, isort)
-- Fix any linting issues
-- Run local tests for quick validation
-- Push branch and report initial CI status
+- Run `make format`
+- Push branch
 
-**Quality Gate**: Branch must be properly formatted with changelog before continuing.
+Testing is handled in Phase 7 by ci-fixer.
 
 ## Optional Enhancement Phases
 
@@ -160,62 +162,72 @@ The following enhancements may be applied to ensure production quality:
 - **Production TANF**: Include based on specific requirements
 - **Full Production Deployment**: Include all enhancements
 
-## Phase 6: Validation
+## Phase 6: Validate & Fix
 
-**Run validators to check implementation quality:**
+**Run sequentially: validator finds issues → ci-fixer implements fixes**
 
-**@complete:country-models:implementation-validator:**
-- Check for hard-coded values in variables
-- Verify placeholder or incomplete implementations
-- Check federal/state parameter organization
-- Assess test quality and coverage
-- Identify performance and vectorization issues
+### Step 6A: Implementation Validator
 
-**For TANF/Benefit Programs, also run @complete:country-models:tanf-program-reviewer:**
-- Learn from PA TANF and OH OWF reference implementations first
-- Validate code formulas against regulations
-- Verify test coverage with manual calculations
-- Check parameter structure and references
-- Focus on: eligibility rules, income disregards, benefit formulas
+Invoke @complete:country-models:implementation-validator to check (in order):
 
-**Quality Gate:** Review validator reports before proceeding
+**1. Parameters:**
+- Description present and follows template
+- References have `title` and `href`
+- PDF links include `#page=XX` (file page number)
+- Title includes full subsection
+- Bracket-style for age-based eligibility
 
-## Phase 7: Local Testing & Fixes
-**CRITICAL: ALWAYS invoke @complete:country-models:ci-fixer agent - do NOT manually fix issues**
+**2. Variables:**
+- Uses `adds` for pure sums (no formula)
+- Uses `add()` for sum + operations (not manual `a + b`)
+- Uses `add() > 0` instead of `spm_unit.any()`
+- Reference uses tuple `()` not list `[]`
+- No `documentation` field (use `reference`)
+- Correct entity level (Person vs SPMUnit)
 
-Invoke @complete:country-models:ci-fixer agent to:
-- Run all tests locally: `policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/[PROGRAM] -c policyengine_us -v`
-- Identify ALL failing tests
-- For each failing test:
-  - Read the test file to understand expected values
-  - Read the actual test output to see what was calculated
-  - Determine root cause: incorrect test expectations OR bug in implementation
-  - Fix the issue:
-    - If test expectations are wrong: update the test file with correct values
-    - If implementation is wrong: fix the variable/parameter code
-  - Re-run tests to verify fix
-- Iterate until ALL tests pass locally
-- **Reference Verification**
-  - Verify all parameters have reference metadata
-  - Verify all variables have reference fields
-  - Keep `sources/` folder files for future reference
-  - If references missing: Create todos for adding them
-- Run `make format` before committing fixes
-- Push final fixes to PR branch
+**3. Tests:**
+- Every variable with `formula` has a test file
+- Variables with `adds` don't need tests
 
-**Success Metrics**:
-- All tests pass locally (green output)
-- All references embedded in code metadata
-- `sources/` folder kept for future reference
-- Code properly formatted
-- Implementation complete and working
-- Clean commit history
+**Validator outputs structured fixes for ci-fixer to implement.**
+
+### Step 6B: CI Fixer
+
+Invoke @complete:country-models:ci-fixer to:
+
+1. **Implement pattern fixes** from validator output
+2. **Run tests LOCALLY** (do NOT wait for GitHub CI):
+   ```bash
+   policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/[AGENCY]/[PROGRAM] -c policyengine_us -v
+   ```
+3. **Fix test failures** based on documentation
+   - Do NOT create wrapper variables just because test inputs don't match
+   - Fix test inputs to match what federal baseline expects
+4. **Iterate** until all tests pass locally
+5. **Run `make format`**
+6. **Push** once everything passes
+
+## Phase 7: Regulatory Review
+
+Invoke @complete:country-models:program-reviewer:
+
+1. **Research regulations FIRST** (before looking at code)
+2. **Compare implementation to regulations**
+3. **Report any discrepancies** between code and legal requirements
+4. **Update PR description** with comprehensive documentation:
+   - Summary with issue link
+   - Regulatory authority section
+   - Income eligibility tests (with sources)
+   - Income deductions & exemptions (with sources)
+   - Income standards table
+   - Benefit calculation formula (with sources)
+   - Files added
+   - Test coverage
 
 ## Phase 8: Final Summary
 
-After all tests pass and references are embedded:
-- Update PR description with final implementation status
-- Add summary of what was implemented
+After regulatory review passes:
+- Verify PR description is complete with all references
 - Report completion to user
 - **Keep PR as draft** - user will mark ready when they choose
 - **WORKFLOW COMPLETE**
@@ -295,30 +307,33 @@ Execute each phase sequentially and **STOP after each phase** to wait for user i
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-4. **Phase 4**: Development (Test + Implementation)
+4. **Phase 4**: Development
+   - **Step 4A:** Run parameter-architect to create parameters
+   - **Step 4B:** Run test-creator and rules-engineer in parallel (different folders)
    - Pass simplified/full decision to rules-engineer
-   - Run test-creator and rules-engineer in parallel (different folders)
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-5. **Phase 5**: Pre-Push Validation
-   - Complete the phase
+5. **Phase 5**: Format and Push
+   - Ensure changelog, run `make format`, push branch
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-6. **Phase 6**: Validation
-   - Run validators
+6. **Phase 6**: Validate & Fix
+   - **Step 6A:** Run implementation-validator (parameters → variables → tests)
+   - **Step 6B:** Run ci-fixer (implement fixes, run tests locally, iterate until pass)
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
-7. **Phase 7**: Local Testing & Fixes (Including Reference Verification)
-   - Complete the phase
+7. **Phase 7**: Regulatory Review
+   - Run program-reviewer (research regulations first, compare to code)
+   - Update PR description with comprehensive documentation
    - Report results
    - **STOP - Wait for user to say "continue" or provide adjustments**
 
 8. **Phase 8**: Final Summary
-   - Update PR description
-   - Report final results (keep PR as draft)
+   - Verify PR description complete
+   - Report completion (keep PR as draft)
    - **WORKFLOW COMPLETE**
 
 **CRITICAL RULES**:

@@ -7,6 +7,26 @@ description: PolicyEngine implementation patterns - variable creation, no hard-c
 
 Essential patterns for implementing government benefit program rules in PolicyEngine.
 
+## FIRST PRINCIPLE: Legal Code is the Source of Truth
+
+**The law defines WHAT to implement. These patterns are just HOW to implement it.**
+
+```
+1. READ the legal code/policy manual FIRST
+2. UNDERSTAND what the law actually says
+3. IMPLEMENT exactly what the law requires
+4. USE these patterns as tools to implement correctly
+```
+
+**Patterns are tools, not rules to blindly follow:**
+- If the legal code says something different from common patterns → **FOLLOW THE LAW**
+- If another state does it differently → **Check YOUR state's legal code**
+- If a pattern doesn't fit the regulation → **Implement what the law says**
+
+**Every implementation decision should trace back to a specific legal citation.**
+
+---
+
 ## PolicyEngine Architecture Constraints
 
 ### What CANNOT Be Simulated (Single-Period Limitation)
@@ -139,6 +159,51 @@ def formula(entity, period, parameters):
 # Complete implementation or no file at all
 ```
 
+### 3. Use `adds` or `add()` - NEVER Manual Addition
+
+**CRITICAL: NEVER manually fetch variables and add them with `+`. Always use `adds` or `add()`.**
+
+#### Rule 1: Pure sum → `adds` attribute (no formula)
+
+```python
+❌ WRONG - Writing a formula for simple sum:
+class tx_tanf_gross_income(Variable):
+    def formula(spm_unit, period, parameters):
+        earned = spm_unit("tanf_gross_earned_income", period)
+        unearned = spm_unit("tanf_gross_unearned_income", period)
+        return earned + unearned  # DON'T DO THIS!
+
+✅ CORRECT - Use adds, no formula needed:
+class tx_tanf_gross_income(Variable):
+    value_type = float
+    entity = SPMUnit
+    definition_period = MONTH
+    adds = ["tanf_gross_earned_income", "tanf_gross_unearned_income"]
+    # NO formula method - adds handles it automatically!
+```
+
+#### Rule 2: Sum + other operations → `add()` function
+
+```python
+❌ WRONG - Manual fetching and adding:
+def formula(spm_unit, period, parameters):
+    earned = spm_unit("tanf_gross_earned_income", period)
+    unearned = spm_unit("tanf_gross_unearned_income", period)
+    gross = earned + unearned  # DON'T manually add!
+    return gross * p.rate
+
+✅ CORRECT - Use add() function:
+def formula(spm_unit, period, parameters):
+    gross = add(spm_unit, period, ["tanf_gross_earned_income", "tanf_gross_unearned_income"])
+    return gross * p.rate
+```
+
+**Decision rule:**
+- Is it ONLY a sum? → `adds = [...]` (no formula)
+- Sum + other operations? → `add()` function inside formula
+
+**See policyengine-aggregation-skill for detailed patterns.**
+
 ---
 
 ## Variable Implementation Standards
@@ -162,8 +227,40 @@ class il_tanf_countable_earned_income(Variable):
 
 **Key rules:**
 - ✅ Use full URL in `reference` (clickable)
-- ❌ Don't use `documentation` field
+- ✅ For PDF links, include page number: `#page=XX`
+- ✅ For multiple references, use TUPLE `()` not list `[]`
+- ❌ **Don't use `documentation` field** - use `reference` instead
 - ❌ Don't use statute citations without URLs
+
+**❌ WRONG - Don't use documentation field:**
+```python
+class some_variable(Variable):
+    documentation = "This is the wrong field"  # DON'T USE THIS
+```
+
+**✅ CORRECT - Use reference field:**
+```python
+class some_variable(Variable):
+    reference = "https://example.gov/rules.pdf#page=10"  # USE THIS
+```
+
+**Reference format:**
+```python
+# Single reference:
+reference = "https://oregon.gov/dhs/tanf-manual.pdf#page=23"
+
+# Multiple references - use TUPLE ():
+reference = (
+    "https://oregon.public.law/rules/oar_461-155-0030",
+    "https://oregon.gov/dhs/tanf-manual.pdf#page=23",
+)
+
+# ❌ WRONG - Don't use list []:
+reference = [
+    "https://...",
+    "https://...",
+]
+```
 
 ### When to Use `adds` vs `formula`
 

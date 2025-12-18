@@ -41,6 +41,112 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
+## FIRST PRINCIPLE: Legal Code is the Source of Truth
+
+**The law defines what to implement. Patterns are just HOW to implement it.**
+
+```
+1. READ the legal code/policy manual FIRST
+2. UNDERSTAND what the law actually says
+3. IMPLEMENT exactly what the law requires
+4. USE patterns (adds, add(), etc.) as tools to implement correctly
+```
+
+**❌ WRONG approach:**
+- "I'll use the TANF pattern from another state"
+- "This looks like it should use `adds`"
+- "Other states do it this way"
+
+**✅ CORRECT approach:**
+- "The TEA Manual Section 2362 says gross income = earned + unearned"
+- "Arkansas law specifies a 50% reduction when income exceeds trigger"
+- "I'll implement exactly what the regulation states"
+
+**If the legal code says something different from common patterns, FOLLOW THE LAW.**
+
+### CRITICAL: Verify Person vs Group Entity Level
+
+**When legal code mentions a deduction, limit, or amount, VERIFY if it applies per-person or per-group.**
+
+```
+"$50 earned income deduction" could mean:
+- $50 per PERSON (each working member gets $50 deducted)
+- $50 per GROUP (entire unit/household gets $50 total)
+```
+
+**This affects which entity to use:**
+- `Person` - Individual level (each person calculated separately)
+- `SPMUnit` - Benefit program unit (TANF, SNAP, etc.)
+- `TaxUnit` - Tax filing unit (IRS programs)
+- `Household` - Entire household
+
+**Implementation examples:**
+```python
+# Per-PERSON deduction (entity = Person):
+class work_expense_deduction(Variable):
+    entity = Person
+    def formula(person, period, parameters):
+        return min_(person("earned_income", period), p.work_expense_max)
+
+# Per-UNIT deduction (entity = SPMUnit, TaxUnit, or Household):
+class work_expense_deduction(Variable):
+    entity = SPMUnit  # or TaxUnit, Household
+    def formula(spm_unit, period, parameters):
+        return p.work_expense_amount  # Flat amount for whole unit
+```
+
+**Check legal code language:**
+- "per recipient" / "per individual" / "for each person" / "per taxpayer" → Person level
+- "per assistance unit" / "per household" / "per tax unit" / "for the family" → Group level
+
+---
+
+## SECOND RULE: Use `adds` or `add()` - NEVER Manual Addition
+
+**BEFORE writing ANY variable, ask: "Do I need to sum variables?"**
+
+```
+Sum only?           → adds = ["var1", "var2"]  (NO formula!)
+Sum + other stuff?  → add(spm_unit, period, ["var1", "var2"]) in formula
+```
+
+### Rule 1: Pure sum → `adds` attribute (no formula)
+
+**❌ WRONG:**
+```python
+def formula(spm_unit, period, parameters):
+    a = spm_unit("a", period)
+    b = spm_unit("b", period)
+    return a + b
+```
+
+**✅ CORRECT:**
+```python
+adds = ["a", "b"]  # No formula needed!
+```
+
+### Rule 2: Sum + other operations → `add()` function
+
+**❌ WRONG - Manual fetching and adding:**
+```python
+def formula(spm_unit, period, parameters):
+    a = spm_unit("a", period)
+    b = spm_unit("b", period)
+    c = a + b  # DON'T manually add!
+    return c * p.rate
+```
+
+**✅ CORRECT - Use add() function:**
+```python
+def formula(spm_unit, period, parameters):
+    c = add(spm_unit, period, ["a", "b"])  # Use add()!
+    return c * p.rate
+```
+
+**NEVER write `a + b` when summing variables. Always use `adds` or `add()`.**
+
+---
+
 ## Primary Directive
 
 **FIRST: Check if this is Simplified or Full TANF implementation**
@@ -168,14 +274,23 @@ The `reference` field in variables is a URL string. **For PDF links, always add 
 # ❌ BAD - No page number for PDF:
 reference = "https://oregon.gov/dhs/tanf-manual.pdf"
 
-# ✅ GOOD - Page number included:
+# ✅ GOOD - Single reference with page number:
 reference = "https://oregon.gov/dhs/tanf-manual.pdf#page=23"
 
-# ✅ GOOD - Direct link to regulation section:
-reference = "https://oregon.public.law/rules/oar_461-155-0030"
+# ✅ GOOD - Multiple references use TUPLE (), not list []
+reference = (
+    "https://oregon.public.law/rules/oar_461-155-0030",
+    "https://oregon.gov/dhs/tanf-manual.pdf#page=23",
+)
 
-# ✅ GOOD - eCFR with section anchor:
-reference = "https://www.ecfr.gov/current/title-7/section-273.9#p-273.9(d)(6)"
+# ❌ WRONG - Don't use list [] for multiple references:
+reference = [
+    "https://...",
+    "https://...",
+]
+
+# ❌ WRONG - Don't use documentation field:
+documentation = "Some description"  # USE reference INSTEAD!
 ```
 
 **Complete variable example:**
@@ -199,8 +314,60 @@ class or_tanf_income_eligible(Variable):
 
 **Quick Decision Process:**
 1. Should this variable exist? (Check decision tree in skill)
-2. If yes, use `adds` or `formula`? (Check skill guidance)
+2. If yes, use `adds` or `formula`? (See decision tree below)
 3. Apply vectorization patterns from policyengine-vectorization-skill
+
+### CRITICAL: `adds` vs `formula` Decision Tree
+
+**Is this variable ONLY a sum of other variables?**
+
+```
+├─ YES → Use `adds` attribute (NO formula needed!)
+│        adds = ["var1", "var2"]
+│
+└─ NO → Use formula with `add()` function
+        (when you need max_, where, conditions, etc.)
+```
+
+**Use `adds` (NO formula):**
+```python
+# ✅ CORRECT - Simple sum, use adds
+class tx_tanf_gross_income(Variable):
+    adds = ["tanf_gross_earned_income", "tanf_gross_unearned_income"]
+    # NO formula method - adds handles it automatically!
+
+# ✅ CORRECT - Counting (boolean sum)
+class household_children_count(Variable):
+    adds = ["is_child"]
+    # Automatically counts True values
+```
+
+**Use `formula` with `add()` (when you need additional logic):**
+```python
+# ✅ CORRECT - Need max_() after sum
+class tx_tanf_countable_income(Variable):
+    def formula(spm_unit, period, parameters):
+        gross = add(spm_unit, period, ["earned", "unearned"])
+        deductions = spm_unit("deductions", period)
+        return max_(gross - deductions, 0)  # max_() requires formula
+
+# ✅ CORRECT - Need where() condition
+class tx_tanf_benefit(Variable):
+    def formula(spm_unit, period, parameters):
+        eligible = spm_unit("tx_tanf_eligible", period)
+        amount = add(spm_unit, period, ["base_benefit", "supplement"])
+        return where(eligible, amount, 0)  # where() requires formula
+```
+
+**Common mistake to AVOID:**
+```python
+# ❌ WRONG - Using formula when adds would work
+class tx_tanf_gross_income(Variable):
+    def formula(spm_unit, period, parameters):
+        earned = spm_unit("tanf_gross_earned_income", period)
+        unearned = spm_unit("tanf_gross_unearned_income", period)
+        return earned + unearned  # Should use adds instead!
+```
 
 **TANF Countable Income - CRITICAL PATTERN:**
 
