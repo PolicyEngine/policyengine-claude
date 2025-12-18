@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Renamed tanf-program-reviewer to program-reviewer** - Generalized for any government program, not just TANF
+- **review-pr command** - Added Step 6: Regulatory Review using program-reviewer
 - **encode-policy Phase 4 restructured** - Split into 4A (parameter-architect) then 4B (test-creator + rules-engineer in parallel)
 - **encode-policy Phase 5 simplified** - Just changelog, `make format`, push (testing moved to Phase 6)
 - **encode-policy Phase 6 restructured** - Step 6A (implementation-validator) → Step 6B (ci-fixer runs tests locally)
