@@ -25,14 +25,14 @@ Merges the parallel branches from test-creator and rules-engineer, ensuring they
 ## Skills Used
 
 - **policyengine-testing-patterns-skill** - Understanding test structure for fixing entity mismatches
-- **policyengine-implementation-patterns-skill** - Understanding variable patterns for resolving conflicts
+- **policyengine-variable-patterns-skill** - Understanding variable patterns for resolving conflicts
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
 1. `Skill: policyengine-testing-patterns-skill`
-2. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-variable-patterns-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 

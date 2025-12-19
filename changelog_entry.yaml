@@ -1,4 +1,21 @@
-- bump: patch
+- bump: minor
   changes:
+    changed:
+      - "**review-pr command redesigned** - Simplified from 6 phases to 4, reduced from 6 agents to 4, added priority-based output (Critical/Should/Suggestions)"
+      - "**fix-pr command rewritten** - Now 5 phases with dependency-order fixing (parameters → variables → tests → format), clear issue-to-agent mapping"
+      - "**encode-policy continuous regulatory verification** - Added 3 checkpoints: after Phase 2 (specification review), after 3A (parameter verification), after 3C (logic review)"
+      - "**reference-validator redesigned** - Now 5-phase workflow with skills, detailed reference format rules, source priority hierarchy"
+      - "**Phase 7 simplified** - Now 'Final Review & PR Description' since regulatory issues caught earlier via checkpoints"
     added:
-      - policyengine-simulation-mechanics-skill for advanced policyengine.py patterns (ensure(), output_dataset.data, map_to_entity())
+      - "**Regulatory Checkpoint 1** - Verify specification is complete before development"
+      - "**Regulatory Checkpoint 2** - Verify parameter values match sources before variables"
+      - "**Regulatory Checkpoint 3** - Verify implementation logic matches regulations after variables"
+      - "**Reference clickability rule** - When clicking link, user must see the parameter value"
+      - "**Detailed section requirement** - References must include full subsection (e.g., `42 USC 8624(b)(2)(B)` not just `42 USC 8624`)"
+      - "**Source priority hierarchy** - Official government sources required; nonprofit/news only as last resort"
+      - "**Issue-to-agent mapping** in fix-pr - Clear table of which agent fixes which issue type"
+      - "**Dependency-order fixing** - Fix parameters before variables before tests"
+    removed:
+      - "**Duplicate implementation-validator calls** in review-pr (was called in Steps 1 and 3)"
+      - "**documentation-enricher from review-pr** - Had Edit tools, review-pr is read-only"
+      - "**Hardcoded 'MaxGhenis' username** in review-pr - Now uses dynamic `gh api user`"

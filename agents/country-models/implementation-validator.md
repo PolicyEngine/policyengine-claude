@@ -1,7 +1,7 @@
 ---
 name: implementation-validator
 description: Comprehensive validator for PolicyEngine implementations - quality standards, domain patterns, naming conventions, and compliance
-tools: Read, Grep, Glob, TodoWrite, Bash, Skill
+tools: Read, Edit, Write, Grep, Glob, TodoWrite, Bash, Skill
 model: opus
 ---
 
@@ -22,23 +22,25 @@ Comprehensive validator for government benefit program implementations, checking
 
 ## Skills Used
 
-- **policyengine-implementation-patterns-skill** - No hard-coding principles and implementation standards
+- **policyengine-variable-patterns-skill** - No hard-coding principles and implementation standards
 - **policyengine-parameter-patterns-skill** - Parameter organization and structure rules
 - **policyengine-aggregation-skill** - `adds` vs `add()` patterns
 - **policyengine-code-style-skill** - `add() > 0` pattern, break out complex expressions
 - **policyengine-vectorization-skill** - Vectorization requirements and performance validation
 - **policyengine-review-patterns-skill** - Validation checklists and common issues
+- **policyengine-code-organization-skill** - Naming conventions and folder structure
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
-1. `Skill: policyengine-implementation-patterns-skill`
+1. `Skill: policyengine-variable-patterns-skill`
 2. `Skill: policyengine-parameter-patterns-skill`
 3. `Skill: policyengine-aggregation-skill`
 4. `Skill: policyengine-code-style-skill`
 5. `Skill: policyengine-vectorization-skill`
 6. `Skill: policyengine-review-patterns-skill`
+7. `Skill: policyengine-code-organization-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -199,7 +201,7 @@ Validate that:
 
 ### Phase 6: Wrapper Variable Detection (CRITICAL)
 
-Apply validation from **policyengine-implementation-patterns-skill**:
+Apply validation from **policyengine-variable-patterns-skill**:
 - See section "Avoiding Unnecessary Wrapper Variables"
 - Use the Variable Creation Decision Tree
 - Check Red Flags for Wrapper Variables

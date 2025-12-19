@@ -1,12 +1,12 @@
 ---
-description: Apply fixes to an existing PR, addressing all review comments and validation issues
+description: Apply fixes to a PR based on review-pr findings or review comments
 ---
 
 # Fixing PR: $ARGUMENTS
 
-## Determining Which PR to Review
+Apply fixes to PR issues identified by `/review-pr` or GitHub review comments.
 
-First, determine which PR to review based on the arguments:
+## Determining Which PR to Fix
 
 ```bash
 # If no arguments provided, use current branch's PR
@@ -29,305 +29,289 @@ else
     fi
 fi
 
-echo "Reviewing PR #$PR_NUMBER"
+echo "Fixing PR #$PR_NUMBER"
+gh pr checkout $PR_NUMBER
 ```
 
-Orchestrate agents to review, validate, and fix issues in PR #$PR_NUMBER, addressing all GitHub review comments.
+---
 
-## ⚠️ CRITICAL: Agent Usage is MANDATORY
+## Coordinator Role
 
-**You are a coordinator, NOT an implementer. You MUST:**
-1. **NEVER make direct code changes** - always use agents
-2. **INVOKE agents with specific, detailed instructions**
-3. **WAIT for each agent to complete** before proceeding
-4. **VERIFY agent outputs** before moving to next phase
+**You are a coordinator, NOT an implementer.**
 
-**If you find yourself using Edit, Write, or MultiEdit directly, STOP and invoke the appropriate agent instead.**
+- ✅ Invoke agents with specific instructions
+- ✅ Wait for agents to complete
+- ✅ Verify fixes worked
+- ❌ Never use Edit/Write directly
+- ❌ Never write code yourself
 
-## Phase 1: PR Analysis
-After determining PR_NUMBER above, gather context about the PR and review comments:
+---
+
+## Phase 1: Gather Context
+
+Collect information about issues to fix:
 
 ```bash
 gh pr view $PR_NUMBER --comments
-gh pr checks $PR_NUMBER  # Note: CI runs on draft PRs too!
+gh pr checks $PR_NUMBER
 gh pr diff $PR_NUMBER
 ```
 
-Document findings:
-- Current CI status (even draft PRs have CI)
-- Review comments to address
-- Files changed
-- Type of implementation (new program, bug fix, enhancement)
+**Parse findings into categories:**
 
-## Phase 2: Enhanced Domain Validation
-Run comprehensive validation using specialized agents:
+| Priority | Examples |
+|----------|----------|
+| 🔴 Critical | Hard-coded values, missing references, regulatory mismatch, CI failures |
+| 🟡 Should | Pattern violations, missing tests, naming issues |
+| 🟢 Suggestions | Documentation, performance |
 
-### Step 1: Domain-Specific Validation
-Invoke **implementation-validator** to check:
-- Federal/state jurisdiction separation
-- Variable naming conventions and duplicates
-- Hard-coded value patterns
-- Performance optimization opportunities
-- Documentation placement
-- PolicyEngine-specific patterns
+**Create fix plan** listing each issue and which agent will fix it.
 
-### Step 2: Reference Validation
-Invoke **reference-validator** to verify:
+---
+
+## Phase 2: Fix Critical Issues
+
+**Fix in dependency order**: Parameters → Variables → Tests
+
+### Step 2A: Fix Reference Issues
+
+If references are missing or incorrect:
+
+**Invoke parameter-architect**:
+```
+Fix reference issues in these parameter files:
+- [file1]: Missing reference
+- [file2]: Reference doesn't corroborate value (says X, should be Y)
+- [file3]: Missing PDF page number
+
+Requirements:
+- Add detailed section numbers (e.g., 42 USC 8624(b)(2)(B))
+- Add #page=XX for PDF links
+- Ensure clicking link shows the value
+```
+
+### Step 2B: Fix Hard-Coded Values
+
+If hard-coded values found in variables:
+
+**Step 1 - Invoke parameter-architect**:
+```
+Create parameters for these hard-coded values:
+- [file1:line]: value 65 (age threshold)
+- [file2:line]: value 0.3 (rate)
+- [file3:line]: value 2000 (income limit)
+
+Create in proper hierarchy (federal vs state).
+Include references for each value.
+```
+
+**Step 2 - Invoke rules-engineer**:
+```
+Refactor these variables to use the new parameters:
+- [file1]: Replace hard-coded 65 with parameter
+- [file2]: Replace hard-coded 0.3 with parameter
+- [file3]: Replace hard-coded 2000 with parameter
+
+Use proper parameter access pattern.
+```
+
+### Step 2C: Fix Regulatory Mismatches
+
+If implementation doesn't match regulations:
+
+**Invoke rules-engineer**:
+```
+Fix regulatory mismatch in [file]:
+- Current: [what code does]
+- Should be: [what regulation says]
+- Source: [regulation citation]
+
+Update the formula to match the regulation.
+```
+
+### Step 2D: Fix CI Failures
+
+If CI is failing:
+
+**Invoke ci-fixer**:
+```
+Fix CI failures for PR #$PR_NUMBER:
+- Test failures: [list failing tests]
+- Lint failures: [list lint issues]
+
+Run tests locally, fix issues, iterate until passing.
+```
+
+---
+
+## Phase 3: Fix Should-Address Issues
+
+### Step 3A: Fix Pattern Violations
+
+If code patterns are wrong:
+
+**Invoke implementation-validator**:
+```
+Fix pattern violations in these files:
+- [file1]: Use `add()` instead of manual sum
+- [file2]: Use `adds` attribute instead of formula
+- [file3]: Use `add() > 0` instead of `spm_unit.any()`
+- [file4]: Reference should use tuple () not list []
+
+Apply fixes following policyengine-code-style-skill patterns.
+```
+
+### Step 3B: Add Missing Tests
+
+If tests are missing:
+
+**Invoke edge-case-generator**:
+```
+Add missing tests for:
+- [variable1]: Missing boundary test at threshold
+- [variable2]: Missing zero income case
+- [variable3]: Missing maximum household size case
+
+Add to existing test files.
+```
+
+### Step 3C: Fix Naming Issues
+
+If naming conventions violated:
+
+**Invoke implementation-validator**:
+```
+Fix naming convention issues:
+- [file1]: Variable should be {state}_{program}_{concept}
+- [file2]: Parameter folder should be in states/{state}/
+
+Rename files and update all references.
+```
+
+---
+
+## Phase 4: Verify All Fixes
+
+After all fixes applied, verify nothing is broken:
+
+### Step 4A: Run Validators
+
+**Invoke implementation-validator** (read-only check):
+```
+Verify all fixes were applied correctly:
+- No remaining hard-coded values
+- All patterns correct
+- All naming conventions followed
+```
+
+**Invoke reference-validator** (read-only check):
+```
+Verify all references are correct:
 - All parameters have references
-- References actually corroborate values
-- Federal sources for federal params
-- State sources for state params
-- Specific citations, not generic links
-
-### Step 3: Implementation Validation
-Invoke **implementation-validator** to check:
-- No hard-coded values in formulas
-- Complete implementations (no TODOs)
-- Proper entity usage
-- Correct formula patterns
-
-Create a comprehensive checklist:
-- [ ] Domain validation issues
-- [ ] Reference validation issues
-- [ ] Implementation issues
-- [ ] Review comments to address
-- [ ] CI failures to fix
-
-## Phase 3: Sequential Fix Application
-
-**CRITICAL: You MUST use agents for ALL fixes. DO NOT make direct edits yourself.**
-
-Based on issues found, invoke agents IN ORDER to avoid conflicts.
-
-**Why Sequential**: Unlike initial implementation where we need isolation, PR fixes must be applied sequentially because:
-- Each fix builds on the previous one
-- Avoids merge conflicts
-- Tests need to see the fixed implementation
-- Documentation needs to reflect the final code
-
-**MANDATORY AGENT USAGE - Apply fixes in this exact order:**
-
-### Step 1: Fix Domain & Parameter Issues
-```markdown
-YOU MUST INVOKE THESE AGENTS - DO NOT FIX DIRECTLY:
-
-1. First, invoke implementation-validator:
-   "Scan all files in this PR and create a comprehensive list of all domain violations and implementation issues"
-
-2. Then invoke parameter-architect (REQUIRED for ANY hard-coded values):
-   "Design parameter structure for these hard-coded values found: [list all values]
-    Create the YAML parameter files with proper federal/state separation"
-
-3. Then invoke rules-engineer (REQUIRED for code changes):
-   "Refactor all variables to use the new parameters created by parameter-architect.
-    Fix all hard-coded values in: [list files]"
-
-4. Then invoke reference-validator:
-   "Add proper references to all new parameters created"
-
-5. ONLY AFTER all agents complete: Commit changes
+- References corroborate values
+- PDF pages included
 ```
 
-### Step 2: Add Missing Tests (MANDATORY)
-```markdown
-REQUIRED - Must generate tests even if none were failing:
+### Step 4B: Run Tests Locally
 
-1. Invoke edge-case-generator:
-   "Generate boundary tests for all parameters created in Step 1.
-    Test edge cases for: [list all new parameters]"
-
-2. Invoke test-creator:
-   "Create integration tests for the refactored Idaho LIHEAP implementation.
-    Include tests for all new parameter files created."
-
-3. VERIFY tests pass before committing
-4. Commit test additions
-```
-
-### Step 3: Enhance Documentation
-1. **documentation-enricher**: Add examples and references to updated code
-2. Commit documentation improvements
-
-### Step 4: Optimize Performance (if needed)
-1. **performance-optimizer**: Vectorize and optimize calculations
-2. Run tests to ensure no regressions
-3. Commit optimizations
-
-### Step 5: Validate Integrations
-1. **cross-program-validator**: Check benefit interactions
-2. Fix any cliff effects or integration issues found
-3. Commit integration fixes
-
-## Phase 4: Apply Fixes
-For each issue identified:
-
-1. **Read current implementation**
-   ```bash
-   gh pr checkout $PR_NUMBER
-   ```
-
-2. **Apply agent-generated fixes**
-   - Use Edit/MultiEdit for targeted fixes
-   - Preserve existing functionality
-   - Add only what's needed
-
-3. **Verify fixes locally**
-   ```bash
-   make test
-   make format
-   ```
-
-## Phase 5: Address Review Comments
-For each GitHub comment:
-
-1. **Parse comment intent**
-   - Is it requesting a change?
-   - Is it asking for clarification?
-   - Is it pointing out an issue?
-
-2. **Generate response**
-   - If change requested: Apply fix and confirm
-   - If clarification: Add documentation/comment
-   - If issue: Fix and explain approach
-
-3. **Post response on GitHub**
-   ```bash
-   gh pr comment $PR_NUMBER --body "Addressed: [explanation of fix]"
-   ```
-
-## Phase 6: CI Validation
-Invoke ci-fixer to ensure all checks pass:
-
-1. **Push fixes**
-   ```bash
-   git add -A
-   git commit -m "Address review comments
-
-   - Fixed hard-coded values identified in review
-   - Added missing tests for edge cases
-   - Enhanced documentation with examples
-   - Optimized performance issues
-   
-   Addresses comments from @reviewer"
-   git push
-   ```
-
-2. **Monitor CI**
-   ```bash
-   gh pr checks $PR_NUMBER --watch
-   ```
-
-3. **Fix any CI failures**
-   - Format issues: `make format`
-   - Test failures: Fix with targeted agents
-   - Lint issues: Apply corrections
-
-## Phase 7: Final Review & Summary
-Invoke implementation-validator for final validation:
-- All comments addressed?
-- All tests passing?
-- No regressions introduced?
-
-Post summary comment:
 ```bash
-gh pr comment $PR_NUMBER --body "## Summary of Changes
-
-### Issues Addressed
-✅ Fixed hard-coded values in [files]
-✅ Added parameterization for [values]
-✅ Enhanced test coverage (+X tests)
-✅ Improved documentation
-✅ All CI checks passing
-
-### Review Comments Addressed
-- @reviewer1: [Issue] → [Fix applied]
-- @reviewer2: [Question] → [Clarification added]
-
-### Ready for Re-Review
-All identified issues have been addressed. The implementation now:
-- Uses parameters for all configurable values
-- Has comprehensive test coverage  
-- Includes documentation with examples
-- Passes all CI checks"
+# Run tests for the affected program
+policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/[AGENCY]/[PROGRAM] -c policyengine_us -v
 ```
 
-## Command Options
+If tests fail, invoke **ci-fixer** to fix.
 
-### Usage Examples
-- `/review-pr` - Review PR for current branch
-- `/review-pr 6444` - Review PR #6444
-- `/review-pr "Idaho LIHEAP"` - Search for and review PR by title/description
+---
 
-### Quick Fix Mode
-`/review-pr [PR] --quick`
-- Only fix CI failures
-- Skip comprehensive review
-- Focus on getting checks green
+## Phase 5: Push Changes
 
-### Deep Review Mode  
-`/review-pr [PR] --deep`
-- Run all validators
-- Generate comprehensive tests
-- Full documentation enhancement
-- Cross-program validation
+### Step 5A: Format and Push
 
-### Comment Only Mode
-`/review-pr [PR] --comments-only`
-- Only address GitHub review comments
-- Skip additional validation
-- Faster turnaround
+**Invoke pr-pusher**:
+```
+Push fixes to PR #$PR_NUMBER:
+- Run make format
+- Commit with message describing fixes
+- Push to branch
+```
 
-## Success Metrics
+### Step 5B: Post Summary Comment
 
-The PR is ready when:
-- ✅ All CI checks passing
-- ✅ All review comments addressed
-- ✅ No hard-coded values
-- ✅ Comprehensive test coverage
-- ✅ Documentation complete
-- ✅ No performance issues
+```bash
+gh pr comment $PR_NUMBER --body "## Fixes Applied
 
-## Common Review Patterns
+### 🔴 Critical Issues Fixed
+- ✅ [Issue 1]: [How it was fixed]
+- ✅ [Issue 2]: [How it was fixed]
 
-### "Hard-coded value" Comment
-1. Identify the value
-2. Create parameter with parameter-architect
-3. Update implementation with rules-engineer
-4. Add test with test-creator
+### 🟡 Should-Address Issues Fixed
+- ✅ [Issue 1]: [How it was fixed]
+- ✅ [Issue 2]: [How it was fixed]
 
-### "Missing test" Comment  
-1. Identify the scenario
-2. Use edge-case-generator for boundaries
-3. Use test-creator for integration tests
-4. Verify with implementation-validator
+### Verification
+- ✅ All validators pass
+- ✅ All tests pass locally
+- ✅ Code formatted
 
-### "Needs documentation" Comment
-1. Use documentation-enricher
-2. Add calculation examples
-3. Add regulatory references
-4. Explain edge cases
+Ready for re-review."
+```
 
-### "Performance issue" Comment
-1. Use performance-optimizer
-2. Vectorize operations
-3. Remove redundant calculations
-4. Test with large datasets
+---
 
-## Error Handling
+## Issue Type → Agent Mapping
 
-If agents produce conflicting fixes:
-1. Prioritize fixes that address review comments
-2. Ensure no regressions
-3. Maintain backward compatibility
-4. Document any tradeoffs
+| Issue Type | Agent |
+|------------|-------|
+| Missing reference | parameter-architect |
+| Bad reference format | parameter-architect |
+| Hard-coded value (create param) | parameter-architect |
+| Hard-coded value (use param) | rules-engineer |
+| Regulatory mismatch | rules-engineer |
+| Pattern violation | implementation-validator |
+| Naming issue | implementation-validator |
+| Missing test | edge-case-generator |
+| CI failure | ci-fixer |
+| Format issue | pr-pusher |
+
+---
+
+## Usage Examples
+
+```bash
+/fix-pr              # Fix PR for current branch
+/fix-pr 6390         # Fix PR #6390
+/fix-pr "Arkansas"   # Search for PR by title
+```
+
+---
+
+## Fix Order (Important!)
+
+Always fix in this order to avoid cascading issues:
+
+```
+1. Parameters (foundation)
+   └─ References, values, structure
+
+2. Variables (depend on parameters)
+   └─ Hard-coded values, patterns, logic
+
+3. Tests (depend on variables)
+   └─ Missing tests, edge cases
+
+4. Format & Push (last)
+   └─ make format, commit, push
+```
+
+---
 
 ## Pre-Flight Checklist
 
-Before starting, confirm:
-- [ ] I will NOT make direct edits (no Edit/Write/MultiEdit by coordinator)
-- [ ] I will invoke agents for ALL changes
-- [ ] I will wait for each agent to complete
-- [ ] I will generate tests even if current tests pass
-- [ ] I will commit after each agent phase
+Before starting:
+- [ ] I will invoke agents for ALL fixes
+- [ ] I will NOT use Edit/Write directly
+- [ ] I will fix in dependency order (params → vars → tests)
+- [ ] I will verify fixes with validators
+- [ ] I will run tests before pushing
 
-Start with determining which PR to review, then proceed to Phase 1: Analyze the PR and review comments.
+Start by gathering context, then proceed through the phases.

@@ -24,7 +24,7 @@ Reviews government program implementations (TANF, SNAP, LIHEAP, tax credits, etc
 
 - **policyengine-review-patterns-skill** - Review procedures, checklists, and validation standards
 - **policyengine-testing-patterns-skill** - Test structure validation and quality checks
-- **policyengine-implementation-patterns-skill** - TANF implementation patterns and best practices
+- **policyengine-variable-patterns-skill** - TANF implementation patterns and best practices
 - **policyengine-parameter-patterns-skill** - Parameter structure and reference validation
 - **policyengine-aggregation-skill** - `adds` vs `add()` patterns
 - **policyengine-vectorization-skill** - Performance checks and vectorization requirements
@@ -37,7 +37,7 @@ Reviews government program implementations (TANF, SNAP, LIHEAP, tax credits, etc
 
 1. `Skill: policyengine-review-patterns-skill`
 2. `Skill: policyengine-testing-patterns-skill`
-3. `Skill: policyengine-implementation-patterns-skill`
+3. `Skill: policyengine-variable-patterns-skill`
 4. `Skill: policyengine-parameter-patterns-skill`
 5. `Skill: policyengine-aggregation-skill`
 6. `Skill: policyengine-vectorization-skill`

@@ -1,7 +1,7 @@
 ---
 name: issue-manager
 description: Finds or creates GitHub issues for program implementations
-tools: Bash, Grep, Skill
+tools: Bash, Grep
 model: opus
 ---
 

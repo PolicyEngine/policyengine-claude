@@ -23,14 +23,16 @@ Designs comprehensive parameter structures for government benefit programs, ensu
 ## Skills Used
 
 - **policyengine-parameter-patterns-skill** - YAML structure, naming conventions, metadata requirements
-- **policyengine-implementation-patterns-skill** - Federal/state separation principles
+- **policyengine-variable-patterns-skill** - Federal/state separation principles
+- **policyengine-code-organization-skill** - Naming conventions and folder structure
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
 1. `Skill: policyengine-parameter-patterns-skill`
-2. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-variable-patterns-skill`
+3. `Skill: policyengine-code-organization-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -63,17 +65,28 @@ Learn from them:
 
 ## Workflow
 
-### Step 1: Analyze Documentation
+### Step 1: Access Documentation
 
-When invoked, you MUST:
+Read `sources/working_references.md` in the repository for program documentation.
+
+Use this file to understand:
+- **Official Program Name and Variable Prefix** - use this for naming parameters
+- Income limits and thresholds to parameterize
+- Benefit amounts and payment standards
+- Eligibility criteria values
+- Deduction and disregard rates
+
+### Step 2: Analyze and Create Parameters
+
+When creating parameters, you MUST:
 1. **CREATE the actual YAML parameter files** using Write tool
 2. **EXTRACT every hard-coded value** and parameterize it
 3. **ORGANIZE parameters** with proper federal/state separation
 4. **INCLUDE complete metadata** - All 4 required fields
 
-### Step 2: Identify Parameterizable Values
+### Step 3: Identify Parameterizable Values
 
-**FIRST: Check policyengine-implementation-patterns-skill "PolicyEngine Architecture Constraints"**
+**FIRST: Check policyengine-variable-patterns-skill "PolicyEngine Architecture Constraints"**
 
 **DO NOT parameterize non-simulatable rules:**
 - ❌ Time limits (lifetime/cumulative limits)
@@ -132,7 +145,7 @@ income_limit/rate.yaml:
 - If legal code only shows dollar amounts (no percentage), then store the dollar amount
 - **Never assume a percentage relationship without legal citation**
 
-### Step 3: Create Parameter Files
+### Step 4: Create Parameter Files
 
 **CRITICAL: NEVER write a parameter file without a description! This is MANDATORY.**
 
@@ -177,14 +190,14 @@ Key templates:
 
 **See skill for complete template list.** Copy templates exactly, replacing only state name and program name.
 
-### Step 4: Apply Naming Conventions
+### Step 5: Apply Naming Conventions
 
 From **policyengine-parameter-patterns-skill**:
 - `/amount.yaml` → Dollar values
 - `/rate.yaml` or `/percentage.yaml` → Multipliers (0.x or x.x)
 - `/threshold.yaml` → Cutoff points
 
-### Step 5: Federal/State Classification
+### Step 6: Federal/State Classification
 
 **Federal Parameters** `/parameters/gov/{agency}/`:
 - Base formulas and methodologies
@@ -196,7 +209,7 @@ From **policyengine-parameter-patterns-skill**:
 - Income thresholds
 - Implementation choices
 
-### Step 6: Validate Parameters
+### Step 7: Validate Parameters
 
 Check against skill requirements:
 - [ ] All 4 metadata fields present
@@ -206,7 +219,7 @@ Check against skill requirements:
 - [ ] Effective dates match sources
 - [ ] Proper federal/state separation
 
-### Step 6.5: Validate Descriptions (MANDATORY)
+### Step 8: Validate Descriptions (MANDATORY)
 
 **Follow policyengine-parameter-patterns-skill exactly:**
 - Section 2: "Description Field" - The ONLY Acceptable Formula
@@ -221,7 +234,7 @@ Check against skill requirements:
 
 **For templates and examples:** See policyengine-parameter-patterns-skill Section 2.2
 
-### Step 7: Reference Quality Requirements
+### Step 9: Reference Quality Requirements
 
 **ONLY use official government sources:**
 - ✅ State codes and administrative regulations
@@ -279,7 +292,7 @@ See **policyengine-parameter-patterns-skill Section 6: "Age-Based Eligibility (B
 
 Consult for detailed patterns:
 - **policyengine-parameter-patterns-skill** - Complete parameter patterns
-- **policyengine-implementation-patterns-skill** - Federal/state principles
+- **policyengine-variable-patterns-skill** - Federal/state principles
 
 ## Quality Standards
 

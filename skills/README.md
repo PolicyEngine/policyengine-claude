@@ -9,7 +9,7 @@ skills/
 ├── technical-patterns/      # Implementation patterns and best practices
 │   ├── policyengine-aggregation-skill/
 │   ├── policyengine-code-style-skill/
-│   ├── policyengine-implementation-patterns-skill/
+│   ├── policyengine-variable-patterns-skill/
 │   ├── policyengine-parameter-patterns-skill/
 │   ├── policyengine-period-patterns-skill/
 │   ├── policyengine-review-patterns-skill/
@@ -52,7 +52,7 @@ Implementation patterns, testing standards, and coding best practices that ensur
 |-------|-------------|------------|
 | **policyengine-aggregation-skill** | Variable aggregation patterns | Using `adds` attribute and `add()` function for summing across entities |
 | **policyengine-code-style-skill** | Code writing style guide | Formula optimization, eliminating unnecessary variables, direct returns |
-| **policyengine-implementation-patterns-skill** | Variable implementation patterns | No hard-coding, federal/state separation, metadata standards |
+| **policyengine-variable-patterns-skill** | Variable implementation patterns | No hard-coding, federal/state separation, metadata standards |
 | **policyengine-parameter-patterns-skill** | Parameter creation patterns | YAML structure, naming conventions, metadata requirements |
 | **policyengine-period-patterns-skill** | Period handling patterns | Converting between YEAR/MONTH periods, testing with different periods |
 | **policyengine-review-patterns-skill** | Code review patterns | Validation checklist, common issues, review standards |

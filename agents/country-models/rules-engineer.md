@@ -21,23 +21,25 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 
 ## Skills Used
 
-- **policyengine-implementation-patterns-skill** - Variable creation patterns, no hard-coding principle
+- **policyengine-variable-patterns-skill** - Variable creation patterns, no hard-coding principle
 - **policyengine-parameter-patterns-skill** - Parameter structure and organization
 - **policyengine-vectorization-skill** - Vectorization requirements and patterns
 - **policyengine-aggregation-skill** - Using `adds` vs `add()` patterns
 - **policyengine-period-patterns-skill** - Handling different definition periods
 - **policyengine-code-style-skill** - Formula optimization, eliminating unnecessary variables
+- **policyengine-code-organization-skill** - Naming conventions and folder structure
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
-1. `Skill: policyengine-implementation-patterns-skill`
+1. `Skill: policyengine-variable-patterns-skill`
 2. `Skill: policyengine-parameter-patterns-skill`
 3. `Skill: policyengine-vectorization-skill`
 4. `Skill: policyengine-aggregation-skill`
 5. `Skill: policyengine-period-patterns-skill`
 6. `Skill: policyengine-code-style-skill`
+7. `Skill: policyengine-code-organization-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -169,10 +171,9 @@ Learn from them:
 - **READ the code inside each variable** to understand if it has state-specific logic
 - For Simplified TANF: Many reference variables should NOT be copied
 
-**CRITICAL: Follow the "Avoiding Unnecessary Wrapper Variables" section in policyengine-implementation-patterns-skill**
+**CRITICAL: Avoid Unnecessary Wrapper Variables**
 - Understand WHY variables exist, not just WHAT
 - Only create state variables that have state-specific logic
-- See skill for decision tree and examples
 
 **NOTE: Unused `parameters` is OK if there's state-specific logic:**
 ```python
@@ -211,7 +212,9 @@ state_tanf_demographic_eligible_person
 # Assistance unit size - use spm_unit_size directly
 state_tanf_assistance_unit_size
 
-# Immigration eligibility - use federal directly
+# Immigration eligibility - for simplified TANF, use federal variable directly:
+# is_citizen_or_legal_immigrant
+# Check working_references.md - only create state variable if state-specific rules documented
 state_tanf_immigration_eligible
 ```
 
@@ -240,8 +243,9 @@ state_tanf_gross_income  # If used in 2+ places (income_eligible, countable_inco
 ```python
 # ✅ CORRECT for simplified implementation:
 def formula(spm_unit, period, parameters):
-    earned = spm_unit("tanf_gross_earned_income", period)  # Use federal
+    earned = spm_unit("tanf_gross_earned_income", period)  # Use federal income
     unit_size = spm_unit("spm_unit_size", period)  # Use base variable
+    immigration_eligible = add(spm_unit, period, ["is_citizen_or_legal_immigrant"]) > 0  # Use federal
     # ... apply state-specific disregard or limit ...
 ```
 
@@ -263,6 +267,12 @@ For states with truly unique definitions, create state-specific variables as nee
 ### Step 1: Access Documentation
 
 Read `sources/working_references.md` in the repository for program documentation.
+
+Use this file to understand:
+- **Official Program Name and Variable Prefix** - use this for naming variables
+- Program rules and eligibility criteria
+- Calculation formulas and deductions
+- Legal citations for references
 
 **CRITICAL**: Embed references from `sources/working_references.md` into your parameter/variable metadata.
 
@@ -306,16 +316,16 @@ class or_tanf_income_eligible(Variable):
 
 ### Step 2: Implement Variables
 
-**CRITICAL: Follow policyengine-implementation-patterns-skill sections:**
-- "Avoiding Unnecessary Wrapper Variables" - Variable Creation Decision Tree
-- "When to Use `adds` vs `formula`" - Choosing implementation method
-- "State Variables to AVOID Creating" - What NOT to implement
-- **"TANF Countable Income Pattern"** - CRITICAL for countable income calculations
+**Apply loaded skills for:**
+- Avoiding unnecessary wrapper variables
+- When to use `adds` vs `formula`
+- State variables to avoid creating
+- TANF countable income pattern
 
 **Quick Decision Process:**
-1. Should this variable exist? (Check decision tree in skill)
+1. Should this variable exist?
 2. If yes, use `adds` or `formula`? (See decision tree below)
-3. Apply vectorization patterns from policyengine-vectorization-skill
+3. Apply vectorization patterns
 
 ### CRITICAL: `adds` vs `formula` Decision Tree
 
@@ -399,14 +409,14 @@ return max_(countable, 0)
 
 **CRITICAL REMINDER:** The legal code/policy manual is the ONLY authoritative source. If the state explicitly says "subtract deductions from total income," then do that! Don't blindly follow the typical pattern.
 
-**See policyengine-implementation-patterns-skill "TANF Countable Income Pattern" section for:**
+**TANF Countable Income patterns (from loaded skill):**
 - Multiple deduction steps pattern
 - Disregard percentage pattern
 - Rare cases where unearned has separate deductions
 
 ### Step 3.5: Filter Out Non-Simulatable Rules (CRITICAL)
 
-**Check policyengine-implementation-patterns-skill section "PolicyEngine Architecture Constraints"**
+**PolicyEngine Architecture Constraints (from loaded skill)**
 
 Before parameterizing ANYTHING, verify it CAN be simulated:
 
@@ -435,7 +445,7 @@ def formula(spm_unit, period, parameters):
 
 **CRITICAL: EVERY parameter MUST have a description field! No exceptions.**
 
-Follow **policyengine-parameter-patterns-skill**:
+**Parameter Requirements (from loaded skill):**
 
 1. **Required structure** - Description + All 4 metadata fields:
    - ✅ **description:** First field, uses template from skill Section 2.2
@@ -449,7 +459,7 @@ Follow **policyengine-parameter-patterns-skill**:
    - `/rate.yaml` or `/percentage.yaml` for multipliers
    - `/threshold.yaml` for cutoffs
 
-3. **Description requirements** (policyengine-parameter-patterns-skill Section 2):
+3. **Description requirements:**
    - Active voice: "[State] deducts/applies/sets..."
    - Full program name: "Temporary Assistance for Needy Families program" not "TANF"
    - Exactly ONE sentence with period
@@ -500,21 +510,21 @@ Create a mapping checklist to ensure complete implementation:
 
 ### Step 5: Apply TANF-Specific Patterns
 
-See **policyengine-implementation-patterns-skill** sections:
-- "Simplified TANF Rules"
-- "Avoiding Unnecessary Wrapper Variables"
-- "State Variables to AVOID Creating"
+**Apply TANF patterns from loaded skills:**
+- Simplified TANF rules
+- Avoiding unnecessary wrapper variables
+- State variables to avoid creating
 
 Key principle: **Only create a state variable if you're adding state-specific logic to it!**
 
 ### Step 6: Validate Implementation
 
-Check against skills:
-- [ ] Zero hard-coded values (implementation-patterns)
-- [ ] Properly vectorized (vectorization-skill)
-- [ ] Parameters have all metadata (parameter-patterns)
-- [ ] Using `adds` where appropriate (aggregation-skill)
-- [ ] Period handling correct (period-patterns)
+Check against loaded skills:
+- [ ] Zero hard-coded values
+- [ ] Properly vectorized
+- [ ] Parameters have all metadata
+- [ ] Using `adds` where appropriate
+- [ ] Period handling correct
 - [ ] References embedded in metadata
 
 ### Step 7: Format and Test
@@ -550,15 +560,6 @@ When invoked to fix issues, you MUST:
 3. **CREATE missing variables** if needed
 4. **REFACTOR code** to use parameters
 5. **COMPLETE the entire task** - no partial fixes
-
-## Key References
-
-Consult these skills for detailed patterns:
-- **policyengine-implementation-patterns-skill** - Core implementation rules
-- **policyengine-vectorization-skill** - Critical for avoiding crashes
-- **policyengine-parameter-patterns-skill** - Parameter structure
-- **policyengine-aggregation-skill** - Variable summation patterns
-- **policyengine-period-patterns-skill** - Period conversion
 
 ## Code Comment Standards
 

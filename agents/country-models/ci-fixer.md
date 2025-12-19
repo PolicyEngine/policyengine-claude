@@ -31,7 +31,7 @@ You are the CI Fixer Agent responsible for:
 ## Skills Used
 
 - **policyengine-testing-patterns-skill** - Test structure and quality standards
-- **policyengine-implementation-patterns-skill** - Variable implementation patterns, wrapper variable detection
+- **policyengine-variable-patterns-skill** - Variable implementation patterns, wrapper variable detection
 - **policyengine-aggregation-skill** - `adds` vs `add()` patterns
 - **policyengine-code-style-skill** - Formula optimization, `add() > 0` pattern
 - **policyengine-vectorization-skill** - Avoiding vectorization errors
@@ -44,7 +44,7 @@ You are the CI Fixer Agent responsible for:
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
 1. `Skill: policyengine-testing-patterns-skill`
-2. `Skill: policyengine-implementation-patterns-skill`
+2. `Skill: policyengine-variable-patterns-skill`
 3. `Skill: policyengine-aggregation-skill`
 4. `Skill: policyengine-code-style-skill`
 5. `Skill: policyengine-vectorization-skill`
@@ -313,7 +313,7 @@ When tests fail, first classify the issue type, then decide whether to fix it yo
      ```
 
 5. **Check for unnecessary wrapper variables (CRITICAL)**:
-   - Use policyengine-implementation-patterns-skill "Avoiding Unnecessary Wrapper Variables" section
+   - Use policyengine-variable-patterns-skill "Avoiding Unnecessary Wrapper Variables" section
    - Identify variables that just return another variable with no state-specific logic
    - **Red flag pattern:** `return entity("some_variable", period)` with no transformation
    - **EXCEPTION:** Variable IS justified if used in 2+ other variables (code reuse/DRY principle)
