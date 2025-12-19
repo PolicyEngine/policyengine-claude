@@ -1,4 +1,10 @@
-- bump: patch
-  changes:
-    added:
-      - policyengine-simulation-mechanics-skill for advanced policyengine.py patterns (ensure(), output_dataset.data, map_to_entity())
+# Placeholder for next changelog entry
+# Format:
+# - bump: patch/minor/major
+#   changes:
+#     added:
+#       - "Description"
+#     changed:
+#       - "Description"
+#     removed:
+#       - "Description"

@@ -1,25 +1,12 @@
 ---
-description: Review an existing PR and post findings to GitHub (does not make code changes)
+description: Review an existing PR and post findings to GitHub (read-only, no code changes)
 ---
 
 # Reviewing PR: $ARGUMENTS
 
-**READ-ONLY MODE**: This command analyzes the PR and posts a comprehensive review to GitHub WITHOUT making any code changes.
-
-Use `/fix-pr` to apply fixes automatically.
-
-## Important: Avoiding Duplicate Reviews
-
-**Before posting**, check if you already have an active review on this PR. If you do AND there are no replies from others:
-- Delete your old comments
-- Post a single updated review
-- DO NOT create multiple review comments
-
-Only post additional reviews if others have engaged with your previous review.
+**READ-ONLY MODE**: This command analyzes the PR and posts a review to GitHub WITHOUT making any code changes. Use `/fix-pr` to apply fixes.
 
 ## Determining Which PR to Review
-
-First, determine which PR to review based on the arguments:
 
 ```bash
 # If no arguments provided, use current branch's PR
@@ -45,386 +32,217 @@ fi
 echo "Reviewing PR #$PR_NUMBER"
 ```
 
-## Phase 1: PR Analysis
+---
 
-Gather context about the PR:
+## Phase 1: Gather Context
+
+Collect information about the PR:
 
 ```bash
-gh pr view $PR_NUMBER --comments
+gh pr view $PR_NUMBER --json title,body,author,baseRefName,headRefName
 gh pr checks $PR_NUMBER
 gh pr diff $PR_NUMBER
 ```
 
-Document findings:
-- Current CI status
-- Existing review comments
-- Files changed
-- Type of implementation (new program, bug fix, enhancement)
+Document:
+- **PR type**: New program, bug fix, enhancement, or refactor
+- **CI status**: Passing, failing, or pending
+- **Files changed**: Parameters, variables, tests
+- **Existing comments**: Any prior review feedback
 
-## Phase 2: Comprehensive Validation (Read-Only)
+---
 
-Run validators to COLLECT issues (do not fix):
+## Phase 2: Run Validators
 
-### Step 1: Domain Validation
-Invoke **implementation-validator** to identify:
-- Federal/state jurisdiction issues
-- Variable naming violations
-- Hard-coded values
-- Performance optimization opportunities
-- Documentation gaps
-- PolicyEngine pattern violations
+Run 4 focused validators. Each reports issues but does NOT make changes.
 
-**IMPORTANT**: Instruct agent to ONLY report issues, not fix them.
+### Check 1: Regulatory Accuracy (Critical)
 
-### Step 2: Reference Validation
-Invoke **reference-validator** to check:
-- Missing parameter references
-- References that don't corroborate values
-- Incorrect source types (federal vs state)
-- Generic/vague citations
-
-### Step 3: Implementation Validation
-Invoke **implementation-validator** to identify:
-- Hard-coded values in formulas
-- Incomplete implementations (TODOs, stubs)
-- Entity usage errors
-- Formula pattern violations
-
-### Step 4: Test Coverage Analysis
-Invoke **edge-case-generator** to identify:
-- Missing boundary tests
-- Untested edge cases
-- Parameter combinations not tested
-
-### Step 5: Documentation Review
-Invoke **documentation-enricher** to find:
-- Missing docstrings
-- Lack of calculation examples
-- Missing regulatory references
-- Unclear variable descriptions
-
-### Step 6: Regulatory Review
-Invoke **program-reviewer** to check:
+Invoke **program-reviewer** to:
 - Research regulations FIRST (independent of code)
 - Compare implementation to legal requirements
 - Identify discrepancies between code and law
 - Flag missing program components
 
-**IMPORTANT**: This step researches regulations independently before looking at code to prevent confirmation bias.
+**Key question**: Does this implementation correctly reflect the law?
 
-## Phase 3: Collect and Organize Findings
+### Check 2: Reference Quality (Critical)
 
-Aggregate all issues into structured format:
+Invoke **reference-validator** to:
+- Find parameters missing references
+- Check reference format (page numbers, detailed sections)
+- Verify references corroborate values
+- Check jurisdiction match (federal vs state sources)
 
-```json
-{
-  "overall_summary": "Brief summary of PR quality and main concerns",
-  "severity": "APPROVE|COMMENT|REQUEST_CHANGES",
-  "line_comments": [
-    {
-      "path": "policyengine_us/variables/gov/states/ma/dta/ccfa/income.py",
-      "line": 42,
-      "body": "💡 **Hard-coded value detected**\n\nThis value should be parameterized:\n\n```suggestion\nmax_income = parameters(period).gov.states.ma.dta.ccfa.max_income\n```\n\n📚 See: [Parameter Guidelines](https://github.com/PolicyEngine/policyengine-us/blob/master/CLAUDE.md#parameter-structure-best-practices)"
-    },
-    {
-      "path": "policyengine_us/tests/variables/gov/states/ma/dta/ccfa/test_eligibility.yaml",
-      "line": 15,
-      "body": "🧪 **Missing edge case test**\n\nConsider adding a test for income exactly at the threshold:\n\n```yaml\n- name: At threshold\n  period: 2024-01\n  input:\n    household_income: 75_000\n  output:\n    ma_ccfa_eligible: true\n```"
-    }
-  ],
-  "general_comments": [
-    "Consider adding integration tests for multi-child households",
-    "Documentation could benefit from real-world calculation examples"
-  ]
-}
-```
+**Key question**: Can every value be traced to an authoritative source?
 
-## Phase 4: Check for Existing Reviews
+### Check 3: Code Patterns (Critical + Should)
 
-**IMPORTANT**: Before posting a new review, check if you already have an active review:
+Invoke **implementation-validator** to:
+- Find hard-coded values in formulas
+- Check variable naming conventions
+- Verify correct patterns (`adds`, `add()`, `add() > 0`)
+- Check period usage (`period` vs `period.this_year`)
+- Identify entity-level issues
+- Flag incomplete implementations (TODOs, stubs)
+
+**Key question**: Does the code follow PolicyEngine standards?
+
+### Check 4: Test Coverage (Should)
+
+Invoke **edge-case-generator** to:
+- Identify missing boundary tests
+- Find untested edge cases
+- Check parameter combinations not tested
+- Verify integration test exists
+
+**Key question**: Are the important scenarios tested?
+
+---
+
+## Phase 3: Compile Findings
+
+Aggregate and prioritize all findings:
+
+### Priority Levels
+
+**Critical (Must Fix Before Merge):**
+- Regulatory mismatches (code doesn't match law)
+- Hard-coded values (can't update when law changes)
+- Missing or non-corroborating references
+- CI failures
+- Incorrect implementations
+
+**Should Address:**
+- Code pattern violations
+- Missing edge case tests
+- Naming convention issues
+- Period usage errors
+
+**Suggestions:**
+- Documentation improvements
+- Performance optimizations
+- Code style refinements
+
+### Deduplication
+
+If multiple validators flag the same issue, combine into one finding with the highest priority level.
+
+---
+
+## Phase 4: Post Review
+
+### Check for Existing Reviews
+
+Before posting, check if you have a prior review on this PR:
 
 ```bash
-# Check for existing reviews from you (Claude)
-EXISTING_REVIEWS=$(gh api "/repos/{owner}/{repo}/pulls/$PR_NUMBER/reviews" \
-  --jq '[.[] | select(.user.login == "MaxGhenis") | {id: .id, state: .state, submitted_at: .submitted_at}]')
+# Get current GitHub user
+CURRENT_USER=$(gh api user --jq '.login')
 
-# Check if there are any comments/replies from others since your last review
-LATEST_REVIEW_TIME=$(echo "$EXISTING_REVIEWS" | jq -r '.[0].submitted_at // empty')
+# Check for existing reviews from current user
+EXISTING=$(gh api "/repos/{owner}/{repo}/pulls/$PR_NUMBER/comments" \
+  --jq "[.[] | select(.user.login == \"$CURRENT_USER\")] | length")
 
-if [ -n "$LATEST_REVIEW_TIME" ]; then
-  # Check for comments after your review
-  COMMENTS_AFTER=$(gh api "/repos/{owner}/{repo}/issues/$PR_NUMBER/comments" \
-    --jq "[.[] | select(.created_at > \"$LATEST_REVIEW_TIME\" and .user.login != \"MaxGhenis\")]")
-
-  if [ -z "$COMMENTS_AFTER" ] || [ "$COMMENTS_AFTER" == "[]" ]; then
-    echo "Existing review found with no replies from others"
-    echo "STRATEGY: Delete old comments and post single updated review"
-
-    # Delete old comment-only reviews/comments
-    gh api "/repos/{owner}/{repo}/issues/$PR_NUMBER/comments" \
-      --jq '.[] | select(.user.login == "MaxGhenis") | .id' | \
-      while read comment_id; do
-        gh api --method DELETE "/repos/{owner}/{repo}/issues/comments/$comment_id"
-      done
-  else
-    echo "Others have replied to your review - will add new review"
-  fi
+if [ "$EXISTING" -gt 0 ]; then
+    echo "Found existing review comments - will post updated review"
 fi
 ```
 
-## Phase 5: Post GitHub Review
+### Post the Review
 
-Post the review using GitHub CLI:
-
-```bash
-# Create review comments JSON
-cat > /tmp/review_comments.json <<'EOF'
-[FORMATTED_COMMENTS_ARRAY]
-EOF
-
-# Post the review with inline comments
-gh api \
-  --method POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  "/repos/{owner}/{repo}/pulls/$PR_NUMBER/reviews" \
-  -f body="$OVERALL_SUMMARY" \
-  -f event="$SEVERITY" \
-  -F comments=@/tmp/review_comments.json
-```
-
-### Severity Guidelines
-
-- **APPROVE**: Minor suggestions only, no critical issues
-- **COMMENT**: Has issues but not blocking (educational feedback)
-- **REQUEST_CHANGES**: Has critical issues that must be fixed:
-  - Hard-coded values
-  - Missing tests for core functionality
-  - Incorrect implementations
-  - Missing required documentation
-
-## Phase 6: Post Summary Comment
-
-Add a comprehensive summary as a regular comment:
+Post a single, clear review:
 
 ```bash
-gh pr comment $PR_NUMBER --body "## 📋 Review Summary
+gh pr comment $PR_NUMBER --body "## PR Review
 
-### ✅ Strengths
-- [List positive aspects]
-- Well-structured variable organization
-- Clear parameter names
+### 🔴 Critical (Must Fix)
 
-### 🔍 Issues Found
+1. **Regulatory mismatch**: [Description with specific file:line]
+2. **Hard-coded value**: [Value] in [file:line] - create parameter
+3. **Reference issue**: [File] - [specific problem]
 
-#### Critical (Must Fix)
-- [ ] 3 hard-coded values in income calculations
-- [ ] Missing edge case tests for boundary conditions
-- [ ] Parameter references not corroborated by sources
+### 🟡 Should Address
 
-#### Suggestions (Optional)
-- [ ] Consider vectorization in \`calculate_benefit()\`
-- [ ] Add calculation walkthrough to documentation
-- [ ] Extract shared logic into helper variable
+1. **Pattern violation**: Use \`add()\` instead of manual sum in [file:line]
+2. **Missing test**: Add edge case for [scenario]
 
-### 📊 Validation Results
-- **Domain Validation**: X issues
-- **Reference Validation**: X issues
-- **Implementation Validation**: X issues
-- **Test Coverage**: X gaps identified
-- **Documentation**: X improvements suggested
-- **Regulatory Review**: X discrepancies found
+### 🟢 Suggestions
 
-### 🚀 Next Steps
-
-To apply these fixes automatically, run:
-\`\`\`bash
-/fix-pr $PR_NUMBER
-\`\`\`
-
-Or address manually and re-request review when ready.
+1. Consider adding calculation example in docstring
 
 ---
-💡 **Tip**: Use \`/fix-pr\` to automatically apply all suggested fixes."
+
+### Validation Summary
+
+| Check | Result |
+|-------|--------|
+| Regulatory Accuracy | X issues |
+| Reference Quality | X issues |
+| Code Patterns | X issues |
+| Test Coverage | X gaps |
+| CI Status | Passing/Failing |
+
+### Next Steps
+
+To auto-fix issues: \`/fix-pr $PR_NUMBER\`
+
+Or address manually and re-request review."
 ```
 
-## Phase 6: CI Status Check
+### CI Failures
 
-If CI is failing, include CI failure summary:
+If CI is failing, add to the Critical section:
 
 ```bash
-gh pr checks $PR_NUMBER --json name,status,conclusion \
-  --jq '.[] | select(.conclusion == "failure") | "❌ " + .name'
+gh pr checks $PR_NUMBER --json name,conclusion \
+  --jq '.[] | select(.conclusion == "failure") | "- **CI Failure**: " + .name'
 ```
 
-Add to review:
-```
-### ⚠️ CI Failures
-- ❌ lint: Black formatting issues
-- ❌ test: 3 test failures in test_income.py
+---
 
-Run `/fix-pr` to automatically fix these issues.
-```
+## Review Severity
 
-## Command Options
+Based on findings, set the review type:
 
-### Usage Examples
-- `/review-pr` - Review PR for current branch
-- `/review-pr 6390` - Review PR #6390
-- `/review-pr "Massachusetts CCFA"` - Search for and review PR by title
+| Severity | When to Use |
+|----------|-------------|
+| **APPROVE** | No critical issues, minor suggestions only |
+| **COMMENT** | Has issues but not blocking (educational) |
+| **REQUEST_CHANGES** | Has critical issues that must be fixed |
 
-### Validation Modes
+---
 
-#### Standard Review (Default)
-- All validators run
-- Comprehensive analysis
-- Balanced severity
+## Usage Examples
 
-#### Quick Review
-`/review-pr [PR] --quick`
-- Skip deep validation
-- Focus on CI failures and critical issues
-- Faster turnaround
-
-#### Strict Review
-`/review-pr [PR] --strict`
-- Maximum scrutiny
-- Flag even minor style issues
-- Request changes for any violations
-
-## Output Format
-
-The review will include:
-
-1. **Overall Summary**: High-level assessment
-2. **Inline Comments**: Specific issues at exact lines
-3. **Code Suggestions**: GitHub suggestion blocks where applicable
-4. **Summary Comment**: Checklist of all issues
-5. **Next Steps**: How to address findings
-
-## Review Categories
-
-### 🔴 Critical Issues (Always flag)
-- Hard-coded values in formulas
-- Missing parameter references
-- Incorrect formula implementations
-- Missing tests for core functionality
-- CI failures
-
-### 🟡 Suggestions (Optional improvements)
-- Performance optimizations
-- Documentation enhancements
-- Code style improvements
-- Additional test coverage
-- Refactoring opportunities
-
-### 🟢 Positive Feedback
-- Well-implemented patterns
-- Good test coverage
-- Clear documentation
-- Proper parameterization
-
-## Success Criteria
-
-A good review should:
-- ✅ Identify all hard-coded values
-- ✅ Flag missing/incorrect references
-- ✅ Suggest specific improvements with examples
-- ✅ Provide actionable next steps
-- ✅ Be respectful and constructive
-- ✅ Include code suggestion blocks for easy application
-
-## Common Review Patterns
-
-### Hard-coded Value
-```markdown
-💡 **Hard-coded value detected**
-
-This value should be parameterized. Create a parameter:
-
-\`\`\`yaml
-# policyengine_us/parameters/gov/states/ma/program/threshold.yaml
-values:
-  2024-01-01: 75000
-metadata:
-  unit: currency-USD
-  period: year
-  reference: [Link to source]
-\`\`\`
-
-Then use in formula:
-\`\`\`suggestion
-threshold = parameters(period).gov.states.ma.program.threshold
-\`\`\`
+```bash
+/review-pr              # Review PR for current branch
+/review-pr 6390         # Review PR #6390
+/review-pr "Arkansas"   # Search for PR by title
 ```
 
-### Missing Test
-```markdown
-🧪 **Missing edge case test**
+---
 
-Add test for boundary condition:
+## Critical Issues (Always Flag)
 
-\`\`\`yaml
-- name: At exact threshold
-  period: 2024-01
-  input:
-    income: 75_000
-  output:
-    eligible: false  # Just above threshold
-\`\`\`
-```
+These MUST be fixed before merge:
 
-### Missing Documentation
-```markdown
-📚 **Documentation enhancement**
+1. **Regulatory mismatch** - Implementation doesn't match law
+2. **Hard-coded values** - Numbers in formulas instead of parameters
+3. **Missing references** - Can't verify where values came from
+4. **Non-corroborating references** - Reference doesn't support value
+5. **CI failures** - Tests or linting failing
+6. **Incorrect formula** - Wrong calculation logic
 
-Add docstring with example:
-
-\`\`\`suggestion
-def formula(person, period, parameters):
-    """
-    Calculate benefit amount.
-
-    Example:
-        Income $50,000 → Benefit $2,400
-        Income $75,000 → Benefit $1,200
-
-    Reference: MA DTA Regulation 106 CMR 702.310
-    """
-\`\`\`
-```
-
-### Performance Issue
-```markdown
-⚡ **Vectorization opportunity**
-
-Replace loop with vectorized operation:
-
-\`\`\`suggestion
-return where(
-    household_size == 1,
-    base_amount,
-    base_amount * household_size * 0.7
-)
-\`\`\`
-```
-
-## Error Handling
-
-If validation agents fail:
-1. Run basic validation manually
-2. Document what couldn't be checked
-3. Note limitations in review
-4. Still post whatever findings were collected
+---
 
 ## Pre-Flight Checklist
 
-Before starting, confirm:
+Before starting:
 - [ ] I will NOT make any code changes
-- [ ] I will ONLY analyze and post reviews
-- [ ] I will collect findings from all validators
-- [ ] I will format findings as GitHub review comments
-- [ ] I will provide actionable suggestions
-- [ ] I will be constructive and respectful
+- [ ] I will run all 4 validators
+- [ ] I will prioritize findings (Critical > Should > Suggestions)
+- [ ] I will post a single clear review
+- [ ] I will be constructive and actionable
 
-Start by determining which PR to review, then proceed to Phase 1: Analyze the PR.
+Start by determining which PR to review, then proceed through the phases.

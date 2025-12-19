@@ -8,12 +8,14 @@ This directory contains specialized skills for PolicyEngine development. Skills 
 skills/
 ├── technical-patterns/      # Implementation patterns and best practices
 │   ├── policyengine-aggregation-skill/
+│   ├── policyengine-code-organization-skill/   # Folder structure and naming
 │   ├── policyengine-code-style-skill/
-│   ├── policyengine-implementation-patterns-skill/
+│   ├── policyengine-data-testing-skill/
 │   ├── policyengine-parameter-patterns-skill/
 │   ├── policyengine-period-patterns-skill/
 │   ├── policyengine-review-patterns-skill/
 │   ├── policyengine-testing-patterns-skill/
+│   ├── policyengine-variable-patterns-skill/
 │   └── policyengine-vectorization-skill/
 │
 ├── domain-knowledge/        # Country/region specific knowledge
@@ -24,13 +26,15 @@ skills/
 │   ├── policyengine-api-skill/
 │   ├── policyengine-app-skill/
 │   ├── policyengine-core-skill/
-│   └── policyengine-python-client-skill/
+│   ├── policyengine-python-client-skill/
+│   └── policyengine-simulation-mechanics-skill/
 │
 ├── data-science/           # Data manipulation and analysis libraries
 │   ├── l0-skill/
 │   ├── microcalibrate-skill/
 │   ├── microdf-skill/
-│   └── microimpute-skill/
+│   ├── microimpute-skill/
+│   └── policyengine-uk-data-skill/
 │
 ├── documentation/          # Writing, standards, and guides
 │   ├── policyengine-design-skill/
@@ -51,12 +55,14 @@ Implementation patterns, testing standards, and coding best practices that ensur
 | Skill | Description | Key Topics |
 |-------|-------------|------------|
 | **policyengine-aggregation-skill** | Variable aggregation patterns | Using `adds` attribute and `add()` function for summing across entities |
+| **policyengine-code-organization-skill** | Folder structure and naming conventions | File organization, variable prefixes, logical grouping |
 | **policyengine-code-style-skill** | Code writing style guide | Formula optimization, eliminating unnecessary variables, direct returns |
-| **policyengine-implementation-patterns-skill** | Variable implementation patterns | No hard-coding, federal/state separation, metadata standards |
+| **policyengine-data-testing-skill** | Data testing patterns | Testing data pipelines and calibration |
 | **policyengine-parameter-patterns-skill** | Parameter creation patterns | YAML structure, naming conventions, metadata requirements |
 | **policyengine-period-patterns-skill** | Period handling patterns | Converting between YEAR/MONTH periods, testing with different periods |
 | **policyengine-review-patterns-skill** | Code review patterns | Validation checklist, common issues, review standards |
 | **policyengine-testing-patterns-skill** | Test creation patterns | YAML structure, naming conventions, period restrictions, quality standards |
+| **policyengine-variable-patterns-skill** | Variable implementation patterns | No hard-coding, federal/state separation, metadata standards |
 | **policyengine-vectorization-skill** | Vectorization patterns | NumPy operations, where/select usage, avoiding scalar logic |
 
 ### 🌍 Domain Knowledge (`domain-knowledge/`)
@@ -78,6 +84,7 @@ Knowledge about PolicyEngine's core tools, APIs, and applications.
 | **policyengine-app-skill** | PolicyEngine React web application | User interface at policyengine.org |
 | **policyengine-core-skill** | PolicyEngine Core simulation engine | The foundation powering all PolicyEngine calculations |
 | **policyengine-python-client-skill** | Python client usage | Programmatic access via Python or REST API |
+| **policyengine-simulation-mechanics-skill** | Advanced simulation patterns | ensure(), output_dataset.data, map_to_entity() |
 
 ### 📊 Data Science (`data-science/`)
 

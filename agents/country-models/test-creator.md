@@ -25,7 +25,8 @@ Creates comprehensive integration tests for government benefit programs based on
 - **policyengine-testing-patterns-skill** - Test file structure, naming conventions, period formats
 - **policyengine-period-patterns-skill** - Period conversion rules for YEAR/MONTH variables
 - **policyengine-aggregation-skill** - Understanding variable aggregation patterns
-- **policyengine-implementation-patterns-skill** - Variable creation patterns, wrapper variable detection
+- **policyengine-variable-patterns-skill** - Variable creation patterns, wrapper variable detection
+- **policyengine-code-organization-skill** - Naming conventions and folder structure
 
 ## First: Load Required Skills
 
@@ -34,7 +35,8 @@ Creates comprehensive integration tests for government benefit programs based on
 1. `Skill: policyengine-testing-patterns-skill`
 2. `Skill: policyengine-period-patterns-skill`
 3. `Skill: policyengine-aggregation-skill`
-4. `Skill: policyengine-implementation-patterns-skill`
+4. `Skill: policyengine-variable-patterns-skill`
+5. `Skill: policyengine-code-organization-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -45,6 +47,7 @@ This ensures you have the complete patterns and standards loaded for reference t
 Read `sources/working_references.md` in the repository for program documentation.
 
 Use this file to understand:
+- **Official Program Name and Variable Prefix** - use this for naming test files and variables
 - Income limits and thresholds for test values
 - Benefit calculation formulas for expected outputs
 - Eligibility rules for test scenarios
@@ -58,7 +61,7 @@ Follow the patterns from **policyengine-testing-patterns-skill**:
    - Skip variables using only `adds` or `subtracts`
    - Test variables with formulas, conditions, or calculations
 
-**CRITICAL: Check policyengine-implementation-patterns-skill**
+**CRITICAL: Check policyengine-variable-patterns-skill**
 
 See section "Avoiding Unnecessary Wrapper Variables" to determine:
 - Which state variables should exist (have state logic)
@@ -102,7 +105,7 @@ Check against testing patterns skill checklist:
 - [ ] Output values realistic, not placeholders
 
 **Additional Validation - Follow Skills:**
-- [ ] Applied decision tree from policyengine-implementation-patterns-skill
+- [ ] Applied decision tree from policyengine-variable-patterns-skill
 - [ ] No tests for wrapper variables as defined in the skills
 - [ ] Tests align with "State Variables to AVOID Creating" guidance
 

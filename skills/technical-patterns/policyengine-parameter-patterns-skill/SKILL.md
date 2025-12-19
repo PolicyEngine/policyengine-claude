@@ -272,6 +272,29 @@ description: California uses this multiplier of the federal poverty guideline fo
 
 ---
 
+## 5.5 Parameter Folder Organization
+
+### Core Principles
+
+1. **Group logically** - Parameters that relate to the same aspect should be together
+2. **Don't create subfolder for 1 file** - If only 1 parameter for an aspect, keep it at parent level
+3. **Payment standard at root** - Main benefit amounts can stay at program root
+
+### Common Aspects (adapt to your program)
+
+- `income/` - Income limits, deductions, disregards
+- `eligibility/` - Age thresholds, citizenship requirements
+- `resources/` - Asset/resource limits
+
+### Study Existing Implementations
+
+Each program is different. Before organizing, look at similar programs:
+```bash
+ls policyengine_us/parameters/gov/states/{state}/{agency}/
+```
+
+---
+
 ## 6. Common Parameter Patterns
 
 ### Income Limits (as FPL multiplier)

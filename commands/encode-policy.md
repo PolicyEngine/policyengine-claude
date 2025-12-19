@@ -51,18 +51,12 @@ Invoke @complete:country-models:issue-manager agent to:
 - Push to fork, then create draft PR to upstream using `--repo PolicyEngine/policyengine-us`
 - Return issue number, PR URL, and branch name for tracking
 
-## Phase 2: Variable Naming Convention
-Invoke @complete:country-models:naming-coordinator agent to:
-- Analyze existing naming patterns in the codebase
-- Establish variable naming convention for $ARGUMENTS
-- Analyze existing folder structure patterns in the codebase
-- Post naming decisions and folder structure to GitHub issue for all agents to reference
+## Phase 2: Document Collection & Specification
 
-**Quality Gate**: Naming convention and folder structure must be documented before proceeding to ensure consistency across parallel development.
-
-## Phase 3: Document Collection
-
-Invoke @complete:country-models:document-collector agent to gather official $ARGUMENTS documentation and save as `sources/working_references.md`.
+Invoke @complete:country-models:document-collector agent to:
+- Research and gather official $ARGUMENTS documentation
+- **Discover the state's official program name** during research
+- Save all documentation to `sources/working_references.md`
 
 **Agent behavior for PDFs:**
 - Agent cannot read PDFs directly
@@ -72,31 +66,54 @@ Invoke @complete:country-models:document-collector agent to gather official $ARG
 
 **Example in sources/working_references.md:**
 ```markdown
+## Official Program Name
+
+**Federal Program**: [Federal program name]
+**State's Official Name**: [State's official name]
+**Abbreviation**: [Abbreviation]
+**Source**: [Legal citation]
+
+**Variable Prefix**: `[state]_[abbreviation]`
+
+---
+
 ## 📄 PDFs for Future Reference
 
 The following PDFs contain additional information but could not be extracted:
 
 1. **State Plan**
-   - URL: https://state.gov/tanf-state-plan.pdf
+   - URL: https://state.gov/program-state-plan.pdf
    - Expected content: Benefit calculation methodology, page 10
-
-2. **Policy Manual**
-   - URL: https://state.gov/tanf-manual.pdf
-   - Expected content: Income deduction details
 ```
 
 **Quality Gate**: Documentation must include:
+- **Official program name discovered through research**
 - Official program guidelines from HTML sources
 - Income limits and benefit schedules
 - Eligibility criteria and priority groups
 - PDF links saved for future reference (if found)
-- Continue to Phase 4 after documentation is complete
 
-## Phase 4: Development
+### Regulatory Checkpoint 1: Specification Review
 
-**IMPORTANT:** All agents create files only - they do NOT commit. pr-pusher in Phase 5 handles all commits.
+Before proceeding to development, verify the specification is complete:
 
-### Step 4A: Create Parameters
+| Check | Question |
+|-------|----------|
+| Program structure | Are all eligibility types documented (income, categorical, demographic, immigration)? |
+| Benefit calculation | Is the formula documented with all components? |
+| Deductions | Are all deductions and disregards listed? |
+| Sources | Does every rule have an authoritative source? |
+| Completeness | Are there any "TBD" or missing sections? |
+
+**If issues found**: Fix specification before proceeding to Phase 3.
+
+## Phase 3: Development
+
+**IMPORTANT:** All agents create files only - they do NOT commit. pr-pusher in Phase 6 handles all commits.
+
+**Naming Convention:** All agents load **policyengine-code-organization-skill** and use the variable prefix from `sources/working_references.md`.
+
+### Step 3A: Create Parameters
 
 **@complete:country-models:parameter-architect** → works in `parameters/` folder:
 - Create complete parameter structure from documentation
@@ -105,7 +122,21 @@ The following PDFs contain additional information but could not be extracted:
 - Use bracket-style for age-based eligibility
 - Verify person vs group level for all amounts
 
-### Step 4B: Create Variables and Tests (Parallel)
+#### Regulatory Checkpoint 2: Parameter Value Verification
+
+Before proceeding to variables, verify parameters are accurate:
+
+| Check | Question |
+|-------|----------|
+| Values | Does each parameter value match its source document? |
+| References | Does each reference have detailed section (e.g., `42 USC 8624(b)(2)(B)`)? |
+| PDF pages | Do PDF references include `#page=XX`? |
+| Jurisdiction | Are federal values in federal folder, state in state folder? |
+| Completeness | Are all values from specification covered? |
+
+**If issues found**: Fix parameters before proceeding to Step 3B.
+
+### Step 3B: Create Variables and Tests (Parallel)
 
 Run both agents IN PARALLEL - they work on different folders so no conflicts.
 
@@ -125,96 +156,96 @@ Run both agents IN PARALLEL - they work on different folders so no conflicts.
 - Use `adds` for pure sums, `add()` for sum + operations
 - Verify person vs group entity level
 
+### Step 3C: Generate Edge Case Tests
+
+**@complete:country-models:edge-case-generator** → works in `tests/` folder:
+- Analyze variables created by rules-engineer
+- Generate edge case tests (boundary conditions, zero values, maximums)
+- Add to existing test files
+
+#### Regulatory Checkpoint 3: Implementation Logic Review
+
+After variables are created, verify implementation matches regulations:
+
+| Check | Question |
+|-------|----------|
+| Logic | Does the eligibility logic match the specification? |
+| Calculations | Does benefit calculation match the documented formula? |
+| Edge cases | Are special rules (exemptions, exceptions) implemented? |
+| Dependencies | Are federal baselines used correctly (for simplified TANF)? |
+| Completeness | Are all program components from specification implemented? |
+
+**If issues found**: Fix variables before proceeding to Phase 4.
+
 **Quality Requirements**:
 - parameter-architect: Complete parameters with references before variables
-- rules-engineer: ZERO hard-coded values, use parameters from Step 4A
+- rules-engineer: ZERO hard-coded values, use parameters from Step 3A
 - test-creator: All tests (unit + integration) created together, based purely on documentation
+- edge-case-generator: Edge cases based on actual variable implementations
 
-## Phase 5: Format and Push
-Invoke @complete:country-models:pr-pusher agent to:
-- Ensure changelog entry exists
-- Run `make format`
-- Push branch
+## Phase 4: Organization Check & Fix
 
-Testing is handled in Phase 7 by ci-fixer.
+Invoke @complete:country-models:implementation-validator to check and fix organization issues:
 
-## Optional Enhancement Phases
+**1. Naming Conventions:**
+- Variable names follow prefix from `working_references.md`
+- Parameter names follow conventions
+- Test file names match variable names
 
-**These phases are OPTIONAL and should be considered based on implementation type:**
+**2. Folder Structure:**
+- Files grouped logically by aspect (income, eligibility, etc.)
+- No subfolder for single files
+- Final output at program root
 
-### For Production-Ready Implementations:
-The following enhancements may be applied to ensure production quality:
-
-1. **Cross-Program Validation**
-   - @complete:country-models:cross-program-validator: Check interactions with other benefits
-   - Prevents benefit cliffs and unintended interactions
-
-2. **Documentation Enhancement**
-   - @complete:country-models:documentation-enricher: Add examples and regulatory citations
-   - Improves maintainability and compliance verification
-
-3. **Performance Optimization**
-   - @complete:country-models:performance-optimizer: Vectorize and optimize calculations
-   - Ensures scalability for large-scale simulations
-
-**Decision Criteria:**
-- **Simplified/Experimental TANF**: Skip these optional phases
-- **Production TANF**: Include based on specific requirements
-- **Full Production Deployment**: Include all enhancements
-
-## Phase 6: Validate & Fix
-
-**Run sequentially: validator finds issues → ci-fixer implements fixes**
-
-### Step 6A: Implementation Validator
-
-Invoke @complete:country-models:implementation-validator to check (in order):
-
-**1. Parameters:**
+**3. Parameter Formatting:**
 - Description present and follows template
 - References have `title` and `href`
 - PDF links include `#page=XX` (file page number)
 - Title includes full subsection
 - Bracket-style for age-based eligibility
 
-**2. Variables:**
-- Uses `adds` for pure sums (no formula)
-- Uses `add()` for sum + operations (not manual `a + b`)
-- Uses `add() > 0` instead of `spm_unit.any()`
-- Reference uses tuple `()` not list `[]`
-- No `documentation` field (use `reference`)
-- Correct entity level (Person vs SPMUnit)
+**4. Variable Code Style (comprehensive check):**
 
-**3. Tests:**
-- Every variable with `formula` has a test file
-- Variables with `adds` don't need tests
+Check ALL variable code against **policyengine-code-style-skill** and **policyengine-variable-patterns-skill**:
+- Aggregation patterns (`adds` vs `add()`)
+- Entity levels (Person vs SPMUnit)
+- Reference format (tuple not list)
+- Vectorization requirements
+- No wrapper variables
+- No hard-coded values
+- Proper period handling
+- Every line of variable code
 
-**Validator outputs structured fixes for ci-fixer to implement.**
+**Fix any issues found before proceeding.**
 
-### Step 6B: CI Fixer
+## Phase 5: Run Tests & Fix
 
 Invoke @complete:country-models:ci-fixer to:
 
-1. **Implement pattern fixes** from validator output
-2. **Run tests LOCALLY** (do NOT wait for GitHub CI):
+1. **Run tests LOCALLY** (do NOT wait for GitHub CI):
    ```bash
    policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/[AGENCY]/[PROGRAM] -c policyengine_us -v
    ```
-3. **Fix test failures** based on documentation
+2. **Fix test failures** based on documentation
    - Do NOT create wrapper variables just because test inputs don't match
    - Fix test inputs to match what federal baseline expects
-4. **Iterate** until all tests pass locally
-5. **Run `make format`**
-6. **Push** once everything passes
+3. **Iterate** until all tests pass locally
 
-## Phase 7: Regulatory Review
+## Phase 6: Format and Push
+
+Invoke @complete:country-models:pr-pusher agent to:
+- Ensure changelog entry exists
+- Run `make format`
+- Push branch
+
+## Phase 7: Final Review & PR Description
+
+Since regulatory accuracy has been verified throughout (Checkpoints 1-3), this phase focuses on final verification and documentation.
 
 Invoke @complete:country-models:program-reviewer:
 
-1. **Research regulations FIRST** (before looking at code)
-2. **Compare implementation to regulations**
-3. **Report any discrepancies** between code and legal requirements
-4. **Update PR description** with comprehensive documentation:
+1. **Final regulatory spot-check** - Quick verification that implementation matches regulations
+2. **Update PR description** with comprehensive documentation:
    - Summary with issue link
    - Regulatory authority section
    - Income eligibility tests (with sources)
@@ -223,6 +254,8 @@ Invoke @complete:country-models:program-reviewer:
    - Benefit calculation formula (with sources)
    - Files added
    - Test coverage
+
+**Note**: Major regulatory issues should have been caught in Checkpoints 1-3. If significant discrepancies are found here, it indicates earlier checkpoints were not thorough enough.
 
 ## Phase 8: Final Summary
 
@@ -256,10 +289,11 @@ After regulatory review passes:
 
 ### Error Handling by Phase
 
-- **Phase 1-3 (Setup):** If agent fails, report error and STOP. Do not attempt to fix.
-- **Phase 4 (Development):** If agent fails, report which agent failed and wait for user.
-- **Phase 5-6 (Validation):** Validation failures are expected - continue to Phase 7.
-- **Phase 7 (Fixes):** ci-fixer handles all fixes. If ci-fixer fails 3 times, report and STOP.
+- **Phase 1-2 (Setup):** If agent fails, report error and STOP. Do not attempt to fix.
+- **Phase 3 (Development):** If agent fails, report which agent failed and wait for user.
+- **Phase 4 (Organization):** Fix issues found; if unfixable, report and continue.
+- **Phase 5 (Tests):** ci-fixer handles test fixes. If ci-fixer fails 3 times, report and STOP.
+- **Phase 6-8:** Continue unless blocking error.
 
 ### Escalation Path
 
@@ -274,7 +308,7 @@ After regulatory review passes:
 1. Invoke agents using the Task tool
 2. Wait for their completion
 3. Check quality gates
-4. **PAUSE and wait for user confirmation before proceeding to next phase**
+4. Proceed to the next phase automatically
 
 **YOU MUST NOT**:
 - Write any code yourself
@@ -282,54 +316,44 @@ After regulatory review passes:
 - Run tests directly
 - Edit files
 
-**Execution Flow (ONE PHASE AT A TIME)**:
+**Execution Flow (CONTINUOUS)**:
 
-Execute each phase sequentially and **STOP after each phase** to wait for user instructions:
+Execute all phases sequentially without stopping:
 
 0. **Phase 0**: Implementation Approach (TANF Programs Only)
    - Auto-detect from $ARGUMENTS ("simple"/"simplified" vs. "full"/"complete")
    - Default to Simplified if unclear
    - Inform user of detected approach
-   - **STOP - Wait for user to say "continue" or provide adjustments**
 
 1. **Phase 1**: Issue and PR Setup
    - Complete the phase
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
+   - Report results briefly
 
-2. **Phase 2**: Variable Naming Convention
-   - Complete the phase
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
+2. **Phase 2**: Document Collection
+   - Research and gather official documentation
+   - Discover official program name during research
+   - Save to `sources/working_references.md`
 
-3. **Phase 3**: Document Collection
-   - Complete the phase
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
-
-4. **Phase 4**: Development
-   - **Step 4A:** Run parameter-architect to create parameters
-   - **Step 4B:** Run test-creator and rules-engineer in parallel (different folders)
+3. **Phase 3**: Development
+   - **Step 3A:** Run parameter-architect to create parameters
+   - **Step 3B:** Run test-creator and rules-engineer in parallel (different folders)
+   - **Step 3C:** Run edge-case-generator to add edge case tests
+   - All agents use variable prefix from `sources/working_references.md`
    - Pass simplified/full decision to rules-engineer
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
 
-5. **Phase 5**: Format and Push
+4. **Phase 4**: Organization Check & Fix
+   - Check naming conventions, folder structure, formatting, code style
+   - Fix any issues found
+
+5. **Phase 5**: Run Tests & Fix
+   - Run tests locally, fix failures, iterate until pass
+
+6. **Phase 6**: Format and Push
    - Ensure changelog, run `make format`, push branch
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
-
-6. **Phase 6**: Validate & Fix
-   - **Step 6A:** Run implementation-validator (parameters → variables → tests)
-   - **Step 6B:** Run ci-fixer (implement fixes, run tests locally, iterate until pass)
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
 
 7. **Phase 7**: Regulatory Review
    - Run program-reviewer (research regulations first, compare to code)
    - Update PR description with comprehensive documentation
-   - Report results
-   - **STOP - Wait for user to say "continue" or provide adjustments**
 
 8. **Phase 8**: Final Summary
    - Verify PR description complete
@@ -337,9 +361,7 @@ Execute each phase sequentially and **STOP after each phase** to wait for user i
    - **WORKFLOW COMPLETE**
 
 **CRITICAL RULES**:
-- Do NOT proceed to the next phase until user explicitly says to continue
-- After each phase, summarize what was accomplished
-- If user provides adjustments, incorporate them before continuing
-- All 8 phases are REQUIRED - pausing doesn't mean skipping
-
-If any agent fails, report the failure but DO NOT attempt to fix it yourself. Wait for user instructions.
+- Run all phases continuously without waiting for user input
+- If an agent fails, attempt recovery through ci-fixer; only stop if unrecoverable
+- All 8 phases are REQUIRED
+- Report final summary at the end

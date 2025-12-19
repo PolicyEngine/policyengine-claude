@@ -1,11 +1,11 @@
 ---
-name: policyengine-implementation-patterns
-description: PolicyEngine implementation patterns - variable creation, no hard-coding principle, federal/state separation, metadata standards
+name: policyengine-variable-patterns
+description: PolicyEngine variable patterns - variable creation, no hard-coding principle, federal/state separation, metadata standards
 ---
 
-# PolicyEngine Implementation Patterns
+# PolicyEngine Variable Patterns
 
-Essential patterns for implementing government benefit program rules in PolicyEngine.
+Essential patterns for creating PolicyEngine variables for government benefit programs.
 
 ## FIRST PRINCIPLE: Legal Code is the Source of Truth
 

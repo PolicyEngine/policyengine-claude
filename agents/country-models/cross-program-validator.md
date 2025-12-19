@@ -22,14 +22,14 @@ Validates interactions between government benefit programs, ensuring proper inte
 
 ## Skills Used
 
-- **policyengine-implementation-patterns-skill** - Cross-program interaction patterns
+- **policyengine-variable-patterns-skill** - Cross-program interaction patterns
 - **policyengine-review-patterns-skill** - Validation procedures for program interactions
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
-1. `Skill: policyengine-implementation-patterns-skill`
+1. `Skill: policyengine-variable-patterns-skill`
 2. `Skill: policyengine-review-patterns-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.

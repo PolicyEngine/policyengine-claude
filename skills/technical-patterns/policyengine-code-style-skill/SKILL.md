@@ -319,6 +319,36 @@ has_child = add(spm_unit, period, ["is_child"]) > 0
 
 ---
 
+## Pattern 9: Use Existing SPMUnit-Level Variables Directly
+
+**If an spm_unit-level variable exists, use it directly. Don't access through person level.**
+
+```python
+# ❌ BAD - Unnecessary person-level access when spm_unit variable exists:
+person = spm_unit.members
+demographic = person("is_person_demographic_tanf_eligible", period)
+# Then aggregating back to spm_unit...
+
+# ✅ GOOD - Use the spm_unit-level variable directly:
+demographic_eligible = spm_unit("is_demographic_tanf_eligible", period)
+```
+
+**Before writing code, check:**
+1. Does an spm_unit-level variable already exist?
+2. If yes, use `spm_unit("variable_name", period)` directly
+3. Only use `spm_unit.members` when you need person-level data that must be aggregated
+
+```python
+# ✅ GOOD - Using existing spm_unit variables:
+income_eligible = spm_unit("ar_tea_income_eligible", period)
+resource_eligible = spm_unit("ar_tea_resource_eligible", period)
+demographic_eligible = spm_unit("is_demographic_tanf_eligible", period)
+
+return income_eligible & resource_eligible & demographic_eligible
+```
+
+---
+
 ## Complete Example: Before vs After
 
 ### ❌ Before - Multiple Issues

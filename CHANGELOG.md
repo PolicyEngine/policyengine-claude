@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.1] - 2025-12-18
+
+### Changed
+- **README updates** - Updated all README files to reflect v3.3.0 changes
+- **Agent count** - Updated from 22 to 21 (naming-coordinator deleted)
+- **Skill count** - Updated from 14 to 24 (accurate count)
+- **Plugin tables** - Updated agent and skill counts in all plugin descriptions
+
+### Added
+- **v3.3.0 version history** - Added to main README
+- **New skills in skills/README** - policyengine-code-organization-skill, policyengine-simulation-mechanics-skill
+
+### Removed
+- **naming-coordinator references** - Removed from all READMEs
+- **Submodule instructions** - Replaced with plugin installation instructions
+
+## [3.3.0] - 2025-12-18
+
+### Changed
+- **review-pr command redesigned** - Simplified from 6 phases to 4, reduced from 6 agents to 4, added priority-based output (Critical/Should/Suggestions)
+- **fix-pr command rewritten** - Now 5 phases with dependency-order fixing (parameters → variables → tests → format), clear issue-to-agent mapping
+- **encode-policy continuous regulatory verification** - Added 3 checkpoints: after Phase 2 (specification review), after 3A (parameter verification), after 3C (logic review)
+- **reference-validator redesigned** - Now 5-phase workflow with skills, detailed reference format rules, source priority hierarchy
+- **Phase 7 simplified** - Now 'Final Review & PR Description' since regulatory issues caught earlier via checkpoints
+
+### Added
+- **Regulatory Checkpoint 1** - Verify specification is complete before development
+- **Regulatory Checkpoint 2** - Verify parameter values match sources before variables
+- **Regulatory Checkpoint 3** - Verify implementation logic matches regulations after variables
+- **Reference clickability rule** - When clicking link, user must see the parameter value
+- **Detailed section requirement** - References must include full subsection (e.g., `42 USC 8624(b)(2)(B)` not just `42 USC 8624`)
+- **Source priority hierarchy** - Official government sources required; nonprofit/news only as last resort
+- **Issue-to-agent mapping** in fix-pr - Clear table of which agent fixes which issue type
+- **Dependency-order fixing** - Fix parameters before variables before tests
+- **policyengine-code-organization-skill** - New skill for folder structure and naming conventions (extracted from naming-coordinator)
+
+### Removed
+- **Duplicate implementation-validator calls** in review-pr (was called in Steps 1 and 3)
+- **documentation-enricher from review-pr** - Had Edit tools, review-pr is read-only
+- **Hardcoded 'MaxGhenis' username** in review-pr - Now uses dynamic `gh api user`
+- **naming-coordinator agent** - Converted to policyengine-code-organization-skill
+
+### Renamed
+- **policyengine-implementation-patterns-skill** → **policyengine-variable-patterns-skill**
+
 ## [3.2.4] - 2025-12-18
 
 ### Changed
