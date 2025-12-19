@@ -6,9 +6,9 @@ Official Claude Code plugin for PolicyEngine - a comprehensive knowledge base fo
 
 PolicyEngine Claude provides agents, slash commands, and skills for working with PolicyEngine's 40+ repository ecosystem:
 
-- **🤖 22 Specialized Agents** - Automated workflows for development
+- **🤖 21 Specialized Agents** - Automated workflows for development
 - **🎯 4 Slash Commands** - Multi-agent orchestration and PR workflows
-- **📚 14 Skills** - Knowledge base for users, analysts, and contributors
+- **📚 24 Skills** - Knowledge base for users, analysts, and contributors
 
 ## Quick Start
 
@@ -18,7 +18,7 @@ PolicyEngine Claude provides agents, slash commands, and skills for working with
 /plugin install complete@policyengine-claude
 ```
 
-This gives you all 22 agents, 4 commands, and 14 skills for the entire PolicyEngine ecosystem.
+This gives you all 21 agents, 4 commands, and 24 skills for the entire PolicyEngine ecosystem.
 
 **Or install selectively by use case:**
 
@@ -176,13 +176,12 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Neutral, objective tone
 - Blog post and PR description patterns
 
-## Agents (22 Total)
+## Agents (21 Total)
 
-### Country Model Agents (17)
+### Country Model Agents (16)
 
 **Workflow agents:**
 - `document-collector` - Gather authoritative sources
-- `naming-coordinator` - Establish naming conventions
 - `issue-manager` - Manage GitHub issues and PRs
 - `parameter-architect` - Design parameter structures
 - `test-creator` - Write tests from documentation
@@ -234,8 +233,8 @@ Develop PolicyEngine software across country models, API, app, and data packages
 
 **`/review-pr [pr-number]`**
 - Comprehensive PR review (read-only)
-- 6 validators: domain, reference, implementation, test coverage, documentation, regulatory
-- Includes regulatory review with `program-reviewer` (researches law first)
+- 4 validators: regulatory accuracy, reference quality, code patterns, test coverage
+- Priority-based output (Critical/Should/Suggestions)
 - Post findings to GitHub
 - Example: `/review-pr 123`
 
@@ -249,12 +248,12 @@ Develop PolicyEngine software across country models, API, app, and data packages
 | Plugin | Audience | Agents | Commands | Skills |
 |--------|----------|--------|----------|--------|
 | **essential** | Users | 0 | 0 | 4 |
-| **country-models** | Contributors | 17 | 4 | 14 |
+| **country-models** | Contributors | 16 | 4 | 15 |
 | **api-development** | Contributors | 1 | 3 | 7 |
 | **app-development** | Contributors | 1 | 3 | 7 |
-| **analysis-tools** | Analysts | 0 | 0 | 8 |
-| **data-science** | Analysts/Contributors | 0 | 0 | 9 |
-| **complete** | All | 22 | 4 | 14 |
+| **analysis-tools** | Analysts | 0 | 0 | 9 |
+| **data-science** | Analysts/Contributors | 0 | 0 | 10 |
+| **complete** | All | 21 | 4 | 24 |
 
 ## Installation
 
@@ -405,8 +404,8 @@ Each repo type installs appropriate plugins:
 
 | Repository | Plugin | What It Includes |
 |------------|--------|------------------|
-| policyengine-us | country-models | 17 agents, 4 commands, 14 skills |
-| policyengine-uk | country-models | 17 agents, 4 commands, 14 skills |
+| policyengine-us | country-models | 16 agents, 4 commands, 15 skills |
+| policyengine-uk | country-models | 16 agents, 4 commands, 15 skills |
 | policyengine-api | api-development | 1 agent, 3 commands, 7 skills |
 | policyengine-app | app-development | 1 agent, 3 commands, 7 skills |
 | crfb-tob-impacts | analysis-tools | 8 skills |
@@ -514,13 +513,14 @@ User in policyengine-us: "/encode-policy California EITC"
 
 Claude: [Has country-models plugin]
 Phase 1: [Invokes @issue-manager] → Creates issue, branch, draft PR
-Phase 2: [Invokes @naming-coordinator] → Establishes naming conventions
-Phase 3: [Invokes @document-collector] → Gathers CA EITC regulations
-Phase 4A: [Invokes @parameter-architect] → Creates parameters
-Phase 4B: [Invokes @test-creator + @rules-engineer in parallel] → Tests + Variables
-Phase 5: [Invokes @pr-pusher] → Format and push
-Phase 6: [Invokes @implementation-validator → @ci-fixer] → Validate and fix locally
-Phase 7: [Invokes @program-reviewer] → Regulatory compliance review
+Phase 2: [Invokes @document-collector] → Gathers CA EITC regulations + Checkpoint 1
+Phase 3A: [Invokes @parameter-architect] → Creates parameters + Checkpoint 2
+Phase 3B: [Invokes @test-creator + @rules-engineer in parallel] → Tests + Variables
+Phase 3C: [Invokes @edge-case-generator] → Edge cases + Checkpoint 3
+Phase 4: [Invokes @implementation-validator] → Organization check & fix
+Phase 5: [Invokes @ci-fixer] → Run tests locally, fix failures
+Phase 6: [Invokes @pr-pusher] → Format and push
+Phase 7: [Invokes @program-reviewer] → Final review + PR description
 
 Creates: Issue + Tests + Implementation + PR with full documentation
 ```
@@ -571,7 +571,7 @@ Claude: [Has api-development plugin]
 /plugin install complete@policyengine-claude
 ```
 
-**Includes:** All 22 agents, 4 commands, 14 skills for the entire PolicyEngine ecosystem.
+**Includes:** All 21 agents, 4 commands, 24 skills for the entire PolicyEngine ecosystem.
 
 ### Selective Installation
 
@@ -658,9 +658,9 @@ Add to `.claude/settings.json` in each repo:
 ### Country Models (For Country Package Development)
 - **Target:** Contributors to policyengine-us, policyengine-uk, etc.
 - **What:** Multi-agent workflow + simulation knowledge
-- **Agents:** 17 specialized agents
+- **Agents:** 16 specialized agents
 - **Commands:** /encode-policy, /review-pr, /fix-pr, /create-pr
-- **Skills:** All 14 technical pattern and documentation skills
+- **Skills:** All 15 technical pattern and documentation skills
 
 ### API Development (For API Contributors)
 - **Target:** policyengine-api contributors
@@ -833,6 +833,16 @@ git submodule update --init --recursive
 ```
 
 ## Version History
+
+**v3.3.0** - Continuous regulatory verification and command redesign
+- Added 3 regulatory checkpoints to encode-policy (after Phase 2, 3A, 3C)
+- Redesigned review-pr: 4 phases, 4 agents, priority-based output (Critical/Should/Suggestions)
+- Rewritten fix-pr: 5 phases, dependency-order fixing (params → vars → tests)
+- Redesigned reference-validator: 5-phase workflow, detailed reference rules
+- Renamed `policyengine-implementation-patterns-skill` → `policyengine-variable-patterns-skill`
+- New `policyengine-code-organization-skill` for folder structure and naming
+- Deleted `naming-coordinator` agent (converted to skill)
+- Removed hardcoded username from review-pr
 
 **v3.2.4** - Workflow improvements and program-reviewer
 - Renamed `tanf-program-reviewer` to `program-reviewer` (generalized for any program)
