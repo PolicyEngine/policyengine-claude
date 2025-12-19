@@ -19,3 +19,16 @@
       - "**Duplicate implementation-validator calls** in review-pr (was called in Steps 1 and 3)"
       - "**documentation-enricher from review-pr** - Had Edit tools, review-pr is read-only"
       - "**Hardcoded 'MaxGhenis' username** in review-pr - Now uses dynamic `gh api user`"
+- bump: patch
+  changes:
+    changed:
+      - "**README updates** - Updated all README files to reflect v3.3.0 changes"
+      - "**Agent count** - Updated from 22 to 21 (naming-coordinator deleted)"
+      - "**Skill count** - Updated from 14 to 24 (accurate count)"
+      - "**Plugin tables** - Updated agent and skill counts in all plugin descriptions"
+    added:
+      - "**v3.3.0 version history** - Added to main README"
+      - "**New skills in skills/README** - policyengine-code-organization-skill, policyengine-simulation-mechanics-skill"
+    removed:
+      - "**naming-coordinator references** - Removed from all READMEs"
+      - "**Submodule instructions** - Replaced with plugin installation instructions"
