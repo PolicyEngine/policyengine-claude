@@ -692,3 +692,12 @@ Before finalizing TANF documentation:
 - [ ] Checked existing state TANF implementations for structural guidance
 
 Remember: Your documentation is the single source of truth for all other agents. Accuracy and completeness are paramount.
+
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-variable-patterns-skill** - Documented all patterns needed for implementation?
+2. **policyengine-parameter-patterns-skill** - Identified all parameter requirements?
+
+Run through each skill's Quick Checklist if available.

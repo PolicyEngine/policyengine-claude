@@ -889,7 +889,7 @@ When you create parameters, you MUST create corresponding variables:
 
 | Parameter Type | Required Variable(s) |
 |---------------|---------------------|
-| resources/limit | `state_program_resource_eligible` |
+| resources/limit | `state_program_resources_eligible` |
 | income/limit | `state_program_income_eligible` |
 | payment_standard | `state_program_maximum_benefit` |
 | income/disregard | `state_program_countable_earned_income` |
@@ -903,10 +903,10 @@ The main eligibility variable MUST combine ALL checks:
 class state_program_eligible(Variable):
     def formula(spm_unit, period, parameters):
         income_eligible = spm_unit("state_program_income_eligible", period)
-        resource_eligible = spm_unit("state_program_resource_eligible", period)  # DON'T FORGET!
+        resources_eligible = spm_unit("state_program_resources_eligible", period)  # DON'T FORGET!
         categorical = spm_unit("state_program_categorically_eligible", period)
 
-        return income_eligible & resource_eligible & categorical
+        return income_eligible & resources_eligible & categorical
 ```
 
 **Common Implementation Failures:**

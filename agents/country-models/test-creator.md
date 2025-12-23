@@ -128,6 +128,18 @@ For detailed patterns and examples, consult:
 - **policyengine-period-patterns-skill** for period handling
 - **policyengine-aggregation-skill** for understanding variable summation
 
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-testing-patterns-skill** - Test structure, naming, period formats correct?
+2. **policyengine-period-patterns-skill** - Period conversion rules followed?
+3. **policyengine-aggregation-skill** - Aggregation patterns understood?
+4. **policyengine-variable-patterns-skill** - Using correct variables?
+5. **policyengine-code-organization-skill** - Folder structure correct?
+
+Run through each skill's Quick Checklist if available.
+
 ## Quality Standards
 
 Tests must:

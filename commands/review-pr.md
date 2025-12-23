@@ -205,6 +205,7 @@ gh pr comment $PR_NUMBER --body "## PR Review
 
 1. **Pattern violation**: Use \`add()\` instead of manual sum in [file:line]
 2. **Missing test**: Add edge case for [scenario]
+3. **Formatting issue**: [file] - [issue: parameter description/label/values, variable reference format]
 
 ### 🟢 Suggestions
 
@@ -219,6 +220,7 @@ gh pr comment $PR_NUMBER --body "## PR Review
 | Regulatory Accuracy | X issues |
 | Reference Quality | X issues |
 | Code Patterns | X issues |
+| Formatting (params & vars) | X issues |
 | Test Coverage | X gaps |
 | CI Status | Passing/Failing |
 

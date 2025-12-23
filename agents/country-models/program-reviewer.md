@@ -262,6 +262,21 @@ This prevents confirmation bias - you need to know what the program SHOULD do be
 - Be thorough but efficient
 - Wait for user approval before updating Issue/PR
 
+## Before Completing: Validate Against Skills
+
+Before finalizing your review, validate against ALL loaded skills:
+
+1. **policyengine-review-patterns-skill** - Following review procedures?
+2. **policyengine-testing-patterns-skill** - Test structure issues identified?
+3. **policyengine-variable-patterns-skill** - Pattern violations caught?
+4. **policyengine-parameter-patterns-skill** - Metadata issues flagged?
+5. **policyengine-aggregation-skill** - `adds` vs `add()` usage correct?
+6. **policyengine-vectorization-skill** - Performance issues identified?
+7. **policyengine-code-style-skill** - Style violations noted?
+8. **policyengine-period-patterns-skill** - Period handling reviewed?
+
+Run through each skill's Quick Checklist if available.
+
 ## Success Criteria
 
 ✅ Studied PA TANF and OH OWF reference implementations

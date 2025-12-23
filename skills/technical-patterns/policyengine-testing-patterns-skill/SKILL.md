@@ -191,22 +191,102 @@ class tx_tanf_income_eligible(Variable):
 
 ## 5. Period Conversion in Tests
 
-### Critical Rule for MONTH Tests
+### Complete Input/Output Rules
 
-When `period: 2025-01`:
-- **Input**: YEAR variables as annual amounts
-- **Output**: YEAR variables show monthly values (÷12)
+**The key rule:** Input matches the **larger of (variable period, test period)**. Output matches the **test period**.
+
+| Variable Def | Test Period | Input Value | Output Value |
+|--------------|-------------|-------------|--------------|
+| **YEAR** | YEAR | Yearly | Yearly |
+| **YEAR** | MONTH | **Yearly** (always!) | Monthly (÷12) |
+| **MONTH** | YEAR | Yearly (÷12 per month) | Yearly (sum of 12) |
+| **MONTH** | MONTH | **Monthly** | Monthly |
+
+### YEAR Variable Examples
 
 ```yaml
-- name: Case 1, income conversion.
-  period: 2025-01  # MONTH period
+# YEAR variable + YEAR period
+- name: Case 1, yearly test.
+  period: 2024
   input:
-    people:
-      person1:
-        employment_income: 12_000  # Input: Annual
+    employment_income: 12_000  # Yearly input
   output:
-    employment_income: 1_000  # Output: Monthly (12_000/12)
+    employment_income: 12_000  # Yearly output
+
+# YEAR variable + MONTH period
+- name: Case 2, monthly test with yearly variable.
+  period: 2024-01
+  input:
+    employment_income: 12_000  # Still yearly input!
+  output:
+    employment_income: 1_000   # Monthly output (12_000/12)
 ```
+
+### MONTH Variable Examples
+
+```yaml
+# MONTH variable + YEAR period
+- name: Case 3, yearly test with monthly variable.
+  period: 2024
+  input:
+    some_monthly_var: 1_200  # Yearly total (divided by 12 = 100/month)
+  output:
+    some_monthly_var: 1_200  # Yearly sum
+
+# MONTH variable + MONTH period
+- name: Case 4, monthly test with monthly variable.
+  period: 2024-01
+  input:
+    some_monthly_var: 100  # Monthly input (just January)
+  output:
+    some_monthly_var: 100  # Monthly output
+```
+
+### Formula Design: Never Multiply by 12
+
+**Critical:** Let PolicyEngine handle period conversion automatically. Never use `* MONTHS_IN_YEAR` or `/ 12` in formulas.
+
+```python
+# ✅ CORRECT - PolicyEngine handles conversion
+class my_yearly_benefit(Variable):
+    definition_period = YEAR
+
+    def formula(tax_unit, period, parameters):
+        monthly_premium = tax_unit("slcsp", period)  # Auto-sums 12 months
+        return where(eligible, monthly_premium, 0)   # No * 12!
+
+# ❌ WRONG - Double counting
+class my_yearly_benefit(Variable):
+    definition_period = YEAR
+
+    def formula(tax_unit, period, parameters):
+        monthly_premium = tax_unit("slcsp", period)  # Already summed!
+        return where(eligible, monthly_premium * MONTHS_IN_YEAR, 0)  # Bug!
+```
+
+### How PolicyEngine Converts Periods
+
+When a YEAR formula calls a MONTH variable:
+```
+my_yearly_benefit<2024> calls slcsp<2024>
+  → slcsp<2024-01> = 500
+  → slcsp<2024-02> = 500
+  → ... (all 12 months)
+  → slcsp<2024> = 6000 (sum)
+```
+
+When a MONTH formula calls a YEAR variable:
+```
+my_monthly_calc<2024-01> calls employment_income<2024-01>
+  → employment_income<2024> = 12000
+  → employment_income<2024-01> = 1000 (12000/12)
+```
+
+### Summary
+
+- **Input:** Match the variable's definition_period (or yearly if test period is YEAR)
+- **Output:** Always matches the test period
+- **Formulas:** Never manually multiply/divide by 12
 
 ---
 

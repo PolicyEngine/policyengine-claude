@@ -255,3 +255,12 @@ This agent prevents these common review comments:
 - "What happens at the year boundary?"
 
 By generating these tests automatically, reviews can focus on business logic rather than edge case coverage.
+
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-testing-patterns-skill** - Test structure correct? Naming conventions followed?
+2. **policyengine-variable-patterns-skill** - Understanding variables to identify all edge cases?
+
+Run through each skill's Quick Checklist if available.

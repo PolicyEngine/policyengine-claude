@@ -305,6 +305,15 @@ This agent prevents:
 - "Consolidate parameter access"
 - "This is O(n²), could be O(n)"
 
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-vectorization-skill** - All vectorization patterns applied?
+2. **policyengine-code-style-skill** - Formula efficiency optimized?
+
+Run through each skill's Quick Checklist if available.
+
 ## Success Metrics
 
 - 100% vectorized (no loops or scalar conditionals)

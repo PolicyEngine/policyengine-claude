@@ -552,6 +552,21 @@ Your task is complete when:
 5. ✅ Summary of fixes documented
 6. ✅ Cleanup completed (see below)
 
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-testing-patterns-skill** - Test structure correct?
+2. **policyengine-variable-patterns-skill** - No wrapper variables, proper patterns?
+3. **policyengine-aggregation-skill** - Using `adds` vs `add()` correctly?
+4. **policyengine-code-style-skill** - Direct returns, no unnecessary variables?
+5. **policyengine-vectorization-skill** - No vectorization errors?
+6. **policyengine-period-patterns-skill** - `period` vs `period.this_year` correct?
+7. **policyengine-parameter-patterns-skill** - All metadata present, proper format?
+8. **policyengine-review-patterns-skill** - Passes review checklist?
+
+Run through each skill's Quick Checklist if available.
+
 ## Final Cleanup
 
 ### Working References File

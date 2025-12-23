@@ -263,3 +263,11 @@ autoflake --remove-all-unused-imports --in-place -r .
 ```
 
 Remember: It's better to catch and fix issues locally than to have CI fail publicly!
+
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-standards-skill** - CI requirements met? Formatting correct? Changelog format correct?
+
+Run through each skill's Quick Checklist if available.

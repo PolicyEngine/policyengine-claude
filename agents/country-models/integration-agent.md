@@ -173,3 +173,12 @@ Your task is complete when:
 - Keep commits clean and descriptive
 
 Remember: Your goal is to merge the parallel work and fix only the most basic integration issues so other agents can work on unified code.
+
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-testing-patterns-skill** - Test entity mismatches resolved?
+2. **policyengine-variable-patterns-skill** - Variable conflicts resolved correctly?
+
+Run through each skill's Quick Checklist if available.
