@@ -6,11 +6,43 @@ description: Review an existing PR and post findings to GitHub (read-only, no co
 
 **READ-ONLY MODE**: This command analyzes the PR and posts a review to GitHub WITHOUT making any code changes. Use `/fix-pr` to apply fixes.
 
-## Determining Which PR to Review
+## Options
+
+- `--local` - Show findings locally only, skip GitHub posting
+
+## Step 1: Determine Posting Mode
+
+**If `--local` flag is provided**: Skip prompt, proceed in local-only mode.
+
+**If no flag provided**: Use `AskUserQuestion` to prompt BEFORE starting review:
+
+```
+Question: "Would you like to post this review to GitHub when complete?"
+Options:
+  - "Yes, post to GitHub" (default)
+  - "No, show locally only"
+```
+
+Store the user's choice and proceed with the review.
+
+---
+
+## Step 2: Determine Which PR to Review
 
 ```bash
-# If no arguments provided, use current branch's PR
-if [ -z "$ARGUMENTS" ]; then
+# Parse arguments for --local flag
+LOCAL_ONLY=false
+PR_ARG=""
+for arg in $ARGUMENTS; do
+    if [ "$arg" = "--local" ]; then
+        LOCAL_ONLY=true
+    else
+        PR_ARG="$arg"
+    fi
+done
+
+# If no PR argument provided, use current branch's PR
+if [ -z "$PR_ARG" ]; then
     CURRENT_BRANCH=$(git branch --show-current)
     PR_NUMBER=$(gh pr list --head "$CURRENT_BRANCH" --json number --jq '.[0].number')
     if [ -z "$PR_NUMBER" ]; then
@@ -18,18 +50,21 @@ if [ -z "$ARGUMENTS" ]; then
         exit 1
     fi
 # If argument is a number, use it directly
-elif [[ "$ARGUMENTS" =~ ^[0-9]+$ ]]; then
-    PR_NUMBER=$ARGUMENTS
+elif [[ "$PR_ARG" =~ ^[0-9]+$ ]]; then
+    PR_NUMBER=$PR_ARG
 # Otherwise, search for PR by description/title
 else
-    PR_NUMBER=$(gh pr list --search "$ARGUMENTS" --json number,title --jq '.[0].number')
+    PR_NUMBER=$(gh pr list --search "$PR_ARG" --json number,title --jq '.[0].number')
     if [ -z "$PR_NUMBER" ]; then
-        echo "No PR found matching: $ARGUMENTS"
+        echo "No PR found matching: $PR_ARG"
         exit 1
     fi
 fi
 
 echo "Reviewing PR #$PR_NUMBER"
+if [ "$LOCAL_ONLY" = true ]; then
+    echo "Mode: Local only (will not post to GitHub)"
+fi
 ```
 
 ---
@@ -132,7 +167,11 @@ If multiple validators flag the same issue, combine into one finding with the hi
 
 ## Phase 4: Post Review
 
-### Check for Existing Reviews
+**If user chose local-only mode**: Display findings locally and skip GitHub posting.
+
+**If user chose to post to GitHub**: Continue with posting.
+
+### Check for Existing Reviews (if posting)
 
 Before posting, check if you have a prior review on this PR:
 
@@ -149,7 +188,7 @@ if [ "$EXISTING" -gt 0 ]; then
 fi
 ```
 
-### Post the Review
+### Post the Review (if user confirms)
 
 Post a single, clear review:
 
@@ -216,9 +255,11 @@ Based on findings, set the review type:
 ## Usage Examples
 
 ```bash
-/review-pr              # Review PR for current branch
-/review-pr 6390         # Review PR #6390
-/review-pr "Arkansas"   # Search for PR by title
+/review-pr              # Review PR for current branch (prompts before posting)
+/review-pr 6390         # Review PR #6390 (prompts before posting)
+/review-pr "Arkansas"   # Search for PR by title (prompts before posting)
+/review-pr --local      # Review current branch's PR, show locally only
+/review-pr 6390 --local # Review PR #6390, show locally only
 ```
 
 ---
@@ -239,10 +280,10 @@ These MUST be fixed before merge:
 ## Pre-Flight Checklist
 
 Before starting:
+- [ ] I will ask user about posting mode FIRST (unless --local flag used)
 - [ ] I will NOT make any code changes
 - [ ] I will run all 4 validators
 - [ ] I will prioritize findings (Critical > Should > Suggestions)
-- [ ] I will post a single clear review
 - [ ] I will be constructive and actionable
 
-Start by determining which PR to review, then proceed through the phases.
+Start by asking the user about posting mode, then proceed through the phases.

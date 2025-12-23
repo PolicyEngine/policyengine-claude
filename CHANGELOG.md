@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.2] - 2025-12-23
+
+### Added
+- **All agents to marketplace.json** - Added 17 agents to `country-models` plugin and 25 agents to `complete` plugin (Issue #36)
+- **`--local` flag for review-pr** - Skip GitHub posting with `--local` flag
+- **`--local` flag for fix-pr** - Skip GitHub pushing/posting with `--local` flag
+- **Interactive prompt for review-pr** - Asks user before posting to GitHub (unless `--local` used)
+- **Interactive prompt for fix-pr** - Asks user before pushing to GitHub (unless `--local` used)
+
+### Changed
+- **review-pr asks upfront** - Posting mode prompt moved to Step 1 (before review starts)
+- **fix-pr asks upfront** - Posting mode prompt moved to Step 1 (before fixes start)
+
 ## [3.3.1] - 2025-12-18
 
 ### Changed
