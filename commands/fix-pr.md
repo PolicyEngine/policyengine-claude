@@ -6,11 +6,43 @@ description: Apply fixes to a PR based on review-pr findings or review comments
 
 Apply fixes to PR issues identified by `/review-pr` or GitHub review comments.
 
-## Determining Which PR to Fix
+## Options
+
+- `--local` - Apply fixes locally only, skip GitHub posting and pushing
+
+## Step 1: Determine Posting Mode
+
+**If `--local` flag is provided**: Skip prompt, proceed in local-only mode.
+
+**If no flag provided**: Use `AskUserQuestion` to prompt BEFORE starting fixes:
+
+```
+Question: "Would you like to push changes and post summary to GitHub when complete?"
+Options:
+  - "Yes, push and post to GitHub" (default)
+  - "No, keep changes local only"
+```
+
+Store the user's choice and proceed with the fixes.
+
+---
+
+## Step 2: Determine Which PR to Fix
 
 ```bash
-# If no arguments provided, use current branch's PR
-if [ -z "$ARGUMENTS" ]; then
+# Parse arguments for --local flag
+LOCAL_ONLY=false
+PR_ARG=""
+for arg in $ARGUMENTS; do
+    if [ "$arg" = "--local" ]; then
+        LOCAL_ONLY=true
+    else
+        PR_ARG="$arg"
+    fi
+done
+
+# If no PR argument provided, use current branch's PR
+if [ -z "$PR_ARG" ]; then
     CURRENT_BRANCH=$(git branch --show-current)
     PR_NUMBER=$(gh pr list --head "$CURRENT_BRANCH" --json number --jq '.[0].number')
     if [ -z "$PR_NUMBER" ]; then
@@ -18,18 +50,21 @@ if [ -z "$ARGUMENTS" ]; then
         exit 1
     fi
 # If argument is a number, use it directly
-elif [[ "$ARGUMENTS" =~ ^[0-9]+$ ]]; then
-    PR_NUMBER=$ARGUMENTS
+elif [[ "$PR_ARG" =~ ^[0-9]+$ ]]; then
+    PR_NUMBER=$PR_ARG
 # Otherwise, search for PR by description/title
 else
-    PR_NUMBER=$(gh pr list --search "$ARGUMENTS" --json number,title --jq '.[0].number')
+    PR_NUMBER=$(gh pr list --search "$PR_ARG" --json number,title --jq '.[0].number')
     if [ -z "$PR_NUMBER" ]; then
-        echo "No PR found matching: $ARGUMENTS"
+        echo "No PR found matching: $PR_ARG"
         exit 1
     fi
 fi
 
 echo "Fixing PR #$PR_NUMBER"
+if [ "$LOCAL_ONLY" = true ]; then
+    echo "Mode: Local only (will not post to GitHub or push)"
+fi
 gh pr checkout $PR_NUMBER
 ```
 
@@ -225,7 +260,11 @@ If tests fail, invoke **ci-fixer** to fix.
 
 ## Phase 5: Push Changes
 
-### Step 5A: Format and Push
+**If user chose local-only mode**: Show summary locally and skip pushing/posting.
+
+**If user chose to push to GitHub**: Continue with pushing and posting.
+
+### Step 5A: Format and Push (if user chose to push)
 
 **Invoke pr-pusher**:
 ```
@@ -235,7 +274,7 @@ Push fixes to PR #$PR_NUMBER:
 - Push to branch
 ```
 
-### Step 5B: Post Summary Comment
+### Step 5B: Post Summary Comment (if user chose to push)
 
 ```bash
 gh pr comment $PR_NUMBER --body "## Fixes Applied
@@ -278,9 +317,11 @@ Ready for re-review."
 ## Usage Examples
 
 ```bash
-/fix-pr              # Fix PR for current branch
-/fix-pr 6390         # Fix PR #6390
-/fix-pr "Arkansas"   # Search for PR by title
+/fix-pr              # Fix PR for current branch (prompts before pushing)
+/fix-pr 6390         # Fix PR #6390 (prompts before pushing)
+/fix-pr "Arkansas"   # Search for PR by title (prompts before pushing)
+/fix-pr --local      # Fix current branch's PR, keep changes local
+/fix-pr 6390 --local # Fix PR #6390, keep changes local
 ```
 
 ---
@@ -308,10 +349,11 @@ Always fix in this order to avoid cascading issues:
 ## Pre-Flight Checklist
 
 Before starting:
+- [ ] I will ask user about posting mode FIRST (unless --local flag used)
 - [ ] I will invoke agents for ALL fixes
 - [ ] I will NOT use Edit/Write directly
 - [ ] I will fix in dependency order (params → vars → tests)
 - [ ] I will verify fixes with validators
 - [ ] I will run tests before pushing
 
-Start by gathering context, then proceed through the phases.
+Start by asking the user about posting mode, then proceed through the phases.
