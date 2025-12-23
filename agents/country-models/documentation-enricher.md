@@ -238,3 +238,11 @@ The enricher runs after initial implementation to:
 5. Update references to latest sources
 
 This creates self-documenting code that answers reviewer questions before they're asked.
+
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-variable-patterns-skill** - Documentation follows code patterns?
+
+Run through each skill's Quick Checklist if available.

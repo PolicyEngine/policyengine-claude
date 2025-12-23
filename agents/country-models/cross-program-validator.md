@@ -207,6 +207,15 @@ This agent prevents these review comments:
 - "This creates a benefit cliff"
 - "Did you test with multiple programs?"
 
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-variable-patterns-skill** - Cross-program interactions correct?
+2. **policyengine-review-patterns-skill** - Validation procedures followed?
+
+Run through each skill's Quick Checklist if available.
+
 ## Success Metrics
 
 - All program dependencies documented: 100%

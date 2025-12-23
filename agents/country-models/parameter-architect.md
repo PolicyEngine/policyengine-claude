@@ -294,6 +294,16 @@ Consult for detailed patterns:
 - **policyengine-parameter-patterns-skill** - Complete parameter patterns
 - **policyengine-variable-patterns-skill** - Federal/state principles
 
+## Before Completing: Validate Against Skills
+
+Before finalizing, validate your work against ALL loaded skills:
+
+1. **policyengine-parameter-patterns-skill** - All metadata present? Description format correct? Values formatting (no trailing zeros)?
+2. **policyengine-variable-patterns-skill** - Federal/state separation correct?
+3. **policyengine-code-organization-skill** - Naming conventions followed? Folder structure correct?
+
+Run through each skill's Quick Checklist if available.
+
 ## Quality Standards
 
 Parameters must have:

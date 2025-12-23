@@ -87,10 +87,21 @@ No TODO comments or placeholder returns:
 **Check all parameter files for:**
 
 **CRITICAL CHECKS (must all pass):**
-- ✅ **Description field present** - EVERY parameter MUST have description
-- ✅ **Description follows template** - Uses active voice, state name, "this X" pattern
+
+**Description field:**
+- ✅ **Present** - EVERY parameter MUST have description
+- ✅ **Exactly ONE sentence** - Ends with single period
+- ✅ **Valid verb** - ONLY use: `limits`, `provides`, `sets`, `excludes`, `deducts`, `uses`
+- ✅ **"this X" placeholder** - Uses `this amount`, `this share`, or `this percentage`
 - ✅ **Full program names** - No acronyms (e.g., "Temporary Assistance for Needy Families program" not "TANF")
-- ✅ **Exactly ONE sentence** - Description ends with single period
+- ✅ **Ends with program context** - "under the [Full Program Name] program" or "for [Full Program Name] program calculations"
+
+**Label field:**
+- ✅ **Present** - EVERY parameter MUST have label in metadata
+- ✅ **Pattern** - `[State] [PROGRAM] [description]` (e.g., "Montana TANF minor child age threshold")
+- ✅ **State spelled out** - Full state name (California, not CA)
+- ✅ **Program abbreviated** - Use acronym (TANF, SNAP) — opposite of description!
+- ✅ **No period at end** - Labels don't end with punctuation
 
 **Reference checks:**
 - ✅ Reference has `title` and `href`
@@ -98,28 +109,16 @@ No TODO comments or placeholder returns:
 - ✅ Title includes full subsection (e.g., `OAR 461-155-0030(2)(a)(B)`)
 - ✅ Link shows actual parameter value when clicked
 
+**Values formatting:**
+- ✅ **No trailing zeros** - Use `0.2` not `0.20`, use `1.5` not `1.50`
+- ✅ **No decimals for integers** - Use `1` not `1.0`, use `2` not `2.00`
+- ✅ **Underscores for large numbers** - Use `3_000` not `3000`, use `50_000` not `50000`
+
 **Structure checks:**
 - Complete metadata (description, unit, period, label, reference)
 - Proper organizational hierarchy (federal/state separation)
 - Effective dates present
 - Bracket-style for age-based eligibility (not separate min/max files)
-
-**CRITICAL ERROR if missing:**
-```yaml
-# ❌ CRITICAL - Missing description
-values:
-  1991-01-01: 90
-metadata:
-  unit: currency-USD
-  # ... (missing description field)
-
-# ✅ CORRECT - Has proper description
-description: Missouri deducts this earned income disregard amount from gross earned income for Temporary Assistance for Needy Families program calculations.
-values:
-  1991-01-01: 90
-metadata:
-  unit: currency-USD
-```
 
 ### Phase 2: Variable Scan
 
@@ -362,6 +361,15 @@ The validator produces a **structured report with specific fixes** that ci-fixer
 | ar_tea_eligible.py | No reference field | Add `reference = "https://..."` |
 | income_limit.yaml | Missing page number | Add `#page=XX` to href |
 
+### Parameter Formatting Issues
+| File | Issue Type | Current | Fix |
+|------|------------|---------|-----|
+| income_limit.yaml | Description: uses acronym | `...TANF...` | `...Temporary Assistance for Needy Families...` |
+| income_limit.yaml | Label: state abbreviated | `MO TANF income limit` | `Missouri TANF income limit` |
+| payment_standard.yaml | Label: has period | `Missouri TANF payment.` | `Missouri TANF payment` |
+| disregard.yaml | Values: trailing zeros | `1.50` | `1.5` |
+| disregard.yaml | Values: no underscores | `50000` | `50_000` |
+
 ## Warnings (Should Address)
 
 ### Parameter Organization
@@ -370,9 +378,10 @@ The validator produces a **structured report with specific fixes** that ci-fixer
 | State rule in federal path | /gov/agency/state_specific.yaml | Move to /states/ |
 
 ## Summary for ci-fixer
-- **Pattern fixes:** X files need code pattern fixes (see above)
+- **Pattern fixes:** X files need code pattern fixes
 - **Hard-coded values:** Y values need parameters
 - **Reference fixes:** Z references need updates
+- **Parameter formatting:** W files need description/label/values fixes
 ```
 
 ## Success Criteria
@@ -407,3 +416,17 @@ Implementation passes when:
 - No hard-coded months or years
 
 This validator works across all benefit programs and jurisdictions by focusing on structural quality rather than program-specific rules.
+
+## Before Completing: Validate Against Skills
+
+Before finalizing your validation report, ensure you checked against ALL loaded skills:
+
+1. **policyengine-variable-patterns-skill** - No hard-coding, proper patterns?
+2. **policyengine-parameter-patterns-skill** - All metadata, description/label format?
+3. **policyengine-aggregation-skill** - `adds` vs `add()` correct?
+4. **policyengine-code-style-skill** - Style patterns followed?
+5. **policyengine-vectorization-skill** - No vectorization issues?
+6. **policyengine-review-patterns-skill** - All checklist items covered?
+7. **policyengine-code-organization-skill** - Naming and structure correct?
+
+Run through each skill's Quick Checklist if available.

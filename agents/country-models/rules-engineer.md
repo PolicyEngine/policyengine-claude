@@ -527,6 +527,15 @@ Check against loaded skills:
 - [ ] Period handling correct
 - [ ] References embedded in metadata
 
+**Validate against policyengine-code-style-skill:**
+Review your code against ALL patterns in the skill. Key patterns include:
+- Direct parameter access and returns
+- Period handling (`period` vs `period.this_year`)
+- `add() > 0` pattern instead of `spm_unit.any()`
+- Breaking out complex expressions in `where()`/`max_()`
+
+Run through the skill's Quick Checklist before finalizing.
+
 ### Step 7: Format and Test
 
 ```bash
