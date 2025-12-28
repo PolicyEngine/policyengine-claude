@@ -20,6 +20,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": "./hooks/hooks.json",
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
@@ -39,6 +40,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": "./hooks/hooks.json",
       "agents": [
         "./agents/country-models/ci-fixer.md",
         "./agents/country-models/cross-program-validator.md",
@@ -203,6 +205,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": "./hooks/hooks.json",
       "agents": [
         "./agents/api/api-reviewer.md",
         "./agents/app/app-reviewer.md",

@@ -1,0 +1,29 @@
+{
+  "description": "Cosilico architecture enforcement - tax logic ONLY in .rac files",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "ARCHITECTURE ENFORCEMENT: Check if this file write/edit violates Cosilico's core principle that ALL tax/benefit calculation logic must be in .rac files ONLY.\n\nVIOLATION PATTERNS to detect in .py, .js, .ts files (NOT .rac):\n\n1. TAX CALCULATION FUNCTIONS:\n   - def calculate_eitc, calculate_ctc, calculate_income_tax, calculate_se_tax\n   - Any function implementing IRC/USC tax formulas\n\n2. HARDCODED TAX PARAMETERS:\n   - PARAMS_2024, PARAMS_2023, tax_params\n   - max_credit, phaseout_rate, phaseout_threshold\n   - bracket thresholds, credit amounts, deduction amounts\n   - Investment income limits, earned income thresholds\n\n3. TAX LOGIC PATTERNS:\n   - Phase-in/phase-out calculations\n   - Marginal bracket logic\n   - Filing status conditional tax rules\n   - Credit limitation logic (e.g., 'limited by tax liability')\n\n4. PARAMETER DICTIONARIES:\n   - 'eitc': { 'max_credit': ...\n   - 'ctc': { 'phaseout_threshold': ...\n   - Any dict with tax parameters by year\n\nEXCEPTIONS (these are OK):\n- .rac files (that's where logic belongs)\n- Test files that IMPORT from .rac (not reimplementing)\n- Comments/docstrings explaining what .rac files do\n- Variable names that just REFERENCE .rac outputs\n\nIf this is a .rac file: return 'approve'\nIf this is NOT a .rac file AND contains violation patterns: return 'block' with message:\n  'BLOCKED: Tax/benefit logic detected outside .rac files. This violates Cosilico architecture. Move this logic to cosilico-us/statute/*.rac files. See CLAUDE.md for architecture rules.'\nIf no violations: return 'approve'",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "PRE-WRITE CHECK: Before writing this file, verify it doesn't violate Cosilico architecture.\n\nIf this is a .py file in cosilico-data-sources, microplex-sources, or cosilico-validators that will contain:\n- Tax calculation functions (calculate_eitc, calculate_ctc, etc.)\n- Hardcoded tax parameters (PARAMS_2024, max_credit, phaseout_rate)\n- Tax bracket logic or phase-out calculations\n\nThen BLOCK with: 'BLOCKED: About to write tax logic outside .rac files. Tax rules belong ONLY in cosilico-us/statute/*.rac. Use cosilico-engine to execute .rac files instead of reimplementing in Python.'\n\nIf this is a .rac file or doesn't contain tax logic: return 'approve'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
