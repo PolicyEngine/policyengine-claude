@@ -46,39 +46,58 @@ file_path = hf_hub_download(
 
 ### Define the Policy Reform
 
-Use `Reform.from_dict()` to define parameter changes. Common examples:
+#### Finding the Right Parameters
 
-**SALT Cap Change:**
+Before defining a reform, find the exact parameter paths in the policyengine-us codebase:
+
+**1. Search the parameters directory:**
+```bash
+# Find parameters related to your policy
+grep -r "salt" policyengine_us/parameters/gov/irs/ --include="*.yaml"
+grep -r "child_tax_credit\|ctc" policyengine_us/parameters/gov/irs/credits/ --include="*.yaml"
+grep -r "eitc" policyengine_us/parameters/gov/irs/credits/ --include="*.yaml"
+```
+
+**2. Navigate the parameter tree structure:**
+- Federal tax: `gov.irs.deductions`, `gov.irs.credits`, `gov.irs.income`
+- State taxes: `gov.states.{state_code}.tax`
+- Benefits: `gov.hhs`, `gov.usda`, `gov.ed`
+
+**3. Read the YAML file to understand structure:**
+```bash
+# Example: Check SALT cap parameter structure
+cat policyengine_us/parameters/gov/irs/deductions/itemized/salt_and_real_estate/cap.yaml
+```
+
+Parameter YAML files show:
+- The parameter path (matches directory structure)
+- Filing status breakdowns (SINGLE, JOINT, SEPARATE, HEAD_OF_HOUSEHOLD, SURVIVING_SPOUSE)
+- Date ranges for values
+- Units and descriptions
+
+#### Creating the Reform
+
+Use `Reform.from_dict()` with the discovered parameter paths:
+
 ```python
 from policyengine_core.reforms import Reform
 
-salt_reform = Reform.from_dict({
+# Example: SALT cap change (after finding paths via grep/exploration)
+reform = Reform.from_dict({
     'gov.irs.deductions.itemized.salt_and_real_estate.cap.SINGLE': {
         '2026-01-01.2100-12-31': 10000  # New cap amount
     },
     'gov.irs.deductions.itemized.salt_and_real_estate.cap.JOINT': {
         '2026-01-01.2100-12-31': 10000
     },
-    'gov.irs.deductions.itemized.salt_and_real_estate.cap.SEPARATE': {
-        '2026-01-01.2100-12-31': 5000
-    },
-    'gov.irs.deductions.itemized.salt_and_real_estate.cap.HEAD_OF_HOUSEHOLD': {
-        '2026-01-01.2100-12-31': 10000
-    },
-    'gov.irs.deductions.itemized.salt_and_real_estate.cap.SURVIVING_SPOUSE': {
-        '2026-01-01.2100-12-31': 10000
-    },
+    # Include all filing statuses from the YAML
 }, 'policyengine_us')
 ```
 
-**Child Tax Credit Change:**
-```python
-ctc_reform = Reform.from_dict({
-    'gov.irs.credits.ctc.amount.base[0].amount': {
-        '2026-01-01.2100-12-31': 3000  # New CTC amount per child
-    }
-}, 'policyengine_us')
-```
+**Key patterns:**
+- Date format: `'YYYY-MM-DD.YYYY-MM-DD'` for start and end dates
+- Bracket parameters use `[index]` syntax: `gov.irs.credits.ctc.amount.base[0].amount`
+- Always check if parameter varies by filing status and include all variants
 
 ### Run District and National Simulations
 
