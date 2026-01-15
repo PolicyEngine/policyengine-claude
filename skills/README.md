@@ -83,6 +83,7 @@ Knowledge about PolicyEngine's core tools, APIs, and applications.
 | **policyengine-api-skill** | PolicyEngine API | Flask REST service powering policyengine.org |
 | **policyengine-app-skill** | PolicyEngine React web application | User interface at policyengine.org |
 | **policyengine-core-skill** | PolicyEngine Core simulation engine | The foundation powering all PolicyEngine calculations |
+| **policyengine-microsimulation-skill** | Population-level Microsimulation | Weighted survey analysis at national, state, and congressional district level |
 | **policyengine-python-client-skill** | Python client usage | Programmatic access via Python or REST API |
 | **policyengine-simulation-mechanics-skill** | Advanced simulation patterns | ensure(), output_dataset.data, map_to_entity() |
 
