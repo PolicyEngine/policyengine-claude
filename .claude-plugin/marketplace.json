@@ -164,6 +164,7 @@
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/analysis/policyengine-analysis-skill",
+        "./skills/analysis/policyengine-district-analysis-skill",
         "./skills/data-science/microdf-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-writing-skill"
@@ -252,6 +253,7 @@
         "./skills/tools-and-apis/policyengine-api-skill",
         "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/analysis/policyengine-analysis-skill",
+        "./skills/analysis/policyengine-district-analysis-skill",
         "./skills/technical-patterns/policyengine-aggregation-skill",
         "./skills/technical-patterns/policyengine-period-patterns-skill",
         "./skills/technical-patterns/policyengine-testing-patterns-skill",
