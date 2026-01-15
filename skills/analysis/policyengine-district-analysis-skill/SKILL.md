@@ -23,22 +23,7 @@ Use this skill when the user asks:
 
 ## Step-by-Step Workflow
 
-### Step 1: Identify the District
-
-**If user provides district code (e.g., NY-17):**
-- Use directly
-
-**If user provides representative name:**
-- Look up the representative's district using web search
-- Example: "Mike Lawler" → NY-17, "Katie Porter" → CA-47
-
-**Common high-SALT-impact districts:**
-- NY-17 (Mike Lawler) - Westchester/Rockland suburbs
-- NY-03 (Tom Suozzi) - Long Island
-- NJ-07 (Tom Kean Jr.) - Central NJ suburbs
-- CA-45 (Michelle Steel) - Orange County
-
-### Step 2: Download District Data
+### Download District Data
 
 Congressional district microdata is on HuggingFace. The URL parser in policyengine-core doesn't handle nested paths, so download manually:
 
@@ -59,7 +44,7 @@ file_path = hf_hub_download(
 )
 ```
 
-### Step 3: Define the Policy Reform
+### Define the Policy Reform
 
 Use `Reform.from_dict()` to define parameter changes. Common examples:
 
@@ -95,7 +80,7 @@ ctc_reform = Reform.from_dict({
 }, 'policyengine_us')
 ```
 
-### Step 4: Run District and National Simulations
+### Run District and National Simulations
 
 ```python
 from policyengine_us import Microsimulation
@@ -112,7 +97,7 @@ national_reformed = Microsimulation(reform=reform)
 period = 2026  # Or relevant year
 ```
 
-### Step 5: Calculate Winners/Losers
+### Calculate Winners/Losers
 
 ```python
 def analyze_impact(baseline_sim, reform_sim, period=2026):
@@ -155,7 +140,7 @@ district_results = analyze_impact(district_baseline, district_reformed, period)
 national_results = analyze_impact(national_baseline, national_reformed, period)
 ```
 
-### Step 6: Present Results
+### Present Results
 
 Format results as a comparison table:
 
