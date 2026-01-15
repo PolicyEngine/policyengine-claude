@@ -104,31 +104,6 @@ file_path = hf_hub_download(
 sim = Microsimulation(dataset=file_path)
 ```
 
-## Congressional District Reference
-
-### Key Districts by State
-
-**New York (high-SALT impact):**
-- NY-17: Mike Lawler (R) - Westchester/Rockland suburbs
-- NY-03: Tom Suozzi (D) - Long Island
-- NY-04: Anthony D'Esposito (R) - Long Island
-- NY-16: Jamaal Bowman (D) - Westchester/Bronx
-
-**California:**
-- CA-45: Michelle Steel (R) - Orange County
-- CA-47: Katie Porter (D) - Orange County
-- CA-27: Mike Garcia (R) - LA suburbs
-
-**New Jersey:**
-- NJ-07: Tom Kean Jr. (R) - Central NJ suburbs
-- NJ-03: Andy Kim (D) - Burlington/Ocean
-
-### District GEOID Codes
-
-Congressional district GEOIDs follow the pattern: `{state_fips}{district_number}`
-- NY-17 = 3617 (state FIPS 36, district 17)
-- CA-52 = 0652 (state FIPS 06, district 52)
-
 ## Core Calculation Methods
 
 ### calc() - Returns Weighted MicroSeries
@@ -232,34 +207,37 @@ def compare_district_to_national(district_code, reform, period=2026):
     }
 ```
 
-### Pattern 3: SALT Cap Analysis
+### Pattern 3: Finding Parameter Paths
+
+To create a reform, first find the exact parameter paths:
+
+```bash
+# Search policyengine-us parameters for relevant policy
+grep -r "salt" policyengine_us/parameters/gov/irs/ --include="*.yaml"
+grep -r "child_tax_credit\|ctc" policyengine_us/parameters/gov/irs/credits/ --include="*.yaml"
+
+# Read the YAML to understand structure
+cat policyengine_us/parameters/gov/irs/deductions/itemized/salt_and_real_estate/cap.yaml
+```
+
+**Parameter tree structure:**
+- Federal tax: `gov.irs.deductions`, `gov.irs.credits`, `gov.irs.income`
+- State taxes: `gov.states.{state_code}.tax`
+- Benefits: `gov.hhs` (Medicaid, TANF), `gov.usda` (SNAP), `gov.ed` (Pell)
+
+**Key patterns:**
+- Filing status variants: Many tax parameters have SINGLE, JOINT, SEPARATE, HEAD_OF_HOUSEHOLD, SURVIVING_SPOUSE
+- Bracket parameters: Use `[index]` syntax, e.g., `gov.irs.credits.ctc.amount.base[0].amount`
+- Date ranges: `'YYYY-MM-DD.YYYY-MM-DD'` format
 
 ```python
-def analyze_salt_cap_change(new_cap=10000, period=2026):
-    """Analyze impact of changing SALT deduction cap."""
-
-    salt_reform = Reform.from_dict({
-        'gov.irs.deductions.itemized.salt_and_real_estate.cap.SINGLE': {
-            f'{period}-01-01.2100-12-31': new_cap
-        },
-        'gov.irs.deductions.itemized.salt_and_real_estate.cap.JOINT': {
-            f'{period}-01-01.2100-12-31': new_cap
-        },
-        'gov.irs.deductions.itemized.salt_and_real_estate.cap.SEPARATE': {
-            f'{period}-01-01.2100-12-31': new_cap // 2
-        },
-        'gov.irs.deductions.itemized.salt_and_real_estate.cap.HEAD_OF_HOUSEHOLD': {
-            f'{period}-01-01.2100-12-31': new_cap
-        },
-        'gov.irs.deductions.itemized.salt_and_real_estate.cap.SURVIVING_SPOUSE': {
-            f'{period}-01-01.2100-12-31': new_cap
-        },
-    }, 'policyengine_us')
-
-    baseline = Microsimulation()
-    reformed = Microsimulation(reform=salt_reform)
-
-    return analyze_winners_losers(baseline, reformed, period)
+# After finding paths via grep, create reform
+reform = Reform.from_dict({
+    'gov.irs.deductions.itemized.salt_and_real_estate.cap.JOINT': {
+        '2026-01-01.2100-12-31': 10000
+    },
+    # Include all filing statuses found in the YAML
+}, 'policyengine_us')
 ```
 
 ## Key Variables for Policy Analysis
@@ -271,13 +249,6 @@ def analyze_salt_cap_change(new_cap=10000, period=2026):
 - `state_income_tax` - State income tax
 - `adjusted_gross_income` - AGI for tax calculations
 
-### SALT-Related
-- `salt_deduction` - Actual SALT deduction taken
-- `salt_cap` - SALT cap amount
-- `reported_salt` - Total SALT before cap
-- `real_estate_taxes` - Property taxes paid
-- `state_and_local_sales_or_income_tax` - State/local taxes
-
 ### Demographics
 - `household_weight` - Survey weight
 - `state_fips` - State FIPS code
@@ -285,40 +256,7 @@ def analyze_salt_cap_change(new_cap=10000, period=2026):
 - `age` - Person age
 - `employment_income` - Wages and salaries
 
-## Current Law Context (2026)
-
-Under OBBBA (One Big Beautiful Bill Act, signed July 2025):
-
-**SALT Cap:**
-- 2025: $40,000 ($20k MFS)
-- 2026: $40,400 ($20.2k MFS)
-- 2027-2029: Annual 1% increases
-- 2030+: Reverts to $10,000
-
-**Phaseout:**
-- Begins at $500k AGI ($250k MFS)
-- 30% reduction rate
-- Floors at $10,000
-
 ## Troubleshooting
-
-### HuggingFace URL Parsing Issue
-
-The `hf://` URL format expects exactly 3 path components after the protocol. For nested paths like `districts/NY-17.h5`, download manually:
-
-```python
-from huggingface_hub import hf_hub_download
-import os
-
-file_path = hf_hub_download(
-    repo_id='policyengine/policyengine-us-data',
-    filename='districts/NY-17.h5',
-    repo_type='model',
-    token=os.environ.get('HUGGING_FACE_TOKEN')
-)
-
-sim = Microsimulation(dataset=file_path)
-```
 
 ### Weight Sanity Checks
 
