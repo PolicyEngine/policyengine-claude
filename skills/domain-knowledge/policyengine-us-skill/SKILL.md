@@ -118,10 +118,12 @@ The household ID represents a situation dictionary. To replicate in Python, you'
 ### When to Use This Skill
 
 - Creating household situations for tax/benefit calculations
-- Running microsimulations with PolicyEngine-US
-- Analyzing policy reforms and their impacts
+- Understanding variables, parameters, and policy reforms
 - Building tools that use PolicyEngine-US (calculators, analysis notebooks)
 - Debugging PolicyEngine-US calculations
+
+**For microsimulation/population analysis**, see the `policyengine-microsimulation` skill.
+**For congressional district analysis**, see the `policyengine-district-analysis` skill.
 
 ## For Contributors 💻
 
