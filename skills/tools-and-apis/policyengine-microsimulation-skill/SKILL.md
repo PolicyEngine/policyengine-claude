@@ -3,7 +3,7 @@ name: policyengine-microsimulation
 description: |
   ALWAYS USE THIS SKILL for PolicyEngine microsimulation, population-level analysis, winners/losers calculations.
   Triggers: "microsimulation", "share who would lose/gain", "policy impact", "national average", weighted analysis.
-  This skill provides the EXACT code pattern - do NOT explore the codebase, just follow the template.
+  Use this skill's code pattern, but explore the codebase to find specific parameter paths if needed.
 ---
 
 # PolicyEngine Microsimulation
