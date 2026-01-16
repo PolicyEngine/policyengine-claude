@@ -60,9 +60,11 @@ sim = Microsimulation()
 # State-level
 sim = Microsimulation(dataset='hf://policyengine/policyengine-us-data/states/NY.h5')
 
-# Congressional district
+# Congressional district - SEE policyengine-district-analysis skill for full examples
 sim = Microsimulation(dataset='hf://policyengine/policyengine-us-data/districts/NY-17.h5')
 ```
+
+**For congressional district analysis** (representative's constituents, district-level impacts), use the `policyengine-district-analysis` skill which has complete examples.
 
 ## Key MicroSeries Methods
 
