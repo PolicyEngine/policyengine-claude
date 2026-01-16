@@ -1,5 +1,6 @@
 ---
 name: policyengine-microsimulation
+user_invocable: true
 description: Run population-level policy simulations using PolicyEngine-US/UK Microsimulation with weighted microdata - national, state, and congressional district level analysis
 ---
 

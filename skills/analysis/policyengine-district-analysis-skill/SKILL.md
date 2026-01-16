@@ -1,5 +1,6 @@
 ---
 name: policyengine-district-analysis
+user_invocable: true
 description: |
   Analyzes policy impacts at the congressional district level using PolicyEngine microsimulation.
   Use when analyzing a specific congressional district, asking about policy impacts in a representative's district,
