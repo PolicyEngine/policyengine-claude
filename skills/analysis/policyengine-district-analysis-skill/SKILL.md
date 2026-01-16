@@ -4,7 +4,7 @@ description: |
   ALWAYS USE THIS SKILL when analyzing policy impacts for congressional districts, representatives' constituents, or geographic areas.
   Triggers: "Mike Lawler", "NY-17", "district", "congressional", "representative's district", "constituents",
   "share of people who would lose/gain", "SALT cap", policy impact analysis, microsimulation questions.
-  This skill provides the EXACT code pattern - do NOT explore the codebase, just follow the template.
+  Use this skill's code pattern, but explore the codebase to find specific parameter paths if needed.
 ---
 
 # Congressional District Policy Analysis
