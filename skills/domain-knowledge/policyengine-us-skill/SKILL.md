@@ -1,6 +1,6 @@
 ---
 name: policyengine-us
-description: PolicyEngine-US tax and benefit microsimulation patterns, situation creation, and common workflows
+description: PolicyEngine-US federal and state tax/benefit rules - variables, parameters, household situations. For national/state microsimulation see policyengine-microsimulation; for district-level see policyengine-district-analysis.
 ---
 
 # PolicyEngine-US
