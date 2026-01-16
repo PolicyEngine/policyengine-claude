@@ -1,6 +1,6 @@
 ---
 name: policyengine-district-analysis
-description: Congressional district microsimulation - HuggingFace district datasets, Mike Lawler NY-17, share who would lose/gain from policy changes like SALT cap
+description: PolicyEngine analysis for congressional districts and representatives' constituents - calculates share of people who would lose/gain from policy changes using HuggingFace district-level microdata
 ---
 
 # Congressional District Policy Analysis
