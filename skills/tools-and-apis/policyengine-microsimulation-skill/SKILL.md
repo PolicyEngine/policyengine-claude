@@ -1,7 +1,9 @@
 ---
 name: policyengine-microsimulation
-user_invocable: true
-description: Run population-level policy simulations using PolicyEngine-US/UK Microsimulation with weighted microdata - national, state, and congressional district level analysis
+description: |
+  ALWAYS USE THIS SKILL for PolicyEngine microsimulation, population-level analysis, winners/losers calculations.
+  Triggers: "microsimulation", "share who would lose/gain", "policy impact", "national average", weighted analysis.
+  This skill provides the EXACT code pattern - do NOT explore the codebase, just follow the template.
 ---
 
 # PolicyEngine Microsimulation
