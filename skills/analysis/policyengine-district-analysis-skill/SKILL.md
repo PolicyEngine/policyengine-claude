@@ -10,103 +10,66 @@ description: |
 
 # Congressional District Policy Analysis
 
-This skill enables district-level policy impact analysis using PolicyEngine microsimulation with weighted survey data.
-
 ## Documentation References
 
 - **Microsimulation API**: https://policyengine.github.io/policyengine-us/usage/microsimulation.html
 - **Parameter Discovery**: https://policyengine.github.io/policyengine-us/usage/parameter-discovery.html
-- **Reform.from_dict()**: https://policyengine.github.io/policyengine-core/usage/reforms.html
 
-## When to Use This Skill
+## CRITICAL: Use calc() - No Manual Weights Ever
 
-Use this skill when the user asks:
-- "What share of people in [rep]'s district would lose/gain from [policy]?"
-- "Analyze [district code like NY-17 or CA-52]"
-- "How would [policy] affect [representative]'s constituents?"
-- "Compare [district] to national average for [policy]"
+**MicroSeries handles all weighting automatically. Never access .weights or do manual math.**
 
-## Workflow
+```python
+# ✅ CORRECT
+change = reformed.calc('household_net_income', period=2026, map_to='person') - \
+         baseline.calc('household_net_income', period=2026, map_to='person')
+loser_share = (change < 0).mean()  # Weighted automatically!
 
-### 1. Load District Data
+# ❌ WRONG
+loser_share = change.weights[change.values < 0].sum() / change.weights.sum()
+```
 
-Congressional district microdata is on HuggingFace at `policyengine/policyengine-us-data/districts/`:
+## Complete Example
 
 ```python
 from policyengine_us import Microsimulation
-
-district_code = "NY-17"  # Format: {STATE}-{DISTRICT_NUMBER}
-district_sim = Microsimulation(
-    dataset=f'hf://policyengine/policyengine-us-data/districts/{district_code}.h5'
-)
-```
-
-### 2. Find Parameter Paths
-
-Search policyengine-us to find the relevant parameters:
-
-```bash
-grep -r "salt" policyengine_us/parameters/gov/irs/ --include="*.yaml"
-cat policyengine_us/parameters/gov/irs/deductions/itemized/salt_and_real_estate/cap.yaml
-```
-
-### 3. Define Reform
-
-```python
 from policyengine_core.reforms import Reform
 
+# 1. Load district data
+district = "NY-17"  # Mike Lawler's district
+baseline = Microsimulation(dataset=f'hf://policyengine/policyengine-us-data/districts/{district}.h5')
+
+# 2. Define reform (find params with: grep -r "salt" policyengine_us/parameters/gov/irs/)
 reform = Reform.from_dict({
-    'gov.irs.deductions.itemized.salt_and_real_estate.cap.JOINT': {
-        '2026-01-01.2100-12-31': 10000
-    },
-    # Include all filing statuses from the YAML
+    'gov.irs.deductions.itemized.salt_and_real_estate.cap.SINGLE': {'2026-01-01.2100-12-31': 10000},
+    'gov.irs.deductions.itemized.salt_and_real_estate.cap.JOINT': {'2026-01-01.2100-12-31': 10000},
+    'gov.irs.deductions.itemized.salt_and_real_estate.cap.SEPARATE': {'2026-01-01.2100-12-31': 5000},
+    'gov.irs.deductions.itemized.salt_and_real_estate.cap.HEAD_OF_HOUSEHOLD': {'2026-01-01.2100-12-31': 10000},
+    'gov.irs.deductions.itemized.salt_and_real_estate.cap.SURVIVING_SPOUSE': {'2026-01-01.2100-12-31': 10000},
 }, 'policyengine_us')
+
+reformed = Microsimulation(dataset=f'hf://policyengine/policyengine-us-data/districts/{district}.h5', reform=reform)
+
+# 3. Calculate impact - MicroSeries handles weights automatically!
+baseline_income = baseline.calc('household_net_income', period=2026, map_to='person')
+reformed_income = reformed.calc('household_net_income', period=2026, map_to='person')
+change = reformed_income - baseline_income
+
+# 4. Results - no manual weight math needed
+print(f"Share losing: {(change < 0).mean():.1%}")
+print(f"Average change: ${change.mean():,.0f}")
+print(f"Total impact: ${change.sum()/1e6:,.1f}M")
 ```
 
-### 4. Run Comparison
+## Compare to National
 
 ```python
-from policyengine_us import Microsimulation
-import numpy as np
-
-# District
-district_baseline = Microsimulation(dataset=f'hf://policyengine/policyengine-us-data/districts/{district_code}.h5')
-district_reformed = Microsimulation(dataset=f'hf://policyengine/policyengine-us-data/districts/{district_code}.h5', reform=reform)
-
-# National
 national_baseline = Microsimulation()
 national_reformed = Microsimulation(reform=reform)
 
-# Calculate at person level for population shares
-def get_loser_share(baseline, reformed, period=2026):
-    baseline_inc = baseline.calc('household_net_income', period=period, map_to='person')
-    reformed_inc = reformed.calc('household_net_income', period=period, map_to='person')
-    change = reformed_inc - baseline_inc
-    return change.weights[change.values < 0].sum() / change.weights.sum()
+national_change = national_reformed.calc('household_net_income', period=2026, map_to='person') - \
+                  national_baseline.calc('household_net_income', period=2026, map_to='person')
 
-district_loser_share = get_loser_share(district_baseline, district_reformed)
-national_loser_share = get_loser_share(national_baseline, national_reformed)
-
-print(f"District: {district_loser_share:.1%} lose")
-print(f"National: {national_loser_share:.1%} lose")
-print(f"Relative impact: {district_loser_share/national_loser_share:.1f}x")
+print(f"District: {(change < 0).mean():.1%} lose")
+print(f"National: {(national_change < 0).mean():.1%} lose")
 ```
-
-### 5. Present Results
-
-```markdown
-## [Policy] Impact: [District] vs National
-
-| Metric | [District] | National | Difference |
-|--------|------------|----------|------------|
-| Share losing | X.X% | Y.Y% | +Z.Z pp |
-| Average loss | $X,XXX | $Y,YYY | +$Z,ZZZ |
-
-**Key takeaway**: [District] residents are [X]x more affected because...
-```
-
-## Weight Sanity Checks
-
-- National: ~130M households, ~330M people
-- District: ~200-400k households typically
-- State: varies (CA ~14M, WY ~250k)
