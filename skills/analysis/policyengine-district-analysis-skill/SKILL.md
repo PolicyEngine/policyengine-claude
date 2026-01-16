@@ -1,10 +1,6 @@
 ---
 name: policyengine-district-analysis
-description: |
-  ALWAYS USE THIS SKILL when analyzing policy impacts for congressional districts, representatives' constituents, or geographic areas.
-  Triggers: "Mike Lawler", "NY-17", "district", "congressional", "representative's district", "constituents",
-  "share of people who would lose/gain", "SALT cap", policy impact analysis, microsimulation questions.
-  Use this skill's code pattern, but explore the codebase to find specific parameter paths if needed.
+description: Congressional district microsimulation - HuggingFace district datasets, Mike Lawler NY-17, share who would lose/gain from policy changes like SALT cap
 ---
 
 # Congressional District Policy Analysis
