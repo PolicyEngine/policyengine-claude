@@ -68,3 +68,4 @@ national_change = national_reformed.calc('household_net_income', period=2026, ma
 print(f"District: {(change < 0).mean():.1%} lose")
 print(f"National: {(national_change < 0).mean():.1%} lose")
 ```
+
