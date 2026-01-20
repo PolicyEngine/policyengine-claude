@@ -9,7 +9,7 @@
 | **policyengine-app-v2** | Blog posts | Markdown + JSON index | None - manual file creation |
 | **newsletters** | Email campaigns | HTML files | `/create-newsletter`, `/upload-draft` commands |
 | **policyengine-claude** | Claude plugins | Skills/templates | `content-orchestrator` agent (new) |
-| **teamverse** | Internal team tool | Unknown | Unknown |
+| **teamverse/CRM** | Internal CRM (campaigns, events, contacts) | React app + Express API | Email campaigns, event management |
 
 ### Current content flow
 
@@ -344,10 +344,117 @@ For PolicyEngine's scale and the importance of consistent, high-quality content 
 
 ---
 
+---
+
+## Option E: CRM/Teamverse as orchestration layer
+
+**Philosophy:** The CRM already manages campaigns and contacts. Make it the content orchestration hub.
+
+### Understanding teamverse/CRM
+
+Teamverse is PolicyEngine's internal CRM at `teamverse.vercel.app` with API at `api.teamverse.policyengine.org`. It handles:
+- Email campaigns (already integrates with Mailchimp-like workflows)
+- Event management
+- Contact segmentation (UK vs US audiences)
+- Activity tracking
+
+### Structure
+
+```
+CRM/packages/
+├── backend/
+│   └── src/
+│       └── services/
+│           └── content-generation.service.ts  # New: calls policyengine-content
+└── frontend/
+    └── src/
+        └── pages/
+            └── content/                        # New: content generation UI
+                ├── CreateContent.tsx
+                ├── ContentPreview.tsx
+                └── PublishWorkflow.tsx
+
+policyengine-content/                           # Separate package (Option A)
+└── ... (rendering logic, templates)
+```
+
+### Workflow
+
+```
+User in teamverse UI:
+  1. Paste Google Doc URL or upload markdown
+  2. Select audiences (UK, US, Global)
+  3. Select outputs (blog, newsletter, social)
+  4. Preview all generated content
+  5. Approve and publish
+
+Teamverse backend:
+  1. Calls policyengine-content API/CLI to generate assets
+  2. Creates PR to app-v2 for blog post
+  3. Creates Mailchimp drafts (or sends via existing campaign system)
+  4. Queues social posts (if Buffer/Hootsuite integrated)
+  5. Logs activity in CRM
+```
+
+### Integration
+
+- **policyengine-content**: Pure rendering library, no orchestration
+- **teamverse/CRM**: Orchestration, approval workflow, publishing
+- **app-v2**: Receives PRs from CRM
+- **newsletters**: Could be deprecated, logic moves to CRM
+- **policyengine-claude**: Thin wrapper for CLI users who don't use CRM UI
+
+### Pros
+- CRM already has user auth, activity logging, contact segmentation
+- Unified place for all external communications
+- Approval workflows can be built into CRM
+- Campaign analytics in one place
+- Non-technical users can use UI instead of CLI/Claude
+
+### Cons
+- CRM is still in development (mock data phase)
+- Adds complexity to CRM scope
+- Requires frontend development for content UI
+- Depends on CRM being operational
+
+---
+
+## Updated recommendation
+
+Given that teamverse/CRM exists and is designed for campaign management:
+
+**Hybrid approach: Option A + E**
+
+1. **policyengine-content package** (Option A):
+   - Pure Python library for rendering
+   - Templates, validators, visual regression tests
+   - CLI for power users and Claude
+   - No orchestration or publishing logic
+
+2. **teamverse/CRM as orchestration layer** (Option E):
+   - UI for content creation workflow
+   - Calls policyengine-content for rendering
+   - Handles publishing to all channels
+   - Approval workflows, activity logging
+   - Contact segmentation for targeting
+
+3. **policyengine-claude integration**:
+   - Wraps policyengine-content CLI for terminal users
+   - Can also call CRM API for full workflow
+
+This gives:
+- **Testable rendering** via Python package
+- **User-friendly UI** via CRM for non-technical users
+- **CLI access** for Claude and power users
+- **Unified campaign management** in one system
+
+---
+
 ## Questions to resolve
 
-1. **What is teamverse?** Need to understand its role to design integration
-2. **Who creates content?** Affects whether CLI or Claude integration is primary
-3. **Frequency?** Daily → invest in automation; Monthly → simpler is fine
+1. **CRM timeline?** Is teamverse ready for new features, or still in mock-data phase?
+2. **Who creates content?** Technical (CLI/Claude) vs non-technical (UI)?
+3. **Frequency?** Daily → invest in CRM UI; Monthly → CLI is fine
 4. **Social media publishing?** Manual or automated (Buffer, Hootsuite)?
-5. **Approval workflow?** Who reviews before publishing?
+5. **Approval workflow?** Single approver or multi-step?
+6. **Newsletter repo fate?** Migrate to CRM or keep separate?
