@@ -9,7 +9,7 @@
 | **policyengine-app-v2** | Blog posts | Markdown + JSON index | None - manual file creation |
 | **newsletters** | Email campaigns | HTML files | `/create-newsletter`, `/upload-draft` commands |
 | **policyengine-claude** | Claude plugins | Skills/templates | `content-orchestrator` agent (new) |
-| **teamverse/CRM** | Internal CRM (campaigns, events, contacts) | React app + Express API | Email campaigns, event management |
+| **CRM** (github.com/policyengine/crm, frontend at teamverse.vercel.app) | Internal CRM (campaigns, events, contacts) | React app + Express API | Email campaigns, event management |
 
 ### Current content flow
 
@@ -346,13 +346,13 @@ For PolicyEngine's scale and the importance of consistent, high-quality content 
 
 ---
 
-## Option E: CRM/Teamverse as orchestration layer
+## Option E: CRM as orchestration layer
 
 **Philosophy:** The CRM already manages campaigns and contacts. Make it the content orchestration hub.
 
-### Understanding teamverse/CRM
+### Understanding the CRM
 
-Teamverse is PolicyEngine's internal CRM at `teamverse.vercel.app` with API at `api.teamverse.policyengine.org`. It handles:
+The CRM repo (`github.com/policyengine/crm`) powers the teamverse frontend at `teamverse.vercel.app` with API at `api.teamverse.policyengine.org`. It handles:
 - Email campaigns (already integrates with Mailchimp-like workflows)
 - Event management
 - Contact segmentation (UK vs US audiences)
