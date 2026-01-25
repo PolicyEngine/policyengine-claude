@@ -102,12 +102,20 @@ curl -s https://pypi.org/pypi/policyengine-us/json | jq '.info.version'
 ```
 # In policyengine-us-data
 1. Add data extraction in puf.py (e.g., puf["partnership_se_income"] = ...)
-2. Add to FINANCIAL_SUBSET list
-3. CRITICAL: Bump minimum version in pyproject.toml:
+2. Add to FINANCIAL_SUBSET list in puf.py
+3. CRITICAL: Add to IMPUTED_VARIABLES in extended_cps.py
+   - This is a SEPARATE list that controls what gets imputed into Enhanced CPS!
+4. CRITICAL: Bump minimum version in pyproject.toml:
    - "policyengine-us>=1.516.0"  # Version with new variable
-4. Run `uv lock` to update lockfile
-5. Merge PR
+5. Run `uv lock` to update lockfile
+6. Merge PR
 ```
+
+**IMPORTANT: There are TWO variable lists!**
+- `FINANCIAL_SUBSET` in `puf.py` - controls what data is extracted from PUF
+- `IMPUTED_VARIABLES` in `extended_cps.py` - controls what gets imputed into Enhanced CPS
+
+If you only add to one, the variable will be extracted but not imputed!
 
 ### Why Version Bumping Matters
 
@@ -169,7 +177,8 @@ The CI uses whatever policyengine-us version satisfies the pyproject.toml constr
 - [ ] Note the PyPI version number that includes the variable
 - [ ] Create policyengine-us-data PR with:
   - [ ] Data extraction code in puf.py
-  - [ ] Variable name in FINANCIAL_SUBSET
+  - [ ] Variable name in FINANCIAL_SUBSET (puf.py)
+  - [ ] Variable name in IMPUTED_VARIABLES (extended_cps.py) ⚠️ **Don't forget this!**
   - [ ] Bumped minimum policyengine-us version in pyproject.toml
   - [ ] Updated uv.lock via `uv lock`
 - [ ] Merge policyengine-us-data PR
