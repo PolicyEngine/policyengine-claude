@@ -34,7 +34,8 @@ skills/
 │   ├── microcalibrate-skill/
 │   ├── microdf-skill/
 │   ├── microimpute-skill/
-│   └── policyengine-uk-data-skill/
+│   ├── policyengine-uk-data-skill/
+│   └── policyengine-us-data-skill/
 │
 ├── documentation/          # Writing, standards, and guides
 │   ├── policyengine-design-skill/
@@ -98,6 +99,7 @@ Specialized data manipulation and statistical analysis tools.
 | **microdf-skill** | Weighted pandas DataFrames | Survey microdata analysis, inequality, poverty calculations |
 | **microimpute-skill** | ML-based variable imputation | Filling missing values in survey data |
 | **policyengine-uk-data-skill** | UK survey data enhancement | FRS with WAS imputation patterns |
+| **policyengine-us-data-skill** | US survey data enhancement | CPS with PUF imputation, cross-repo variable workflows |
 
 ### 📝 Documentation (`documentation/`)
 

@@ -71,6 +71,7 @@
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/tools-and-apis/policyengine-core-skill",
+        "./skills/data-science/policyengine-us-data-skill",
         "./skills/technical-patterns/policyengine-aggregation-skill",
         "./skills/technical-patterns/policyengine-period-patterns-skill",
         "./skills/technical-patterns/policyengine-testing-patterns-skill",
@@ -187,6 +188,7 @@
         "./skills/data-science/microimpute-skill",
         "./skills/data-science/microcalibrate-skill",
         "./skills/data-science/l0-skill",
+        "./skills/data-science/policyengine-us-data-skill",
         "./skills/tools-and-apis/policyengine-simulation-mechanics-skill",
         "./skills/tools-and-apis/policyengine-microsimulation-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
@@ -267,6 +269,7 @@
         "./skills/data-science/microimpute-skill",
         "./skills/data-science/microcalibrate-skill",
         "./skills/data-science/l0-skill",
+        "./skills/data-science/policyengine-us-data-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill"
