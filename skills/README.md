@@ -34,10 +34,12 @@ skills/
 │   ├── microcalibrate-skill/
 │   ├── microdf-skill/
 │   ├── microimpute-skill/
-│   └── policyengine-uk-data-skill/
+│   ├── policyengine-uk-data-skill/
+│   └── policyengine-us-data-skill/
 │
 ├── documentation/          # Writing, standards, and guides
 │   ├── policyengine-design-skill/
+│   ├── policyengine-research-lookup-skill/
 │   ├── policyengine-standards-skill/
 │   ├── policyengine-user-guide-skill/
 │   └── policyengine-writing-skill/
@@ -98,6 +100,7 @@ Specialized data manipulation and statistical analysis tools.
 | **microdf-skill** | Weighted pandas DataFrames | Survey microdata analysis, inequality, poverty calculations |
 | **microimpute-skill** | ML-based variable imputation | Filling missing values in survey data |
 | **policyengine-uk-data-skill** | UK survey data enhancement | FRS with WAS imputation patterns |
+| **policyengine-us-data-skill** | US survey data enhancement | CPS with PUF imputation, cross-repo variable workflows |
 
 ### 📝 Documentation (`documentation/`)
 
@@ -106,6 +109,7 @@ Standards for writing, design, and user guidance.
 | Skill | Description | Application |
 |-------|-------------|-------------|
 | **policyengine-design-skill** | Visual identity | Colors, fonts, logos, branding for all PolicyEngine materials |
+| **policyengine-research-lookup-skill** | Find existing research | Blog posts, proof points, published analyses for evidence |
 | **policyengine-standards-skill** | Coding standards | Formatters, CI requirements, development best practices |
 | **policyengine-user-guide-skill** | Using PolicyEngine web apps | Analyzing tax and benefit policy impacts |
 | **policyengine-writing-skill** | Writing style guide | Blog posts, documentation, PR descriptions, research reports |
@@ -206,6 +210,7 @@ To add a new skill:
 - **Writing documentation?** → Review `documentation/` skills
 - **Analyzing policy impacts?** → Use `analysis/policyengine-analysis-skill`
 - **Processing survey data?** → Explore `data-science/` skills
+- **Finding proof points or research?** → Use `documentation/policyengine-research-lookup-skill`
 
 ## Version History
 

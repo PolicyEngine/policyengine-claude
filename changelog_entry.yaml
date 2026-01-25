@@ -1,10 +1,4 @@
-# Placeholder for next changelog entry
-# Format:
-# - bump: patch/minor/major
-#   changes:
-#     added:
-#       - "Description"
-#     changed:
-#       - "Description"
-#     removed:
-#       - "Description"
+- bump: minor
+  changes:
+    added:
+      - Add policyengine-research-lookup-skill for finding blog posts, proof points, and published analyses
