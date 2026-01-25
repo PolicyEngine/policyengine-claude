@@ -39,6 +39,7 @@ skills/
 │
 ├── documentation/          # Writing, standards, and guides
 │   ├── policyengine-design-skill/
+│   ├── policyengine-research-lookup-skill/
 │   ├── policyengine-standards-skill/
 │   ├── policyengine-user-guide-skill/
 │   └── policyengine-writing-skill/
@@ -108,6 +109,7 @@ Standards for writing, design, and user guidance.
 | Skill | Description | Application |
 |-------|-------------|-------------|
 | **policyengine-design-skill** | Visual identity | Colors, fonts, logos, branding for all PolicyEngine materials |
+| **policyengine-research-lookup-skill** | Find existing research | Blog posts, proof points, published analyses for evidence |
 | **policyengine-standards-skill** | Coding standards | Formatters, CI requirements, development best practices |
 | **policyengine-user-guide-skill** | Using PolicyEngine web apps | Analyzing tax and benefit policy impacts |
 | **policyengine-writing-skill** | Writing style guide | Blog posts, documentation, PR descriptions, research reports |
@@ -208,6 +210,7 @@ To add a new skill:
 - **Writing documentation?** → Review `documentation/` skills
 - **Analyzing policy impacts?** → Use `analysis/policyengine-analysis-skill`
 - **Processing survey data?** → Explore `data-science/` skills
+- **Finding proof points or research?** → Use `documentation/policyengine-research-lookup-skill`
 
 ## Version History
 
