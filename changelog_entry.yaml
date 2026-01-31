@@ -1,10 +1,4 @@
-# Placeholder for next changelog entry
-# Format:
-# - bump: patch/minor/major
-#   changes:
-#     added:
-#       - "Description"
-#     changed:
-#       - "Description"
-#     removed:
-#       - "Description"
+- bump: minor
+  changes:
+    added:
+      - SessionStart hook that auto-detects PolicyEngine repos and injects instructions to use specialized plugin agents (rules-engineer, ci-fixer, pr-pusher, etc.) instead of general-purpose agents
