@@ -335,6 +335,31 @@ reference = "https://www.law.cornell.edu/..."  # Full clickable URL
 - "[Program] categorical eligibility"
 - "[Program] benefit formula"
 
+**CRITICAL: Pay Special Attention to Income Definitions**
+
+When collecting documentation for tax credits or income-based programs, carefully note the **exact income definition** used in the statute. Many programs use modified versions of standard measures:
+
+- Look for phrases like "AGI **plus**..." or "AGI **minus**..."
+- Common patterns:
+  - "adjusted gross income plus exemptions"
+  - "modified adjusted gross income"
+  - "income as defined in section [X]"
+  - "gross income less certain deductions"
+
+**Example:** Arizona Family Tax Credit (ARS 43-1073) specifies:
+> "Arizona adjusted gross income, plus the amount subtracted for exemptions under section 43-1023"
+
+This means the eligibility threshold uses `az_agi + az_exemptions`, NOT just `az_agi`.
+
+**Documentation template for modified income:**
+```markdown
+### Income Definition
+**Statute Citation**: [Exact citation]
+**Income Measure**: [Standard measure] PLUS/MINUS [adjustments]
+**Exact Statutory Language**: "[Quote the statute]"
+**Implementation**: variable_name + adjustment_variable_name
+```
+
 ### 3. Verify Currency
 - Check "effective date" on all documents
 - Search for "final rule" to find recent changes

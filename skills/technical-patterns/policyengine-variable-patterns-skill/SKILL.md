@@ -449,6 +449,83 @@ first_person: 14_580
 fpg_multiplier: 2.0  # 200% of FPG
 ```
 
+### State Income Tax Conformity to Federal Rules
+
+**CRITICAL: State income taxes should reference federal income sources and limits, not redefine them**
+
+Most state income taxes start with federal definitions and then make specific adjustments. When implementing state income tax:
+
+**✅ CORRECT - Reference federal income sources:**
+```python
+class ms_agi(Variable):
+    """Mississippi adjusted gross income"""
+    value_type = float
+    entity = TaxUnit
+    definition_period = YEAR
+    label = "Mississippi adjusted gross income"
+    unit = USD
+
+    def formula(tax_unit, period, parameters):
+        # Start with federal AGI, which already includes
+        # federal capital loss limits and other federal rules
+        federal_agi = tax_unit("adjusted_gross_income", period)
+
+        # Apply Mississippi-specific additions/subtractions
+        ms_additions = tax_unit("ms_additions_to_agi", period)
+        ms_subtractions = tax_unit("ms_subtractions_from_agi", period)
+
+        return federal_agi + ms_additions - ms_subtractions
+```
+
+**❌ WRONG - Redefining income sources:**
+```python
+# DON'T create state-specific parameters like:
+# parameters/gov/states/ms/tax/income/income_sources.yaml
+# containing:
+#   - capital_gains
+#   - long_term_capital_gains
+#   - short_term_capital_gains
+
+# This bypasses federal limits like the $3,000 capital loss deduction limit
+```
+
+**Why this matters:**
+- Federal income tax applies capital loss limits before reporting AGI
+- State income taxes that start from federal AGI automatically inherit these limits
+- Creating separate state income source parameters bypasses federal rules
+- Results in incorrect calculations (e.g., unlimited capital loss deductions)
+
+**Common state conformity patterns:**
+1. **Full conformity** - State AGI = Federal AGI (rare)
+2. **Rolling conformity** - State follows current federal rules
+3. **Static conformity** - State follows federal rules as of a specific date
+4. **Selective conformity** - State follows federal but with specific modifications
+
+**Implementation approach:**
+- Always start with federal income sources/AGI/taxable income as the base
+- Use state parameters only for state-specific additions, subtractions, or modifications
+- Reference federal variables: `adjusted_gross_income`, `taxable_income`, etc.
+- Don't recreate federal income aggregation logic at the state level
+
+**Example - Mississippi specifics:**
+```python
+class ms_additions_to_agi(Variable):
+    """Mississippi additions to federal AGI"""
+    # Add state-specific income items not in federal AGI
+    adds = [
+        "ms_state_bond_interest",
+        "ms_other_additions"
+    ]
+
+class ms_subtractions_from_agi(Variable):
+    """Mississippi subtractions from federal AGI"""
+    # Subtract state-specific deductions
+    adds = [
+        "ms_retirement_income_exclusion",
+        "ms_other_subtractions"
+    ]
+```
+
 ---
 
 ## Code Reuse Patterns
