@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: 'Inter', sans-serif;
+            width: 1200px;
+            height: 630px;
+            overflow: hidden;
+            background: #1a2332;
+        }
+        .wrapper {
+            width: 1200px;
+            height: 630px;
+            background: #1a2332;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            position: relative;
+        }
+        .container {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            width: 100%;
+        }
+        .left { flex: 1; }
+        .badge {
+            display: inline-block;
+            background: rgba(94, 234, 212, 0.15);
+            border: 1px solid rgba(94, 234, 212, 0.3);
+            color: #5EEAD4;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+        }
+        .headline {
+            font-size: {{headline_size|default:48}}px;
+            font-weight: 800;
+            color: #FFFFFF;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+        .headline .highlight { color: #5EEAD4; }
+        .subtext {
+            font-size: 18px;
+            color: #94A3B8;
+            line-height: 1.6;
+            max-width: 480px;
+        }
+        .right {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .headshot {
+            width: 180px;
+            height: 180px;
+            border-radius: 90px;
+            object-fit: cover;
+            border: 4px solid #319795;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .quote-box {
+            background: rgba(49, 151, 149, 0.15);
+            border-left: 3px solid #319795;
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            max-width: 280px;
+        }
+        .quote {
+            font-size: 14px;
+            font-style: italic;
+            color: #E2E8F0;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        .attribution {
+            font-size: 13px;
+            font-weight: 600;
+            color: #5EEAD4;
+        }
+        .title {
+            font-size: 11px;
+            color: #64748B;
+        }
+        .logo {
+            position: absolute;
+            top: 520px;
+            left: 60px;
+            height: 28px;
+            z-index: 9999;
+        }
+        .flags {
+            position: absolute;
+            top: 40px;
+            right: 60px;
+            font-size: 36px;
+            display: flex;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="flags">{{flags}}</div>
+        <div class="container">
+            <div class="left">
+                <div class="badge">{{badge|default:Major Milestone}}</div>
+                <h1 class="headline">
+                    {{headline_prefix}}<br>
+                    <span class="highlight">{{headline_highlight}}</span>
+                </h1>
+                <p class="subtext">{{subtext}}</p>
+            </div>
+            <div class="right">
+                <img src="{{headshot_url}}" class="headshot" alt="{{attribution_name}}">
+                <div class="quote-box">
+                    <p class="quote">"{{quote}}"</p>
+                    <p class="attribution">{{attribution_name}}</p>
+                    <p class="title">{{attribution_title}}</p>
+                </div>
+            </div>
+        </div>
+        <img src="{{logo_url}}" class="logo" alt="PolicyEngine">
+    </div>
+</body>
+</html>

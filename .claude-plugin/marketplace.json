@@ -201,6 +201,28 @@
       ]
     },
     {
+      "name": "content",
+      "description": "Content generation - social images and posts from blog articles",
+      "source": "./",
+      "category": "marketing",
+      "version": "3.4.0",
+      "keywords": ["content", "social", "marketing", "images"],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "agents": [
+        "./agents/content/content-orchestrator.md"
+      ],
+      "commands": [
+        "./commands/generate-content.md"
+      ],
+      "skills": [
+        "./skills/content/content-generation-skill"
+      ]
+    },
+    {
       "name": "complete",
       "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
       "source": "./",
@@ -217,6 +239,7 @@
         "./agents/api/api-reviewer.md",
         "./agents/app/app-reviewer.md",
         "./agents/branch-comparator.md",
+        "./agents/content/content-orchestrator.md",
         "./agents/country-models/ci-fixer.md",
         "./agents/country-models/cross-program-validator.md",
         "./agents/country-models/document-collector.md",
@@ -243,6 +266,7 @@
       "commands": [
         "./commands/create-pr.md",
         "./commands/encode-policy.md",
+        "./commands/generate-content.md",
         "./commands/review-pr.md",
         "./commands/fix-pr.md"
       ],
@@ -277,7 +301,8 @@
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill",
-        "./skills/documentation/policyengine-research-lookup-skill"
+        "./skills/documentation/policyengine-research-lookup-skill",
+        "./skills/content/content-generation-skill"
       ]
     }
   ]
