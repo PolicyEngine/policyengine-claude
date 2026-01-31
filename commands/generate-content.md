@@ -1,6 +1,6 @@
 ---
 name: generate-content
-description: Generate newsletters, social images, and posts from a blog post or announcement
+description: Generate social images and posts from a blog post or announcement
 arguments:
   - name: source
     description: URL or file path to the blog post/announcement
@@ -9,7 +9,7 @@ arguments:
     description: Comma-separated list of audiences (uk, us, global)
     default: "uk,us"
   - name: outputs
-    description: Comma-separated list of outputs (newsletter, social-image, social-copy, all)
+    description: Comma-separated list of outputs (social-image, social-copy, all)
     default: "all"
 ---
 
@@ -27,9 +27,7 @@ Generate branded PolicyEngine content from a source blog post or announcement.
    - Flags and regional sections
 3. **Renders outputs**:
    - **Social images**: 1200x630 PNGs via Chrome headless
-   - **Newsletters**: HTML emails ready for Mailchimp
    - **Social copy**: Platform-optimized text for LinkedIn/X
-4. **Creates drafts** - Optionally uploads newsletters to Mailchimp as drafts
 
 ## Usage
 
@@ -39,9 +37,6 @@ Generate branded PolicyEngine content from a source blog post or announcement.
 
 # Generate only social images for UK
 /generate-content --source ./blog-post.md --audiences uk --outputs social-image
-
-# Generate newsletters only
-/generate-content --source https://policyengine.org/us/research/some-post --outputs newsletter
 ```
 
 ## Output structure
@@ -51,9 +46,6 @@ output/
 ├── social/
 │   ├── social-uk.png
 │   └── social-us.png
-├── newsletters/
-│   ├── newsletter-uk.html
-│   └── newsletter-us.html
 └── copy/
     └── social-posts.md
 ```
@@ -62,20 +54,11 @@ output/
 
 The command will prompt for any missing information:
 - **Headline**: Main announcement headline
-- **Quote**: Pull quote for social image and newsletter
+- **Quote**: Pull quote for social image
 - **Quote attribution**: Name and title of person quoted
 - **Headshot URL**: URL to headshot image for quote block
-- **CTAs**: Links for newsletter buttons
-
-## Integration with Mailchimp
-
-If `MAILCHIMP_API_KEY` is set, the command can create draft campaigns:
-- Automatically segments by audience (UK vs non-UK subscribers)
-- Sets subject line and preview text
-- Uploads HTML content
 
 ## Customization
 
-Edit templates in `skills/content/content-generation-skill/templates/`:
+Edit the template in `skills/content/content-generation-skill/templates/`:
 - `social-image.html` - Social media image template
-- `newsletter-base.html` - Newsletter HTML template

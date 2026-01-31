@@ -202,11 +202,11 @@
     },
     {
       "name": "content",
-      "description": "Content generation - newsletters, social images, and posts from blog articles",
+      "description": "Content generation - social images and posts from blog articles",
       "source": "./",
       "category": "marketing",
       "version": "3.4.0",
-      "keywords": ["content", "newsletters", "social", "marketing", "images"],
+      "keywords": ["content", "social", "marketing", "images"],
       "author": {
         "name": "PolicyEngine",
         "url": "https://github.com/PolicyEngine"

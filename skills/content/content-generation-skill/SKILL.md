@@ -1,6 +1,6 @@
 # Content generation skill
 
-Use this skill when generating marketing content from PolicyEngine blog posts, research, or announcements. This includes newsletters, social media images, and social post copy.
+Use this skill when generating marketing content from PolicyEngine blog posts, research, or announcements. This includes social media images and social post copy.
 
 ## Overview
 
@@ -18,15 +18,9 @@ This skill provides templates and patterns for generating consistent, branded Po
 - PolicyEngine logo
 - Audience-appropriate flags
 
-### Newsletters
+### Newsletters (future)
 
-HTML email templates for Mailchimp with:
-- Responsive table-based layout (email client compatible)
-- Hero section with gradient
-- Quote blocks with headshots
-- Feature highlight sections
-- CTAs with proper button styling
-- Mailchimp merge tags for personalization
+Newsletter generation is planned for a future release. The agent can generate newsletter HTML ad-hoc following brand guidelines, but there is no template file yet.
 
 ### Social post copy
 
@@ -63,32 +57,13 @@ attribution_title: Quote attribution title/role
 logo_path: Path to PolicyEngine logo
 ```
 
-### Newsletter template
-
-```
-audience: "uk" | "us" | "global"
-hero_label: Badge text (e.g., "Major announcement")
-hero_title: Main headline
-hero_subtitle: Supporting text
-quote_text: Pull quote
-quote_author: Author name
-quote_title: Author title
-quote_image: Author headshot URL
-main_content: HTML content for main story
-sections: Array of additional sections
-cta_primary_text: Primary button text
-cta_primary_url: Primary button URL
-cta_secondary_text: Secondary button text (optional)
-cta_secondary_url: Secondary button URL (optional)
-```
-
 ## Workflow
 
 1. **Parse source** - Extract key information from blog post/announcement
 2. **Generate variants** - Create UK and US versions with appropriate localization
-3. **Render assets** - Generate images via Chrome headless, HTML for newsletters
-4. **Create drafts** - Upload to Mailchimp, save files locally
-5. **Output summary** - Provide paths and links to all generated content
+3. **Render assets** - Generate images via Chrome headless
+4. **Generate social copy** - Create platform-optimized posts for LinkedIn/X
+5. **Output summary** - Provide paths to all generated content
 
 ## Brand guidelines
 
@@ -113,4 +88,3 @@ cta_secondary_url: Secondary button URL (optional)
 ## Dependencies
 
 - Google Chrome (for headless screenshot)
-- Mailchimp API key (for newsletter drafts)

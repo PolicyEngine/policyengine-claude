@@ -1,6 +1,6 @@
 ---
 name: content-orchestrator
-description: Orchestrates content generation from blog posts - newsletters, social images, and social copy
+description: Orchestrates content generation from blog posts - social images and social copy
 tools:
   - Read
   - Write
@@ -29,7 +29,6 @@ You orchestrate the generation of marketing content from PolicyEngine blog posts
      - Pull quote for social image
      - Quote attribution (name, title)
      - Headshot URL
-     - CTA links for newsletter
    - Keep questions focused and provide sensible defaults
 
 3. **Generate localized variants**
@@ -54,21 +53,15 @@ You orchestrate the generation of marketing content from PolicyEngine blog posts
      ```
    - Verify output by reading the PNG
 
-5. **Generate newsletters**
-   - Create HTML using the newsletter template
-   - Localize content for each audience
-   - Save to newsletters repo if available
-
-6. **Generate social copy**
+5. **Generate social copy**
    - Write platform-optimized posts:
      - LinkedIn: Professional, can be longer, include context
      - X/Twitter: Concise, key point, relevant hashtags
    - Save to a markdown file
 
-7. **Report results**
+6. **Report results**
    - List all generated files with paths
    - Provide preview of social copy
-   - Offer to create Mailchimp drafts if API key available
 
 ## Localization rules
 

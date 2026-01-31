@@ -4,4 +4,4 @@
       - Add policyengine-research-lookup-skill for finding blog posts, proof points, and published analyses
       - Register research-lookup skill in analysis-tools and complete plugins
       - Add policyengine-api-v2-skill for working with the next-generation microservices API
-      - Content generation plugin for creating newsletters, social images, and social posts from blog articles
+      - Content generation plugin for creating social images and social posts from blog articles
