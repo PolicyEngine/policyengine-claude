@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.1] - 2026-01-31
+
+### Changed
+- **pr-pusher, rules-engineer, ci-fixer** - Use `uv run black` instead of bare `black` command to ensure version matches uv.lock and CI
+- **Formatting guidance** - Added explicit guidance about using `uv sync --extra dev` before formatting to ensure correct tool versions
+
+## [3.4.0] - 2026-01-31
+
+### Added
+- **SessionStart hook** - Auto-detects PolicyEngine repos and injects instructions to use specialized plugin agents (rules-engineer, ci-fixer, pr-pusher, etc.) instead of general-purpose agents
+
 ## [3.3.3] - 2025-12-23
 
 ### Added
