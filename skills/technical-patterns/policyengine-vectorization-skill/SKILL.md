@@ -218,7 +218,89 @@ return where(
 
 ---
 
-## 5. Advanced Patterns
+## 5. CRITICAL: Avoiding Divide-by-Zero Warnings
+
+### The Problem with `where()` for Division
+
+`where()` evaluates **BOTH branches** before selecting. This causes divide-by-zero warnings even when the zero case wouldn't be selected:
+
+```python
+# ❌ WRONG - causes divide-by-zero warning
+proportion = where(
+    total_income > 0,
+    person_income / total_income,  # Still evaluated when total_income = 0!
+    0,
+)
+```
+
+### ✅ CORRECT: Use `np.divide` with `where` Parameter
+
+```python
+# ✅ CORRECT - only divides where mask is True
+# The `out` parameter IS the default value - positions where mask=False keep this value
+mask = total_income > 0
+proportion = np.divide(
+    person_income,
+    total_income,
+    out=np.zeros_like(person_income),  # Default to 0 where mask is False
+    where=mask,
+)
+```
+
+**How `out` works as the default:**
+- `out=np.zeros_like(...)` → default is 0
+- `out=np.ones_like(...)` → default is 1
+- Positions where `where=False` keep their `out` value unchanged
+
+### ✅ CORRECT: Alternative Mask Pattern
+
+```python
+# ✅ CORRECT - traditional mask assignment
+proportion = np.zeros_like(total_income)
+mask = total_income > 0
+proportion[mask] = person_income[mask] / total_income[mask]
+```
+
+### Common Use Cases
+
+**Proportional allocation (e.g., splitting deductions between spouses):**
+```python
+# Allocate proportionally by income
+unit_income = tax_unit.sum(person_income)
+mask = unit_income > 0
+share = np.divide(
+    person_income,
+    unit_income,
+    out=np.zeros_like(person_income),
+    where=mask,
+)
+# Default share when unit has no income
+share = where(mask, share, where(is_head, 1.0, 0.0))
+```
+
+**Calculating ratios:**
+```python
+# AGI ratio for credit calculations
+mask = us_agi != 0
+ratio = np.divide(
+    state_agi,
+    us_agi,
+    out=np.zeros_like(us_agi),
+    where=mask,
+)
+```
+
+### Real Examples in Codebase
+
+See these files for reference implementations:
+- `taxable_social_security.py` - person share of unit benefits
+- `mo_taxable_income.py` - AGI share allocation
+- `md_two_income_subtraction.py` - head's share of couple income
+- `ok_child_care_child_tax_credit.py` - AGI ratio
+
+---
+
+## 6. More Advanced Patterns
 
 ### Pattern: Vectorized Lookup Tables
 
@@ -270,7 +352,7 @@ total = household.sum(eligible_income)
 
 ---
 
-## 6. Performance Implications
+## 7. Performance Implications
 
 ### Why Vectorization Matters
 
@@ -290,7 +372,7 @@ benefits = where(incomes > 1000, 500, 100)  # All at once!
 
 ---
 
-## 7. Testing for Vectorization Issues
+## 8. Testing for Vectorization Issues
 
 ### Signs Your Code Isn't Vectorized
 
