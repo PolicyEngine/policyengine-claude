@@ -242,10 +242,12 @@ policyengine-core test policyengine_us/tests/policy/baseline/gov/states/ar/dhs/t
 
 #### Linting/Formatting
 ```bash
-# Python formatting
-make format
-# or
-black . -l 79
+# CRITICAL: Use uv run to ensure correct black version from uv.lock
+# This matches CI exactly
+uv sync --extra dev
+uv run black . -l 79
+
+# DO NOT use bare 'black' command - may use wrong version!
 
 # Commit formatting fixes
 git add -A

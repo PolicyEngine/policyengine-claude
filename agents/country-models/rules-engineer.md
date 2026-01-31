@@ -539,11 +539,14 @@ Run through the skill's Quick Checklist before finalizing.
 ### Step 7: Format and Test
 
 ```bash
-# Format code first
-make format
+# CRITICAL: Use uv run to ensure correct tool versions from uv.lock
+uv sync --extra dev  # Ensure all dev dependencies installed
+
+# Format code using locked black version
+uv run black . -l 79
 
 # Run tests to verify implementation
-make test
+uv run pytest policyengine_us/tests/policy/baseline/gov/states/STATE/ -v --maxfail=5
 
 # Fix any issues found
 ```
@@ -559,6 +562,7 @@ Create your parameter and variable files in the appropriate directories:
 ```bash
 # Just create files - DO NOT commit
 # pr-pusher will stage, commit, and push all files together
+# This ensures consistent formatting and changelog handling
 ```
 
 ## When Invoked to Fix Issues

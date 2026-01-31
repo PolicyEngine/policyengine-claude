@@ -2,3 +2,6 @@
   changes:
     added:
       - SessionStart hook that auto-detects PolicyEngine repos and injects instructions to use specialized plugin agents (rules-engineer, ci-fixer, pr-pusher, etc.) instead of general-purpose agents
+    changed:
+      - "Update pr-pusher, rules-engineer, and ci-fixer agents to use `uv run black` instead of bare `black` command to ensure version matches uv.lock and CI"
+      - "Add explicit guidance about using `uv sync --extra dev` before formatting to ensure correct tool versions"

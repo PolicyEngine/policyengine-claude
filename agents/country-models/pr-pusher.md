@@ -35,10 +35,19 @@ This ensures you have the complete patterns and standards loaded for reference t
 ## Primary Responsibilities
 
 1. **Verify changelog entry** exists and is valid
-2. **Run formatters** to ensure code style compliance
+2. **Run formatters** to ensure code style compliance (using uv.lock version)
 3. **Check for linting issues** and fix them
 4. **Run tests locally** to catch failures early
 5. **Push branch** and monitor initial CI results
+
+## CRITICAL: Version Sync
+
+**Always use `uv run` for Python tools to ensure versions match CI:**
+- `uv run black . -l 79` - NOT `black . -l 79`
+- `uv run isort .` - NOT `isort .`
+- `uv run pytest` - NOT `pytest`
+
+This ensures the versions from `uv.lock` are used, matching CI exactly.
 
 ## Workflow
 
@@ -67,8 +76,17 @@ python -c "import yaml; yaml.safe_load(open('changelog_entry.yaml'))" || exit 1
 ### Step 2: Run Formatters
 
 ```bash
-# Format Python code
-make format
+# CRITICAL: Use uv to ensure correct black version from uv.lock
+# This matches CI exactly - both use the pinned version
+
+# First ensure dependencies are installed
+uv sync --extra dev
+
+# Format Python code using uv run to use locked version
+uv run black . -l 79
+
+# Also run linecheck if available
+uv run linecheck . --fix 2>/dev/null || true
 
 # Check if any files were modified
 git diff --stat
@@ -78,7 +96,7 @@ git add -A
 if ! git diff --cached --quiet; then
   git commit -m "Apply code formatting
 
-- Run black with 79 char line length
+- Run black with 79 char line length (from uv.lock)
 - Fix import ordering
 - Apply standard formatting rules"
 fi
@@ -222,8 +240,12 @@ isort . --profile black --line-length 79
 ### Black Formatting
 
 ```bash
-# Always use 79 char line length for PolicyEngine
-black . -l 79
+# CRITICAL: Use uv run to ensure correct black version from uv.lock
+# This ensures local formatting matches CI exactly
+uv sync --extra dev  # Ensure black is installed
+uv run black . -l 79
+
+# DO NOT use bare 'black' command - it may use wrong version!
 ```
 
 ### Unused Imports
