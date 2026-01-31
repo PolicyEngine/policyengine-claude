@@ -480,6 +480,136 @@ Before submitting tests:
 
 ---
 
+## 11. Test Suite Performance Optimization
+
+### Overview
+
+PolicyEngine country model repositories have two types of tests:
+1. **Fast unit tests** - YAML tests run via policyengine-core (~seconds)
+2. **Slow microsimulation tests** - Load full datasets, simulate tax-benefit system (~minutes, high memory)
+
+### Problem
+
+Running all tests together causes:
+- Long CI times (several minutes)
+- High memory usage (>4GB)
+- Slow developer feedback loop
+- CI failures on memory-constrained environments
+
+### Solution: Pytest Markers
+
+Use `@pytest.mark.microsimulation` to separate expensive tests:
+
+```python
+# tests/microsimulation/test_reform_impacts.py
+import pytest
+
+@pytest.mark.microsimulation
+def test_reform_impact():
+    """Test that loads full dataset and runs simulation."""
+    baseline = Microsimulation()  # Loads ~100MB FRS/CPS dataset
+    # ... expensive test ...
+```
+
+### Makefile Pattern
+
+Standard pattern for country model repositories:
+
+```makefile
+test:
+	pytest -m "not microsimulation"
+
+test-microsimulation:
+	pytest -m microsimulation
+
+test-all:
+	pytest
+```
+
+This allows:
+- `make test` - Fast tests only (default for local dev)
+- `make test-all` - Everything (for final validation)
+- `make test-microsimulation` - Just the slow tests
+
+### Fixture Optimization
+
+**Problem:** Module-level baseline initialization loads datasets on import:
+
+```python
+# BAD - Loads 100MB dataset when file is imported
+baseline = Microsimulation()
+
+def test_something():
+    result = baseline.calculate(...)
+```
+
+**Solution:** Use pytest fixture with module scope:
+
+```python
+# GOOD - Loads once per test module, only when tests run
+import pytest
+
+@pytest.fixture(scope="module")
+def baseline():
+    return Microsimulation()
+
+def test_something(baseline):
+    result = baseline.calculate(...)
+```
+
+Benefits:
+- Doesn't load on import
+- Loads once per test file (not per test)
+- Memory released after module tests complete
+
+### Tests to Avoid
+
+Some test patterns are too expensive for regular execution:
+
+**Validity Tests** - Testing all variables with full dataset:
+```python
+# REMOVE - Tests 698 variables on full dataset
+def test_validity():
+    sim = Microsimulation()
+    for variable in sim.tax_benefit_system.variables:
+        sim.calculate(variable)  # Very slow!
+```
+
+These should be removed entirely, as:
+- They're redundant with integration tests
+- Take 30-60 seconds each
+- Use 200-400MB memory
+- Rarely catch bugs that integration tests don't
+
+### Configuration Files
+
+Add to `pytest.ini` or `pyproject.toml`:
+
+```ini
+[pytest]
+markers =
+    microsimulation: marks tests as slow microsimulation tests (deselect with '-m "not microsimulation"')
+```
+
+### When to Mark Tests
+
+Mark a test as `@pytest.mark.microsimulation` if it:
+- Loads full survey datasets (FRS, CPS, etc.)
+- Creates `Microsimulation()` objects
+- Runs full tax-benefit system simulations
+- Takes >5 seconds to run
+- Uses >100MB memory
+
+### Impact Metrics
+
+Example from policyengine-uk optimization:
+- Default test time: Minutes → Seconds
+- Default memory usage: >4GB → <1GB
+- CI success rate: Improved (fewer OOM failures)
+- Developer velocity: Faster feedback loop
+
+---
+
 ## For Agents
 
 When creating tests:
@@ -490,3 +620,10 @@ When creating tests:
 5. **Follow naming conventions** exactly
 6. **Include edge cases** at thresholds
 7. **Test realistic scenarios** not placeholders
+
+When optimizing test suites:
+1. **Identify slow tests** - Profile with `pytest --durations=10`
+2. **Add markers** - Mark microsimulation tests appropriately
+3. **Optimize fixtures** - Use module-scoped fixtures for expensive setup
+4. **Remove redundant tests** - Eliminate validity tests that just iterate all variables
+5. **Update Makefile** - Provide `test`, `test-all`, and `test-microsimulation` targets
