@@ -1,6 +1,5 @@
-- bump: patch
+- bump: minor
   changes:
     added:
-      - Document bracket parameter pattern for handling negative values (-.inf vs 0 thresholds) in parameter patterns skill
-    changed:
-      - Add critical warning against mixing adds/subtracts with custom formulas in implementation patterns skill
+      - Add policyengine-research-lookup-skill for finding blog posts, proof points, and published analyses
+      - Register research-lookup skill in analysis-tools and complete plugins
