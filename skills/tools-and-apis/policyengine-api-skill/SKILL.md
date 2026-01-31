@@ -275,6 +275,40 @@ def calculate(data):
     return simulation.calculate(...)
 ```
 
+### Dataset Selection Pattern
+
+**When to delegate to policyengine.py:**
+
+The API should return `None` for dataset selection in most cases, allowing policyengine.py to choose the appropriate default dataset. This creates better separation of concerns.
+
+**Pattern:**
+```python
+# In economy_service.py _setup_data() method:
+
+# ❌ DON'T: Explicitly specify datasets the API shouldn't control
+if region == "ny":
+    return "gs://policyengine-us-data/some_dataset.h5"
+
+# ✅ DO: Return None to let policyengine.py choose the default
+if region in US_STATES:
+    return None  # policyengine.py handles state-specific datasets
+
+# ✅ DO: Only specify datasets for special cases the API needs to control
+if region == "nyc":
+    return "gs://policyengine-us-data/pooled_3_year_cps_2023.h5"  # NYC exception
+```
+
+**Why this matters:**
+- Keeps dataset logic centralized in policyengine.py where it belongs
+- API doesn't need to know about state-specific dataset paths
+- Easier to update dataset selection without API changes
+- Only special cases (like NYC) should be explicitly specified in the API
+
+**When to see this pattern:**
+- Look at `policyengine_api/services/economy_service.py`
+- Look for `_setup_data()` method
+- Related to microsimulation and state-level calculations
+
 ### Testing
 
 **To see current test patterns:**
