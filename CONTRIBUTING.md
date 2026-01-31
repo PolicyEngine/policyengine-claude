@@ -14,20 +14,28 @@ This bypasses the cache and picks up changes on restart.
 
 ### Publishing Changes
 
-**IMPORTANT: Always bump the version AND update CHANGELOG.md when making changes.**
+**IMPORTANT: Always bump the version AND populate changelog_entry.yaml when making changes.**
 
 Claude Code caches plugins by version. If you push changes without bumping the version, users won't get the updates even after running `/plugin update`.
 
 1. Make your changes
-2. Bump the version in `.claude-plugin/marketplace.json`:
+2. Populate `changelog_entry.yaml` with your changes:
+   ```yaml
+   - bump: patch  # or minor/major
+     changes:
+       added:
+         - Description of new feature
+       changed:
+         - Description of change
+       fixed:
+         - Description of fix
+   ```
+3. Bump the version in `.claude-plugin/marketplace.json`:
    - Bump ALL version fields (marketplace version + each plugin's version)
    - Use semver: patch for fixes, minor for new features, major for breaking changes
-3. **Update CHANGELOG.md** (common pitfall - don't forget this!):
-   - Add a new section at the top with the new version and today's date
-   - Document changes under `### Added`, `### Changed`, `### Fixed`, or `### Removed`
-   - `changelog_entry.yaml` is NOT automatically processed - you must update CHANGELOG.md directly
-4. Commit and push to main
-5. Users can then `/plugin update` to get the new version
+4. Run `make changelog` to auto-generate CHANGELOG.md (consistent with other PE repos)
+5. Commit and push to main
+6. Users can then `/plugin update` to get the new version
 
 Example version bump:
 ```bash
@@ -35,13 +43,7 @@ Example version bump:
 sed -i '' 's/"version": "3.4.0"/"version": "3.4.1"/g' .claude-plugin/marketplace.json
 ```
 
-Example CHANGELOG.md entry:
-```markdown
-## [3.4.1] - 2026-01-31
-
-### Changed
-- **agent-name** - Description of what changed
-```
+**DO NOT edit CHANGELOG.md directly** - it's auto-generated from changelog_entry.yaml via `make changelog`.
 
 ### Adding New Skills
 

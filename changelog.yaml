@@ -1,0 +1,16 @@
+# Changelog entries in YAML format
+# New entries are appended from changelog_entry.yaml via `make changelog`
+
+- changes:
+    added:
+    - SessionStart hook that auto-detects PolicyEngine repos and injects instructions to use specialized plugin agents
+    changed:
+    - pr-pusher, rules-engineer, ci-fixer now use `uv run black` for consistent formatting with CI
+    - Added explicit guidance about using `uv sync --extra dev` before formatting
+  date: 2026-01-31 00:00:00
+  version: 3.4.1
+- changes:
+    added:
+    - Initial plugin marketplace release with 18 agents, 3 commands, 3 skills
+  date: 2025-10-18 00:00:00
+  version: 1.0.0
