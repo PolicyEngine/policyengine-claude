@@ -176,6 +176,61 @@ metadata:
 - State parameter cites only federal source (may be valid if state follows federal)
 - Federal parameter cites state source (likely error)
 
+### Phase 4.1: UK-Specific Reference Rules
+
+**For UK parameters, distinguish between:**
+
+**Establishing legislation (authority only):**
+- Primary Acts (e.g., Social Security Act 1992, Income Tax Act 2007)
+- These establish the legal framework but rarely contain specific parameter values
+- ❌ DON'T use alone for value-specific parameters
+
+**Value-containing legislation (use these):**
+- Statutory Instruments (SIs) with specific rates/amounts (e.g., SI 2024/432)
+- Finance Acts with specific section numbers (e.g., Finance Act 2023 s. 6(4))
+- Budget Orders with actual values
+- ✅ These contain the actual parameter values
+
+**Critical distinction for uprated values:**
+```yaml
+❌ BAD - Establishing legislation only:
+# minimum_wage/hourly/adult.yaml
+values:
+  2024-04-01: 11.44
+metadata:
+  reference:
+    - title: National Minimum Wage Act 1998
+      href: https://www.legislation.gov.uk/ukpga/1998/39
+# Problem: Act establishes authority but doesn't contain the £11.44 value!
+
+✅ GOOD - Specific uprating regulation:
+# minimum_wage/hourly/adult.yaml
+values:
+  2024-04-01: 11.44
+metadata:
+  reference:
+    - title: National Minimum Wage Regulations 1999 (as amended)
+      href: https://www.legislation.gov.uk/uksi/1999/584
+    - title: The National Minimum Wage (Amendment) Regulations 2024 (SI 2024/432)
+      href: https://www.legislation.gov.uk/uksi/2024/432
+# The SI actually contains the £11.44 rate!
+```
+
+**Common UK parameter types requiring verification:**
+
+1. **Tax rates and thresholds** → Finance Act with section number
+2. **Benefit amounts** → Annual uprating SIs (not original 1992 Act)
+3. **National Insurance rates** → SI amendments with specific rates
+4. **Minimum wage rates** → Annual amendment SIs with actual rates
+5. **Statistical parameters** → Don't reference legislation (use ONS/OBR data)
+6. **Monetary policy rates** → Don't reference BoE Act 1998 (use BoE announcements)
+
+**What NOT to reference:**
+- ❌ Statistical data (e.g., TV ownership rates) - not from legislation
+- ❌ Monetary policy decisions (e.g., base rate values) - policy decisions, not statutory
+- ❌ Generic Acts without the specific amending SI that contains the value
+- ❌ Benefit uprating announcements without the actual SI reference
+
 ### Phase 5: Generate Report
 
 Output a structured report for review:
