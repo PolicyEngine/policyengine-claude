@@ -3,9 +3,13 @@
   "hooks": {
     "SessionStart": [
       {
-        "type": "prompt",
-        "prompt": "POLICYENGINE AGENT AUTO-SELECTION: Detect if the current working directory contains a PolicyEngine repository.\n\nCheck for these repo patterns:\n- policyengine-us (or contains policyengine_us/)\n- policyengine-uk (or contains policyengine_uk/)\n- policyengine-core\n- policyengine-api\n- policyengine-app\n\nIf in a PolicyEngine country model repo (policyengine-us or policyengine-uk):\nINJECT THIS INSTRUCTION: 'IMPORTANT: When spawning subagents for implementation work in this repo, use the specialized PolicyEngine plugin agents instead of general-purpose agents:\n\n| Task | Use Agent |\n|------|----------|\n| Implement variables/parameters | complete:country-models:rules-engineer |\n| Create tests | complete:country-models:test-creator |\n| Fix CI failures | complete:country-models:ci-fixer |\n| Push PR with formatting | complete:country-models:pr-pusher |\n| Review implementation | complete:country-models:implementation-validator |\n\nThese agents automatically load PolicyEngine skills, run make format before commits, and follow PE coding standards. Do NOT use general-purpose agents for policyengine-us/uk work.'\n\nIf in policyengine-api:\nINJECT: 'Use complete:api:api-reviewer for API-related agent work.'\n\nIf in policyengine-app:\nINJECT: 'Use complete:app:app-reviewer for frontend-related agent work.'\n\nIf not in a PolicyEngine repo: return empty/no injection.",
-        "timeout": 5
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "POLICYENGINE AGENT AUTO-SELECTION: Detect if the current working directory contains a PolicyEngine repository.\n\nCheck for these repo patterns:\n- policyengine-us (or contains policyengine_us/)\n- policyengine-uk (or contains policyengine_uk/)\n- policyengine-core\n- policyengine-api\n- policyengine-app\n\nIf in a PolicyEngine country model repo (policyengine-us or policyengine-uk):\nINJECT THIS INSTRUCTION: 'IMPORTANT: When spawning subagents for implementation work in this repo, use the specialized PolicyEngine plugin agents instead of general-purpose agents:\n\n| Task | Use Agent |\n|------|----------|\n| Implement variables/parameters | complete:country-models:rules-engineer |\n| Create tests | complete:country-models:test-creator |\n| Fix CI failures | complete:country-models:ci-fixer |\n| Push PR with formatting | complete:country-models:pr-pusher |\n| Review implementation | complete:country-models:implementation-validator |\n\nThese agents automatically load PolicyEngine skills, run make format before commits, and follow PE coding standards. Do NOT use general-purpose agents for policyengine-us/uk work.'\n\nIf in policyengine-api:\nINJECT: 'Use complete:api:api-reviewer for API-related agent work.'\n\nIf in policyengine-app:\nINJECT: 'Use complete:app:app-reviewer for frontend-related agent work.'\n\nIf not in a PolicyEngine repo: return empty/no injection.",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
