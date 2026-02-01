@@ -40,17 +40,23 @@ for arg in $ARGUMENTS; do
         PR_ARG="$arg"
     fi
 done
+```
 
-# If no PR argument provided, use current branch's PR
-if [ -z "$PR_ARG" ]; then
-    CURRENT_BRANCH=$(git branch --show-current)
-    PR_NUMBER=$(gh pr list --head "$CURRENT_BRANCH" --json number --jq '.[0].number')
-    if [ -z "$PR_NUMBER" ]; then
-        echo "No PR found for current branch $CURRENT_BRANCH"
-        exit 1
-    fi
+**If no PR argument provided**: Use `AskUserQuestion` to ask for the PR:
+
+```
+Question: "Which PR would you like to fix?"
+Header: "PR"
+Options:
+  - "Enter PR number" (e.g., 6390)
+  - "Enter PR name/title" (e.g., "Arkansas TANF")
+```
+
+Then use the provided value to find the PR.
+
+```bash
 # If argument is a number, use it directly
-elif [[ "$PR_ARG" =~ ^[0-9]+$ ]]; then
+if [[ "$PR_ARG" =~ ^[0-9]+$ ]]; then
     PR_NUMBER=$PR_ARG
 # Otherwise, search for PR by description/title
 else
