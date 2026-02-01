@@ -1,0 +1,6 @@
+- bump: patch
+  changes:
+    added:
+      - Add reference-validator to encode-policy Phase 5 for parameter reference validation
+      - Add absolute_error_margin guidance to testing patterns skill
+      - Add AskUserQuestion prompts to review-pr and fix-pr commands for PR selection
