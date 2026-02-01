@@ -23,6 +23,11 @@ policyengine_us/tests/policy/baseline/gov/states/[state]/[agency]/[program]/
 - ❌ `2024-04` - Other months NOT supported
 - ❌ `2024-01-01` - Full dates NOT supported
 
+### Error Margin
+- Always use `absolute_error_margin: 0.1` after period line
+- Allows for small floating-point differences in calculations
+- **Never use 1** - a margin of 1 makes `true` (1) and `false` (0) indistinguishable
+
 ### Naming Convention
 - Files: `variable_name.yaml` (matches variable exactly)
 - Integration: Always `integration.yaml` (never prefixed)

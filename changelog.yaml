@@ -24,3 +24,10 @@
     - Content generation plugin for creating social images and social posts from blog
       articles
   date: 2026-01-31 11:55:22
+- version: 3.6.1
+  changes:
+    added:
+    - Add reference-validator to encode-policy Phase 5 for parameter reference validation
+    - Add absolute_error_margin guidance to testing patterns skill
+    - Add AskUserQuestion prompts to review-pr and fix-pr commands for PR selection
+  date: 2026-02-01 13:43:05

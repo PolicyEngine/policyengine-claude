@@ -1,3 +1,8 @@
+---
+name: content-generation
+description: Generate marketing content from PolicyEngine blog posts - social media images, social post copy, and branded assets
+---
+
 # Content generation skill
 
 Use this skill when generating marketing content from PolicyEngine blog posts, research, or announcements. This includes social media images and social post copy.

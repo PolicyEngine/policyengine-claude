@@ -218,7 +218,19 @@ Check ALL variable code against **policyengine-code-style-skill** and **policyen
 
 **Fix any issues found before proceeding.**
 
-## Phase 5: Run Tests & Fix
+## Phase 5: Validate, Test & Fix
+
+### Step 5A: Reference Validation
+
+Invoke @complete:country-models:reference-validator to:
+- Find parameters missing references
+- Check reference format (page numbers, detailed sections)
+- Verify references corroborate parameter values
+- Check jurisdiction match (federal vs state sources)
+
+**If issues found**: ci-fixer delegates to parameter-architect to fix reference issues.
+
+### Step 5B: Run Tests & Fix
 
 Invoke @complete:country-models:ci-fixer to:
 
@@ -345,8 +357,9 @@ Execute all phases sequentially without stopping:
    - Check naming conventions, folder structure, formatting, code style
    - Fix any issues found
 
-5. **Phase 5**: Run Tests & Fix
-   - Run tests locally, fix failures, iterate until pass
+5. **Phase 5**: Validate, Test & Fix
+   - **Step 5A:** Run reference-validator (check all parameters have proper references)
+   - **Step 5B:** Run tests locally, fix failures, iterate until pass
 
 6. **Phase 6**: Format and Push
    - Ensure changelog, run `make format`, push branch
