@@ -242,6 +242,18 @@ Invoke @complete:country-models:pr-pusher agent to:
 
 Since regulatory accuracy has been verified throughout (Checkpoints 1-3), this phase focuses on final verification and documentation.
 
+### Step 7A: Reference Validation
+
+Invoke @complete:country-models:reference-validator to:
+- Find parameters missing references
+- Check reference format (page numbers, detailed sections)
+- Verify references corroborate parameter values
+- Check jurisdiction match (federal vs state sources)
+
+**Fix any reference issues before proceeding to Step 7B.**
+
+### Step 7B: Regulatory Review
+
 Invoke @complete:country-models:program-reviewer:
 
 1. **Final regulatory spot-check** - Quick verification that implementation matches regulations
@@ -351,8 +363,9 @@ Execute all phases sequentially without stopping:
 6. **Phase 6**: Format and Push
    - Ensure changelog, run `make format`, push branch
 
-7. **Phase 7**: Regulatory Review
-   - Run program-reviewer (research regulations first, compare to code)
+7. **Phase 7**: Reference Validation & Regulatory Review
+   - **Step 7A:** Run reference-validator (check all parameters have proper references)
+   - **Step 7B:** Run program-reviewer (research regulations first, compare to code)
    - Update PR description with comprehensive documentation
 
 8. **Phase 8**: Final Summary
