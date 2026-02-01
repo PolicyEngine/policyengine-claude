@@ -218,7 +218,19 @@ Check ALL variable code against **policyengine-code-style-skill** and **policyen
 
 **Fix any issues found before proceeding.**
 
-## Phase 5: Run Tests & Fix
+## Phase 5: Validate, Test & Fix
+
+### Step 5A: Reference Validation
+
+Invoke @complete:country-models:reference-validator to:
+- Find parameters missing references
+- Check reference format (page numbers, detailed sections)
+- Verify references corroborate parameter values
+- Check jurisdiction match (federal vs state sources)
+
+**If issues found**: ci-fixer delegates to parameter-architect to fix reference issues.
+
+### Step 5B: Run Tests & Fix
 
 Invoke @complete:country-models:ci-fixer to:
 
@@ -241,18 +253,6 @@ Invoke @complete:country-models:pr-pusher agent to:
 ## Phase 7: Final Review & PR Description
 
 Since regulatory accuracy has been verified throughout (Checkpoints 1-3), this phase focuses on final verification and documentation.
-
-### Step 7A: Reference Validation
-
-Invoke @complete:country-models:reference-validator to:
-- Find parameters missing references
-- Check reference format (page numbers, detailed sections)
-- Verify references corroborate parameter values
-- Check jurisdiction match (federal vs state sources)
-
-**Fix any reference issues before proceeding to Step 7B.**
-
-### Step 7B: Regulatory Review
 
 Invoke @complete:country-models:program-reviewer:
 
@@ -357,15 +357,15 @@ Execute all phases sequentially without stopping:
    - Check naming conventions, folder structure, formatting, code style
    - Fix any issues found
 
-5. **Phase 5**: Run Tests & Fix
-   - Run tests locally, fix failures, iterate until pass
+5. **Phase 5**: Validate, Test & Fix
+   - **Step 5A:** Run reference-validator (check all parameters have proper references)
+   - **Step 5B:** Run tests locally, fix failures, iterate until pass
 
 6. **Phase 6**: Format and Push
    - Ensure changelog, run `make format`, push branch
 
-7. **Phase 7**: Reference Validation & Regulatory Review
-   - **Step 7A:** Run reference-validator (check all parameters have proper references)
-   - **Step 7B:** Run program-reviewer (research regulations first, compare to code)
+7. **Phase 7**: Regulatory Review
+   - Run program-reviewer (research regulations first, compare to code)
    - Update PR description with comprehensive documentation
 
 8. **Phase 8**: Final Summary
