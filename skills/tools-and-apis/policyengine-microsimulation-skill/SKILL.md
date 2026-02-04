@@ -20,6 +20,25 @@ description: |
 
 **MicroSeries handles all weighting automatically. Never access .weights or do manual weight math.**
 
+### NEVER strip weights with .values
+
+`calc()` and `calculate()` return MicroSeries with embedded weights. Calling `.values` strips them and returns a plain numpy array where `.mean()` is **unweighted**.
+
+```python
+# ❌ WRONG - .values strips weights, .mean() is UNWEIGHTED
+result = sim.calc("household_net_income", period=2025).values
+wrong_mean = result.mean()  # Unweighted!
+
+# ❌ WRONG - same problem with .to_numpy()
+result = sim.calc("household_net_income", period=2025).to_numpy()
+
+# ✅ CORRECT - keep as MicroSeries, all operations are weighted
+result = sim.calc("household_net_income", period=2025)
+correct_mean = result.mean()  # Weighted automatically!
+```
+
+### Correct patterns
+
 ```python
 # ✅ CORRECT - MicroSeries handles everything
 change = reformed.calc('household_net_income', period=2026, map_to='person') - \

@@ -225,6 +225,8 @@ universal_credit = simulation.calculate("universal_credit", 2025)
 household_net_income = simulation.calculate("household_net_income", 2025)
 ```
 
+**IMPORTANT for population-level analysis (Microsimulation):** `calc()` and `calculate()` return MicroSeries with embedded weights. Never call `.values` or `.to_numpy()` on them — this strips weights and makes aggregations like `.mean()` unweighted. Keep results as MicroSeries and use its methods directly.
+
 **Common Variables:**
 
 **Income:**
