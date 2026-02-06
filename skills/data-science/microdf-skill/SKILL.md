@@ -126,6 +126,17 @@ income_series.gini()
 income_series.percentile(50)
 ```
 
+**WARNING: `.values` and `.to_numpy()` strip weights.** These methods now emit a `UserWarning` because they return plain numpy arrays where operations like `.mean()` are unweighted. Always use MicroSeries methods directly for weighted calculations:
+
+```python
+# ❌ WRONG - strips weights, .mean() is unweighted
+ms.values.mean()
+ms.to_numpy().mean()
+
+# ✅ CORRECT - weighted automatically
+ms.mean()
+```
+
 ### Working with PolicyEngine Results
 
 ```python
