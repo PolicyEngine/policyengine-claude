@@ -1,0 +1,6 @@
+- bump: minor
+  changes:
+    added:
+      - Add policyengine-policy-lookup skill for answering factual questions about benefit amounts, tax rates, and policy parameter values
+      - Skill triggers on queries like "what is the TANF benefit", "how much SNAP", "max benefit amount", "EITC for a family"
+      - Includes patterns for household simulation, state comparison, family size variation, and variable discovery
