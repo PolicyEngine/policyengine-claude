@@ -23,6 +23,7 @@
       "hooks": "./hooks/hooks.json",
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/tools-and-apis/policyengine-policy-lookup-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/documentation/policyengine-writing-skill"
@@ -160,6 +161,7 @@
       "license": "MIT",
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/tools-and-apis/policyengine-policy-lookup-skill",
         "./skills/tools-and-apis/policyengine-python-client-skill",
         "./skills/tools-and-apis/policyengine-simulation-mechanics-skill",
         "./skills/tools-and-apis/policyengine-microsimulation-skill",
@@ -272,6 +274,7 @@
       ],
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/tools-and-apis/policyengine-policy-lookup-skill",
         "./skills/tools-and-apis/policyengine-python-client-skill",
         "./skills/tools-and-apis/policyengine-simulation-mechanics-skill",
         "./skills/tools-and-apis/policyengine-microsimulation-skill",
