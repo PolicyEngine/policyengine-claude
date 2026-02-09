@@ -16,9 +16,10 @@ PolicyEngine's visual identity and branding guidelines for creating consistent u
 - **Blue** (#2C6496) - Secondary color (links, charts, headers)
 
 **Typography:**
-- **Charts:** Roboto Serif
-- **Web app:** System fonts (sans-serif)
+- **Charts (Plotly):** Roboto Serif
+- **Web app (app-v2):** Inter (via Mantine default)
 - **Streamlit apps:** Default sans-serif
+- **Standalone React tools:** Use any distinctive font (Inter, DM Sans, etc.) — not Roboto
 
 **Logo:**
 - Used in charts (bottom right)
@@ -547,10 +548,10 @@ BLUE_PRIMARY_V2 = "#026AA2"  # From app-v2
 font=dict(family="Roboto Serif")
 ```
 
-**For web apps:**
+**For web apps (app-v2):**
 ```javascript
-// System font stack
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ...
+// Mantine default — Inter
+font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 ```
 
 **Loading Google Fonts:**
@@ -980,7 +981,7 @@ WHITE = "#FFFFFF"
 | Context | Font |
 |---------|------|
 | Charts | Roboto Serif |
-| Web app | System sans-serif |
+| Web app (app-v2) | Inter (Mantine default) |
 | Streamlit | Default sans-serif |
 | Code blocks | Monospace |
 
