@@ -302,6 +302,7 @@
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill",
         "./skills/documentation/policyengine-research-lookup-skill",
+        "./skills/documentation/policyengine-plugin-maintenance-skill",
         "./skills/content/content-generation-skill"
       ]
     }
