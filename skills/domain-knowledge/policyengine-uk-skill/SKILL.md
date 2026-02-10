@@ -1,6 +1,16 @@
 ---
 name: policyengine-uk
-description: PolicyEngine-UK tax and benefit microsimulation patterns, situation creation, and common workflows
+description: |
+  PolicyEngine-UK tax and benefit rules - variables, parameters, household situations, and common workflows.
+  USE THIS SKILL for single-household benefit/tax calculations and eligibility questions about the UK.
+  Triggers: "what would", "how much would a", "benefit be", "eligible for", "qualify for",
+  "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
+  "earning £", "making £", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",
+  "what benefits", "how much tax", "what would I get", "what would they get",
+  "Universal Credit", "child benefit", "pension credit", "housing benefit", "council tax",
+  "income tax", "national insurance", "JSA", "ESA", "PIP", "disability living allowance",
+  "working tax credit", "child tax credit", "Scotland", "Wales", "UK".
+  For population-level microsimulation see policyengine-microsimulation.
 ---
 
 # PolicyEngine-UK

@@ -1,6 +1,15 @@
 ---
 name: policyengine-us
-description: PolicyEngine-US federal and state tax/benefit rules - variables, parameters, household situations. For national/state microsimulation see policyengine-microsimulation; for district-level see policyengine-district-analysis.
+description: |
+  PolicyEngine-US federal and state tax/benefit rules - variables, parameters, household situations.
+  USE THIS SKILL for single-household benefit/tax calculations and eligibility questions.
+  Triggers: "what would", "how much would a", "benefit be", "eligible for", "qualify for",
+  "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
+  "earning $", "making $", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",
+  "what benefits", "how much tax", "what would I get", "what would they get",
+  "TANF", "SNAP", "EITC", "CTC", "SSI", "WIC", "Section 8", "Medicaid", "ACA", "food stamps",
+  "child tax credit", "earned income", "supplemental security", "housing voucher".
+  For national/state microsimulation see policyengine-microsimulation; for district-level see policyengine-district-analysis.
 ---
 
 # PolicyEngine-US
