@@ -448,6 +448,42 @@ for state in states:
     }
 ```
 
+### Pattern 5: Benefit Cliff Analysis
+
+Use axes to sweep income and find where benefits drop sharply:
+
+```python
+from policyengine_us import Simulation
+import numpy as np
+
+# Setup situation with axes (see Pattern 1 for full situation dict)
+# ... situation with axes varying employment_income from 0 to max_income ...
+
+sim = Simulation(situation=situation)
+
+# Use map_to to align person-level income with unit-level benefits
+income = sim.calculate("employment_income", 2026, map_to="household")
+benefit = sim.calculate("tanf", 2026)  # or ca_tanf, snap, etc.
+net_income = sim.calculate("household_net_income", 2026)
+
+# Find the cliff: biggest single-step drop in benefits
+benefit_diffs = np.diff(benefit)
+biggest_drop_idx = np.argmin(benefit_diffs)
+cliff_size = benefit[biggest_drop_idx] - benefit[biggest_drop_idx + 1]
+
+# Find all cliffs (MTR > 100% = net income drops when earnings rise)
+net_diffs = np.diff(net_income)
+income_diffs = np.diff(income)
+mtr = 1 - net_diffs / np.where(income_diffs > 0, income_diffs, 1)
+cliff_indices = np.where(mtr > 1)[0]
+```
+
+**Tips:**
+- Use 1000+ axis points for fine granularity around cliffs
+- Set the income range to cover the expected phase-out zone
+- `household_net_income` captures interactions across all programs (TANF, SNAP, taxes, etc.)
+- For state-specific benefits, use the state-prefixed variable (e.g., `ca_tanf`, `ny_tanf`)
+
 ## Helper Scripts
 
 This skill includes helper scripts in the `scripts/` directory:
@@ -523,33 +559,77 @@ situation_single = situation.copy()
 situation_single.pop("axes", None)
 ```
 
-### Pitfall 5: State-Specific Variables
-**Problem:** Using NYC-specific variables without `in_nyc: True`
+### Pitfall 5: Geography Variables
+**Problem:** Missing geography inputs for sub-state programs (county, city, region).
 
-**Solution:** Set NYC flag for NY residents in NYC:
+Many state programs vary by county or region. Set these on the `household` entity:
+
 ```python
 "households": {
     "household": {
-        "state_name": {2026: "NY"},
-        "in_nyc": {2026: True}  # Required for NYC taxes
+        "members": [...],
+        "state_name": {2026: "CA"},
+        # County (UPPER_SNAKE_CASE with state suffix):
+        "county_str": {2026: "LOS_ANGELES_COUNTY_CA"},
+        # City flags (boolean):
+        "in_nyc": {2026: True},   # NYC taxes
+        "in_la": {2026: True},    # LA-specific programs
     }
 }
 ```
 
-## NYC Handling
+**County format:** `county_str` uses `UPPER_SNAKE_CASE_STATE` (e.g., `"LOS_ANGELES_COUNTY_CA"`,
+`"HARRIS_COUNTY_TX"`, `"COOK_COUNTY_IL"`).
 
-For New York City residents:
+**SPM unit flags** for state program variants:
 ```python
-situation = {
-    # ... people setup ...
-    "households": {
-        "household": {
-            "members": ["person"],
-            "state_name": {2026: "NY"},
-            "in_nyc": {2026: True}  # Enable NYC tax calculations
-        }
+"spm_units": {
+    "spm_unit": {
+        "members": [...],
+        "ca_tanf_exempt": {2026: False},  # CA TANF exempt vs non-exempt
     }
 }
+```
+
+**Discovering geography variables:** Search for county/region variables relevant to your program:
+```python
+system = CountryTaxBenefitSystem()
+geo_vars = [v for v in system.variables if 'county' in v or 'region' in v]
+```
+
+## Discovering State-Specific Variables
+
+State variables follow the naming convention `{state_code}_{program}` (e.g., `ca_tanf`, `ny_tanf`, `dc_tanf`).
+
+**Finding variables for a state or program:**
+```python
+from policyengine_us import CountryTaxBenefitSystem
+system = CountryTaxBenefitSystem()
+
+# All variables for a state
+ca_vars = [v for v in system.variables if v.startswith("ca_")]
+
+# All TANF variables (any state)
+tanf_vars = [v for v in system.variables if "tanf" in v]
+
+# Check a variable's entity (person, spm_unit, household, etc.)
+var = system.variables["ca_tanf"]
+print(var.entity.key)  # "spm_unit"
+```
+
+**Common state program prefixes:**
+- `{state}_tanf` — TANF/cash assistance (entity: `spm_unit`)
+- `{state}_income_tax` — State income tax (entity: `tax_unit`, but just use `state_income_tax`)
+- `{state}_eitc` — State EITC (entity: `tax_unit`)
+- `{state}_ctc` — State child tax credit (entity: `tax_unit`)
+- `{state}_cdcc` — State child/dependent care credit (entity: `tax_unit`)
+
+**Finding parameters for a state:**
+```python
+params = CountryTaxBenefitSystem().parameters
+# Browse: params.gov.states.{state_code}
+ca_params = params.gov.states.ca
+print([c for c in ca_params.children])  # List agencies/programs
 ```
 
 ## Version Compatibility
