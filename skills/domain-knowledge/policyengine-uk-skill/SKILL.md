@@ -160,16 +160,16 @@ When users ask about a specific policy value (tax rate, personal allowance, bene
 look up the parameter directly instead of running a simulation.
 
 ```python
-from policyengine_uk import parameters
+from policyengine_uk import CountryTaxBenefitSystem
 
-params = parameters()
+params = CountryTaxBenefitSystem().parameters
 
-# Income tax personal allowance
+# Income tax personal allowance (scalar parameter — call with date string)
 personal_allowance = params.gov.hmrc.income_tax.allowances.personal_allowance.amount("2026-01-01")
 print(f"Personal Allowance: £{personal_allowance:,.0f}")
 
 # Basic rate of income tax
-basic_rate = params.gov.hmrc.income_tax.rates.uk.brackets[0].rate("2026-01-01")
+basic_rate = params.gov.hmrc.income_tax.rates.uk.brackets.children["0"].rate("2026-01-01")
 print(f"Basic rate: {basic_rate:.0%}")
 
 # Universal Credit standard allowance for a single person 25+
@@ -178,6 +178,9 @@ uc_standard = params.gov.dwp.universal_credit.elements.standard_allowance.amount
 # Child Benefit weekly rate for first child
 child_benefit = params.gov.hmrc.child_benefit.amount.first("2026-01-01")
 ```
+
+**IMPORTANT**: Use `CountryTaxBenefitSystem().parameters` to load the parameter tree.
+For indexed/bracket parameters, use `.children["N"]` (string key), NOT `[N]`.
 
 **When to use parameter lookup vs simulation:**
 - **Parameter lookup**: "What is the personal allowance?", "What is the basic tax rate?", "What is UC standard allowance?"

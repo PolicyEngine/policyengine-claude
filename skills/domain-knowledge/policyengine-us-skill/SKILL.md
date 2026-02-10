@@ -136,26 +136,31 @@ When users ask about a specific policy value (maximum benefit, tax rate, income 
 look up the parameter directly instead of running a simulation. This is faster and more direct.
 
 ```python
-from policyengine_us import parameters
+from policyengine_us import CountryTaxBenefitSystem
 
 # Load the parameter tree
-params = parameters()
+params = CountryTaxBenefitSystem().parameters
 
 # Look up a specific parameter value for 2026
 # Navigate the tree: params.gov.<agency>.<program>.<parameter>
+# For scalar parameters, call with a date string:
 ctc_amount = params.gov.irs.credits.ctc.amount.base_amount("2026-01-01")
 print(f"CTC base amount: ${ctc_amount:,.0f}")  # $2,000
 
-# SNAP max allotment for a family of 4
-snap_max = params.gov.usda.snap.income.max_allotment[4]("2026-01-01")
-
-# State-specific: DC TANF standard payment for family of 3
-dc_tanf_max = params.gov.states.dc.dhs.tanf.standard_payment.amount[3]("2026-01-01")
+# For bracket/indexed parameters (by family size, income bracket, etc.),
+# use .children["N"] where N is a string:
+dc_tanf_max = params.gov.states.dc.dhs.tanf.standard_payment.amount.children["3"]("2026-01-01")
 print(f"DC TANF max (family of 3): ${dc_tanf_max:,.0f}/month")
 
+# SNAP max allotment for a family of 4
+snap_max = params.gov.usda.snap.income.max_allotment.children["4"]("2026-01-01")
+
 # Federal poverty level for family of 3
-fpl = params.gov.hhs.poverty_guideline[3]("2026-01-01")
+fpl = params.gov.hhs.poverty_guideline.children["3"]("2026-01-01")
 ```
+
+**IMPORTANT**: For indexed/bracket parameters, always use `.children["N"]` (string key),
+NOT `[N]` (integer subscript). The `[N]` syntax does not work on ParameterNode objects.
 
 **When to use parameter lookup vs simulation:**
 - **Parameter lookup**: "What is the maximum TANF benefit?", "What is the CTC amount?", "What is the poverty line?"
