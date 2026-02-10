@@ -689,6 +689,51 @@ make build      # Production build (apps)
 - **Problem**: Missing `uv run` prefix
 - **Solution**: Use `uv run pytest` instead of `pytest`
 
+## Repo rename checklist
+
+When renaming a PolicyEngine repository, references to the old name are often hardcoded across the org. Follow this checklist to avoid broken links, builds, and embeds.
+
+### 1. Search the org for all references
+
+```bash
+# Find every file in the org that mentions the old repo name
+gh api "/search/code?q=org:PolicyEngine+OLD_REPO_NAME" --paginate | jq '.items[] | {repo: .repository.full_name, path: .path}'
+```
+
+Review every result -- some will be docs/changelogs (safe to update later), others will break builds if not updated before the rename.
+
+### 2. Common places where repo names are hardcoded
+
+| Location | What to look for | Example |
+|----------|-----------------|---------|
+| **GitHub Actions workflows** | `PUBLIC_URL`, checkout paths, artifact names | `PUBLIC_URL: https://policyengine.github.io/OLD_NAME` |
+| **Iframe embeds in policyengine-app-v2** | `src` URLs in page components | `app/src/pages/*.jsx` referencing `OLD_NAME.github.io` |
+| **README badges and links** | Shield.io badges, repo links | `![CI](https://github.com/PolicyEngine/OLD_NAME/actions/...)` |
+| **package.json / pyproject.toml** | `name`, `repository`, `homepage` fields | `"name": "old-name"` |
+| **GitHub Pages URLs** | Any URL containing `policyengine.github.io/OLD_NAME` | Links in docs, blog posts, other READMEs |
+| **CLAUDE.md** | Repo-specific instructions that reference the old name | Paths, URLs, skill references |
+| **Import paths (Python)** | Package name derived from repo name | `from old_name import ...` |
+| **Vercel / deployment configs** | Project names, domain aliases | `vercel.json`, Vercel dashboard settings |
+| **policyengine-claude skills** | Skill files that reference the repo | Links in `SKILL.md` files across this plugin |
+
+### 3. Cross-repo coordination
+
+If the renamed repo is embedded in another site (e.g., via iframe or GitHub Pages), **both repos need updates**:
+
+1. **In the renamed repo**: Update `PUBLIC_URL` and any self-referencing URLs in workflows, configs, and docs.
+2. **In the embedding repo**: Update iframe `src` URLs, links, and any CI that depends on the old name.
+3. **Deploy order**: Push the renamed repo's changes first (so the new URL is live), then update the embedding repo.
+
+### 4. After renaming
+
+- GitHub automatically redirects the old repo URL, but **GitHub Pages URLs do not redirect** -- `policyengine.github.io/old-name` will 404.
+- Verify GitHub Pages is re-enabled under the new repo settings if it was active.
+- Run the org-wide search again to catch anything you missed:
+  ```bash
+  gh api "/search/code?q=org:PolicyEngine+OLD_REPO_NAME" --paginate | jq '.total_count'
+  ```
+- Update any external references (blog posts on policyengine.org, Notion docs, etc.) that link to the old GitHub Pages URL.
+
 ## Best Practices Checklist
 
 ### Code Quality
