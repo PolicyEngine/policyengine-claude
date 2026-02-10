@@ -118,20 +118,32 @@ find skills/ -name "SKILL.md" -exec sed -i '' 's/"2026"/"2027"/g' {} +
 
 ## Making changes effective
 
-### For immediate testing (current machine only)
+### CRITICAL: Cache invalidation
 
-1. Edit files in marketplace source: `~/.claude/plugins/marketplaces/policyengine-claude/`
-2. Copy to cache: `cp <source> ~/.claude/plugins/cache/policyengine-claude/complete/<version>/`
-3. Start a new Claude Code session to pick up changes
+Claude Code caches plugins and **does NOT pick up file edits automatically**. Manually editing
+files in the cache directory (`~/.claude/plugins/cache/`) has no effect — Claude Code rebuilds
+the cache from the marketplace repo's git state on session start.
 
-**Warning**: Cache may be rebuilt from marketplace repo on session start, overwriting manual cache edits. Always commit changes to the marketplace repo.
+**To test local changes:**
 
-### For permanent changes
+```bash
+# 1. Make changes in the marketplace repo and commit
+cd ~/.claude/plugins/marketplaces/policyengine-claude
+# ... edit files, git add, git commit ...
 
-1. Create branch in marketplace repo
-2. Make changes and commit
-3. Push and create PR
-4. After merge, users get updates on next plugin update (`/update-plugins` or automatic)
+# 2. Clear the plugin cache (this is the key step)
+rm -rf ~/.claude/plugins/cache/policyengine-claude
+
+# 3. Start a new Claude Code session — it rebuilds from the marketplace repo
+```
+
+**To publish changes for all users:**
+
+1. Create branch in marketplace repo, make changes, commit, push
+2. Create and merge PR to main
+3. Switch marketplace repo back to main: `git checkout main && git pull`
+4. Clear cache: `rm -rf ~/.claude/plugins/cache/policyengine-claude`
+5. Start new session to verify
 
 ## Common issues
 
