@@ -1,10 +1,10 @@
 ---
 name: policyengine-python-client
 description: |
-  Using PolicyEngine programmatically via Python client or REST API.
-  Use this skill when users ask about the PolicyEngine Python package, API endpoints, REST API,
-  batch analysis, or programmatic access. NOT for answering "what would my benefit be" household
-  questions — use policyengine-us or policyengine-uk for those.
+  ONLY use this skill when users explicitly ask about the PolicyEngine Python package installation,
+  REST API endpoints, API authentication, rate limits, or policyengine.py client library.
+  DO NOT use for household benefit/tax calculations — ALWAYS use policyengine-us or policyengine-uk instead.
+  This skill is about the API/client tooling itself, not about calculating benefits or taxes.
 ---
 
 # PolicyEngine Python Client
