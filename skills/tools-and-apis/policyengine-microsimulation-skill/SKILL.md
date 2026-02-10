@@ -28,14 +28,14 @@ description: |
 
 ```python
 # ❌ WRONG - .values strips weights, .mean() is UNWEIGHTED
-result = sim.calc("household_net_income", period=2025).values
+result = sim.calc("household_net_income", period=2026).values
 wrong_mean = result.mean()  # Unweighted!
 
 # ❌ WRONG - same problem with .to_numpy()
-result = sim.calc("household_net_income", period=2025).to_numpy()
+result = sim.calc("household_net_income", period=2026).to_numpy()
 
 # ✅ CORRECT - keep as MicroSeries, all operations are weighted
-result = sim.calc("household_net_income", period=2025)
+result = sim.calc("household_net_income", period=2026)
 correct_mean = result.mean()  # Weighted automatically!
 ```
 
