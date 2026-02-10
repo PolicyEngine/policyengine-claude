@@ -334,6 +334,22 @@ incomes = simulation.calculate("employment_income", 2026)  # Array of 1001 value
 taxes = simulation.calculate("income_tax", 2026)  # Array of 1001 values
 ```
 
+**Important — multi-person households with axes:**
+
+Person-level variables (like `employment_income`) return `n_people × count` values,
+while unit-level variables (like `universal_credit`, `income_tax`) return just `count` values.
+Use `map_to` to aggregate person-level results to a group entity for aligned arrays:
+
+```python
+# map_to sums person-level values to the group level
+income = simulation.calculate("employment_income", 2026, map_to="household")  # (1001,)
+uc = simulation.calculate("universal_credit", 2026)  # (1001,) - already at benunit level
+# These arrays are now aligned and can be plotted/compared directly
+```
+
+Valid `map_to` targets: `"household"`, `"benunit"`, `"family"`.
+Use singular form (e.g., `"household"` not `"households"`).
+
 **Important:** Remove axes before creating single-point simulations:
 ```python
 situation_single = situation.copy()
@@ -455,7 +471,8 @@ situation_with_axes = {
 }
 
 sim = Simulation(situation=situation_with_axes)
-incomes = sim.calculate("employment_income", 2026)
+# Use map_to for person-level vars to align with unit-level outputs
+incomes = sim.calculate("employment_income", 2026, map_to="household")
 net_incomes = sim.calculate("household_net_income", 2026)
 
 # Calculate marginal tax rate
