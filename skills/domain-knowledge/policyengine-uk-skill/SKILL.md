@@ -9,6 +9,8 @@ description: |
   "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
   "earning £", "making £", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",
   "what benefits", "how much tax", "what would I get", "what would they get",
+  "what is the rate", "what is the threshold", "personal allowance", "maximum benefit",
+  "income limit", "benefit amount", "how much is", "compare",
   "Universal Credit", "child benefit", "pension credit", "housing benefit", "council tax",
   "income tax", "national insurance", "JSA", "ESA", "PIP", "disability living allowance",
   "working tax credit", "child tax credit", "Scotland", "Wales", "UK".
@@ -152,8 +154,42 @@ policyengine.org/uk/household?household=12345
 **Equivalent Python (conceptually):**
 The household ID represents a situation dictionary. To replicate in Python, you'd create a similar situation.
 
+### Parameter lookup (for "what is the rate/threshold/allowance" questions)
+
+When users ask about a specific policy value (tax rate, personal allowance, benefit amount, etc.),
+look up the parameter directly instead of running a simulation.
+
+```python
+from policyengine_uk import parameters
+
+params = parameters()
+
+# Income tax personal allowance
+personal_allowance = params.gov.hmrc.income_tax.allowances.personal_allowance.amount("2026-01-01")
+print(f"Personal Allowance: £{personal_allowance:,.0f}")
+
+# Basic rate of income tax
+basic_rate = params.gov.hmrc.income_tax.rates.uk.brackets[0].rate("2026-01-01")
+print(f"Basic rate: {basic_rate:.0%}")
+
+# Universal Credit standard allowance for a single person 25+
+uc_standard = params.gov.dwp.universal_credit.elements.standard_allowance.amount.single.over_25("2026-01-01")
+
+# Child Benefit weekly rate for first child
+child_benefit = params.gov.hmrc.child_benefit.amount.first("2026-01-01")
+```
+
+**When to use parameter lookup vs simulation:**
+- **Parameter lookup**: "What is the personal allowance?", "What is the basic tax rate?", "What is UC standard allowance?"
+- **Simulation**: "What would my tax be if I earn £30k?", "Am I eligible for Universal Credit?"
+
+**Finding parameter paths:**
+- Browse: https://policyengine.org/uk/parameters
+- State parameters follow pattern: `params.gov.<department>.<program>.<parameter>`
+
 ### When to Use This Skill
 
+- Looking up policy parameter values (rates, thresholds, allowances, benefit amounts)
 - Creating household situations for tax/benefit calculations
 - Running microsimulations with PolicyEngine-UK
 - Analyzing policy reforms and their impacts

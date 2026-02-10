@@ -9,6 +9,8 @@ description: |
   "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
   "earning $", "making $", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",
   "what benefits", "how much tax", "what would I get", "what would they get",
+  "what is the maximum", "what is the rate", "what is the threshold", "poverty line",
+  "income limit", "benefit amount", "how much is", "maximum benefit", "compare states",
   "TANF", "SNAP", "EITC", "CTC", "SSI", "WIC", "Section 8", "Medicaid", "ACA", "food stamps",
   "child tax credit", "earned income", "supplemental security", "housing voucher".
   For national/state microsimulation see policyengine-microsimulation; for district-level see policyengine-district-analysis.
@@ -128,8 +130,45 @@ policyengine.org/us/household?household=12345
 **Equivalent Python (conceptually):**
 The household ID represents a situation dictionary. To replicate in Python, you'd create a similar situation.
 
+### Parameter lookup (for "what is the maximum/rate/threshold" questions)
+
+When users ask about a specific policy value (maximum benefit, tax rate, income threshold, etc.),
+look up the parameter directly instead of running a simulation. This is faster and more direct.
+
+```python
+from policyengine_us import parameters
+
+# Load the parameter tree
+params = parameters()
+
+# Look up a specific parameter value for 2026
+# Navigate the tree: params.gov.<agency>.<program>.<parameter>
+ctc_amount = params.gov.irs.credits.ctc.amount.base_amount("2026-01-01")
+print(f"CTC base amount: ${ctc_amount:,.0f}")  # $2,000
+
+# SNAP max allotment for a family of 4
+snap_max = params.gov.usda.snap.income.max_allotment[4]("2026-01-01")
+
+# State-specific: DC TANF standard payment for family of 3
+dc_tanf_max = params.gov.states.dc.dhs.tanf.standard_payment.amount[3]("2026-01-01")
+print(f"DC TANF max (family of 3): ${dc_tanf_max:,.0f}/month")
+
+# Federal poverty level for family of 3
+fpl = params.gov.hhs.poverty_guideline[3]("2026-01-01")
+```
+
+**When to use parameter lookup vs simulation:**
+- **Parameter lookup**: "What is the maximum TANF benefit?", "What is the CTC amount?", "What is the poverty line?"
+- **Simulation**: "What would my TANF benefit be if I earn $500/mo?", "Am I eligible for SNAP?"
+
+**Finding parameter paths:**
+- Browse: https://policyengine.org/us/parameters
+- Or explore the tree: `params.gov.states.dc` and inspect children
+- State parameters follow pattern: `params.gov.states.<state_code>.<agency>.<program>`
+
 ### When to Use This Skill
 
+- Looking up policy parameter values (rates, thresholds, maximum benefits)
 - Creating household situations for tax/benefit calculations
 - Understanding variables, parameters, and policy reforms
 - Building tools that use PolicyEngine-US (calculators, analysis notebooks)
