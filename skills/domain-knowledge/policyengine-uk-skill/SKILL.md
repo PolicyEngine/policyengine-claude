@@ -1,9 +1,23 @@
 ---
 name: policyengine-uk
-description: PolicyEngine-UK tax and benefit microsimulation patterns, situation creation, and common workflows
+description: |
+  ALWAYS LOAD THIS SKILL FIRST before writing any PolicyEngine-UK code.
+  Contains the correct situation dictionary structure, entity names (benunits not families),
+  variable names, and region format that are required to avoid common errors.
+  Use for ANY UK household benefit/tax calculation, eligibility question, or PolicyEngine-UK code.
+  Triggers: "what would", "how much would a", "benefit be", "eligible for", "qualify for",
+  "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
+  "earning £", "making £", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",
+  "what benefits", "how much tax", "what would I get", "what would they get",
+  "Universal Credit", "child benefit", "pension credit", "housing benefit", "council tax",
+  "income tax", "national insurance", "JSA", "ESA", "PIP", "disability living allowance",
+  "working tax credit", "child tax credit", "Scotland", "Wales", "UK".
+  For population-level microsimulation see policyengine-microsimulation.
 ---
 
 # PolicyEngine-UK
+
+> **IMPORTANT: Always use the current year (2026) in situation dictionaries and calculate() calls, not 2024 or 2025.**
 
 PolicyEngine-UK models the UK tax and benefit system, including devolved variations for Scotland and Wales.
 
@@ -102,8 +116,8 @@ from policyengine_uk import Simulation
 situation = {
     "people": {
         "person": {
-            "age": {2025: 30},
-            "employment_income": {2025: 30000}
+            "age": {2026: 30},
+            "employment_income": {2026: 30000}
         }
     },
     "benunits": {
@@ -114,15 +128,15 @@ situation = {
     "households": {
         "household": {
             "members": ["person"],
-            "region": {2025: "LONDON"}
+            "region": {2026: "LONDON"}
         }
     }
 }
 
 # Calculate taxes and benefits
 sim = Simulation(situation=situation)
-income_tax = sim.calculate("income_tax", 2025)[0]
-universal_credit = sim.calculate("universal_credit", 2025)[0]
+income_tax = sim.calculate("income_tax", 2026)[0]
+universal_credit = sim.calculate("universal_credit", 2026)[0]
 
 print(f"Income tax: £{income_tax:,.0f}")
 print(f"Universal Credit: £{universal_credit:,.0f}")
@@ -180,8 +194,8 @@ PolicyEngine UK requires a nested dictionary defining household composition:
 situation = {
     "people": {
         "person_id": {
-            "age": {2025: 35},
-            "employment_income": {2025: 30000},
+            "age": {2026: 35},
+            "employment_income": {2026: 30000},
             # ... other person attributes
         }
     },
@@ -193,7 +207,7 @@ situation = {
     "households": {
         "household_id": {
             "members": ["person_id", ...],
-            "region": {2025: "SOUTH_EAST"}
+            "region": {2026: "SOUTH_EAST"}
         }
     }
 }
@@ -201,7 +215,7 @@ situation = {
 
 **Key Rules:**
 - All entities must have consistent member lists
-- Use year keys for all values: `{2025: value}`
+- Use year keys for all values: `{2026: value}`
 - Region must be one of the ITL 1 regions (see below)
 - All monetary values in pounds (not pence)
 - UK tax year runs April 6 to April 5 (but use calendar year in code)
@@ -220,9 +234,9 @@ from policyengine_uk import Simulation
 simulation = Simulation(situation=situation)
 
 # Calculate variables
-income_tax = simulation.calculate("income_tax", 2025)
-universal_credit = simulation.calculate("universal_credit", 2025)
-household_net_income = simulation.calculate("household_net_income", 2025)
+income_tax = simulation.calculate("income_tax", 2026)
+universal_credit = simulation.calculate("universal_credit", 2026)
+household_net_income = simulation.calculate("household_net_income", 2026)
 ```
 
 **IMPORTANT for population-level analysis (Microsimulation):** `calc()` and `calculate()` return MicroSeries with embedded weights. Never call `.values` or `.to_numpy()` on them — this strips weights and makes aggregations like `.mean()` unweighted. Keep results as MicroSeries and use its methods directly.
@@ -271,14 +285,14 @@ situation = {
         "count": 1001,
         "min": 0,
         "max": 100000,
-        "period": 2025
+        "period": 2026
     }]]
 }
 
 simulation = Simulation(situation=situation)
 # Now calculate() returns arrays of 1001 values
-incomes = simulation.calculate("employment_income", 2025)  # Array of 1001 values
-taxes = simulation.calculate("income_tax", 2025)  # Array of 1001 values
+incomes = simulation.calculate("employment_income", 2026)  # Array of 1001 values
+taxes = simulation.calculate("income_tax", 2026)  # Array of 1001 values
 ```
 
 **Important:** Remove axes before creating single-point simulations:
@@ -296,7 +310,7 @@ from policyengine_uk import Simulation
 # Define a reform (modifies parameters)
 reform = {
     "gov.hmrc.income_tax.rates.uk.brackets[0].rate": {
-        "2025-01-01.2100-12-31": 0.25  # Increase basic rate to 25%
+        "2026-01-01.2100-12-31": 0.25  # Increase basic rate to 25%
     }
 }
 
@@ -314,8 +328,8 @@ from policyengine_uk import Simulation
 situation = {
     "people": {
         "person": {
-            "age": {2025: 30},
-            "employment_income": {2025: 30000}
+            "age": {2026: 30},
+            "employment_income": {2026: 30000}
         }
     },
     "benunits": {
@@ -326,15 +340,15 @@ situation = {
     "households": {
         "household": {
             "members": ["person"],
-            "region": {2025: "LONDON"}
+            "region": {2026: "LONDON"}
         }
     }
 }
 
 sim = Simulation(situation=situation)
-income_tax = sim.calculate("income_tax", 2025)[0]
-national_insurance = sim.calculate("national_insurance", 2025)[0]
-universal_credit = sim.calculate("universal_credit", 2025)[0]
+income_tax = sim.calculate("income_tax", 2026)[0]
+national_insurance = sim.calculate("national_insurance", 2026)[0]
+universal_credit = sim.calculate("universal_credit", 2026)[0]
 ```
 
 ### Pattern 2: Couple with Children
@@ -343,18 +357,18 @@ universal_credit = sim.calculate("universal_credit", 2025)[0]
 situation = {
     "people": {
         "parent_1": {
-            "age": {2025: 35},
-            "employment_income": {2025: 35000}
+            "age": {2026: 35},
+            "employment_income": {2026: 35000}
         },
         "parent_2": {
-            "age": {2025: 33},
-            "employment_income": {2025: 25000}
+            "age": {2026: 33},
+            "employment_income": {2026: 25000}
         },
         "child_1": {
-            "age": {2025: 8}
+            "age": {2026: 8}
         },
         "child_2": {
-            "age": {2025: 5}
+            "age": {2026: 5}
         }
     },
     "benunits": {
@@ -365,14 +379,14 @@ situation = {
     "households": {
         "household": {
             "members": ["parent_1", "parent_2", "child_1", "child_2"],
-            "region": {2025: "NORTH_WEST"}
+            "region": {2026: "NORTH_WEST"}
         }
     }
 }
 
 sim = Simulation(situation=situation)
-child_benefit = sim.calculate("child_benefit", 2025)[0]
-universal_credit = sim.calculate("universal_credit", 2025)[0]
+child_benefit = sim.calculate("child_benefit", 2026)[0]
+universal_credit = sim.calculate("universal_credit", 2026)[0]
 ```
 
 ### Pattern 3: Marginal Tax Rate Analysis
@@ -382,14 +396,14 @@ universal_credit = sim.calculate("universal_credit", 2025)[0]
 situation_with_axes = {
     "people": {
         "person": {
-            "age": {2025: 30}
+            "age": {2026: 30}
         }
     },
     "benunits": {"benunit": {"members": ["person"]}},
     "households": {
         "household": {
             "members": ["person"],
-            "region": {2025: "LONDON"}
+            "region": {2026: "LONDON"}
         }
     },
     "axes": [[{
@@ -397,13 +411,13 @@ situation_with_axes = {
         "count": 1001,
         "min": 0,
         "max": 100000,
-        "period": 2025
+        "period": 2026
     }]]
 }
 
 sim = Simulation(situation=situation_with_axes)
-incomes = sim.calculate("employment_income", 2025)
-net_incomes = sim.calculate("household_net_income", 2025)
+incomes = sim.calculate("employment_income", 2026)
+net_incomes = sim.calculate("household_net_income", 2026)
 
 # Calculate marginal tax rate
 import numpy as np
@@ -420,10 +434,10 @@ for region in regions:
     situation = create_situation(region=region, income=30000)
     sim = Simulation(situation=situation)
     results[region] = {
-        "income_tax": sim.calculate("income_tax", 2025)[0],
-        "national_insurance": sim.calculate("national_insurance", 2025)[0],
-        "total_tax": sim.calculate("income_tax", 2025)[0] +
-                     sim.calculate("national_insurance", 2025)[0]
+        "income_tax": sim.calculate("income_tax", 2026)[0],
+        "national_insurance": sim.calculate("national_insurance", 2026)[0],
+        "total_tax": sim.calculate("income_tax", 2026)[0] +
+                     sim.calculate("national_insurance", 2026)[0]
     }
 ```
 
@@ -437,7 +451,7 @@ class IncreaseBasicRate(Reform):
     def apply(self):
         def modify_parameters(parameters):
             parameters.gov.hmrc.income_tax.rates.uk.brackets[0].rate.update(
-                period="year:2025:10", value=0.25
+                period="year:2026:10", value=0.25
             )
             return parameters
         self.modify_parameters(modify_parameters)
@@ -447,13 +461,13 @@ baseline = Microsimulation()
 reformed = Microsimulation(reform=IncreaseBasicRate)
 
 # Calculate revenue impact
-baseline_revenue = baseline.calc("income_tax", 2025).sum()
-reformed_revenue = reformed.calc("income_tax", 2025).sum()
+baseline_revenue = baseline.calc("income_tax", 2026).sum()
+reformed_revenue = reformed.calc("income_tax", 2026).sum()
 revenue_change = (reformed_revenue - baseline_revenue) / 1e9  # in billions
 
 # Calculate household impact
-baseline_net_income = baseline.calc("household_net_income", 2025)
-reformed_net_income = reformed.calc("household_net_income", 2025)
+baseline_net_income = baseline.calc("household_net_income", 2026)
+reformed_net_income = reformed.calc("household_net_income", 2026)
 ```
 
 ## Helper Scripts
@@ -504,12 +518,12 @@ all_members = ["parent", "child"]
 
 ### Pitfall 2: Forgetting Year Keys
 
-**Problem:** `"age": 35` instead of `"age": {2025: 35}`
+**Problem:** `"age": 35` instead of `"age": {2026: 35}`
 
 **Solution:** Always use year dictionary:
 ```python
-"age": {2025: 35},
-"employment_income": {2025: 30000}
+"age": {2026: 35},
+"employment_income": {2026: 30000}
 ```
 
 ### Pitfall 3: Wrong Region Format
@@ -519,11 +533,11 @@ all_members = ["parent", "child"]
 **Solution:** Use uppercase ITL 1 region codes:
 ```python
 # CORRECT regions:
-"region": {2025: "LONDON"}
-"region": {2025: "SCOTLAND"}
-"region": {2025: "WALES"}
-"region": {2025: "NORTH_EAST"}
-"region": {2025: "SOUTH_EAST"}
+"region": {2026: "LONDON"}
+"region": {2026: "SCOTLAND"}
+"region": {2026: "WALES"}
+"region": {2026: "NORTH_EAST"}
+"region": {2026: "SOUTH_EAST"}
 ```
 
 ### Pitfall 4: Axes Persistence
@@ -581,7 +595,7 @@ UK uses ITL 1 (International Territorial Level 1, formerly NUTS 1) regions:
 **England/Northern Ireland:**
 - Standard UK rates: basic 20%, higher 40%, additional 45%
 
-## Key Parameters and Values (2025/26)
+## Key Parameters and Values (2026/27)
 
 ### Income Tax
 - **Personal Allowance:** £12,570
@@ -608,7 +622,7 @@ UK uses ITL 1 (International Territorial Level 1, formerly NUTS 1) regions:
 
 ## Version Compatibility
 
-- Use `policyengine-uk>=1.0.0` for 2025 calculations
+- Always use the latest `policyengine-uk` for current year calculations
 - Check version: `import policyengine_uk; print(policyengine_uk.__version__)`
 - Different years may require different package versions
 
@@ -617,13 +631,13 @@ UK uses ITL 1 (International Territorial Level 1, formerly NUTS 1) regions:
 1. **Enable tracing:**
    ```python
    simulation.trace = True
-   result = simulation.calculate("variable_name", 2025)
+   result = simulation.calculate("variable_name", 2026)
    ```
 
 2. **Check intermediate calculations:**
    ```python
-   gross_income = simulation.calculate("gross_income", 2025)
-   disposable_income = simulation.calculate("disposable_income", 2025)
+   gross_income = simulation.calculate("gross_income", 2026)
+   disposable_income = simulation.calculate("disposable_income", 2026)
    ```
 
 3. **Verify situation structure:**

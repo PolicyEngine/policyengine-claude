@@ -4,7 +4,9 @@ description: |
   ALWAYS USE THIS SKILL for PolicyEngine microsimulation, population-level analysis, winners/losers calculations.
   Triggers: "microsimulation", "share who would lose/gain", "policy impact", "national average", "weighted analysis",
   "cost", "revenue impact", "budgetary", "estimate the cost", "federal revenues", "tax revenue", "budget score",
-  "how much would", "total cost of", "aggregate impact", "cost to the government", "revenue loss", "fiscal impact".
+  "how much would it cost", "how much would the policy cost", "total cost of", "aggregate impact",
+  "cost to the government", "revenue loss", "fiscal impact".
+  NOT for single-household calculations like "what would my benefit be" — use policyengine-us or policyengine-uk for those.
   Use this skill's code pattern, but explore the codebase to find specific parameter paths if needed.
 ---
 
@@ -26,14 +28,14 @@ description: |
 
 ```python
 # ❌ WRONG - .values strips weights, .mean() is UNWEIGHTED
-result = sim.calc("household_net_income", period=2025).values
+result = sim.calc("household_net_income", period=2026).values
 wrong_mean = result.mean()  # Unweighted!
 
 # ❌ WRONG - same problem with .to_numpy()
-result = sim.calc("household_net_income", period=2025).to_numpy()
+result = sim.calc("household_net_income", period=2026).to_numpy()
 
 # ✅ CORRECT - keep as MicroSeries, all operations are weighted
-result = sim.calc("household_net_income", period=2025)
+result = sim.calc("household_net_income", period=2026)
 correct_mean = result.mean()  # Weighted automatically!
 ```
 

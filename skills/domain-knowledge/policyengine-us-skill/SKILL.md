@@ -1,9 +1,22 @@
 ---
 name: policyengine-us
-description: PolicyEngine-US federal and state tax/benefit rules - variables, parameters, household situations. For national/state microsimulation see policyengine-microsimulation; for district-level see policyengine-district-analysis.
+description: |
+  ALWAYS LOAD THIS SKILL FIRST before writing any PolicyEngine-US code.
+  Contains the correct situation dictionary structure, entity names, variable names, and state_code format
+  that are required to avoid common errors (e.g., state_name vs state_code, missing entity groups).
+  Use for ANY US household benefit/tax calculation, eligibility question, or PolicyEngine-US code.
+  Triggers: "what would", "how much would a", "benefit be", "eligible for", "qualify for",
+  "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
+  "earning $", "making $", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",
+  "what benefits", "how much tax", "what would I get", "what would they get",
+  "TANF", "SNAP", "EITC", "CTC", "SSI", "WIC", "Section 8", "Medicaid", "ACA", "food stamps",
+  "child tax credit", "earned income", "supplemental security", "housing voucher".
+  For national/state microsimulation see policyengine-microsimulation; for district-level see policyengine-district-analysis.
 ---
 
 # PolicyEngine-US
+
+> **IMPORTANT: Always use the current year (2026) in situation dictionaries and calculate() calls, not 2024 or 2025.**
 
 PolicyEngine-US models the US federal and state tax and benefit system.
 
@@ -80,8 +93,8 @@ from policyengine_us import Simulation
 situation = {
     "people": {
         "you": {
-            "age": {2024: 30},
-            "employment_income": {2024: 50000}
+            "age": {2026: 30},
+            "employment_income": {2026: 50000}
         }
     },
     "families": {"family": {"members": ["you"]}},
@@ -91,15 +104,15 @@ situation = {
     "households": {
         "household": {
             "members": ["you"],
-            "state_name": {2024: "CA"}
+            "state_name": {2026: "CA"}
         }
     }
 }
 
 # Calculate taxes and benefits
 sim = Simulation(situation=situation)
-income_tax = sim.calculate("income_tax", 2024)[0]
-eitc = sim.calculate("eitc", 2024)[0]
+income_tax = sim.calculate("income_tax", 2026)[0]
+eitc = sim.calculate("eitc", 2026)[0]
 
 print(f"Income tax: ${income_tax:,.0f}")
 print(f"EITC: ${eitc:,.0f}")
@@ -159,8 +172,8 @@ PolicyEngine requires a nested dictionary defining household composition and cha
 situation = {
     "people": {
         "person_id": {
-            "age": {2024: 35},
-            "employment_income": {2024: 50000},
+            "age": {2026: 35},
+            "employment_income": {2026: 50000},
             # ... other person attributes
         }
     },
@@ -179,7 +192,7 @@ situation = {
     "households": {
         "household_id": {
             "members": ["person_id", ...],
-            "state_name": {2024: "CA"}
+            "state_name": {2026: "CA"}
         }
     }
 }
@@ -187,7 +200,7 @@ situation = {
 
 **Key Rules:**
 - All entities must have consistent member lists
-- Use year keys for all values: `{2024: value}`
+- Use year keys for all values: `{2026: value}`
 - State must be two-letter code (e.g., "CA", "NY", "TX")
 - All monetary values in dollars (not cents)
 
@@ -200,9 +213,9 @@ from policyengine_us import Simulation
 simulation = Simulation(situation=situation)
 
 # Calculate variables
-income_tax = simulation.calculate("income_tax", 2024)
-eitc = simulation.calculate("eitc", 2024)
-household_net_income = simulation.calculate("household_net_income", 2024)
+income_tax = simulation.calculate("income_tax", 2026)
+eitc = simulation.calculate("eitc", 2026)
+household_net_income = simulation.calculate("household_net_income", 2026)
 ```
 
 **Common Variables:**
@@ -250,14 +263,14 @@ situation = {
         "count": 1001,
         "min": 0,
         "max": 200000,
-        "period": 2024
+        "period": 2026
     }]]
 }
 
 simulation = Simulation(situation=situation)
 # Now calculate() returns arrays of 1001 values
-incomes = simulation.calculate("employment_income", 2024)  # Array of 1001 values
-taxes = simulation.calculate("income_tax", 2024)  # Array of 1001 values
+incomes = simulation.calculate("employment_income", 2026)  # Array of 1001 values
+taxes = simulation.calculate("income_tax", 2026)  # Array of 1001 values
 ```
 
 **Important:** Remove axes before creating single-point simulations:
@@ -275,7 +288,7 @@ from policyengine_us import Simulation
 # Define a reform (modifies parameters)
 reform = {
     "gov.irs.credits.ctc.amount.base_amount": {
-        "2024-01-01.2100-12-31": 5000  # Increase CTC to $5000
+        "2026-01-01.2100-12-31": 5000  # Increase CTC to $5000
     }
 }
 
@@ -293,11 +306,11 @@ from policyengine_us import Simulation
 situation = {
     "people": {
         "parent": {
-            "age": {2024: 35},
-            "employment_income": {2024: 60000}
+            "age": {2026: 35},
+            "employment_income": {2026: 60000}
         },
         "child": {
-            "age": {2024: 5}
+            "age": {2026: 5}
         }
     },
     "families": {"family": {"members": ["parent", "child"]}},
@@ -307,14 +320,14 @@ situation = {
     "households": {
         "household": {
             "members": ["parent", "child"],
-            "state_name": {2024: "NY"}
+            "state_name": {2026: "NY"}
         }
     }
 }
 
 sim = Simulation(situation=situation)
-income_tax = sim.calculate("income_tax", 2024)[0]
-ctc = sim.calculate("ctc", 2024)[0]
+income_tax = sim.calculate("income_tax", 2026)[0]
+ctc = sim.calculate("ctc", 2026)[0]
 ```
 
 ### Pattern 2: Marginal Tax Rate Analysis
@@ -328,13 +341,13 @@ situation_with_axes = {
         "count": 1001,
         "min": 0,
         "max": 200000,
-        "period": 2024
+        "period": 2026
     }]]
 }
 
 sim = Simulation(situation=situation_with_axes)
-incomes = sim.calculate("employment_income", 2024)
-taxes = sim.calculate("income_tax", 2024)
+incomes = sim.calculate("employment_income", 2026)
+taxes = sim.calculate("income_tax", 2026)
 
 # Calculate marginal tax rate
 import numpy as np
@@ -347,12 +360,12 @@ mtr = np.gradient(taxes) / np.gradient(incomes)
 # Baseline (no donation)
 situation_baseline = create_situation(income=100000, donation=0)
 sim_baseline = Simulation(situation=situation_baseline)
-tax_baseline = sim_baseline.calculate("income_tax", 2024)[0]
+tax_baseline = sim_baseline.calculate("income_tax", 2026)[0]
 
 # With donation
 situation_donation = create_situation(income=100000, donation=5000)
 sim_donation = Simulation(situation=situation_donation)
-tax_donation = sim_donation.calculate("income_tax", 2024)[0]
+tax_donation = sim_donation.calculate("income_tax", 2026)[0]
 
 # Tax savings from donation
 tax_savings = tax_baseline - tax_donation
@@ -369,8 +382,8 @@ for state in states:
     situation = create_situation(state=state, income=75000)
     sim = Simulation(situation=situation)
     results[state] = {
-        "state_income_tax": sim.calculate("state_income_tax", 2024)[0],
-        "total_tax": sim.calculate("household_tax", 2024)[0]
+        "state_income_tax": sim.calculate("state_income_tax", 2026)[0],
+        "total_tax": sim.calculate("household_tax", 2026)[0]
     }
 ```
 
@@ -422,12 +435,12 @@ all_members = ["parent", "child"]
 ```
 
 ### Pitfall 2: Forgetting Year Keys
-**Problem:** `"age": 35` instead of `"age": {2024: 35}`
+**Problem:** `"age": 35` instead of `"age": {2026: 35}`
 
 **Solution:** Always use year dictionary:
 ```python
-"age": {2024: 35},
-"employment_income": {2024: 50000}
+"age": {2026: 35},
+"employment_income": {2026: 50000}
 ```
 
 ### Pitfall 3: Net Taxes vs Gross Taxes
@@ -436,8 +449,8 @@ all_members = ["parent", "child"]
 **Solution:** Use proper calculation:
 ```python
 # Net taxes (what household actually pays)
-net_tax = sim.calculate("household_tax", 2024) - \
-          sim.calculate("household_benefits", 2024)
+net_tax = sim.calculate("household_tax", 2026) - \
+          sim.calculate("household_benefits", 2026)
 ```
 
 ### Pitfall 4: Axes Persistence
@@ -456,8 +469,8 @@ situation_single.pop("axes", None)
 ```python
 "households": {
     "household": {
-        "state_name": {2024: "NY"},
-        "in_nyc": {2024: True}  # Required for NYC taxes
+        "state_name": {2026: "NY"},
+        "in_nyc": {2026: True}  # Required for NYC taxes
     }
 }
 ```
@@ -471,8 +484,8 @@ situation = {
     "households": {
         "household": {
             "members": ["person"],
-            "state_name": {2024: "NY"},
-            "in_nyc": {2024: True}  # Enable NYC tax calculations
+            "state_name": {2026: "NY"},
+            "in_nyc": {2026: True}  # Enable NYC tax calculations
         }
     }
 }
@@ -480,7 +493,7 @@ situation = {
 
 ## Version Compatibility
 
-- Always use `policyengine-us>=1.155.0` for 2024 calculations
+- Always use the latest `policyengine-us` for current year calculations
 - Check version: `import policyengine_us; print(policyengine_us.__version__)`
 - Different years may require different package versions
 
@@ -489,13 +502,13 @@ situation = {
 1. **Enable tracing:**
    ```python
    simulation.trace = True
-   result = simulation.calculate("variable_name", 2024)
+   result = simulation.calculate("variable_name", 2026)
    ```
 
 2. **Check intermediate calculations:**
    ```python
-   agi = simulation.calculate("adjusted_gross_income", 2024)
-   taxable_income = simulation.calculate("taxable_income", 2024)
+   agi = simulation.calculate("adjusted_gross_income", 2026)
+   taxable_income = simulation.calculate("taxable_income", 2026)
    ```
 
 3. **Verify situation structure:**

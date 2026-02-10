@@ -1,9 +1,15 @@
 ---
 name: policyengine-python-client
-description: Using PolicyEngine programmatically via Python client or REST API
+description: |
+  ONLY use this skill when users explicitly ask about the PolicyEngine Python package installation,
+  REST API endpoints, API authentication, rate limits, or policyengine.py client library.
+  DO NOT use for household benefit/tax calculations — ALWAYS use policyengine-us or policyengine-uk instead.
+  This skill is about the API/client tooling itself, not about calculating benefits or taxes.
 ---
 
 # PolicyEngine Python Client
+
+> **IMPORTANT: Always use the current year (2026) in situation dictionaries and calculate() calls, not 2024 or 2025.**
 
 This skill covers programmatic access to PolicyEngine for analysts and researchers.
 
@@ -26,21 +32,21 @@ from policyengine import Simulation
 household = {
     "people": {
         "you": {
-            "age": {"2024": 30},
-            "employment_income": {"2024": 50000}
+            "age": {"2026": 30},
+            "employment_income": {"2026": 50000}
         }
     },
     "households": {
         "your household": {
             "members": ["you"],
-            "state_name": {"2024": "CA"}
+            "state_name": {"2026": "CA"}
         }
     }
 }
 
 # Run simulation
 sim = Simulation(situation=household, country_id="us")
-income_tax = sim.calculate("income_tax", "2024")
+income_tax = sim.calculate("income_tax", "2026")
 ```
 
 ## For Users: Why Use Python?
@@ -69,17 +75,17 @@ from policyengine import Simulation
 household = {
     "people": {
         "you": {
-            "age": {"2024": 35},
-            "employment_income": {"2024": 75000},
-            "qualified_dividend_income": {"2024": 5000},
-            "charitable_cash_donations": {"2024": 3000}
+            "age": {"2026": 35},
+            "employment_income": {"2026": 75000},
+            "qualified_dividend_income": {"2026": 5000},
+            "charitable_cash_donations": {"2026": 3000}
         },
         "spouse": {
-            "age": {"2024": 33},
-            "employment_income": {"2024": 60000}
+            "age": {"2026": 33},
+            "employment_income": {"2026": 60000}
         },
-        "child1": {"age": {"2024": 8}},
-        "child2": {"age": {"2024": 5}}
+        "child1": {"age": {"2026": 8}},
+        "child2": {"age": {"2026": 5}}
     },
     # ... entities setup (see policyengine-us-skill)
 }
@@ -87,10 +93,10 @@ household = {
 sim = Simulation(situation=household, country_id="us")
 
 # Calculate specific values
-federal_income_tax = sim.calculate("income_tax", "2024")
-state_income_tax = sim.calculate("state_income_tax", "2024")
-ctc = sim.calculate("ctc", "2024")
-eitc = sim.calculate("eitc", "2024")
+federal_income_tax = sim.calculate("income_tax", "2026")
+state_income_tax = sim.calculate("state_income_tax", "2026")
+ctc = sim.calculate("ctc", "2026")
+eitc = sim.calculate("eitc", "2026")
 
 print(f"Federal income tax: ${federal_income_tax:,.0f}")
 print(f"State income tax: ${state_income_tax:,.0f}")
@@ -116,8 +122,8 @@ household = create_household()  # Your household definition
 sim_baseline = Simulation(situation=household, country_id="us")
 sim_reform = Simulation(situation=household, country_id="us", reform=reform)
 
-ctc_baseline = sim_baseline.calculate("ctc", "2024")
-ctc_reform = sim_reform.calculate("ctc", "2024")
+ctc_baseline = sim_baseline.calculate("ctc", "2026")
+ctc_reform = sim_reform.calculate("ctc", "2026")
 
 print(f"CTC baseline: ${ctc_baseline:,.0f}")
 print(f"CTC reform: ${ctc_reform:,.0f}")
@@ -145,9 +151,9 @@ for h in households:
     results.append({
         "income": h["income"],
         "children": h["children"],
-        "income_tax": sim.calculate("income_tax", "2024"),
-        "ctc": sim.calculate("ctc", "2024"),
-        "eitc": sim.calculate("eitc", "2024")
+        "income_tax": sim.calculate("income_tax", "2026"),
+        "ctc": sim.calculate("ctc", "2026"),
+        "eitc": sim.calculate("eitc", "2026")
     })
 
 df = pd.DataFrame(results)
@@ -319,7 +325,7 @@ situation = {
 }
 
 sim = Simulation(situation=situation)
-result = sim.calculate("variable_name", 2024)
+result = sim.calculate("variable_name", 2026)
 ```
 
 **Benefits:**
