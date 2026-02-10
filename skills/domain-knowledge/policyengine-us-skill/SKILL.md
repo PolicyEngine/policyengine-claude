@@ -1,8 +1,10 @@
 ---
 name: policyengine-us
 description: |
-  PolicyEngine-US federal and state tax/benefit rules - variables, parameters, household situations.
-  USE THIS SKILL for single-household benefit/tax calculations and eligibility questions.
+  ALWAYS LOAD THIS SKILL FIRST before writing any PolicyEngine-US code.
+  Contains the correct situation dictionary structure, entity names, variable names, and state_code format
+  that are required to avoid common errors (e.g., state_name vs state_code, missing entity groups).
+  Use for ANY US household benefit/tax calculation, eligibility question, or PolicyEngine-US code.
   Triggers: "what would", "how much would a", "benefit be", "eligible for", "qualify for",
   "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
   "earning $", "making $", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",

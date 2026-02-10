@@ -1,8 +1,10 @@
 ---
 name: policyengine-uk
 description: |
-  PolicyEngine-UK tax and benefit rules - variables, parameters, household situations, and common workflows.
-  USE THIS SKILL for single-household benefit/tax calculations and eligibility questions about the UK.
+  ALWAYS LOAD THIS SKILL FIRST before writing any PolicyEngine-UK code.
+  Contains the correct situation dictionary structure, entity names (benunits not families),
+  variable names, and region format that are required to avoid common errors.
+  Use for ANY UK household benefit/tax calculation, eligibility question, or PolicyEngine-UK code.
   Triggers: "what would", "how much would a", "benefit be", "eligible for", "qualify for",
   "single parent", "married couple", "family of", "household of", "if they earn", "with income of",
   "earning £", "making £", "calculate benefits", "calculate taxes", "benefit for a", "tax for a",
