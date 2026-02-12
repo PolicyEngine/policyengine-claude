@@ -61,6 +61,7 @@
         "./agents/country-models/workflow.md"
       ],
       "commands": [
+        "./commands/audit-state-tax.md",
         "./commands/encode-policy.md",
         "./commands/review-pr.md",
         "./commands/fix-pr.md",
@@ -264,6 +265,7 @@
         "./agents/shared/pr-merge-checklist.md"
       ],
       "commands": [
+        "./commands/audit-state-tax.md",
         "./commands/create-pr.md",
         "./commands/encode-policy.md",
         "./commands/generate-content.md",
