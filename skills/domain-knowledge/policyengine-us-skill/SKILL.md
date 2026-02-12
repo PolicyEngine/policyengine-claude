@@ -663,6 +663,82 @@ print([c for c in ca_params.children])  # List agencies/programs
    - Enter same inputs
    - Compare results
 
+## SNAP Deep-Dive: Monthly Eligibility and Cliff Analysis
+
+SNAP benefits are calculated **monthly** (definition_period = MONTH). When sweeping annual income, the annual SNAP value is the sum of 12 monthly calculations. This creates subtle cliff behavior.
+
+### SNAP Eligibility Tests
+- **Gross income test**: Monthly gross income ≤ 130% of monthly FPL
+- **Net income test**: Monthly net income ≤ 100% of monthly FPL
+- **Categorical eligibility**: Can override gross income test in some states
+
+### FPL Fiscal Year Change
+The Federal Poverty Level updates in **October** (new fiscal year). This means:
+- Jan-Sep uses one FPL threshold, Oct-Dec uses a higher threshold
+- A household can fail the gross income test for 9 months but pass for 3 months
+- This creates a "partial-year" cliff where annual SNAP drops to ~25% rather than zero
+
+### Example: Missouri 3-Person Household (2025)
+```
+$33,550/yr → $2,795.83/mo → Eligible all 12 months → $1,956/yr SNAP
+$33,600/yr → $2,800.00/mo → 130% FPL = $2,797.17/mo (Jan-Sep)
+                           → Fails 9 months, passes Oct-Dec → $527/yr SNAP
+$34,700/yr → $2,891.67/mo → Exceeds even Oct-Dec threshold → $0/yr SNAP
+```
+
+### SNAP Variable Hierarchy for Debugging
+```
+snap (annual sum of monthly allotments)
+├── snap_normal_allotment = max(snap_min_allotment, snap_max_allotment - snap_expected_contribution)
+│   ├── snap_max_allotment (household size and region)
+│   ├── snap_expected_contribution = floor(snap_net_income) × 0.30
+│   │   └── snap_net_income = max(0, snap_gross_income - snap_deductions)
+│   │       ├── snap_gross_income = snap_earned_income + snap_unearned_income
+│   │       └── snap_deductions = standard + earned_income(20%) + shelter + dependent_care + medical + child_support
+│   └── snap_min_allotment (usually only for 1-2 person households)
+├── is_snap_eligible
+│   ├── meets_snap_gross_income_test (≤ 130% FPL, or categorical)
+│   ├── meets_snap_net_income_test (≤ 100% FPL)
+│   ├── meets_snap_asset_test
+│   └── meets_snap_work_requirements
+└── snap_emergency_allotment (COVID-era, now $0)
+```
+
+### Using Trace Mode for Monthly SNAP Debugging
+```python
+sim = Simulation(situation=situation)
+sim.trace = True
+result = sim.calculate('snap_normal_allotment', '2025-01')  # Check specific month!
+
+for node in sim.tracer.trees:
+    def print_tree(n, indent=0):
+        val = n.value
+        val_str = str(val[0]) if hasattr(val, '__len__') and len(val) == 1 else str(val)
+        print('  ' * indent + f'{n.name} <{n.period}> = {val_str}')
+        for child in n.children:
+            print_tree(child, indent + 1)
+    print_tree(node)
+```
+
+### Common Benefit Cliff Causes
+| Cliff | Cause | Typical magnitude |
+|-------|-------|-------------------|
+| SNAP 130% FPL (partial year) | Gross income test fails 9 months, passes Oct-Dec | ~75% of SNAP lost |
+| SNAP 130% FPL (full) | Exceeds even Oct-Dec threshold | 100% of SNAP lost |
+| School meals (free → reduced) | Free school meals lost at ~130% FPL | ~$250/child/yr |
+| School meals (reduced → none) | Reduced-price meals lost at ~185% FPL | ~$990/child/yr |
+
+### Key Gotcha: Simulation vs Microsimulation
+```python
+# ✅ CORRECT for custom situations
+from policyengine_us import Simulation
+sim = Simulation(situation=situation)
+
+# ❌ WRONG - Microsimulation expects a dataset, not a situation
+from policyengine_us import Microsimulation
+sim = Microsimulation(situation=situation)  # Raises ValueError
+```
+
 ## Additional Resources
 
 - **Documentation:** https://policyengine.org/us/docs
