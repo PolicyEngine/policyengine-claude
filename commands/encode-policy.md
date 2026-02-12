@@ -20,6 +20,23 @@ This workflow adapts based on the type of program being implemented:
 - Phase 7: Uses general @complete:country-models:implementation-validator agent in parallel validation
 - Optional phases: Include based on production requirements
 
+## Program Complexity Assessment
+
+Before starting, assess the program's complexity to determine which phases to run:
+
+**Simple programs** (flat payments, single eligibility check, ≤3 variables, ≤2 parameters):
+- Skip Phase 3C (edge-case-generator) — test-creator should include edge cases directly
+- Skip Phase 4 (organization check) — orchestrator verifies file structure directly
+- Skip Phase 5A (reference validation) — orchestrator verifies references directly
+- Phase 5B: Orchestrator runs tests directly instead of spawning ci-fixer
+- Phase 6: Orchestrator formats and pushes directly instead of spawning pr-pusher
+- Phase 7: Orchestrator writes PR description directly instead of spawning program-reviewer
+
+**Complex programs** (multiple income tests, deductions, household-size-varying amounts, >5 variables):
+- Run all phases as specified
+
+**The orchestrator should assess complexity after Phase 2 (document collection) when program details are known.**
+
 ## Phase 0: Implementation Approach (TANF Programs Only)
 
 **For TANF programs, detect implementation approach from $ARGUMENTS:**
@@ -59,10 +76,11 @@ Invoke @complete:country-models:document-collector agent to:
 - Save all documentation to `sources/working_references.md`
 
 **Agent behavior for PDFs:**
-- Agent cannot read PDFs directly
-- Agent MUST add all PDF links to `sources/working_references.md` under a "📄 PDFs for Future Reference" section
-- Agent continues with HTML sources and proceeds with available information
-- Do NOT stop the workflow for PDFs
+- Agent SHOULD download PDFs with `curl` and extract text with `pdftotext`
+- This works for most government PDFs: `curl -sL URL -o /tmp/doc.pdf && pdftotext /tmp/doc.pdf /tmp/doc.txt`
+- Agent verifies download is actually a PDF (not an HTML error page) with `file /tmp/doc.pdf`
+- Only list PDFs under "📄 PDFs for Future Reference" if extraction genuinely fails
+- Do NOT stop the workflow for PDFs that can't be extracted
 
 **Example in sources/working_references.md:**
 ```markdown
@@ -74,16 +92,6 @@ Invoke @complete:country-models:document-collector agent to:
 **Source**: [Legal citation]
 
 **Variable Prefix**: `[state]_[abbreviation]`
-
----
-
-## 📄 PDFs for Future Reference
-
-The following PDFs contain additional information but could not be extracted:
-
-1. **State Plan**
-   - URL: https://state.gov/program-state-plan.pdf
-   - Expected content: Benefit calculation methodology, page 10
 ```
 
 **Quality Gate**: Documentation must include:
@@ -177,11 +185,19 @@ After variables are created, verify implementation matches regulations:
 
 **If issues found**: Fix variables before proceeding to Phase 4.
 
+### Step 3D: Integration into Benefits System
+
+After variables are created, add the main benefit variable to `parameters/gov/household/household_state_benefits.yaml`:
+- Add to ALL date entries in the file (e.g., both `2023-01-01` and `2024-01-01`)
+- Add with a comment indicating the state (e.g., `# New Mexico benefits`)
+- This ensures the benefit flows into `spm_unit_benefits` and household income calculations
+
 **Quality Requirements**:
 - parameter-architect: Complete parameters with references before variables
 - rules-engineer: ZERO hard-coded values, use parameters from Step 3A
 - test-creator: All tests (unit + integration) created together, based purely on documentation
 - edge-case-generator: Edge cases based on actual variable implementations
+- **Integration**: Main benefit variable added to `household_state_benefits.yaml`
 
 ## Phase 4: Organization Check & Fix
 
@@ -322,15 +338,23 @@ After regulatory review passes:
 3. Check quality gates
 4. Proceed to the next phase automatically
 
-**YOU MUST NOT**:
+**YOU MUST NOT** (for complex programs):
 - Write any code yourself
 - Fix any issues manually
 - Run tests directly
 - Edit files
 
+**For simple programs** (≤3 variables, ≤2 parameters), the orchestrator MAY:
+- Run tests directly with `policyengine-core test`
+- Run `make format` and push directly
+- Write the PR description directly
+- Verify file organization and references directly
+- Add the new benefit variable to `household_state_benefits.yaml` directly
+This avoids spawning 4-5 unnecessary agents for trivial work.
+
 **Execution Flow (CONTINUOUS)**:
 
-Execute all phases sequentially without stopping:
+Execute all phases sequentially without stopping. After Phase 2, assess program complexity (see "Program Complexity Assessment" above) and skip phases accordingly for simple programs.
 
 0. **Phase 0**: Implementation Approach (TANF Programs Only)
    - Auto-detect from $ARGUMENTS ("simple"/"simplified" vs. "full"/"complete")
@@ -343,30 +367,35 @@ Execute all phases sequentially without stopping:
 
 2. **Phase 2**: Document Collection
    - Research and gather official documentation
+   - **Agent downloads and extracts PDFs** using `curl` + `pdftotext` (not just logging URLs)
    - Discover official program name during research
    - Save to `sources/working_references.md`
+   - **After this phase: assess program complexity** to determine which later phases to skip
 
 3. **Phase 3**: Development
    - **Step 3A:** Run parameter-architect to create parameters
    - **Step 3B:** Run test-creator and rules-engineer in parallel (different folders)
-   - **Step 3C:** Run edge-case-generator to add edge case tests
+   - **Step 3C:** Run edge-case-generator to add edge case tests *(skip for simple programs)*
    - All agents use variable prefix from `sources/working_references.md`
    - Pass simplified/full decision to rules-engineer
 
-4. **Phase 4**: Organization Check & Fix
+4. **Phase 4**: Organization Check & Fix *(skip for simple programs — orchestrator checks directly)*
    - Check naming conventions, folder structure, formatting, code style
    - Fix any issues found
 
 5. **Phase 5**: Validate, Test & Fix
-   - **Step 5A:** Run reference-validator (check all parameters have proper references)
+   - **Step 5A:** Run reference-validator *(skip for simple programs — orchestrator checks directly)*
    - **Step 5B:** Run tests locally, fix failures, iterate until pass
+   - For simple programs: orchestrator runs tests directly with `policyengine-core test`
 
 6. **Phase 6**: Format and Push
    - Ensure changelog, run `make format`, push branch
+   - For simple programs: orchestrator does this directly
 
 7. **Phase 7**: Regulatory Review
    - Run program-reviewer (research regulations first, compare to code)
    - Update PR description with comprehensive documentation
+   - For simple programs: orchestrator writes PR description directly
 
 8. **Phase 8**: Final Summary
    - Verify PR description complete

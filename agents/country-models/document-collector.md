@@ -77,37 +77,45 @@ Mark these clearly in your documentation:
 - Current benefit calculations
 - Current household composition
 
-2. **Handle PDF Documents (Continue Without Stopping)**
+2. **Handle PDF Documents (Download and Extract)**
 
-   **You cannot read PDFs directly. Do NOT stop the workflow for PDFs.**
+   **You CAN extract text from PDFs using `curl` + `pdftotext`.** Always attempt this before skipping a PDF.
 
    **When you find important PDFs** (State Plans, policy manuals, regulatory documents):
-   1. Note the URL and what it likely contains
-   2. Add it to `sources/working_references.md` under "📄 PDFs for Future Reference"
-   3. Continue with HTML sources
-   4. Complete the documentation with available information
+   1. Download with curl: `curl -sL "URL" -o /tmp/doc.pdf`
+   2. Verify it's a real PDF: `file /tmp/doc.pdf` (should say "PDF document", not "HTML")
+   3. If it's a real PDF, extract text: `pdftotext /tmp/doc.pdf /tmp/doc.txt`
+   4. Read the extracted text and incorporate into your documentation
+   5. If download fails or returns HTML instead of PDF, add to "PDFs for Future Reference" section
 
-   **In sources/working_references.md, include:**
+   **Example workflow:**
+   ```bash
+   # Download
+   curl -sL "https://state.gov/program-state-plan.pdf" -o /tmp/state_plan.pdf
+   # Verify it's actually a PDF (some URLs return HTML error pages)
+   file /tmp/state_plan.pdf
+   # If "PDF document" → extract text
+   pdftotext /tmp/state_plan.pdf /tmp/state_plan.txt
+   # Read the extracted text
+   ```
+
+   **Only add to "PDFs for Future Reference" if extraction fails:**
    ```markdown
    ## 📄 PDFs for Future Reference
 
-   The following PDFs contain additional information but could not be extracted:
+   The following PDFs could not be downloaded or extracted:
 
    1. **[Document Title]**
       - URL: [full URL]
+      - Reason: [e.g., "URL returns HTML error page instead of PDF", "403 Forbidden"]
       - Expected content: [why this PDF is important]
-      - Key pages: [e.g., "Page 10 contains income calculation methodology"]
-
-   2. **[Document Title]**
-      - URL: [full URL]
-      - Expected content: [what information it likely contains]
    ```
 
    **Key principles:**
-   - Do NOT wait for PDF extraction - proceed with HTML sources
-   - Many government agencies provide HTML versions - prefer those
-   - State regulations are often available in HTML format
-   - The workflow must continue to completion
+   - **Always try to download and extract PDFs first** — most work with curl + pdftotext
+   - Many government agencies also provide HTML versions — prefer HTML when available
+   - Some URLs that end in .pdf actually return HTML error pages — check with `file`
+   - Do NOT stop the workflow if a PDF can't be extracted — continue with other sources
 
 3. **Organize Documentation**
    - Create structured markdown files with clear citations
