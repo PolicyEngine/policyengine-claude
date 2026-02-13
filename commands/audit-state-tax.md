@@ -10,16 +10,18 @@ description: Audit a state income tax PR's parameter values against official PDF
 
 `$ARGUMENTS` should contain:
 - **PR number** (required) — e.g., `7130`
-- **PDF URL** (required) — link to the state's official tax form instructions or tax guide
+- **PDF URL** (optional) — link to the state's official tax form instructions or tax guide. If omitted, the command will auto-discover the source.
 - **Options**:
   - `--local` — show findings locally only, skip GitHub posting
   - `--full` — audit ALL implemented parameters (not just PR changes) against the PDF
 
 **Examples:**
 ```
+/audit-state-tax 7130
+/audit-state-tax 7130 --full
+/audit-state-tax 7130 --local
 /audit-state-tax 7130 https://oregon.gov/.../form-or-40-inst_2025.pdf
-/audit-state-tax 7130 https://oregon.gov/.../publication-or-17_2025.pdf --full
-/audit-state-tax 7130 https://oregon.gov/.../form-or-40-inst_2025.pdf --local
+/audit-state-tax 7130 https://oregon.gov/.../form-or-40-inst_2025.pdf --full
 ```
 
 ---
@@ -29,7 +31,7 @@ description: Audit a state income tax PR's parameter values against official PDF
 ```
 Parse $ARGUMENTS:
 - PR_NUMBER: first numeric argument
-- PDF_URL: first URL argument
+- PDF_URL: first URL argument (may be empty — will auto-discover in Phase 1.5)
 - LOCAL_ONLY: true if --local flag present
 - FULL_AUDIT: true if --full flag present
 ```
@@ -65,10 +67,64 @@ From the diff, identify:
 
 ---
 
+## Phase 1.5: Auto-Discover PDF Source (if no URL provided)
+
+**Skip this phase if the user provided a PDF URL.**
+
+### Step 1: Check the PR for source links
+
+Scan the PR body and YAML parameter files in the diff for existing PDF references:
+```bash
+# Check PR description for PDF links
+gh pr view $PR_NUMBER --json body --jq '.body' | grep -oE 'https?://[^ )]*.pdf[^ )]*'
+
+# Check YAML files in the diff for reference fields
+gh pr diff $PR_NUMBER | grep -i 'reference\|source\|\.pdf\|\.gov'
+```
+
+If a clear official source PDF URL is found (e.g., a `.gov` domain tax instruction booklet), use it and skip to Phase 2.
+
+### Step 2: Search for the official instruction booklet
+
+Using the **state abbreviation** and **tax year** from Phase 1:
+
+```
+Map state abbreviation to:
+- STATE_FULL_NAME (e.g., "or" → "Oregon")
+- STATE_REVENUE_SITE (e.g., "or" → "oregon.gov/dor")
+```
+
+Search in order of priority:
+1. **WebSearch**: `"{State full name} {year} income tax instruction booklet site:{state}.gov filetype:pdf"`
+2. **WebSearch**: `"{State full name} {year} resident income tax form instructions site:{state}.gov"`
+3. **WebSearch**: `"{State full name} {year} tax guide publication site:{state}.gov"` (some states publish a comprehensive guide, e.g., OR-17)
+4. **WebFetch** the state revenue department's main tax forms page to find download links
+
+### Step 3: Validate the PDF
+
+Before proceeding, confirm the discovered PDF is correct:
+- Download it: `curl -L -o /tmp/{state}-audit-source.pdf "URL"`
+- Check page count: `pdfinfo /tmp/{state}-audit-source.pdf | grep Pages`
+- Extract first page text: `pdftotext -f 1 -l 2 /tmp/{state}-audit-source.pdf -`
+- Verify it matches the expected state, tax year, and document type (instruction booklet, not just a blank form)
+
+If the PDF looks wrong (e.g., wrong year, wrong state, just a form without instructions), try the next search result.
+
+### Step 4: Check for supplementary documents
+
+Some states split tax information across multiple documents. After finding the main booklet, check:
+- Does the booklet reference other publications? (e.g., OR-40 instructions reference OR-17 guide)
+- Are there separate rate schedules, tax tables, or credit worksheets?
+- Note these for later — they'll be fetched by verification agents if needed during Phase 5.
+
+---
+
 ## Phase 2: Download & Prepare PDF
 
+**If PDF was already downloaded and validated in Phase 1.5**, skip the download step.
+
 ```bash
-# Download PDF
+# Download PDF (skip if already done in Phase 1.5)
 curl -L -o /tmp/{state}-audit-source.pdf "$PDF_URL"
 
 # Extract text for cross-referencing
