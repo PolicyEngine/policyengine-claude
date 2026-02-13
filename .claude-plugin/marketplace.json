@@ -1,7 +1,7 @@
 {
   "$schema": "https://claude.ai/schemas/plugin-marketplace.json",
   "name": "policyengine-claude",
-  "version": "3.6.2",
+  "version": "3.7.0",
   "description": "Complete PolicyEngine knowledge base - for users, analysts, and contributors across the entire PolicyEngine ecosystem",
   "owner": {
     "name": "PolicyEngine",
@@ -13,7 +13,7 @@
       "description": "Essential PolicyEngine knowledge for all users - understanding the platform, using the web app, and basic concepts",
       "source": "./",
       "category": "getting-started",
-      "version": "3.6.2",
+      "version": "3.7.0",
       "keywords": ["beginner", "users", "guide", "basics"],
       "author": {
         "name": "PolicyEngine",
@@ -33,7 +33,7 @@
       "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages",
       "source": "./",
       "category": "development",
-      "version": "3.6.2",
+      "version": "3.7.0",
       "keywords": ["tax", "benefits", "microsimulation", "country-models", "rules", "testing"],
       "author": {
         "name": "PolicyEngine",
@@ -91,7 +91,7 @@
       "description": "API development - Flask endpoints, caching, services, and integration patterns",
       "source": "./",
       "category": "development",
-      "version": "3.6.2",
+      "version": "3.7.0",
       "keywords": ["api", "flask", "backend", "rest", "endpoints"],
       "author": {
         "name": "PolicyEngine",
@@ -122,7 +122,7 @@
       "description": "React app development - components, routing, charts, and PolicyEngine-specific patterns",
       "source": "./",
       "category": "development",
-      "version": "3.6.2",
+      "version": "3.7.0",
       "keywords": ["react", "frontend", "app", "ui", "components"],
       "author": {
         "name": "PolicyEngine",
@@ -152,7 +152,7 @@
       "description": "Policy analysis and research - impact studies, dashboards, notebooks, and visualizations",
       "source": "./",
       "category": "analysis",
-      "version": "3.6.2",
+      "version": "3.7.0",
       "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly", "notebooks"],
       "author": {
         "name": "PolicyEngine",
@@ -179,7 +179,7 @@
       "description": "Data analysis, survey enhancement, imputation, calibration, and microdata utilities",
       "source": "./",
       "category": "data",
-      "version": "3.6.2",
+      "version": "3.7.0",
       "keywords": ["data", "microdata", "survey", "imputation", "calibration", "inequality", "poverty", "ml"],
       "author": {
         "name": "PolicyEngine",
@@ -228,7 +228,7 @@
       "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
       "source": "./",
       "category": "complete",
-      "version": "3.6.2",
+      "version": "3.7.0",
       "keywords": ["complete", "all", "comprehensive"],
       "author": {
         "name": "PolicyEngine",
