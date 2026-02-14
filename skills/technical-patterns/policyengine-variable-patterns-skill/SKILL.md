@@ -895,6 +895,44 @@ def formula(entity, period, parameters):
     income_limit = fpg * state_scale
 ```
 
+### Handling Parameter Structure Transitions
+
+**When a parameter changes structure over time** (e.g., flat rate → marginal brackets), the parameter side uses a boolean toggle with separate files (see parameter patterns skill). The variable must branch on that toggle.
+
+**Pattern: Use `if p.toggle:` to select the right parameter access method:**
+
+```python
+class wa_capital_gains_tax(Variable):
+    value_type = float
+    entity = TaxUnit
+    definition_period = YEAR
+    unit = USD
+    defined_for = StateCode.WA
+
+    def formula(tax_unit, period, parameters):
+        p = parameters(period).gov.states.wa.tax.income.capital_gains
+        taxable_ltcg = ...  # calculation
+
+        # Toggle between flat and bracket-based calculation
+        if p.rate.flat_applies:
+            return taxable_ltcg * p.rate.flat
+        return p.rate.incremental.calc(taxable_ltcg)
+```
+
+**Why `if` (not `where`) is correct here:**
+- `p.rate.flat_applies` is a **parameter** (scalar boolean at a given instant), not a per-entity variable
+- Python `if` is appropriate because the entire population uses the same rate structure in a given year
+- `where()` is for per-entity branching (e.g., different treatment by filing status)
+
+**When to use this pattern:**
+- ✅ A flat rate became a marginal bracket schedule at a specific date
+- ✅ A single value became a lookup table at a specific date
+- ✅ Any parameter whose access method (`.calc()` vs `*`) changes by period
+
+**When NOT to use this pattern:**
+- ❌ The parameter structure is the same across all periods (just access it normally)
+- ❌ The branching depends on a per-entity condition like income or age (use `where()` instead)
+
 ---
 
 ## Accessing Baseline Parameters in Reform Simulations

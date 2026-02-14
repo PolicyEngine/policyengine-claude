@@ -1,0 +1,4 @@
+- bump: minor
+  changes:
+    added:
+      - Add parameter structure transition pattern (flat to bracket) to parameter-patterns and variable-patterns skills

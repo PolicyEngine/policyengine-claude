@@ -467,6 +467,91 @@ brackets:
 
 **Real-world example:** Hawaii Food/Excise Tax Credit uses AGI brackets. The first threshold must be `-.inf` to correctly handle taxpayers with negative AGI (e.g., business losses).
 
+### Parameter Structure Transitions (Flat → Bracket)
+
+**When a parameter changes structure over time** (e.g., a flat rate becomes a tiered/marginal rate in a later year), you CANNOT put both structures in a single YAML file. Instead, split into separate files with a boolean toggle.
+
+**Problem:** A single `rate.yaml` with marginal brackets would retroactively apply the tiered structure to years that had a flat rate.
+
+**Solution:** Create a `rate/` folder with three files:
+
+```
+rate/
+├── flat.yaml           # The original flat-rate value
+├── incremental.yaml    # The new bracket/marginal structure
+└── flat_applies.yaml   # Boolean toggle: true = use flat, false = use brackets
+```
+
+**`rate/flat.yaml`** — The original single-value parameter:
+```yaml
+description: Washington taxes long-term capital gains at this rate.
+values:
+  2022-01-01: 0.07
+
+metadata:
+  unit: /1
+  period: year
+  label: Washington flat capital gains tax rate
+  reference:
+    - title: RCW 82.87.040(1) Tax imposed—Long-term capital assets
+      href: https://app.leg.wa.gov/RCW/default.aspx?cite=82.87.040
+```
+
+**`rate/incremental.yaml`** — The new bracket structure:
+```yaml
+description: Washington taxes long-term capital gains at these marginal rates.
+brackets:
+  - threshold:
+      2022-01-01: 0
+    rate:
+      2022-01-01: 0.07
+  - threshold:
+      2025-01-01: 1_000_000
+    rate:
+      2025-01-01: 0.099
+
+metadata:
+  threshold_unit: currency-USD
+  rate_unit: /1
+  threshold_period: year
+  type: marginal_rate
+  label: Washington marginal capital gains tax rate
+  reference:
+    - title: RCW 82.87.040(1)-(2) Tax imposed—Long-term capital assets
+      href: https://app.leg.wa.gov/RCW/default.aspx?cite=82.87.040
+    - title: ESSB 5813, Chapter 421, Laws of 2025, Sec. 101
+      href: https://lawfilesext.leg.wa.gov/biennium/2025-26/Htm/Bills/Session%20Laws/Senate/5813-S.SL.htm
+```
+
+**`rate/flat_applies.yaml`** — The boolean toggle:
+```yaml
+description: Washington uses this indicator to determine whether the flat capital gains tax rate applies.
+values:
+  2022-01-01: true
+  2025-01-01: false
+
+metadata:
+  unit: bool
+  period: year
+  label: Washington flat capital gains tax rate applies
+  reference:
+    - title: RCW 82.87.040(1) Tax imposed—Long-term capital assets
+      href: https://app.leg.wa.gov/RCW/default.aspx?cite=82.87.040
+    - title: ESSB 5813, Chapter 421, Laws of 2025, Sec. 101
+      href: https://lawfilesext.leg.wa.gov/biennium/2025-26/Htm/Bills/Session%20Laws/Senate/5813-S.SL.htm
+```
+
+**When to use this pattern:**
+- ✅ A flat rate becomes a marginal bracket schedule
+- ✅ A single value becomes a lookup table by household size
+- ✅ Any parameter whose YAML structure type changes at a specific date
+
+**When NOT to use this pattern:**
+- ❌ Values change but the structure stays the same (just add a new date entry)
+- ❌ A new bracket is added to an existing bracket structure (just add the bracket with a new date)
+
+**See variable patterns skill for the corresponding variable-side logic (`if p.rate.flat_applies`).**
+
 ---
 
 ## 7. Validation Checklist
