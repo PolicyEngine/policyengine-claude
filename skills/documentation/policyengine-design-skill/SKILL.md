@@ -101,21 +101,18 @@ These appear in older projects. Migrate to the values above.
 
 ### Font families
 
+**Two font families only: Inter + JetBrains Mono.** No serif fonts, no Roboto, no Public Sans.
+
 | Context | Font | CSS variable |
 |---------|------|-------------|
-| **UI / standalone tools / charts** | Inter | `--pe-font-family-primary`, `--pe-font-family-chart` |
-| **Long-form prose (blog, research)** | Roboto Serif | `--pe-font-family-prose` |
-| **Body text (app-v2)** | Roboto | `--pe-font-family-body` |
+| **Everything** (UI, charts, blog, tools) | Inter | `--pe-font-family-primary` |
 | **Code** | JetBrains Mono | `--pe-font-family-mono` |
 
-**Key rule: Inter for everything interactive — UI, charts, and tools.** Roboto Serif is reserved for long-form written content (blog posts, research articles). Serif fonts should never appear in buttons, form labels, chart labels, headings, or navigation.
+Legacy aliases (`--pe-font-family-chart`, `--pe-font-family-body`, `--pe-font-family-prose`, `--pe-font-family-secondary`) all resolve to Inter for backward compatibility.
 
-**Loading fonts:**
+**Loading Inter:**
 ```html
-<!-- Inter — UI, charts, and interactive tools -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<!-- Roboto Serif — only needed for blog/research long-form content -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
 ```
 
 ### Font sizes
@@ -261,7 +258,7 @@ toolbarMode = "minimal"
 | **Standalone tool** | `@import tokens.css` or CDN link | Google Fonts: Inter |
 | **Python chart** | Hardcode or load `tokens.json` | Inter for Plotly |
 | **Streamlit** | `.streamlit/config.toml` | Default sans-serif |
-| **Blog HTML** | Hardcode from token values | Google Fonts: Roboto |
+| **Blog HTML** | Hardcode from token values | Google Fonts: Inter |
 
 ## Accessibility
 
