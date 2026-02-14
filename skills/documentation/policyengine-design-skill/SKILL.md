@@ -103,16 +103,19 @@ These appear in older projects. Migrate to the values above.
 
 | Context | Font | CSS variable |
 |---------|------|-------------|
-| **UI / standalone tools** | Inter | `--pe-font-family-primary` |
-| **Charts (Plotly/Recharts)** | Roboto Serif | `--pe-font-family-chart` |
+| **UI / standalone tools / charts** | Inter | `--pe-font-family-primary`, `--pe-font-family-chart` |
+| **Long-form prose (blog, research)** | Roboto Serif | `--pe-font-family-prose` |
 | **Body text (app-v2)** | Roboto | `--pe-font-family-body` |
 | **Code** | JetBrains Mono | `--pe-font-family-mono` |
 
-**Key rule: Inter for all interactive tools and UI.** Roboto Serif is only for chart axis labels and titles. Serif fonts should not appear in buttons, form labels, headings, or navigation.
+**Key rule: Inter for everything interactive — UI, charts, and tools.** Roboto Serif is reserved for long-form written content (blog posts, research articles). Serif fonts should never appear in buttons, form labels, chart labels, headings, or navigation.
 
-**Loading Inter:**
+**Loading fonts:**
 ```html
+<!-- Inter — UI, charts, and interactive tools -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Roboto Serif — only needed for blog/research long-form content -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
 ```
 
 ### Font sizes
@@ -165,7 +168,7 @@ import plotly.graph_objects as go
 
 # Import from tokens.json or hardcode
 TEAL = "#319795"
-CHART_FONT = "Roboto Serif"
+CHART_FONT = "Inter"
 LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png"
 
 def format_fig(fig):
@@ -195,8 +198,8 @@ def format_fig(fig):
 import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 
 <BarChart data={data}>
-  <XAxis dataKey="name" style={{ fontFamily: "Roboto Serif" }} />
-  <YAxis style={{ fontFamily: "Roboto Serif" }} />
+  <XAxis dataKey="name" style={{ fontFamily: "Inter" }} />
+  <YAxis style={{ fontFamily: "Inter" }} />
   <Tooltip />
   <Bar dataKey="value" fill="#319795" />
 </BarChart>
@@ -215,9 +218,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 
 ### Chart typography
 
-- **Axis labels and titles:** Roboto Serif, 14px
-- **Tick labels:** Roboto Serif, 12px
-- **Legend:** Roboto Serif, horizontal, above chart
+- **Axis labels and titles:** Inter, 14px
+- **Tick labels:** Inter, 12px
+- **Legend:** Inter, horizontal, above chart
 
 ## Logos
 
@@ -256,7 +259,7 @@ toolbarMode = "minimal"
 |-------------|-------------|------------|
 | **app-v2** | `import { colors } from '@/designTokens'` | Built-in (Mantine + Inter) |
 | **Standalone tool** | `@import tokens.css` or CDN link | Google Fonts: Inter |
-| **Python chart** | Hardcode or load `tokens.json` | Roboto Serif for Plotly |
+| **Python chart** | Hardcode or load `tokens.json` | Inter for Plotly |
 | **Streamlit** | `.streamlit/config.toml` | Default sans-serif |
 | **Blog HTML** | Hardcode from token values | Google Fonts: Roboto |
 

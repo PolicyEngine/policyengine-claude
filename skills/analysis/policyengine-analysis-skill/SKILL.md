@@ -251,7 +251,7 @@ def create_pe_layout(title, xaxis_title, yaxis_title):
         title=title,
         xaxis_title=xaxis_title,
         yaxis_title=yaxis_title,
-        font=dict(family="Roboto Serif", size=14),
+        font=dict(family="Inter", size=14),
         plot_bgcolor="white",
         hovermode="x unified",
         xaxis=dict(
