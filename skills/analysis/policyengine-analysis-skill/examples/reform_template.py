@@ -114,7 +114,7 @@ def create_chart(df, title="Reform Impact Analysis"):
         title=title,
         xaxis_title="Income",
         yaxis_title="Net Income Change ($)",
-        font=dict(family="Roboto Serif", size=14),
+        font=dict(family="Inter", size=14),
         plot_bgcolor="white",
         hovermode="x unified",
         xaxis=dict(

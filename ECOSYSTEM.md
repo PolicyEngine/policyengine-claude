@@ -259,8 +259,8 @@ sim = Simulation(situation=household, country_id="us")
 - pandas
 
 **Branding:**
-- Use v1 colors for now (#39C6C0, #2C6496)
-- Roboto Serif for charts
+- Use teal (#319795) as primary brand color
+- Inter for charts and UI; Roboto Serif only for long-form prose
 - PolicyEngine logo
 - .streamlit/config.toml theme
 
