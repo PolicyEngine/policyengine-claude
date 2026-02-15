@@ -1,3 +1,8 @@
+---
+name: policyengine-recharts
+description: Recharts chart patterns, formatting, and styling for PolicyEngine apps
+---
+
 # PolicyEngine Recharts charts
 
 Use this skill when creating or modifying charts in PolicyEngine applications. PolicyEngine favors **Recharts** over Plotly for frontend charts due to its dramatically smaller bundle size and React-native SVG rendering.
