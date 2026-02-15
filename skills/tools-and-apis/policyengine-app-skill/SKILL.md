@@ -251,6 +251,71 @@ Exceptions: proper nouns (PolicyEngine), acronyms (IRS), official names (Child T
 | `packages/design-system/` | Token source of truth |
 | `app/.claude/skills/` | Local skills (design-tokens, chart-standards, ingredient-patterns) |
 
+## URL patterns
+
+### Production domains
+
+| Domain | Purpose |
+|--------|---------|
+| `policyengine.org` | Marketing website, research, blog |
+| `app.policyengine.org` | Calculator app (policies, households, reports) |
+
+### Calculator URLs (app.policyengine.org)
+
+```
+app.policyengine.org/:countryId/                             # Dashboard
+app.policyengine.org/:countryId/policies                     # Saved policies
+app.policyengine.org/:countryId/policies/create               # Policy builder
+app.policyengine.org/:countryId/households                    # Saved households
+app.policyengine.org/:countryId/households/create             # Household builder
+app.policyengine.org/:countryId/reports                       # Saved reports
+app.policyengine.org/:countryId/reports/create                # Report builder
+app.policyengine.org/:countryId/simulations                   # Saved simulations
+app.policyengine.org/:countryId/simulations/create            # Simulation builder
+app.policyengine.org/:countryId/report-output/:reportId       # Report output (overview)
+app.policyengine.org/:countryId/report-output/:reportId/:subpage/:view  # Specific chart
+```
+
+**Report output subpages and views:**
+```
+/report-output/:reportId/budget                               # Budget overview
+/report-output/:reportId/distributional/incomeDecile          # Distributional by income
+/report-output/:reportId/distributional/wealthDecile          # Distributional by wealth
+/report-output/:reportId/winners-losers/incomeDecile          # Winners/losers by income
+/report-output/:reportId/winners-losers/wealthDecile          # Winners/losers by wealth
+/report-output/:reportId/poverty/age                          # Poverty by age
+/report-output/:reportId/poverty/gender                       # Poverty by gender
+/report-output/:reportId/poverty/race                         # Poverty by race (US only)
+/report-output/:reportId/deep-poverty/age                     # Deep poverty by age
+/report-output/:reportId/deep-poverty/gender                  # Deep poverty by gender
+/report-output/:reportId/inequality                           # Inequality measures
+```
+
+**Country IDs:** `us`, `uk`, `ca`, `ng`, `il`
+
+### Website URLs (policyengine.org)
+
+```
+policyengine.org/:countryId/                     # Country home
+policyengine.org/:countryId/research             # Research index
+policyengine.org/:countryId/research/:slug       # Research article
+policyengine.org/:countryId/blog                 # Blog index
+policyengine.org/:countryId/blog/:postName       # Blog post
+policyengine.org/:countryId/model                # Policy model explorer
+policyengine.org/:countryId/:slug                # Embedded app (from apps.json)
+```
+
+### Legacy v1 URLs (DO NOT USE)
+
+The old `policyengine-app` (v1) used a different URL pattern that no longer works:
+```
+# WRONG — v1 format, returns "App not found"
+policyengine.org/us/policy?reform=73278&baseline=2&region=enhanced_us&timePeriod=2025
+policyengine.org/us/reform/2/280039/over/2/us?focus=policyOutput.winnersAndLosers.incomeDecile
+```
+
+Always use `app.policyengine.org` for calculator functionality.
+
 ## Related skills
 
 - `policyengine-design-skill` — Full token reference
