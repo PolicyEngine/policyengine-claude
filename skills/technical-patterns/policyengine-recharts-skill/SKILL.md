@@ -107,10 +107,9 @@ export default function MyChart({ data, highlightX }: {
   data: DataPoint[];
   highlightX?: number;
 }) {
-  const fmt = (v: number) => {
-    const abs = Math.abs(v).toLocaleString();
-    return v < 0 ? `-$${abs}` : `$${abs}`;
-  };
+  const fmt = (v: number) => v.toLocaleString("en-US", {
+    style: "currency", currency: "USD", maximumFractionDigits: 0,
+  });
   const xMax = Math.max(...data.map(d => d.x));
   const yMax = Math.max(...data.map(d => d.y));
   const xTicks = niceTicks(xMax);
@@ -203,17 +202,16 @@ const TOOLTIP_STYLE = {
 
 ## Currency formatting
 
-**Negative sign must precede the currency symbol.** This is the standard accounting convention.
+**Never manually concatenate currency symbols** (`` `$${value}` ``). Use `Intl.NumberFormat` with `style: 'currency'`, which handles negative sign placement correctly.
 
 ```typescript
 // WRONG — produces "$-31"
 const fmt = (v: number) => `$${v.toLocaleString()}`;
 
-// CORRECT — produces "-$31"
-const fmt = (v: number) => {
-  const formatted = Math.abs(v).toLocaleString();
-  return v < 0 ? `-$${formatted}` : `$${formatted}`;
-};
+// CORRECT — produces "-$31" (Intl handles sign placement)
+const fmt = (v: number) => v.toLocaleString("en-US", {
+  style: "currency", currency: "USD", maximumFractionDigits: 0,
+});
 ```
 
-Use `formatParameterValue()` from `@/utils/chartValueUtils` or `formatCurrency()` from `@/utils/formatters` (which uses `Intl.NumberFormat` with `style: 'currency'` and handles sign placement correctly).
+In policyengine-app-v2, use `formatParameterValue()` from `@/utils/chartValueUtils` or `formatCurrency()` from `@/utils/formatters` — both use `Intl.NumberFormat` internally.

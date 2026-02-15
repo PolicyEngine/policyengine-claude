@@ -133,7 +133,9 @@ function RevenueChart({ data }) {
       <ResponsiveContainer width="100%" height={400}>
         <BarChart data={data}>
           <XAxis dataKey="name" />
-          <YAxis tickFormatter={(v) => `$${(v / 1e9).toFixed(1)}B`} />
+          <YAxis tickFormatter={(v) => v.toLocaleString('en-US', {
+            style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1,
+          })} />
           <Tooltip content={<ImpactTooltip />} />
           <Bar dataKey="value" fill={colors.primary[500]} />
         </BarChart>
