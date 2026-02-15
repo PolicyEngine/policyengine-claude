@@ -107,7 +107,10 @@ export default function MyChart({ data, highlightX }: {
   data: DataPoint[];
   highlightX?: number;
 }) {
-  const fmt = (v: number) => `$${v.toLocaleString()}`;
+  const fmt = (v: number) => {
+    const abs = Math.abs(v).toLocaleString();
+    return v < 0 ? `-$${abs}` : `$${abs}`;
+  };
   const xMax = Math.max(...data.map(d => d.x));
   const yMax = Math.max(...data.map(d => d.y));
   const xTicks = niceTicks(xMax);
@@ -196,3 +199,21 @@ const TOOLTIP_STYLE = {
 6. **Use `dot={false}`** on Line components for clean curves with many data points
 7. **Use `ReferenceDot`** to highlight the user's current selection
 8. **Teal (#319795) is the primary chart color** - matches PolicyEngine brand
+9. **Negative currency: sign before symbol** - Always format as `-$31`, never `$-31`
+
+## Currency formatting
+
+**Negative sign must precede the currency symbol.** This is the standard accounting convention.
+
+```typescript
+// WRONG — produces "$-31"
+const fmt = (v: number) => `$${v.toLocaleString()}`;
+
+// CORRECT — produces "-$31"
+const fmt = (v: number) => {
+  const formatted = Math.abs(v).toLocaleString();
+  return v < 0 ? `-$${formatted}` : `$${formatted}`;
+};
+```
+
+Use `formatParameterValue()` from `@/utils/chartValueUtils` or `formatCurrency()` from `@/utils/formatters` (which uses `Intl.NumberFormat` with `style: 'currency'` and handles sign placement correctly).
