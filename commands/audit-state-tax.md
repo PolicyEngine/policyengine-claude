@@ -288,9 +288,91 @@ STEPS:
 
 ---
 
-## Phase 6: Verify Mismatches (CRITICAL)
+## Phase 5.5: Verify Mismatches via Agent Discussion
 
-**Never trust agent-reported mismatches without verification.** For each reported mismatch:
+**Never trust agent-reported mismatches without verification.** Agents commonly produce false positives — a parameter value may look wrong in isolation but be correct because:
+- The parameter is only used in a deprecated code path (e.g., pre-2023)
+- The value is automatically inherited from a federal variable
+- The parameter interacts with other parameters in a way the audit agent didn't trace
+
+For each MISMATCH reported by an audit agent, spawn a **verification team** where a verifier agent and the original audit agent discuss the finding.
+
+### Step 1: Create a verification team
+
+For each mismatch (or group of related mismatches from the same audit agent):
+
+```
+TeamCreate(team_name="verify-mismatch-{N}")
+```
+
+### Step 2: Spawn the verifier agent
+
+Spawn a new `general-purpose` agent as a teammate with this prompt:
+
+```
+You are a code-path verifier for a state tax audit. An audit agent reported
+a MISMATCH and you must determine if it's a real issue or a false positive.
+
+REPORTED MISMATCH:
+- Parameter: {parameter name and file path}
+- Repo value: {value}
+- Expected value: {value from source}
+- Audit agent's reasoning: {summary from their report}
+
+YOUR TASK:
+1. Grep for ALL usages of this parameter across the codebase
+2. For each variable that references it, trace the call chain:
+   - Is it called from the {year}+ code path?
+   - Or only from a deprecated/disabled path?
+3. Check if the parameter's value actually affects the target tax year's
+   computation by following the execution flow from the top-level tax
+   variable (e.g., ia_income_tax) down to this parameter
+4. Check if the value might be correct due to interaction with other
+   parameters (e.g., a flag that disables the feature, a separate
+   variable that overrides it)
+
+After your analysis, message the audit agent with your findings and
+any questions. Discuss until you reach a verdict.
+
+VERDICT must be one of:
+- CONFIRMED: The mismatch is real and affects {year} calculations
+- REJECTED: The parameter doesn't affect {year} (explain why)
+- INCONCLUSIVE: Unable to determine (explain what's unclear)
+
+Report your verdict with full reasoning.
+```
+
+### Step 3: Resume the original audit agent as a teammate
+
+Resume the audit agent that reported the mismatch using `resume: {agent_id}`:
+
+```
+A verifier agent is checking your mismatch finding for [{parameter}].
+They may message you with questions about your reasoning.
+Answer their questions based on your earlier analysis.
+If they present evidence that the parameter isn't used in the {year}
+code path, acknowledge it. If you have evidence it IS used, explain
+the code path.
+```
+
+### Step 4: Let them discuss
+
+Allow up to 3-4 message round-trips. The verifier traces code, the audit agent defends or concedes.
+
+### Step 5: Collect verdicts
+
+After the team reaches consensus:
+- **CONFIRMED** mismatches proceed to Phase 6 for 600 DPI visual verification
+- **REJECTED** mismatches are excluded from the final report (but noted as "investigated and cleared")
+- **INCONCLUSIVE** mismatches proceed to Phase 6 for manual verification
+
+Shut down the verification team after collecting the verdict.
+
+---
+
+## Phase 6: Verify Confirmed Mismatches
+
+For each mismatch that was **CONFIRMED** or **INCONCLUSIVE** in Phase 5.5:
 
 1. **Re-render at 600 DPI** for the disputed page:
    ```bash
@@ -372,11 +454,12 @@ gh pr comment $PR_NUMBER --body "## State Tax Parameter Audit
 
 1. **READ-ONLY**: Never edit files. Never switch branches. This is an audit.
 2. **300 DPI minimum**: Always render PDFs at 300 DPI. Use 600 DPI for mismatch verification.
-3. **Verify all mismatches**: Never trust agent-reported mismatches without 600 DPI + text cross-reference.
+3. **Verify all mismatches via discussion**: Every mismatch must go through Phase 5.5 (agent discussion) before Phase 6 (visual verification). Never include a mismatch in the final report without both code-path verification AND visual confirmation.
 4. **Agents stay in scope**: Agents only read their assigned pages. Cross-references and external PDFs get separate verification agents.
 5. **Always cite pages**: Every finding must include a `#page=XX` citation.
 6. **Error margin <= 1**: Flag any difference > 0.3 between repo and PDF values.
 7. **Context preservation**: Never read large PDFs in the main context. Always delegate to agents.
+8. **Trace code paths**: A parameter mismatch is only real if the parameter is actually used in the target tax year's computation. Always verify the parameter is reachable from the top-level tax variable.
 
 ---
 
@@ -386,7 +469,8 @@ Before starting:
 - [ ] I will NOT make any code changes
 - [ ] I will NOT switch branches
 - [ ] I will render PDF at 300 DPI minimum
-- [ ] I will verify all agent-reported mismatches at 600 DPI
+- [ ] I will verify all mismatches via Phase 5.5 agent discussion before reporting
+- [ ] I will verify confirmed mismatches at 600 DPI in Phase 6
 - [ ] I will spawn verification agents for cross-references and external PDFs
 - [ ] I will include #page=XX citations for all findings
 - [ ] I will be constructive and actionable in the PR comment
