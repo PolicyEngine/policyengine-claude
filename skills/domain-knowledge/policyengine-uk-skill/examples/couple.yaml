@@ -5,14 +5,14 @@
 people:
   person_1:
     age:
-      2025: 35
+      2026: 35
     employment_income:
-      2025: 35000
+      2026: 35000
   person_2:
     age:
-      2025: 33
+      2026: 33
     employment_income:
-      2025: 25000
+      2026: 25000
 
 benunits:
   benunit:
@@ -26,4 +26,4 @@ households:
       - person_1
       - person_2
     region:
-      2025: SCOTLAND
+      2026: SCOTLAND

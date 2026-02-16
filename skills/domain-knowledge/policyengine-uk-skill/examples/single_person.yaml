@@ -4,9 +4,9 @@
 people:
   person:
     age:
-      2025: 30
+      2026: 30
     employment_income:
-      2025: 30000
+      2026: 30000
 
 benunits:
   benunit:
@@ -18,4 +18,4 @@ households:
     members:
       - person
     region:
-      2025: LONDON
+      2026: LONDON
