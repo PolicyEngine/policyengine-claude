@@ -563,6 +563,51 @@ def formula(household, period, parameters):
 
 ---
 
+## Federal Aggregator Variables (Summing State Programs)
+
+### CRITICAL: Discover Programs by Enumerating State Directories
+
+When building or modifying a federal-level variable that sums state programs (like `tanf`, which sums all state TANF programs), **never search by keyword or naming pattern**. State programs use wildly different names that don't match any single pattern.
+
+**Example — TANF program names across states:**
+- Standard: `al_tanf`, `ca_tanf`, `ny_tanf` (28 states)
+- Non-standard: `fl_tca`, `mn_mfip`, `ia_fip`, `ct_tfa`, `md_tca`, `mi_fip`
+- Completely unique: `ar_tea`, `id_tafi`, `la_fitap`, `ma_tafdc`, `ne_adc`, `oh_owf`, `ut_fep`, `wy_power`, `ky_ktap`, `nh_fanf`, `tn_ff`
+
+None of the "completely unique" names contain "tanf". A keyword search for "tanf" misses 11 programs.
+
+**Correct discovery method:**
+1. List ALL state directories: `ls policyengine_us/variables/gov/states/`
+2. For EACH of the 51 jurisdictions (50 states + DC), check non-tax subdirectories for the program type
+3. Look for the top-level benefit variable (entity=SPMUnit, has `defined_for`)
+4. Add it to the aggregator list
+
+**Quick command to find all state TANF-like top-level variables:**
+```bash
+# Search for SPMUnit variables under state welfare/human services directories
+grep -rl "entity = SPMUnit" policyengine_us/variables/gov/states/*/  \
+  --include="*.py" | \
+  xargs grep -l "defined_for" | \
+  # Then manually check which are TANF top-level benefit variables
+```
+
+### Cycle Checks When Wiring Up State Programs
+
+Adding a state program to a federal aggregator can create circular dependencies. Common cycles:
+
+1. **Housing cost cycle**: State TANF → `housing_cost` → `rent` → `housing_assistance` → `hud_annual_income` → TANF
+   - Fix: Use `pre_subsidy_rent` + other housing components instead of `housing_cost`
+
+2. **Childcare cycle**: State TANF → `childcare_expenses` → childcare subsidies → SNAP → TANF
+   - Fix: Use `spm_unit_pre_subsidy_childcare_expenses` instead of `childcare_expenses`
+
+3. **Entity broadcast bugs**: Person-level and SPMUnit-level arrays mixed in `where()` — passes unit tests (scalar) but fails microsim (vectorized)
+   - Fix: Use `spm_unit.project(spm_unit_var)` to broadcast to person level
+
+**After adding programs, always run the microsimulation test** — it catches cycles and entity mismatches that unit tests miss.
+
+---
+
 ## TANF-Specific Patterns
 
 ### Study Reference Implementations First
