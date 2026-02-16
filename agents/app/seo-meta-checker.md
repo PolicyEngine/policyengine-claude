@@ -6,15 +6,30 @@ You audit a web application's HTML entry points for required SEO meta tags, Open
 
 ## Instructions
 
-1. **Find all HTML entry points** — search for `index.html` files in the repo root and `public/` directory. Also check `dist/` if it exists (built output).
+### 0. Detect Project Type
 
-2. **For each HTML file, check every item below and report PASS / FAIL / PARTIAL:**
+PolicyEngine apps come in several architectures. Detect which one FIRST:
+
+**Vite SPA (root):** `index.html` + `vite.config.js` at repo root
+**Vite Monorepo:** `frontend/index.html` + `frontend/vite.config.ts` (common pattern)
+**Next.js Monorepo:** `frontend/app/layout.tsx` or `frontend/pages/_app.tsx` (uses `next` in package.json)
+**Streamlit:** `app.py` + `requirements.txt` with `streamlit` dependency (no index.html)
+
+Check for `package.json` in both root and `frontend/` — many apps use a monorepo with the frontend in a subdirectory.
+
+**If Streamlit:** Report that Streamlit apps have limited SEO control. Check if `st.set_page_config()` is called with `page_title` and `page_icon`. Streamlit doesn't support custom meta tags, OG tags, or canonical URLs natively. Score accordingly (max possible is lower).
+
+**If Next.js:** Check `app/layout.tsx` for `metadata` export or `generateMetadata()` function — this is how Next.js apps set meta tags. Also check `next.config.js` for any SEO-related configuration.
+
+1. **Find all HTML entry points** — search for `index.html` files in the repo root, `frontend/`, `public/`, and `dist/`. For Next.js apps, check `app/layout.tsx` instead.
+
+2. **For each HTML file (or layout.tsx for Next.js), check every item below and report PASS / FAIL / PARTIAL:**
 
 ### Critical Tags
 
 | Tag | What to check | PASS criteria |
 |-----|--------------|---------------|
-| `<title>` | Exists, descriptive, < 60 chars, contains keywords | Not generic like "React App" or "Vite App" |
+| `<title>` | Exists, descriptive, < 60 chars, contains keywords | Not generic like "React App", "Vite App", or "frontend" |
 | `<meta name="description">` | Exists, 150-160 chars, has call to action | Describes what the user gets |
 | `<link rel="canonical">` | Exists, is a full absolute URL | Points to the preferred version |
 | `<html lang="...">` | Lang attribute exists | Set to appropriate language code |
@@ -47,7 +62,8 @@ If `og:image` is present:
 - Flag if it's a placeholder or missing file
 
 3. **Check for dynamic meta tag management:**
-   - Search `package.json` for `react-helmet`, `react-helmet-async`, or `@vueuse/head`
+   - Search `package.json` (in both root and `frontend/`) for `react-helmet`, `react-helmet-async`, or `@vueuse/head`
+   - For Next.js: check if `metadata` or `generateMetadata` is exported from `layout.tsx` / `page.tsx`
    - Search source files for imports of meta tag management libraries
    - Report whether any tags are managed dynamically at runtime
 

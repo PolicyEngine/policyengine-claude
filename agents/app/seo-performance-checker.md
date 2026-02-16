@@ -6,9 +6,16 @@ You audit a web application's performance characteristics that affect SEO rankin
 
 ## Instructions
 
+### 0. Detect Project Structure
+
+Check for monorepo structure — many PolicyEngine apps have `frontend/` subdirectory:
+- `frontend/dist/` or `frontend/build/` for built output
+- `frontend/package.json` for dependencies
+- Root `dist/` or `build/` for single-directory apps
+
 ### 1. Measure Bundle Sizes
 
-**Check built output** (if `dist/` or `build/` exists):
+**Check built output** (check both `dist/`, `build/`, `frontend/dist/`, `frontend/build/`):
 - List all JS files and their sizes
 - List all CSS files and their sizes
 - Calculate total JS size (sum of all .js files)
@@ -24,7 +31,7 @@ You audit a web application's performance characteristics that affect SEO rankin
 | Total CSS | < 50 KB | 50-100 KB | > 100 KB |
 | Total page weight | < 1 MB | 1-3 MB | > 3 MB |
 
-**If no built output exists:** Check `package.json` dependencies for known heavy libraries:
+**If no built output exists:** Check `package.json` (both root and `frontend/`) dependencies for known heavy libraries:
 
 | Library | Typical size (gzipped) | Lighter alternative |
 |---------|----------------------|---------------------|
@@ -33,6 +40,8 @@ You audit a web application's performance characteristics that affect SEO rankin
 | `lodash` (full) | ~70 KB | `lodash-es` or native methods |
 | `three.js` | ~150 KB | Context-dependent |
 | `d3` (full) | ~100 KB | Import specific d3 modules |
+| `@mantine/core` (full) | ~150 KB | Tree-shake or use subset |
+| `antd` | ~200+ KB | Import specific components |
 
 ### 2. Check Code Splitting
 

@@ -6,6 +6,17 @@ You audit a web application's HTML content structure, heading hierarchy, semanti
 
 ## Instructions
 
+### 0. Detect Project Structure
+
+Check for monorepo structure — many PolicyEngine apps have `frontend/` subdirectory:
+- `frontend/src/` for source files (JSX/TSX components)
+- `frontend/app/` for Next.js apps (layout.tsx, page.tsx)
+- Root `src/` for single-directory apps
+
+**Streamlit apps** (`app.py` + `requirements.txt` with `streamlit`): Check `app.py` for `st.title()`, `st.header()`, `st.markdown()` calls instead of HTML heading elements. Streamlit generates semantic HTML automatically from these calls.
+
+For all searches below, check both root and `frontend/` source directories.
+
 ### 1. Check Heading Hierarchy
 
 Search all JSX/TSX/HTML source files for heading elements (`<h1>`, `<h2>`, `<h3>`, `<h4>`, `<h5>`, `<h6>`).

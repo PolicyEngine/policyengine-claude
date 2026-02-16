@@ -58,7 +58,7 @@ AUDIT_DIR="/tmp/seo-audit-target"
 AUDIT_DIR="$(pwd)"
 ```
 
-Verify this is a web application by checking for `index.html` or `package.json` with a frontend framework dependency.
+Verify this is a web application by checking for `index.html`, `frontend/index.html`, `frontend/app/layout.tsx`, or `package.json` with a frontend framework dependency. Also check for Streamlit apps (`app.py` + `requirements.txt` with `streamlit`).
 
 ---
 
@@ -71,11 +71,18 @@ Collect information about the project:
 REPO_NAME=$(basename $(git -C $AUDIT_DIR remote get-url origin 2>/dev/null) .git || basename $AUDIT_DIR)
 REPO_FULL=$(git -C $AUDIT_DIR remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
 
-# Check for built output
+# Check for built output (root and monorepo)
 ls $AUDIT_DIR/dist/ 2>/dev/null || ls $AUDIT_DIR/build/ 2>/dev/null
+ls $AUDIT_DIR/frontend/dist/ 2>/dev/null || ls $AUDIT_DIR/frontend/build/ 2>/dev/null
 
-# Identify framework
+# Detect project structure
+ls $AUDIT_DIR/frontend/package.json 2>/dev/null  # monorepo?
+ls $AUDIT_DIR/frontend/app/layout.tsx 2>/dev/null  # Next.js?
+ls $AUDIT_DIR/app.py 2>/dev/null  # Streamlit?
+
+# Identify framework (check both root and frontend/)
 cat $AUDIT_DIR/package.json | grep -E '"(react|vue|svelte|next|vite|gatsby)"'
+cat $AUDIT_DIR/frontend/package.json 2>/dev/null | grep -E '"(react|vue|svelte|next|vite|gatsby)"'
 
 # Check hosting
 ls $AUDIT_DIR/.github/workflows/ 2>/dev/null
@@ -85,9 +92,10 @@ cat $AUDIT_DIR/netlify.toml 2>/dev/null
 
 **Document:**
 - Repository name and URL
-- Framework (React, Vue, Next.js, etc.)
+- Project structure (Vite SPA, Vite Monorepo, Next.js Monorepo, Streamlit)
+- Framework (React, Vue, Next.js, Streamlit, etc.)
 - Build tool (Vite, CRA, Webpack, etc.)
-- Hosting platform (GitHub Pages, Vercel, Netlify)
+- Hosting platform (GitHub Pages, Vercel, Netlify, Cloud Run, Modal)
 - Whether built output exists locally
 
 ---

@@ -6,10 +6,22 @@ You audit a web application's crawlability — whether search engines can discov
 
 ## Instructions
 
+### 0. Detect Project Structure
+
+PolicyEngine apps use several architectures. Detect which one FIRST:
+
+**Vite SPA (root):** `index.html` at repo root
+**Vite Monorepo:** `frontend/index.html` (common — look for `frontend/` dir)
+**Next.js Monorepo:** `frontend/app/` directory with `layout.tsx`
+**Streamlit:** `app.py` + `requirements.txt` with `streamlit` dependency
+
+For monorepo apps, check both root and `frontend/` for all files below.
+
 ### 1. Check robots.txt
 
 Search for `robots.txt` in:
 - `public/robots.txt` (Vite/CRA source — gets copied to build root)
+- `frontend/public/robots.txt` (monorepo pattern)
 - `dist/robots.txt` or `build/robots.txt` (built output)
 - Root of repository
 
@@ -83,11 +95,21 @@ Determine the hosting platform:
 - `.github/workflows/` with GitHub Pages deployment → GitHub Pages
 - `vercel.json` → Vercel
 - `netlify.toml` or `_redirects` → Netlify
+- `Dockerfile` with `streamlit` → Streamlit on Cloud Run/Modal
+- `cloudbuild.yaml` → Google Cloud Run
+- `modal_app.py` or Modal config → Modal serverless
+
+**For Vercel specifically:**
+- Check `vercel.json` for `cleanUrls: true` (removes .html extensions — good for SEO)
+- Check `vercel.json` for `framework` field
+- Check for rewrites/redirects configuration
 
 **For GitHub Pages specifically:**
 - Check if `base` path in build config matches the repository name
 - Check if CNAME file exists (custom domain)
 - Note: GitHub Pages doesn't support server-side redirects or SSR
+
+**Multiple deploy configs:** Some repos have Dockerfile + vercel.json + cloudbuild.yaml. Identify which is the PRIMARY deployment and use that for canonical URL recommendations.
 
 ### 7. Check for Duplicate Content Risk
 
