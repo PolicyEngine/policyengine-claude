@@ -91,13 +91,39 @@ sim = Microsimulation(dataset='hf://policyengine/policyengine-us-data/districts/
 
 ## Key MicroSeries Methods
 
+MicroSeries (from [microdf](https://github.com/PolicyEngine/microdf)) handles all weighting automatically — see the `microdf` skill for full documentation.
+
 ```python
 income = sim.calc('household_net_income', period=2026, map_to='person')
 
+# Basic weighted statistics
 income.mean()           # Weighted mean
 income.sum()            # Weighted sum
 income.median()         # Weighted median
 (income > 50000).mean() # Weighted share meeting condition
+
+# Inequality metrics (see microdf skill for more)
+income.gini()           # Weighted Gini coefficient
+```
+
+### Inequality & Distributional Analysis
+
+Use built-in MicroSeries methods — never reimplement Gini or other inequality metrics manually:
+
+```python
+baseline_income = baseline.calc('household_net_income', period=2026, map_to='person')
+reformed_income = reformed.calc('household_net_income', period=2026, map_to='person')
+
+# Gini coefficient change
+print(f"Baseline Gini: {baseline_income.gini():.4f}")
+print(f"Reform Gini:   {reformed_income.gini():.4f}")
+
+# Poverty rate (boolean MicroSeries)
+in_poverty = baseline.calc('spm_unit_is_in_spm_poverty', map_to='person', period=2026)
+print(f"SPM poverty rate: {in_poverty.mean():.1%}")
+
+# Decile-level analysis
+income.decile_rank()    # Assign decile ranks (1-10)
 ```
 
 ## Finding Parameter Paths
