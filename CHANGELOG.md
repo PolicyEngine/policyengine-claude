@@ -5,17 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.7.0] - 2026-02-13
+## [3.7.0] - 2026-02-16 17:53:45
 
 ### Added
 
-- Auto-discover PDF sources in audit-state-tax command when no URL is provided — checks PR references, YAML metadata, and web search
-
-## [3.6.2] - 2026-02-01
-
-### Fixed
-
-- Fix SessionStart hook schema - wrap prompt in nested `hooks` array to match expected structure
+- /audit-seo command for cross-repo SEO auditing with 4 specialist agents
+- seo-meta-checker agent for meta tags, OG tags, Twitter cards, and canonical URLs
+- seo-crawlability-checker agent for robots.txt, sitemap, routing, SSR, and hosting
+- seo-performance-checker agent for bundle sizes, code splitting, fonts, and images
+- seo-content-checker agent for heading hierarchy, semantic HTML, and accessibility
+- seo-checklist-skill with SEO first principles for PolicyEngine web apps
 
 ## [3.6.1] - 2026-02-01 13:43:05
 
@@ -53,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[3.6.2]: https://github.com/PolicyEngine/policyengine-claude/compare/3.6.1...3.6.2
+[3.7.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.6.1...3.7.0
 [3.6.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.5.0...3.6.1
 [3.5.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.4.1...3.5.0
 [3.4.1]: https://github.com/PolicyEngine/policyengine-claude/compare/1.0.0...3.4.1
