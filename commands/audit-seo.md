@@ -170,7 +170,7 @@ Each agent scores their domain out of their total checks. Combine into an overal
 
 | Category | Agent | Max Points | Weight |
 |----------|-------|-----------|--------|
-| Meta Tags | seo-meta-checker | 18 | 30% |
+| Meta Tags | seo-meta-checker | 19 | 30% |
 | Crawlability | seo-crawlability-checker | 7 | 30% |
 | Performance | seo-performance-checker | 7 | 20% |
 | Content & Structure | seo-content-checker | 7 | 20% |
@@ -215,7 +215,7 @@ Try to determine the live URL:
 
 | Category | Score | Status |
 |----------|-------|--------|
-| Meta Tags | X/18 | {emoji} |
+| Meta Tags | X/19 | {emoji} |
 | Crawlability | X/7 | {emoji} |
 | Performance | X/7 | {emoji} |
 | Content & Structure | X/7 | {emoji} |

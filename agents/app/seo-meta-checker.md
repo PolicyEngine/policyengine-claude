@@ -50,6 +50,7 @@ Check for `package.json` in both root and `frontend/` — many apps use a monore
 | `<meta property="og:site_name">` | Exists | "PolicyEngine" or appropriate brand |
 | `<meta name="viewport">` | Exists | Contains `width=device-width` |
 | `<meta charset="utf-8">` | Exists | UTF-8 specified |
+| Favicon | `<link rel="icon">` exists in HTML | File exists in `public/` (favicon.ico, favicon.svg, or favicon.png). Google shows favicons in mobile search results — missing = less clickable. |
 
 ### OG Image Validation
 
@@ -83,7 +84,7 @@ If `og:image` is present:
 | meta description | FAIL | (missing) | No description for search snippets |
 | ... | ... | ... | ... |
 
-### Important Tags: X/5 passing
+### Important Tags: X/6 passing
 
 | Tag | Status | Current Value | Issue |
 |-----|--------|--------------|-------|
@@ -95,5 +96,5 @@ If `og:image` is present:
 
 ### Dual-Mode Assessment: [Canonical strategy: present/missing/misconfigured]
 
-### Score: X/18 (Critical: X/13, Important: X/5)
+### Score: X/19 (Critical: X/13, Important: X/6)
 ```
