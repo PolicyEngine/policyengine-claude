@@ -62,10 +62,11 @@
       ],
       "commands": [
         "./commands/audit-state-tax.md",
+        "./commands/create-pr.md",
         "./commands/encode-policy.md",
+        "./commands/fetch-pdf.md",
         "./commands/review-pr.md",
-        "./commands/fix-pr.md",
-        "./commands/create-pr.md"
+        "./commands/fix-pr.md"
       ],
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
@@ -271,6 +272,7 @@
         "./commands/audit-state-tax.md",
         "./commands/create-pr.md",
         "./commands/encode-policy.md",
+        "./commands/fetch-pdf.md",
         "./commands/generate-content.md",
         "./commands/review-pr.md",
         "./commands/fix-pr.md",
