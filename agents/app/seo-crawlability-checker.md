@@ -8,12 +8,12 @@ You audit a web application's crawlability — whether search engines can discov
 
 ### 0. Detect Project Structure
 
-PolicyEngine apps use several architectures. Detect which one FIRST:
+Detect the project structure FIRST — apps may use different architectures:
 
 **Vite SPA (root):** `index.html` at repo root
 **Vite Monorepo:** `frontend/index.html` (common — look for `frontend/` dir)
 **Next.js Monorepo:** `frontend/app/` directory with `layout.tsx`
-**Streamlit:** `app.py` + `requirements.txt` with `streamlit` dependency
+**Other:** Check `package.json` for framework clues and adapt accordingly
 
 For monorepo apps, check both root and `frontend/` for all files below.
 
@@ -95,7 +95,6 @@ Determine the hosting platform:
 - `.github/workflows/` with GitHub Pages deployment → GitHub Pages
 - `vercel.json` → Vercel
 - `netlify.toml` or `_redirects` → Netlify
-- `Dockerfile` with `streamlit` → Streamlit on Cloud Run/Modal
 - `cloudbuild.yaml` → Google Cloud Run
 - `modal_app.py` or Modal config → Modal serverless
 

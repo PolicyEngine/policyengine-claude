@@ -8,16 +8,14 @@ You audit a web application's HTML entry points for required SEO meta tags, Open
 
 ### 0. Detect Project Type
 
-PolicyEngine apps come in several architectures. Detect which one FIRST:
+Detect the project structure FIRST — apps may use different architectures:
 
 **Vite SPA (root):** `index.html` + `vite.config.js` at repo root
 **Vite Monorepo:** `frontend/index.html` + `frontend/vite.config.ts` (common pattern)
 **Next.js Monorepo:** `frontend/app/layout.tsx` or `frontend/pages/_app.tsx` (uses `next` in package.json)
-**Streamlit:** `app.py` + `requirements.txt` with `streamlit` dependency (no index.html)
+**Other:** Check `package.json` for framework clues and adapt accordingly
 
 Check for `package.json` in both root and `frontend/` — many apps use a monorepo with the frontend in a subdirectory.
-
-**If Streamlit:** Report that Streamlit apps have limited SEO control. Check if `st.set_page_config()` is called with `page_title` and `page_icon`. Streamlit doesn't support custom meta tags, OG tags, or canonical URLs natively. Score accordingly (max possible is lower).
 
 **If Next.js:** Check `app/layout.tsx` for `metadata` export or `generateMetadata()` function — this is how Next.js apps set meta tags. Also check `next.config.js` for any SEO-related configuration.
 
