@@ -24,10 +24,21 @@
     - Content generation plugin for creating social images and social posts from blog
       articles
   date: 2026-01-31 11:55:22
-- version: 3.6.1
-  changes:
+- changes:
     added:
     - Add reference-validator to encode-policy Phase 5 for parameter reference validation
     - Add absolute_error_margin guidance to testing patterns skill
     - Add AskUserQuestion prompts to review-pr and fix-pr commands for PR selection
   date: 2026-02-01 13:43:05
+  version: 3.6.1
+- bump: minor
+  changes:
+    added:
+    - /audit-seo command for cross-repo SEO auditing with 4 specialist agents
+    - seo-meta-checker agent for meta tags, OG tags, Twitter cards, and canonical
+      URLs
+    - seo-crawlability-checker agent for robots.txt, sitemap, routing, SSR, and hosting
+    - seo-performance-checker agent for bundle sizes, code splitting, fonts, and images
+    - seo-content-checker agent for heading hierarchy, semantic HTML, and accessibility
+    - seo-checklist-skill with SEO first principles for PolicyEngine web apps
+  date: 2026-02-16 17:53:45
