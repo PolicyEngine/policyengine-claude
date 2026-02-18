@@ -45,6 +45,8 @@ Search for `sitemap.xml` in the same locations as robots.txt.
 
 **If not found:** Report FAIL — search engines can't discover pages efficiently.
 
+**GitHub Pages caveat:** Even if `sitemap.xml` is valid, Google Search Console cannot fetch sitemaps from `.github.io` domains (returns "Sitemap could not be read"). This is a GitHub infrastructure limitation. Flag this if the hosting is GitHub Pages without a custom domain.
+
 ### 3. Check Routing Architecture
 
 Determine the routing strategy by examining:
@@ -107,6 +109,8 @@ Determine the hosting platform:
 - Check if `base` path in build config matches the repository name
 - Check if CNAME file exists (custom domain)
 - Note: GitHub Pages doesn't support server-side redirects or SSR
+- **CRITICAL: Check for `.nojekyll` file** in `public/` or repo root. Without this file, GitHub Pages runs Jekyll processing which can mangle XML files (sitemap.xml, robots.txt). If missing, report FAIL.
+- **Sitemap + Google Search Console warning:** GitHub Pages on `.github.io` domains blocks automated fetches from Googlebot. Google Search Console will show "Sitemap could not be read" even if the sitemap is valid. The fix is using a **custom domain** (CNAME). If the site uses `.github.io` without a custom domain, flag this as a known limitation and recommend setting up a custom domain for proper sitemap indexing.
 
 **Multiple deploy configs:** Some repos have Dockerfile + vercel.json + cloudbuild.yaml. Identify which is the PRIMARY deployment and use that for canonical URL recommendations.
 
