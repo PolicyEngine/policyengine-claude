@@ -5,20 +5,20 @@
 people:
   parent_1:
     age:
-      2024: 35
+      2026: 35
     employment_income:
-      2024: 100000
+      2026: 100000
   parent_2:
     age:
-      2024: 35
+      2026: 35
     employment_income:
-      2024: 50000
+      2026: 50000
   child_1:
     age:
-      2024: 8
+      2026: 8
   child_2:
     age:
-      2024: 5
+      2026: 5
 
 families:
   family:
@@ -60,7 +60,7 @@ households:
       - child_1
       - child_2
     state_name:
-      2024: NY
+      2026: NY
 
 # Axes: Vary charitable donations from $0 to $50,000
 axes:
@@ -68,4 +68,4 @@ axes:
       count: 1001
       min: 0
       max: 50000
-      period: 2024
+      period: 2026

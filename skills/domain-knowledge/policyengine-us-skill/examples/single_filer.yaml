@@ -4,11 +4,11 @@
 people:
   person:
     age:
-      2024: 30
+      2026: 30
     employment_income:
-      2024: 60000
+      2026: 60000
     charitable_cash_donations:
-      2024: 5000
+      2026: 5000
 
 families:
   family:
@@ -35,4 +35,4 @@ households:
     members:
       - person
     state_name:
-      2024: CA
+      2026: CA
