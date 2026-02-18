@@ -213,6 +213,43 @@
       ]
     },
     {
+      "name": "dashboard-builder",
+      "description": "Orchestrated AI workflow for creating PolicyEngine dashboards from natural-language descriptions",
+      "source": "./",
+      "category": "development",
+      "version": "3.11.1",
+      "keywords": ["dashboard", "calculator", "interactive", "workflow", "orchestration", "react", "vercel"],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "agents": [
+        "./agents/dashboard/dashboard-planner.md",
+        "./agents/dashboard/dashboard-scaffold.md",
+        "./agents/dashboard/backend-builder.md",
+        "./agents/dashboard/frontend-builder.md",
+        "./agents/dashboard/dashboard-integrator.md",
+        "./agents/dashboard/dashboard-validator.md"
+      ],
+      "commands": [
+        "./commands/create-dashboard.md",
+        "./commands/deploy-dashboard.md"
+      ],
+      "skills": [
+        "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
+        "./skills/tools-and-apis/policyengine-interactive-tools-skill",
+        "./skills/tools-and-apis/policyengine-vercel-deployment-skill",
+        "./skills/tools-and-apis/policyengine-api-v2-skill",
+        "./skills/tools-and-apis/policyengine-app-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill"
+      ]
+    },
+    {
       "name": "content",
       "description": "Content generation - social images and posts from blog articles",
       "source": "./",
@@ -274,6 +311,12 @@
         "./agents/country-models/rules-engineer.md",
         "./agents/country-models/test-creator.md",
         "./agents/country-models/workflow.md",
+        "./agents/dashboard/dashboard-planner.md",
+        "./agents/dashboard/dashboard-scaffold.md",
+        "./agents/dashboard/backend-builder.md",
+        "./agents/dashboard/frontend-builder.md",
+        "./agents/dashboard/dashboard-integrator.md",
+        "./agents/dashboard/dashboard-validator.md",
         "./agents/legislation-statute-analyzer.md",
         "./agents/reference-validator.md",
         "./agents/shared/model-evaluator.md",
@@ -291,7 +334,9 @@
         "./commands/review-pr.md",
         "./commands/review-program.md",
         "./commands/fix-pr.md",
-        "./commands/new-tool.md"
+        "./commands/new-tool.md",
+        "./commands/create-dashboard.md",
+        "./commands/deploy-dashboard.md"
       ],
       "skills": [
         "./skills/domain-knowledge/policyengine-us-skill",
@@ -329,7 +374,8 @@
         "./skills/documentation/policyengine-research-lookup-skill",
         "./skills/documentation/policyengine-plugin-maintenance-skill",
         "./skills/content/content-generation-skill",
-        "./skills/technical-patterns/seo-checklist-skill"
+        "./skills/technical-patterns/seo-checklist-skill",
+        "./skills/tools-and-apis/policyengine-dashboard-workflow-skill"
       ]
     }
   ]
