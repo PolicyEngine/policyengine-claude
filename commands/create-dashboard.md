@@ -8,6 +8,28 @@ Coordinate the multi-agent workflow to create a complete PolicyEngine dashboard.
 
 **Input:** $ARGUMENTS should contain or reference the dashboard description. If $ARGUMENTS is empty, ask the user to describe the dashboard they want.
 
+## Phase 0: Permission Check
+
+Before anything else, verify the user can create repositories in the PolicyEngine GitHub organization:
+
+```bash
+gh api orgs/PolicyEngine/memberships/$( gh api user --jq '.login' ) --jq '.role' 2>&1
+```
+
+**If the command succeeds** and returns `admin` or `member`: proceed to Phase 1.
+
+**If the command fails** (404, 403, or any error): stop immediately and display:
+
+> **Permission check failed.** The `/create-dashboard` workflow needs to create a new repository under the `PolicyEngine` GitHub organization, but your current GitHub account does not appear to have the required permissions.
+>
+> To use this workflow, you need:
+> - **Membership** in the [PolicyEngine GitHub organization](https://github.com/PolicyEngine)
+> - **Repository creation** privileges within the org
+>
+> Please ask a PolicyEngine org admin to add your GitHub account, then try again.
+
+**Do NOT proceed past this point if the permission check fails.**
+
 ## Phase 1: Plan
 
 Invoke @complete:dashboard:dashboard-planner agent to:
