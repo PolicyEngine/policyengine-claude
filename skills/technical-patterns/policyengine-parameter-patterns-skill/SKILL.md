@@ -548,9 +548,98 @@ metadata:
 
 **When NOT to use this pattern:**
 - ❌ Values change but the structure stays the same (just add a new date entry)
-- ❌ A new bracket is added to an existing bracket structure (just add the bracket with a new date)
+- ❌ A new bracket is added to an existing bracket structure (see below)
 
 **See variable patterns skill for the corresponding variable-side logic (`if p.rate.flat_applies`).**
+
+### Adding New Brackets to Existing Scales
+
+**When a new bracket is added to an existing scale in a later year**, you CANNOT simply add the bracket with only the new year's date — the bracket would have no defined threshold/amount for prior years, breaking the scale.
+
+**Solution:** Add the new bracket with its threshold set to `.inf` (or `-.inf` for rate brackets starting from the bottom) for the base year. This makes the bracket structurally present for all years but **functionally unreachable** before the year it takes effect.
+
+**Example: Ohio personal exemption phase-out (HB 96)**
+
+Ohio's personal exemption had 3 brackets (by AGI). Starting 2025, a 4th bracket phases the exemption to $0 at high incomes ($750k in 2025, $500k in 2026+):
+
+```yaml
+brackets:
+  - threshold:
+      2021-01-01: 0
+    amount:
+      2021-01-01: 2_400
+  - threshold:
+      2021-01-01: 40_001
+    amount:
+      2021-01-01: 2_150
+  - threshold:
+      2021-01-01: 80_001
+    amount:
+      2021-01-01: 1_900
+  # New bracket: use .inf for base year so pre-2025 is unaffected
+  - threshold:
+      2021-01-01: .inf         # Pre-2025: unreachable → bracket is inert
+      2025-01-01: 750_000      # 2025: phase-out at $750k
+      2026-01-01: 500_000      # 2026+: phase-out drops to $500k
+    amount:
+      2021-01-01: 0            # $0 exemption above threshold
+```
+
+**Why `.inf` works:**
+- For pre-2025 periods, no income can reach `.inf`, so the bracket never activates
+- Starting 2025, the threshold becomes a real value ($750k) and the bracket takes effect
+- The scale remains structurally valid across all time periods
+
+**Another example: Ohio joint filing credit MAGI cap**
+
+```yaml
+brackets:
+  - threshold:
+      2021-01-01: 0
+    amount:
+      2021-01-01: 0.2
+  - threshold:
+      2021-01-01: 25_000
+    amount:
+      2021-01-01: 0.15
+  - threshold:
+      2021-01-01: 50_000
+    amount:
+      2021-01-01: 0.1
+  - threshold:
+      2021-01-01: 75_000
+    amount:
+      2021-01-01: 0.05
+  # New bracket: MAGI cap added by HB 96
+  - threshold:
+      2021-01-01: .inf
+      2025-01-01: 750_000
+      2026-01-01: 500_000
+    amount:
+      2021-01-01: 0
+```
+
+**When to use `.inf` for new brackets:**
+- ✅ A new upper bracket is added in a later year (cap, phase-out, new rate tier)
+- ✅ The bracket should not affect calculations for prior years
+- ✅ The new bracket sets a value to zero (phase-out) or introduces a new rate
+
+**When NOT to use this pattern:**
+- ❌ The bracket existed in all prior years too (just add it normally with the base date)
+- ❌ The parameter structure type itself changes (use the flat→bracket transition pattern above)
+
+**Real-world reference:** [policyengine-us PR #7107](https://github.com/PolicyEngine/policyengine-us/pull/7107) — Ohio 2025 income tax update (HB 96 personal exemption and joint filing credit MAGI caps).
+
+### Choosing Between the Two Approaches
+
+Both the **flat→bracket transition** and the **`.inf` new bracket** patterns handle parameters that change over time, but they solve different problems:
+
+| | Flat→Bracket Transition | `.inf` New Bracket |
+|---|---|---|
+| **Problem** | Structure type changes (e.g., flat value → bracket scale) | New bracket added to an existing scale |
+| **Parameter side** | Split into folder with separate files + boolean toggle | Add bracket with `.inf` threshold for base year |
+| **Variable side** | Requires `if p.toggle:` branching to choose access method | No changes — `.calc()` works as before |
+| **Example** | WA capital gains: flat 7% → tiered 7%/9.9% | OH exemptions: 3 brackets → 4 brackets with phase-out |
 
 ---
 

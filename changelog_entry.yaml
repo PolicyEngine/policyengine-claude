@@ -1,4 +1,5 @@
-- bump: minor
+- bump: patch
   changes:
     added:
       - Add parameter structure transition pattern (flat to bracket) to parameter-patterns and variable-patterns skills
+      - Add new bracket pattern using .inf for adding brackets to existing scales without breaking prior years

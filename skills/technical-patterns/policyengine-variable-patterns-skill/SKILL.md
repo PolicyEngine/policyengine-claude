@@ -932,6 +932,7 @@ class wa_capital_gains_tax(Variable):
 **When NOT to use this pattern:**
 - ❌ The parameter structure is the same across all periods (just access it normally)
 - ❌ The branching depends on a per-entity condition like income or age (use `where()` instead)
+- ❌ A new bracket was added to an existing scale using `.inf` (no variable changes needed — `.calc()` works as before; see parameter patterns skill)
 
 ---
 
