@@ -225,14 +225,28 @@ Place in `public/sitemap.xml`:
 
 For apps with multiple distinct pages, add each URL as a separate `<url>` entry.
 
+### .nojekyll (GitHub Pages only)
+
+**Always add an empty `.nojekyll` file to `public/`** when deploying to GitHub Pages. Without it, GitHub runs Jekyll processing which can mangle XML files like `sitemap.xml` and `robots.txt`, preventing Google from reading them.
+
+### GitHub Pages Sitemap Limitation
+
+**Known issue:** Google Search Console cannot fetch sitemaps from `.github.io` domains. Even with a valid, accessible `sitemap.xml`, Search Console will show "Sitemap could not be read." This is a GitHub infrastructure limitation — GitHub blocks automated Googlebot fetches.
+
+**Workarounds:**
+- **Custom domain (recommended):** Set up a CNAME (e.g., `tool.policyengine.org`) pointing to `org.github.io`. Sitemaps work correctly on custom domains.
+- **URL Inspection:** Manually request indexing via Search Console's URL Inspection tool — this works even when sitemap fetching doesn't.
+- **Backlinks:** Links from other indexed sites (e.g., policyengine.org embedding/linking to the tool) will cause Google to discover and index the page without needing the sitemap.
+
 ### Google Search Console
 
 After deploying robots.txt and sitemap.xml:
 1. Go to https://search.google.com/search-console
-2. Add your domain as a property
-3. Verify ownership (HTML file, DNS, or meta tag)
+2. Add your domain as a property (use URL prefix for GitHub Pages subpaths)
+3. Verify ownership (HTML meta tag is easiest for GitHub Pages)
 4. Submit your sitemap URL
-5. Monitor indexing status and search performance
+5. If on `.github.io`: expect "Sitemap could not be read" — use URL Inspection instead
+6. Monitor indexing status and search performance
 
 ---
 
@@ -351,6 +365,7 @@ This is not something the plugin can check, but it's important context: the poli
 - [ ] `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image` present
 - [ ] `robots.txt` exists in build output root
 - [ ] `sitemap.xml` exists in build output root
+- [ ] `.nojekyll` exists in `public/` (GitHub Pages only — prevents XML mangling)
 - [ ] Page content is in the HTML (not only JS-rendered)
 - [ ] `<html lang="en">` attribute set
 
