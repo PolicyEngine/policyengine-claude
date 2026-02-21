@@ -26,8 +26,12 @@ agents/
 │   └── workflow.md              # Multi-agent workflow documentation
 ├── api/                         # Agents for policyengine-api
 │   └── api-reviewer.md          # Reviews API implementations
-├── app/                         # Agents for policyengine-app
-│   └── app-reviewer.md          # Reviews React app code
+├── app/                         # Agents for policyengine-app and web tools
+│   ├── app-reviewer.md          # Reviews React app code
+│   ├── seo-meta-checker.md      # Audits SEO meta tags and OG tags
+│   ├── seo-crawlability-checker.md # Audits robots.txt, sitemap, routing
+│   ├── seo-performance-checker.md  # Audits bundle sizes and performance
+│   └── seo-content-checker.md   # Audits semantic HTML and content
 ├── shared/                      # Shared resources across all repos
 │   ├── policyengine-standards.md # Common standards and patterns
 │   ├── model-evaluator.md       # Evaluates model outputs
@@ -123,6 +127,10 @@ See `country-models/workflow.md` for detailed workflow documentation.
 | Agent | Description | Location |
 |-------|-------------|----------|
 | **app-reviewer** | Reviews React app code for quality and performance | `app/` |
+| **seo-meta-checker** | Audits meta tags, OG tags, Twitter cards, canonical URLs | `app/` |
+| **seo-crawlability-checker** | Audits robots.txt, sitemap, routing, SSR, hosting config | `app/` |
+| **seo-performance-checker** | Audits bundle sizes, code splitting, fonts, images | `app/` |
+| **seo-content-checker** | Audits heading hierarchy, semantic HTML, accessibility | `app/` |
 
 ### Shared Resources
 
@@ -145,5 +153,5 @@ See `country-models/workflow.md` for detailed workflow documentation.
 - **Country Models**: 16 agents
 - **Root-Level**: 3 agents
 - **API**: 1 agent
-- **App**: 1 agent
-- **Total**: 21 agents
+- **App**: 5 agents
+- **Total**: 25 agents

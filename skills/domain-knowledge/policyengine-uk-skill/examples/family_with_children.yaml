@@ -7,20 +7,20 @@
 people:
   parent_1:
     age:
-      2025: 35
+      2026: 35
     employment_income:
-      2025: 35000
+      2026: 35000
   parent_2:
     age:
-      2025: 33
+      2026: 33
     employment_income:
-      2025: 25000
+      2026: 25000
   child_1:
     age:
-      2025: 8
+      2026: 8
   child_2:
     age:
-      2025: 5
+      2026: 5
 
 benunits:
   benunit:
@@ -38,4 +38,4 @@ households:
       - child_1
       - child_2
     region:
-      2025: WALES
+      2026: WALES

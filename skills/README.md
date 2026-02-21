@@ -16,7 +16,8 @@ skills/
 │   ├── policyengine-review-patterns-skill/
 │   ├── policyengine-testing-patterns-skill/
 │   ├── policyengine-variable-patterns-skill/
-│   └── policyengine-vectorization-skill/
+│   ├── policyengine-vectorization-skill/
+│   └── seo-checklist-skill/
 │
 ├── domain-knowledge/        # Country/region specific knowledge
 │   ├── policyengine-uk-skill/
@@ -66,6 +67,7 @@ Implementation patterns, testing standards, and coding best practices that ensur
 | **policyengine-testing-patterns-skill** | Test creation patterns | YAML structure, naming conventions, period restrictions, quality standards |
 | **policyengine-variable-patterns-skill** | Variable implementation patterns | No hard-coding, federal/state separation, metadata standards |
 | **policyengine-vectorization-skill** | Vectorization patterns | NumPy operations, where/select usage, avoiding scalar logic |
+| **seo-checklist-skill** | SEO first principles for web apps | Meta tags, crawlability, dual-mode (standalone + iframe), performance |
 
 ### 🌍 Domain Knowledge (`domain-knowledge/`)
 

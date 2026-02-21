@@ -563,6 +563,51 @@ def formula(household, period, parameters):
 
 ---
 
+## Federal Aggregator Variables (Summing State Programs)
+
+### CRITICAL: Discover Programs by Enumerating State Directories
+
+When building or modifying a federal-level variable that sums state programs (like `tanf`, which sums all state TANF programs), **never search by keyword or naming pattern**. State programs use wildly different names that don't match any single pattern.
+
+**Example — TANF program names across states:**
+- Standard: `al_tanf`, `ca_tanf`, `ny_tanf` (28 states)
+- Non-standard: `fl_tca`, `mn_mfip`, `ia_fip`, `ct_tfa`, `md_tca`, `mi_fip`
+- Completely unique: `ar_tea`, `id_tafi`, `la_fitap`, `ma_tafdc`, `ne_adc`, `oh_owf`, `ut_fep`, `wy_power`, `ky_ktap`, `nh_fanf`, `tn_ff`
+
+None of the "completely unique" names contain "tanf". A keyword search for "tanf" misses 11 programs.
+
+**Correct discovery method:**
+1. List ALL state directories: `ls policyengine_us/variables/gov/states/`
+2. For EACH of the 51 jurisdictions (50 states + DC), check non-tax subdirectories for the program type
+3. Look for the top-level benefit variable (entity=SPMUnit, has `defined_for`)
+4. Add it to the aggregator list
+
+**Quick command to find all state TANF-like top-level variables:**
+```bash
+# Search for SPMUnit variables under state welfare/human services directories
+grep -rl "entity = SPMUnit" policyengine_us/variables/gov/states/*/  \
+  --include="*.py" | \
+  xargs grep -l "defined_for" | \
+  # Then manually check which are TANF top-level benefit variables
+```
+
+### Cycle Checks When Wiring Up State Programs
+
+Adding a state program to a federal aggregator can create circular dependencies. Common cycles:
+
+1. **Housing cost cycle**: State TANF → `housing_cost` → `rent` → `housing_assistance` → `hud_annual_income` → TANF
+   - Fix: Use `pre_subsidy_rent` + other housing components instead of `housing_cost`
+
+2. **Childcare cycle**: State TANF → `childcare_expenses` → childcare subsidies → SNAP → TANF
+   - Fix: Use `spm_unit_pre_subsidy_childcare_expenses` instead of `childcare_expenses`
+
+3. **Entity broadcast bugs**: Person-level and SPMUnit-level arrays mixed in `where()` — passes unit tests (scalar) but fails microsim (vectorized)
+   - Fix: Use `spm_unit.project(spm_unit_var)` to broadcast to person level
+
+**After adding programs, always run the microsimulation test** — it catches cycles and entity mismatches that unit tests miss.
+
+---
+
 ## TANF-Specific Patterns
 
 ### Study Reference Implementations First
@@ -849,6 +894,45 @@ def formula(entity, period, parameters):
     state_scale = p.income_limit_scale  # Often exists
     income_limit = fpg * state_scale
 ```
+
+### Handling Parameter Structure Transitions
+
+**When a parameter changes structure over time** (e.g., flat rate → marginal brackets), the parameter side uses a boolean toggle with separate files (see parameter patterns skill). The variable must branch on that toggle.
+
+**Pattern: Use `if p.toggle:` to select the right parameter access method:**
+
+```python
+class wa_capital_gains_tax(Variable):
+    value_type = float
+    entity = TaxUnit
+    definition_period = YEAR
+    unit = USD
+    defined_for = StateCode.WA
+
+    def formula(tax_unit, period, parameters):
+        p = parameters(period).gov.states.wa.tax.income.capital_gains
+        taxable_ltcg = ...  # calculation
+
+        # Toggle between flat and bracket-based calculation
+        if p.rate.flat_applies:
+            return taxable_ltcg * p.rate.flat
+        return p.rate.incremental.calc(taxable_ltcg)
+```
+
+**Why `if` (not `where`) is correct here:**
+- `p.rate.flat_applies` is a **parameter** (scalar boolean at a given instant), not a per-entity variable
+- Python `if` is appropriate because the entire population uses the same rate structure in a given year
+- `where()` is for per-entity branching (e.g., different treatment by filing status)
+
+**When to use this pattern:**
+- ✅ A flat rate became a marginal bracket schedule at a specific date
+- ✅ A single value became a lookup table at a specific date
+- ✅ Any parameter whose access method (`.calc()` vs `*`) changes by period
+
+**When NOT to use this pattern:**
+- ❌ The parameter structure is the same across all periods (just access it normally)
+- ❌ The branching depends on a per-entity condition like income or age (use `where()` instead)
+- ❌ A new bracket was added to an existing scale using `.inf` (no variable changes needed — `.calc()` works as before; see parameter patterns skill)
 
 ---
 

@@ -5,13 +5,13 @@
 people:
   parent:
     age:
-      2025: 30
+      2026: 30
   child_1:
     age:
-      2025: 8
+      2026: 8
   child_2:
     age:
-      2025: 5
+      2026: 5
 
 benunits:
   benunit:
@@ -27,7 +27,7 @@ households:
       - child_1
       - child_2
     region:
-      2025: NORTH_WEST
+      2026: NORTH_WEST
 
 # Axes: Vary employment income from £0 to £50,000
 axes:
@@ -35,4 +35,4 @@ axes:
       count: 1001
       min: 0
       max: 50000
-      period: 2025
+      period: 2026
