@@ -1,11 +1,17 @@
 ---
 name: policyengine-analysis
-description: Common analysis patterns for PolicyEngine research repositories (CRFB, newsletters, dashboards, impact studies)
+description: |
+  Common analysis patterns for PolicyEngine research repositories (CRFB, newsletters, dashboards, impact studies).
+  For population-level estimates (cost, poverty, distributional impacts), use the policyengine-microsimulation skill instead.
 ---
 
-# PolicyEngine Analysis
+# PolicyEngine analysis
 
 Patterns for creating policy impact analyses, dashboards, and research using PolicyEngine.
+
+**For population-level estimates** (budgetary cost, poverty impact, distributional analysis), use the **policyengine-microsimulation** skill instead. This skill covers analysis repo patterns, visualization, and household-level calculations.
+
+See `MICROSIMULATION_REFORM_GUIDE.md` for UK-specific microsimulation patterns.
 
 ## For Users 👥
 

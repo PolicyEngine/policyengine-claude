@@ -1,5 +1,11 @@
-- bump: patch
+- bump: minor
   changes:
     added:
-      - Add parameter structure transition pattern (flat to bracket) to parameter-patterns and variable-patterns skills
-      - Add new bracket pattern using .inf for adding brackets to existing scales without breaking prior years
+      - Add poverty analysis patterns (child poverty, deep poverty, SPM) to microsimulation skill
+      - Add poverty-related trigger keywords to microsimulation skill description
+      - Add common variables reference to microsimulation skill
+      - Add budgetary cost decomposition pattern
+      - Add current law context lookup pattern
+    changed:
+      - Update analysis skill to cross-reference microsimulation skill for population-level estimates
+      - Clarify when .values extraction is appropriate (filtered subgroup analysis)

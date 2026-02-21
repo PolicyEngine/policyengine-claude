@@ -357,7 +357,18 @@ def formula(person, period, parameters):
     age = person("age", period.this_year)  # Gets actual age
 ```
 
-### ❌ Mistake 2: Mixing Annual and Monthly
+### ❌ Mistake 2: Redundant period.this_year / MONTHS_IN_YEAR for Flow Variables
+```python
+# WRONG - Double-converting; period already auto-divides by 12
+fpg = spm_unit("spm_unit_fpg", period.this_year) / MONTHS_IN_YEAR
+
+# CORRECT - Core auto-converts annual → monthly when you use period
+fpg = spm_unit("spm_unit_fpg", period)
+```
+
+This applies to all YEAR-defined **flow variables** (income, FPG, dollar amounts). Using `period` from a MONTH formula auto-divides by 12. Using `period.this_year / MONTHS_IN_YEAR` is equivalent but redundant — just use `period`.
+
+### ❌ Mistake 3: Mixing annual and monthly
 ```python
 # WRONG - Comparing different units
 monthly_income = person("monthly_income", period)
@@ -371,7 +382,7 @@ monthly_limit = annual_limit / MONTHS_IN_YEAR
 if monthly_income < monthly_limit:  # Good comparison
 ```
 
-### ❌ Mistake 3: Wrong Test Expectations
+### ❌ Mistake 4: Wrong test expectations
 ```yaml
 # WRONG - Expecting annual in MONTH test
 period: 2024-01
