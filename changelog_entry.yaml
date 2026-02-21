@@ -1,0 +1,11 @@
+- bump: minor
+  changes:
+    added:
+      - Add poverty analysis patterns (child poverty, deep poverty, SPM) to microsimulation skill
+      - Add poverty-related trigger keywords to microsimulation skill description
+      - Add common variables reference to microsimulation skill
+      - Add budgetary cost decomposition pattern
+      - Add current law context lookup pattern
+    changed:
+      - Update analysis skill to cross-reference microsimulation skill for population-level estimates
+      - Clarify when .values extraction is appropriate (filtered subgroup analysis)
