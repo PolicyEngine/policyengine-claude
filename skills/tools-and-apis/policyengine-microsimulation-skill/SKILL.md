@@ -208,7 +208,7 @@ total_cost = reformed.calc("household_net_income", period=YEAR).sum() - \
 
 ## CRITICAL: Budgetary impact calculation
 
-### Start with a BOTEC before running code, and flag if results diverge
+### Start with a BOTEC range before running code, and flag if the point estimate diverges
 
 ### Use `household_net_income` for total cost
 
