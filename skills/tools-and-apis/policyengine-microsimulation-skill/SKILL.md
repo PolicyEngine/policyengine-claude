@@ -239,6 +239,20 @@ print(f"Benefit spending increase: ${benefit_cost:,.1f}B")
 shifts credits from non-refundable to refundable, changing `income_tax` by much more than
 the `ctc` variable itself changes. The `household_net_income` change captures the full effect.
 
+### Per-program decomposition
+
+Individual program changes are still useful for understanding *where* the cost comes from,
+but they don't substitute for the total `household_net_income` cost above.
+
+```python
+programs = ["income_tax", "ctc", "eitc", "snap", "ssi", "household_benefits"]
+for prog in programs:
+    b = baseline.calc(prog, period=YEAR).sum()
+    r = reformed.calc(prog, period=YEAR).sum()
+    if abs(r - b) > 1e6:
+        print(f"{prog}: ${(r - b) / 1e9:+.1f}B")
+```
+
 ## Current law context
 
 **Always check baseline parameter values before interpreting reform impacts.** Tax law changes frequently (TCJA, OBBBA, etc.). Use `CountryTaxBenefitSystem().parameters` to look up current-law values:
