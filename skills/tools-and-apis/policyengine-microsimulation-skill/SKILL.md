@@ -208,11 +208,7 @@ total_cost = reformed.calc("household_net_income", period=YEAR).sum() - \
 
 ## CRITICAL: Budgetary impact calculation
 
-### Sanity-check with a back-of-envelope estimate BEFORE running code
-
-Before running a microsimulation, estimate the expected cost from simple arithmetic
-(affected population x per-person change, plus indirect effects). If the microsimulation
-result falls outside this range, investigate before presenting results.
+### Start with a BOTEC before running code, and flag if results diverge
 
 ### Use `household_net_income` for total cost
 
