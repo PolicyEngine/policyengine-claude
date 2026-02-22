@@ -53,7 +53,7 @@ loser_share = (change < 0).mean()  # Weighted automatically!
 loser_share = change.weights[change.values < 0].sum() / change.weights.sum()
 ```
 
-## Quick Start
+## Quick start
 
 ```python
 from policyengine_us import Microsimulation
@@ -72,7 +72,7 @@ change = reformed_income - baseline_income
 
 # Weighted stats - no manual weight handling needed!
 print(f"Average impact: ${change.mean():,.0f}")
-print(f"Total cost: ${-change.sum()/1e9:,.1f}B")
+print(f"Total cost: ${change.sum()/1e9:,.1f}B")
 print(f"Share losing: {(change < 0).mean():.1%}")
 ```
 
@@ -206,15 +206,38 @@ total_cost = reformed.calc("household_net_income", period=YEAR).sum() - \
              baseline.calc("household_net_income", period=YEAR).sum()
 ```
 
-## Budgetary cost decomposition
+## CRITICAL: Budgetary impact calculation
+
+**The budgetary cost of a reform is the change in `household_net_income`, NOT the change in the
+directly-modified program variable.** A reform that changes one program (e.g., CTC) can have
+cascading effects on other taxes and benefits through interactions (refundability, phase-outs,
+benefit clawbacks). Summing only the program-specific variable will undercount the true cost.
+
+This matches the pattern used in the PolicyEngine API (`policyengine-api/endpoints/economy/compare.py`).
 
 ```python
-programs = ["income_tax", "ctc", "eitc", "snap", "ssi"]
-for prog in programs:
-    b = baseline.calc(prog, period=YEAR).sum()
-    r = reformed.calc(prog, period=YEAR).sum()
-    print(f"{prog}: ${(r - b) / 1e9:+.1f}B")
+# Total budgetary cost = change in household_net_income
+baseline_hni = baseline.calc('household_net_income', period=YEAR).sum()
+reformed_hni = reformed.calc('household_net_income', period=YEAR).sum()
+total_cost = (reformed_hni - baseline_hni) / 1e9
+print(f"Total budgetary cost: ${total_cost:,.1f}B")
+
+# Break out by federal taxes, state/local taxes, and benefits
+federal_tax_cost = (baseline.calc('income_tax', period=YEAR).sum() -
+                    reformed.calc('income_tax', period=YEAR).sum()) / 1e9
+state_tax_cost = (baseline.calc('state_income_tax', period=YEAR).sum() -
+                  reformed.calc('state_income_tax', period=YEAR).sum()) / 1e9
+benefit_cost = (reformed.calc('household_benefits', period=YEAR).sum() -
+                baseline.calc('household_benefits', period=YEAR).sum()) / 1e9
+
+print(f"Federal income tax revenue loss: ${federal_tax_cost:,.1f}B")
+print(f"State/local tax revenue loss: ${state_tax_cost:,.1f}B")
+print(f"Benefit spending increase: ${benefit_cost:,.1f}B")
 ```
+
+**Why not sum the program variable directly?** Example: making the CTC fully refundable
+shifts credits from non-refundable to refundable, changing `income_tax` by much more than
+the `ctc` variable itself changes. The `household_net_income` change captures the full effect.
 
 ## Current law context
 
