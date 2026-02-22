@@ -210,14 +210,9 @@ total_cost = reformed.calc("household_net_income", period=YEAR).sum() - \
 
 ### Sanity-check with a back-of-envelope estimate BEFORE running code
 
-Before running a microsimulation, estimate the expected cost from simple arithmetic:
-1. **How many people/children/units are affected?** (e.g., ~73M US children, ~65M CTC-qualifying)
-2. **What's the per-person change?** (e.g., $800 increase per child)
-3. **Are there indirect effects?** (e.g., making a credit refundable helps low-income families
-   who couldn't use it before — estimate how many and how much they gain)
-4. **Multiply and sum** to get an expected range
-
-If the microsimulation result falls outside this range, investigate before presenting results.
+Before running a microsimulation, estimate the expected cost from simple arithmetic
+(affected population x per-person change, plus indirect effects). If the microsimulation
+result falls outside this range, investigate before presenting results.
 
 ### Use `household_net_income` for total cost
 
