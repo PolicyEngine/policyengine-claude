@@ -208,6 +208,19 @@ total_cost = reformed.calc("household_net_income", period=YEAR).sum() - \
 
 ## CRITICAL: Budgetary impact calculation
 
+### Sanity-check with a back-of-envelope estimate BEFORE running code
+
+Before running a microsimulation, estimate the expected cost from simple arithmetic:
+1. **How many people/children/units are affected?** (e.g., ~73M US children, ~65M CTC-qualifying)
+2. **What's the per-person change?** (e.g., $800 increase per child)
+3. **Are there indirect effects?** (e.g., making a credit refundable helps low-income families
+   who couldn't use it before — estimate how many and how much they gain)
+4. **Multiply and sum** to get an expected range
+
+If the microsimulation result falls outside this range, investigate before presenting results.
+
+### Use `household_net_income` for total cost
+
 **The budgetary cost of a reform is the change in `household_net_income`, NOT the change in the
 directly-modified program variable.** A reform that changes one program (e.g., CTC) can have
 cascading effects on other taxes and benefits through interactions (refundability, phase-outs,
