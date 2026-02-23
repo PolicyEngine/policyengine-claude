@@ -103,11 +103,15 @@ Use sentence case (capitalize only the first word and proper nouns) for all head
 ## Key Findings
 ```
 
-## Neutral, Objective Tone
+## Analytical neutrality
 
-Describe what policies do without value judgments. Let readers draw their own conclusions from the data.
+PolicyEngine is a nonpartisan 501(c)(3). Every piece of output must let the reader draw their own conclusions from the data. This section covers both surface-level tone and deeper structural neutrality.
 
-**✅ Correct (Neutral):**
+### Value-laden language
+
+Describe what policies do without value judgments.
+
+**✅ Correct:**
 ```
 The reform reduces poverty by 3.2% and raises inequality by 0.16%
 Single filers with earnings between $8,000 and $37,000 see their net incomes increase
@@ -116,7 +120,7 @@ PolicyEngine projects higher costs than other organizations
 The top income decile receives 42% of total benefits
 ```
 
-**❌ Wrong (Value judgments):**
+**❌ Wrong:**
 ```
 The reform successfully reduces poverty by 3.2% but unfortunately raises inequality
 Low-income workers finally see their net incomes increase
@@ -124,6 +128,125 @@ The tax changes benefit most residents
 PolicyEngine provides more accurate cost estimates
 The wealthiest households receive a disproportionate share of benefits
 ```
+
+Specific words and phrases to avoid:
+- "Unfortunately" or "successfully" attached to policy outcomes
+- "Disproportionate" without defining the benchmark
+- "Fair share" or "equitable" without specifying the normative standard
+- "Helping" or "hurting" — use "increases/decreases net income by $X"
+- "Merely" or "just" to understate difficulty
+
+### Policy prescriptions disguised as findings
+
+Never recommend policies. Present findings and let readers decide.
+
+**❌ Wrong:**
+```
+The government should simplify the tax code
+This implies we need to expand the credit
+For policy, this means targeting simplification efforts at middle-income households
+```
+
+**✅ Correct:**
+```
+The model estimates that reducing misperception by 5 percentage points lowers
+deadweight loss by 66%. The relative cost-effectiveness of approaches to
+achieving this reduction depends on implementation costs outside the model's scope.
+```
+
+Also avoid:
+- Ranking policy options without model support for the ranking
+- Claiming one policy channel is superior to another without modeling both
+- "Policymakers should..." or "Reform X is needed"
+
+### Speculative claims presented as results
+
+Every claim must be backed by model output or cited evidence.
+
+**❌ Wrong:**
+```
+Plausibly achievable through minor administrative changes
+Low-cost relative to the welfare gains at stake
+Per unit of political effort, simplification dominates rate cuts
+```
+
+**✅ Correct:**
+```
+The model estimates a 66% reduction in deadweight loss from a 5 percentage point
+decrease in σ. Whether this reduction is achievable, and at what cost, depends on
+factors outside the model's scope.
+```
+
+Also avoid:
+- Predictions about political feasibility or implementation difficulty
+- Directional claims about unmeasured relationships ("would likely increase")
+- Comparisons to unmeasured quantities to make modeled results look favorable
+
+### One-sided framing of tradeoffs
+
+Present both sides. If you discuss benefits, discuss costs. If you discuss costs, discuss what the policy achieves.
+
+**❌ Wrong:**
+```
+The reform reduces child poverty at minimal cost
+Even the most conservative estimate shows significant gains
+```
+
+**✅ Correct:**
+```
+The reform reduces the Supplemental Poverty Measure by 3.2%, affecting 2.1 million
+children. The sensitivity range spans 1.8% to 4.7% depending on behavioral
+assumptions. The estimated cost is $14.3 billion annually.
+```
+
+Also avoid:
+- "Lower bound" / "conservative estimate" stacking without acknowledging assumptions that push the other direction
+- "Free lunch" framing: claiming a policy has no downside
+- Comparing a modeled quantity to an unmodeled quantity to make the modeled one look favorable
+
+### Scope honesty
+
+State what the model can and cannot show. Don't extend conclusions beyond the analysis.
+
+**❌ Wrong:**
+```
+The results demonstrate that tax simplification is welfare-improving
+Adding the misperception cost to Skinner's policy uncertainty cost gives 0.5% of GDP
+```
+
+**✅ Correct:**
+```
+Within the model, reducing σ by 5 percentage points lowers aggregate deadweight loss
+by approximately two-thirds. Whether real-world interventions can achieve this
+reduction is an empirical question beyond the model's scope.
+```
+
+Also avoid:
+- Applying static model results to dynamic settings without caveat
+- Treating model parameters as if they were policy levers
+- Adding estimates from different models/frameworks as if straightforwardly additive
+
+### Common neutrality problems by output type
+
+**Blog posts:**
+- Framing a policy as "helping families" instead of "increasing net income by $X for households with income between $Y and $Z"
+- Comparing PolicyEngine results favorably to other models without noting methodological differences
+- Stating policy costs without mentioning what the policy achieves (or vice versa)
+
+**Research papers:**
+- "Lower bound" / "conservative" stacking: asserting the estimate is conservative at every decision point without acknowledging assumptions pushing the other way
+- Policy prescription sections that go beyond model scope
+- Informal magnitude comparisons designed to make results seem large or small
+
+**Interactive tools:**
+- Default scenarios that highlight dramatic results
+- Labels or descriptions that frame outcomes positively or negatively
+- "You could save $X" instead of "Your net income changes by $X"
+
+**Project communications:**
+- Claiming PolicyEngine is "more accurate" than alternatives (say: "projects X% higher/lower than Y")
+- Describing nonpartisan analysis as "supporting" a particular reform
+- Using results to advocate for or against specific legislation
 
 ## Precise Verbs Over Adverbs
 
@@ -555,7 +678,11 @@ Before publishing, verify:
 - [ ] Use active voice throughout
 - [ ] Include specific numbers for all claims
 - [ ] Use sentence case for all headings
-- [ ] Maintain neutral, objective tone
+- [ ] No policy prescriptions disguised as findings
+- [ ] No speculative claims presented as results
+- [ ] Tradeoffs presented evenhandedly (costs and benefits)
+- [ ] Conclusions stay within model scope
+- [ ] No implicit value judgments
 - [ ] Choose precise verbs over vague adverbs
 - [ ] Include concrete household examples
 - [ ] Present data in tables
