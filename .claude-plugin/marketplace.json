@@ -161,13 +161,16 @@
       "description": "Policy analysis and research - impact studies, dashboards, notebooks, and visualizations",
       "source": "./",
       "category": "analysis",
-      "version": "3.9.0",
-      "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly", "notebooks"],
+      "version": "3.10.0",
+      "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly", "notebooks", "blog", "pipeline"],
       "author": {
         "name": "PolicyEngine",
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "commands": [
+        "./commands/publish-analysis.md"
+      ],
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/tools-and-apis/policyengine-python-client-skill",
@@ -180,7 +183,10 @@
         "./skills/data-science/microdf-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-writing-skill",
-        "./skills/documentation/policyengine-research-lookup-skill"
+        "./skills/documentation/policyengine-research-lookup-skill",
+        "./skills/content/blog-pipeline-skill",
+        "./skills/content/us-household-analysis-skill",
+        "./skills/content/uk-household-analysis-skill"
       ]
     },
     {
@@ -212,11 +218,11 @@
     },
     {
       "name": "content",
-      "description": "Content generation - social images and posts from blog articles",
+      "description": "Content pipeline - blog post analysis, social images, and distribution from policy reforms",
       "source": "./",
       "category": "marketing",
-      "version": "3.4.0",
-      "keywords": ["content", "social", "marketing", "images"],
+      "version": "3.10.0",
+      "keywords": ["content", "social", "marketing", "images", "blog", "pipeline", "analysis"],
       "author": {
         "name": "PolicyEngine",
         "url": "https://github.com/PolicyEngine"
@@ -226,10 +232,14 @@
         "./agents/content/content-orchestrator.md"
       ],
       "commands": [
-        "./commands/generate-content.md"
+        "./commands/generate-content.md",
+        "./commands/publish-analysis.md"
       ],
       "skills": [
-        "./skills/content/content-generation-skill"
+        "./skills/content/content-generation-skill",
+        "./skills/content/blog-pipeline-skill",
+        "./skills/content/us-household-analysis-skill",
+        "./skills/content/uk-household-analysis-skill"
       ]
     },
     {
@@ -283,6 +293,7 @@
         "./commands/create-pr.md",
         "./commands/encode-policy.md",
         "./commands/generate-content.md",
+        "./commands/publish-analysis.md",
         "./commands/review-pr.md",
         "./commands/fix-pr.md",
         "./commands/new-tool.md"
@@ -323,6 +334,9 @@
         "./skills/documentation/policyengine-research-lookup-skill",
         "./skills/documentation/policyengine-plugin-maintenance-skill",
         "./skills/content/content-generation-skill",
+        "./skills/content/blog-pipeline-skill",
+        "./skills/content/us-household-analysis-skill",
+        "./skills/content/uk-household-analysis-skill",
         "./skills/technical-patterns/seo-checklist-skill"
       ]
     }
