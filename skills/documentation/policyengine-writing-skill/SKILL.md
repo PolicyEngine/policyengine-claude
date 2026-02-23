@@ -226,6 +226,32 @@ Also avoid:
 - Treating model parameters as if they were policy levers
 - Adding estimates from different models/frameworks as if straightforwardly additive
 
+### Counterintuitive results
+
+When results show impacts that go against directional expectations, always explain the mechanism. Unexplained surprising results erode trust and leave readers to guess — or assume the analysis is wrong.
+
+Common counterintuitive patterns to watch for:
+- Households losing from a tax rate reduction (SALT deduction interactions, AMT thresholds, benefit phase-outs)
+- Households losing from a benefit expansion (cliff effects, interactions with other means-tested programs)
+- A reform that raises revenue but increases poverty (or vice versa)
+- Impacts that differ in sign across income groups in unexpected ways
+- A "simplification" that raises effective rates for some filers
+
+**❌ Wrong:**
+```
+The tax rate reduction increases net income for 82% of households.
+```
+
+**✅ Correct:**
+```
+The tax rate reduction increases net income for 82% of households. The 4.3%
+of households that see a net income decrease are primarily filers in the
+$100,000–$200,000 range who lose more from the corresponding SALT deduction
+cap than they gain from the lower rate.
+```
+
+Rule: if any subgroup's impact has the opposite sign from the headline result, explain why.
+
 ### Common neutrality problems by output type
 
 **Blog posts:**
@@ -683,6 +709,7 @@ Before publishing, verify:
 - [ ] Tradeoffs presented evenhandedly (costs and benefits)
 - [ ] Conclusions stay within model scope
 - [ ] No implicit value judgments
+- [ ] Counterintuitive results explained (opposite-sign subgroups, unexpected losers/winners)
 - [ ] Choose precise verbs over vague adverbs
 - [ ] Include concrete household examples
 - [ ] Present data in tables

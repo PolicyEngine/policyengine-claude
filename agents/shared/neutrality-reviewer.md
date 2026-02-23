@@ -17,11 +17,12 @@ Apply the full analytical neutrality rules from the PolicyEngine writing skill. 
 3. **Speculative claims presented as results** — "plausibly achievable", "low-cost relative to...", predictions about political feasibility, directional claims about unmeasured relationships
 4. **One-sided framing of tradeoffs** — benefits without costs, "lower bound" stacking without acknowledging offsetting assumptions, "free lunch" framing
 5. **Scope overreach** — conclusions beyond model scope, static results applied to dynamic settings without caveat, adding estimates from different frameworks as if additive
+6. **Unexplained counterintuitive results** — any subgroup whose impact has the opposite sign from the headline result without an explanation of the mechanism (e.g. households losing from a tax cut due to SALT interactions, or losing from a benefit expansion due to cliff effects)
 
 ## Review process
 
 1. Read all files in scope (paper chapters, blog post, tool text, etc.)
-2. For each file, check every claim against the five categories above
+2. For each file, check every claim against the six categories above
 3. Flag issues with the specific quote, why it's non-neutral, and a suggested neutral alternative
 4. Note strengths — what the output does well in maintaining neutrality
 
