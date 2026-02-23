@@ -420,6 +420,68 @@ Scotland has different income tax rates. Northern Ireland has some separate bene
 
 ---
 
+## Charts for UK Household Posts
+
+Produce these charts for household-level analysis. See blog-pipeline-skill for full Plotly styling details and additional chart types.
+
+### Required charts
+
+| Chart | What it shows | When to use |
+|-------|---------------|-------------|
+| **Net income curve** | Baseline vs reform net income across earnings range | Every household post |
+| **UC taper chart** | Universal Credit amount vs earnings, showing work allowance and 55% taper | Posts about UC changes |
+| **Component breakdown bar** | Which taxes/benefits drive the net income change (income tax, NI, UC, child benefit) | Posts where multiple programs interact |
+
+### Optional charts (use when relevant)
+
+| Chart | What it shows | When to use |
+|-------|---------------|-------------|
+| **Marginal tax rate curve** | Effective MTR showing income tax + NI + UC taper interaction | Posts about taper rates or benefit withdrawal |
+| **Regional comparison bar** | Same household across regions (London vs North West vs Scotland) | Posts about regional variation |
+| **Scotland vs England comparison** | Same income, different tax systems | Posts about Scottish tax rate changes |
+| **Benefit cliff chart** | Individual benefit amounts (UC, child benefit, housing element) vs income | Posts about benefit interactions |
+| **Revenue impact time series** | Annual cost across fiscal years (2026-27 to 2030-31) | Posts with multi-year budget windows |
+
+### Custom charts
+
+For topic-specific visuals not listed above, follow these rules:
+- Use PE brand colors: `TEAL = "#39C6C0"`, `BLUE = "#2C6496"`, `RED = "#DC2626"`
+- Plotly with `template="plotly_white"`, `font=dict(family="Inter, sans-serif")`
+- Save as PNG at 1200x600, scale=2
+- Format currency as £ throughout (not $ or GBP)
+- Write alt text with chart type and 2-3 key data points
+- Include in results.json under `"charts"` with `url`, `alt`, `source_line`, `source_url`
+
+## Tables for UK Household Posts
+
+### Required tables
+
+| Table | Columns | When to use |
+|-------|---------|-------------|
+| **Household impact table** | Household type, Income, Tenure, Region, Net income change | Every household post |
+| **Component breakdown table** | Component (income tax, NI, UC, child benefit...), Baseline, Reform, Change | Posts where multiple programs interact |
+
+### Optional tables
+
+| Table | Columns | When to use |
+|-------|---------|-------------|
+| **Parameter comparison** | Parameter, Current law, Reform | Posts introducing the reform details |
+| **Regional comparison** | Region, Net income change, Key driver | Posts about regional variation |
+| **Scotland vs England** | Metric, Scotland, England, Difference | Posts about devolved tax rates |
+| **UC calculation walkthrough** | Step (standard allowance, child elements, housing, earnings deduction, taper), Amount | Posts explaining UC mechanics |
+| **Revenue impact by year** | Fiscal year, Static cost (£B), Dynamic cost (£B) | Posts with multi-year analysis |
+| **Poverty and inequality** | Metric (AHC poverty, BHC poverty, child poverty, Gini), Baseline, Reform, Change | Posts with distributional analysis |
+
+### Custom tables
+
+For topic-specific tables, follow these rules:
+- Include in results.json with `headers`, `rows`, `source_line`, `source_url`
+- Pre-format values as display strings ("£1,200", "12.4%")
+- Use `{{table:name}}` in blog post markdown
+- Keep under 15 rows
+
+---
+
 ## Generating results.json for Household Analysis
 
 ```python

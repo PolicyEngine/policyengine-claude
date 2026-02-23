@@ -327,6 +327,64 @@ eitc = sim.calculate("eitc", "2026")
 
 ---
 
+## Charts for Household Posts
+
+Produce these charts for household-level analysis. See blog-pipeline-skill for full Plotly styling details and additional chart types.
+
+### Required charts
+
+| Chart | What it shows | When to use |
+|-------|---------------|-------------|
+| **Net income curve** | Baseline vs reform net income across earnings range | Every household post |
+| **Marginal tax rate curve** | Effective MTR across earnings range, baseline vs reform | Posts about tax rate changes or benefit cliffs |
+| **Component breakdown bar** | Which taxes/credits drive the net income change | Posts where multiple programs interact |
+
+### Optional charts (use when relevant)
+
+| Chart | What it shows | When to use |
+|-------|---------------|-------------|
+| **Benefit cliff chart** | Individual benefit amounts (EITC, CTC, SNAP) vs income | Posts about benefit interactions or phase-outs |
+| **State comparison bar** | Same household, different states | Posts about state-level variation |
+| **Filing status comparison** | Same income, different filing statuses | Posts about marriage penalties or filing status effects |
+| **Waterfall** | Tax component decomposition for one household | Posts breaking down a complex reform |
+
+### Custom charts
+
+For topic-specific visuals not listed above, follow these rules:
+- Use PE brand colors: `TEAL = "#39C6C0"`, `BLUE = "#2C6496"`, `RED = "#DC2626"`
+- Plotly with `template="plotly_white"`, `font=dict(family="Inter, sans-serif")`
+- Save as PNG at 1200x600, scale=2
+- Write alt text with chart type and 2-3 key data points
+- Include in results.json under `"charts"` with `url`, `alt`, `source_line`, `source_url`
+
+## Tables for Household Posts
+
+### Required tables
+
+| Table | Columns | When to use |
+|-------|---------|-------------|
+| **Household impact table** | Household type, Income, Filing status, Net income change | Every household post |
+| **Component breakdown table** | Component (income tax, EITC, CTC, SNAP...), Baseline, Reform, Change | Posts where multiple programs interact |
+
+### Optional tables
+
+| Table | Columns | When to use |
+|-------|---------|-------------|
+| **Parameter comparison** | Parameter, Current law, Reform | Posts introducing the reform details |
+| **State comparison** | State, Net income change, Key driver | Posts about state variation |
+| **Income sweep summary** | Income level, Baseline net, Reform net, Change, MTR | Posts with detailed income range analysis |
+| **Benefit eligibility** | Income level, EITC, CTC, SNAP, Medicaid, Total benefits | Posts about benefit cliffs |
+
+### Custom tables
+
+For topic-specific tables, follow these rules:
+- Include in results.json with `headers`, `rows`, `source_line`, `source_url`
+- Pre-format values as display strings ("$1,200", "12.4%")
+- Use `{{table:name}}` in blog post markdown
+- Keep under 15 rows
+
+---
+
 ## Generating results.json for Household Analysis
 
 Household analyses produce results.json with the same schema as microsimulation analyses, but values come from specific households rather than population aggregates.

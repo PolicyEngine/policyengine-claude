@@ -254,35 +254,278 @@ budget_impact = reform_revenue.result - baseline_revenue.result
 
 ---
 
-### Chart Generation
+### Standard Chart Types
 
-Generate chart PNGs using Plotly with PolicyEngine brand styling:
+Every analysis should produce charts from this catalog. Pick the ones relevant to the reform. You may also create **custom charts** for topic-specific visualizations — just follow the same Plotly styling and alt text rules.
+
+#### Chart 1: Decile impact bar chart (required for microsimulation posts)
+
+Shows average net income change by income decile. The most common chart across both US and UK posts.
 
 ```python
 import plotly.graph_objects as go
 import plotly.io as pio
+import os
 
 TEAL = "#39C6C0"
-BLUE = "#2C6496"
+RED = "#DC2626"
 
 fig = go.Figure()
 fig.add_trace(go.Bar(
     x=[f"Decile {i}" for i in range(1, 11)],
     y=decile_values,
-    marker_color=[TEAL if v >= 0 else "#DC2626" for v in decile_values],
+    marker_color=[TEAL if v >= 0 else RED for v in decile_values],
+    text=[f"${v:,.0f}" for v in decile_values],
+    textposition="outside",
 ))
 fig.update_layout(
     template="plotly_white",
     font=dict(family="Inter, sans-serif"),
-    xaxis_title="Income Decile",
-    yaxis_title="Average Annual Change ($)",
+    xaxis_title="Income decile",
+    yaxis_title="Average annual change ($)",
 )
 
 os.makedirs("charts", exist_ok=True)
-pio.write_image(fig, "charts/distributional.png", width=1200, height=600, scale=2)
+pio.write_image(fig, "charts/decile_impact.png", width=1200, height=600, scale=2)
 ```
 
-Charts are deployed to GitHub Pages via a GitHub Actions workflow in the analysis repo.
+**Alt text pattern:** "Bar chart showing [reform] impact by income decile. Bottom decile [gains/loses] [amount]. Top decile [gains/loses] [amount]."
+
+#### Chart 2: Household net income curve (required for household posts)
+
+Shows how net income changes across an earnings range for a specific household type. Use axes for efficiency.
+
+```python
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=incomes, y=baseline_net, mode="lines",
+    name="Current law", line=dict(color=BLUE, width=2),
+))
+fig.add_trace(go.Scatter(
+    x=incomes, y=reform_net, mode="lines",
+    name="Reform", line=dict(color=TEAL, width=2),
+))
+fig.update_layout(
+    template="plotly_white",
+    font=dict(family="Inter, sans-serif"),
+    xaxis_title="Employment income ($)",
+    yaxis_title="Household net income ($)",
+    xaxis_tickformat="$,.0f",
+    yaxis_tickformat="$,.0f",
+    legend=dict(x=0.02, y=0.98),
+)
+pio.write_image(fig, "charts/net_income_curve.png", width=1200, height=600, scale=2)
+```
+
+**Alt text pattern:** "Line chart comparing net income under current law and [reform] for [household type]. Reform increases net income by [amount] at [income level], with the largest gain at [peak]."
+
+#### Chart 3: Winners and losers bar chart
+
+Shows what percentage of households gain, lose, or are unaffected, often by decile.
+
+```python
+fig = go.Figure()
+fig.add_trace(go.Bar(
+    x=decile_labels, y=pct_gaining, name="Gain", marker_color=TEAL,
+))
+fig.add_trace(go.Bar(
+    x=decile_labels, y=pct_losing, name="Lose", marker_color=RED,
+))
+fig.update_layout(
+    template="plotly_white",
+    barmode="group",
+    xaxis_title="Income decile",
+    yaxis_title="Share of households (%)",
+    font=dict(family="Inter, sans-serif"),
+)
+pio.write_image(fig, "charts/winners_losers.png", width=1200, height=600, scale=2)
+```
+
+**Alt text pattern:** "Bar chart showing winners and losers by income decile. [X]% of bottom-decile households gain vs [Y]% of top-decile households."
+
+#### Chart 4: Budgetary impact over time (bar)
+
+Shows annual cost or revenue impact across a budget window (typically 10 years).
+
+```python
+fig = go.Figure()
+fig.add_trace(go.Bar(
+    x=years, y=annual_costs,
+    marker_color=BLUE,
+    text=[f"${v/1e9:.1f}B" for v in annual_costs],
+    textposition="outside",
+))
+fig.update_layout(
+    template="plotly_white",
+    xaxis_title="Year",
+    yaxis_title="Budget impact ($)",
+    yaxis_tickformat="$,.0f",
+    font=dict(family="Inter, sans-serif"),
+)
+pio.write_image(fig, "charts/budget_impact.png", width=1200, height=600, scale=2)
+```
+
+**Alt text pattern:** "Bar chart showing annual budget impact from [year] to [year]. Total [10]-year cost: [amount]."
+
+#### Chart 5: Poverty impact comparison (grouped bar)
+
+Shows poverty rate changes across demographics (overall, children, seniors, etc.).
+
+```python
+categories = ["Overall", "Children", "Working-age", "Seniors"]
+fig = go.Figure()
+fig.add_trace(go.Bar(
+    x=categories, y=baseline_poverty, name="Current law", marker_color="#94A3B8",
+))
+fig.add_trace(go.Bar(
+    x=categories, y=reform_poverty, name="Reform", marker_color=TEAL,
+))
+fig.update_layout(
+    template="plotly_white",
+    barmode="group",
+    yaxis_title="Poverty rate (%)",
+    yaxis_tickformat=".1%",
+    font=dict(family="Inter, sans-serif"),
+)
+pio.write_image(fig, "charts/poverty_impact.png", width=1200, height=600, scale=2)
+```
+
+**Alt text pattern:** "Grouped bar chart comparing poverty rates under current law and [reform]. Overall poverty [falls/rises] from [X]% to [Y]%. Child poverty [falls/rises] from [X]% to [Y]%."
+
+#### Chart 6: Waterfall (tax component decomposition)
+
+Shows how individual reform components add up to the total impact. Used in analysis repos (HR1), underused in blog posts.
+
+```python
+fig = go.Figure(go.Waterfall(
+    x=["Baseline revenue", "Income tax change", "Payroll tax change",
+       "Credit expansion", "Reform revenue"],
+    y=[baseline_rev, income_tax_delta, payroll_delta, credit_delta, 0],
+    measure=["absolute", "relative", "relative", "relative", "total"],
+    connector={"line": {"color": "#94A3B8"}},
+    increasing={"marker": {"color": TEAL}},
+    decreasing={"marker": {"color": RED}},
+    totals={"marker": {"color": BLUE}},
+    text=[f"${v/1e9:.1f}B" for v in [baseline_rev, income_tax_delta,
+          payroll_delta, credit_delta, reform_rev]],
+    textposition="outside",
+))
+fig.update_layout(
+    template="plotly_white",
+    yaxis_title="Federal revenue ($B)",
+    font=dict(family="Inter, sans-serif"),
+)
+pio.write_image(fig, "charts/waterfall.png", width=1200, height=600, scale=2)
+```
+
+**Alt text pattern:** "Waterfall chart decomposing budget impact. [Component 1] contributes [amount], [component 2] contributes [amount]. Total reform impact: [amount]."
+
+#### Chart 7: Marginal tax rate curve (line)
+
+Shows effective marginal tax rate across an income range, revealing benefit cliffs and taper interactions.
+
+```python
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=incomes[:-1], y=baseline_mtr, mode="lines",
+    name="Current law", line=dict(color=BLUE, width=2),
+))
+fig.add_trace(go.Scatter(
+    x=incomes[:-1], y=reform_mtr, mode="lines",
+    name="Reform", line=dict(color=TEAL, width=2),
+))
+fig.update_layout(
+    template="plotly_white",
+    xaxis_title="Employment income ($)",
+    yaxis_title="Marginal tax rate (%)",
+    yaxis_tickformat=".0%",
+    font=dict(family="Inter, sans-serif"),
+)
+pio.write_image(fig, "charts/marginal_rates.png", width=1200, height=600, scale=2)
+```
+
+**Alt text pattern:** "Line chart showing marginal tax rates under current law and [reform] for [household type]. Reform [reduces/increases] peak marginal rate from [X]% to [Y]% at [income level]."
+
+#### Custom Charts
+
+For topic-specific visualizations not covered above (e.g., state comparison maps, benefit phase-in schedules, wealth decile breakdowns, animated time series), follow these rules:
+
+1. Use the same Plotly styling: `template="plotly_white"`, `font=dict(family="Inter, sans-serif")`
+2. Use PE brand colors: `TEAL = "#39C6C0"`, `BLUE = "#2C6496"`, `RED = "#DC2626"`, `GRAY = "#94A3B8"`
+3. Save as PNG at 1200x600, scale=2
+4. Write descriptive alt text with chart type and 2-3 key data points
+5. Include the chart in results.json with `url`, `alt`, `width`, `height`, `source_line`, `source_url`
+
+---
+
+### Standard Table Types
+
+Every analysis should produce tables from this catalog where relevant. You may also create **custom tables** — just follow the same formatting rules.
+
+#### Table 1: Household impact table (required for household posts)
+
+Shows net income change for representative household types.
+
+| Household | Income | Filing status | Net income change |
+|-----------|--------|---------------|-------------------|
+| Single, no children | $40,000 | Single | +$0 |
+| Single parent, 2 children | $50,000 | Head of household | +$1,000 |
+| Married, 2 children | $100,000 | Joint | +$2,000 |
+| Senior, retired | $24,000 | Single | +$0 |
+
+**UK equivalent:** Replace "Filing status" with "Tenure type" or "Region". Include `would_claim_*` context.
+
+#### Table 2: Income decile distribution table (required for microsimulation posts)
+
+Shows average impact, share affected, and share of total benefit by decile.
+
+| Decile | Avg. change | % affected | Share of total benefit |
+|--------|-------------|------------|----------------------|
+| 1 (bottom 10%) | +$340 | 12% | 2% |
+| ... | ... | ... | ... |
+| 10 (top 10%) | +$8,200 | 89% | 42% |
+
+#### Table 3: Parameter comparison table
+
+Shows what the reform changes — current law values vs. reform values.
+
+| Parameter | Current law | Reform |
+|-----------|------------|--------|
+| CTC base amount | $2,000 | $5,000 |
+| Phase-out threshold (single) | $200,000 | $200,000 |
+| Phase-out threshold (joint) | $400,000 | $400,000 |
+| Refundability | $1,700 | Fully refundable |
+
+#### Table 4: Budgetary impact by year table
+
+Shows annual fiscal cost over a budget window.
+
+| Year | Static cost ($B) | Dynamic cost ($B) |
+|------|-----------------|-------------------|
+| 2026 | 15.2 | 18.4 |
+| 2027 | 15.8 | 19.1 |
+| ... | ... | ... |
+| 2026-2035 total | 162.0 | 195.0 |
+
+#### Table 5: Poverty and inequality summary table
+
+Shows key distributional metrics before and after reform.
+
+| Metric | Baseline | Reform | Change |
+|--------|----------|--------|--------|
+| Overall poverty rate (SPM) | 12.4% | 12.0% | -0.4pp |
+| Child poverty rate | 13.2% | 11.8% | -1.4pp |
+| Gini index | 0.414 | 0.412 | -0.002 |
+| Top 10% income share | 31.2% | 30.8% | -0.4pp |
+
+#### Custom Tables
+
+For topic-specific tables not covered above (e.g., state-by-state comparisons, methodology comparisons, tax rate schedules, benefit phase-in tables), follow these rules:
+
+1. Include in results.json under `"tables"` with `headers`, `rows`, `source_line`, `source_url`
+2. Pre-format all values as display strings (e.g., "$15.2 billion", "12.4%")
+3. Use `{{table:name}}` in the blog post markdown
+4. Keep tables under 15 rows — split into multiple tables if larger
 
 ---
 
