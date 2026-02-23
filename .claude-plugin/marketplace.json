@@ -223,7 +223,8 @@
       },
       "license": "MIT",
       "agents": [
-        "./agents/content/content-orchestrator.md"
+        "./agents/content/content-orchestrator.md",
+        "./agents/shared/neutrality-reviewer.md"
       ],
       "commands": [
         "./commands/generate-content.md"
@@ -275,7 +276,8 @@
         "./agents/reference-validator.md",
         "./agents/shared/model-evaluator.md",
         "./agents/shared/policyengine-standards.md",
-        "./agents/shared/pr-merge-checklist.md"
+        "./agents/shared/pr-merge-checklist.md",
+        "./agents/shared/neutrality-reviewer.md"
       ],
       "commands": [
         "./commands/audit-seo.md",
