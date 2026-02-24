@@ -387,10 +387,12 @@ For topic-specific tables, follow these rules:
 
 ## Generating results.json for Household Analysis
 
-Household analyses produce results.json with the same schema as microsimulation analyses, but values come from specific households rather than population aggregates.
+Household analyses produce results.json with the same schema as microsimulation analyses, but values come from specific households rather than population aggregates. Use `tracked_value()` for automatic source line tracking and `ResultsJson` for schema validation.
 
 ```python
-import json, inspect
+from policyengine.results import (
+    ResultsJson, ResultsMetadata, ValueEntry, TableEntry, tracked_value,
+)
 
 REPO = "PolicyEngine/ctc-expansion"
 
@@ -400,42 +402,43 @@ households = {
     "married_2": {"filing": "JOINT", "income": 100_000, "children": 2},
 }
 
-results = {
-    "metadata": {
-        "title": "CTC Expansion Household Impacts",
-        "repo": REPO,
-        "year": 2026,
-    },
-    "values": {},
-    "tables": {},
-    "charts": {},
-}
-
+values = {}
 rows = []
 for name, params in households.items():
     # ... calculate baseline and reform ...
-    line = inspect.currentframe().f_lineno
     change = reform_net - baseline_net
 
-    results["values"][f"{name}_change"] = {
-        "value": float(change),
-        "display": f"${abs(change):,.0f}",
-        "source_line": line,
-        "source_url": f"https://github.com/{REPO}/blob/main/analysis.py#L{line}",
-    }
+    # tracked_value() captures this line number automatically
+    values[f"{name}_change"] = ValueEntry(**tracked_value(
+        value=float(change),
+        display=f"${abs(change):,.0f}",
+        repo=REPO,
+    ))
     rows.append([name, f"${params['income']:,}", f"${change:,.0f}"])
 
-line = inspect.currentframe().f_lineno
-results["tables"]["household_impacts"] = {
-    "title": "Household impact by family type",
-    "headers": ["Household", "Income", "Net income change"],
-    "rows": rows,
-    "source_line": line,
-    "source_url": f"https://github.com/{REPO}/blob/main/analysis.py#L{line}",
+import inspect
+table_line = inspect.currentframe().f_lineno
+tables = {
+    "household_impacts": TableEntry(
+        title="Household impact by family type",
+        headers=["Household", "Income", "Net income change"],
+        rows=rows,
+        source_line=table_line,
+        source_url=f"https://github.com/{REPO}/blob/main/analysis.py#L{table_line}",
+    ),
 }
 
-with open("results.json", "w") as f:
-    json.dump(results, f, indent=2)
+results = ResultsJson(
+    metadata=ResultsMetadata(
+        title="CTC Expansion Household Impacts",
+        repo=REPO,
+        country_id="us",
+        year=2026,
+    ),
+    values=values,
+    tables=tables,
+)
+results.write("results.json")
 ```
 
 ---

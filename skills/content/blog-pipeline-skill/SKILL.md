@@ -624,31 +624,38 @@ The reform has a significant budgetary impact.
 
 ### Source Tracking
 
-Every value in results.json must include `source_line` and `source_url` pointing to the exact line in analysis.py that computed it:
+Every value in results.json must include `source_line` and `source_url` pointing to the exact line in analysis.py that computed it. Use the `tracked_value()` helper from `policyengine.results` — it captures the caller's line number automatically via `inspect.stack()`:
 
 ```python
-import inspect
+from policyengine.results import tracked_value, ValueEntry
 
-line = inspect.currentframe().f_lineno
 budget_impact = reform_revenue.result - baseline_revenue.result
 
-results["values"]["budget_impact"] = {
-    "value": budget_impact,
-    "display": format_currency(budget_impact),
-    "source_line": line,
-    "source_url": f"https://github.com/{REPO}/blob/main/analysis.py#L{line}",
-}
+# tracked_value() captures this line number automatically
+budget_entry = ValueEntry(**tracked_value(
+    value=budget_impact,
+    display=f"${abs(budget_impact)/1e9:.1f} billion",
+    repo="PolicyEngine/salt-cap-analysis",
+))
 ```
 
-**✅ Correct — every value traceable:**
-```json
-{
-  "budget_impact": {
-    "value": -15200000000,
-    "display": "$15.2 billion",
-    "source_line": 47,
-    "source_url": "https://github.com/PolicyEngine/salt-cap/blob/main/analysis.py#L47"
-  }
+**✅ Correct — using tracked_value():**
+```python
+entry = ValueEntry(**tracked_value(
+    value=budget_impact,
+    display=f"${abs(budget_impact)/1e9:.1f} billion",
+    repo=REPO,
+))
+```
+
+**❌ Wrong — manual line tracking (error-prone, goes stale on refactoring):**
+```python
+line = inspect.currentframe().f_lineno
+entry = {
+    "value": budget_impact,
+    "display": f"${abs(budget_impact)/1e9:.1f} billion",
+    "source_line": line,
+    "source_url": f"https://github.com/{REPO}/blob/main/analysis.py#L{line}",
 }
 ```
 

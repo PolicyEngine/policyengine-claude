@@ -63,18 +63,32 @@ policy = Policy(name="...", parameter_values=[pv])
 
 **Build results.json with source tracking:**
 ```python
-from policyengine.results import ResultsJson, ResultsMetadata, ValueEntry, tracked_value
+from policyengine.results import (
+    ResultsJson, ResultsMetadata, ValueEntry, TableEntry, ChartEntry, tracked_value,
+)
 
-# Use tracked_value() for automatic source line capture
-results["values"]["budget_impact"] = tracked_value(
+REPO = "PolicyEngine/salt-cap-analysis"
+
+# tracked_value() returns a dict — wrap in ValueEntry for validation
+budget_entry = ValueEntry(**tracked_value(
     value=budget_impact,
     display=f"${abs(budget_impact)/1e9:.1f} billion",
     repo=REPO,
-)
+))
 
-# Validate with Pydantic schema before writing
-validated = ResultsJson(**results)
-validated.write("results.json")
+# Build the validated results object directly
+results = ResultsJson(
+    metadata=ResultsMetadata(
+        title="SALT Cap Repeal",
+        repo=REPO,
+        country_id="us",
+        year=2026,
+    ),
+    values={"budget_impact": budget_entry},
+    tables={...},  # TableEntry objects
+    charts={...},  # ChartEntry objects
+)
+results.write("results.json")
 ```
 
 ### 2. Run the script
