@@ -1,6 +1,6 @@
 ---
 name: publish-analysis
-description: End-to-end blog post pipeline - from research question to published, distributed post with traceable numbers
+description: End-to-end blog post pipeline - from research question to published, distributed post with traceable numbers and validated results
 arguments:
   - name: topic
     description: Research question, reform description, or bill reference (e.g., "SALT cap repeal" or "HR 1234")
@@ -15,7 +15,7 @@ arguments:
 
 # Publish Analysis: $ARGUMENTS
 
-Generate a complete, SEO-optimized blog post from a policy reform — all numbers traceable to code, zero hard-coded values. Uses `policyengine.py` for local simulation.
+Generate a complete, validated, SEO-optimized blog post from a policy reform — every number traceable to code, validated against external estimates, zero hard-coded values.
 
 ## Prerequisites
 
@@ -27,221 +27,479 @@ Load these skills before starting:
 
 ---
 
-## Pre-Flight Checklist
+## Workflow Overview
 
-Before starting:
-- [ ] I will use `policyengine.py` for all simulations (not API, not policyengine-us directly)
-- [ ] I will generate results.json with `source_line` and `source_url` for every value
-- [ ] I will use `{{}}` template references — zero hard-coded numbers in the blog post
-- [ ] I will follow policyengine-writing-skill for neutral tone and active voice
-- [ ] I will generate descriptive alt text with 2-3 key data points for every chart
-- [ ] I will ask the user before creating any GitHub repos or PRs
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                    /publish-analysis {TOPIC}                             │
+└──────────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+                ┌───────────────────────────────┐
+                │  PHASE 0: PRE-FLIGHT          │
+                │  Check for existing analysis   │
+                └───────────────────────────────┘
+                                │
+                                ▼
+                ┌───────────────────────────────┐
+                │  PHASE 1: PARALLEL RESEARCH   │
+                │  (Task agents)                │
+                └───────────────────────────────┘
+                                │
+          ┌─────────────────────┴─────────────────────────┐
+          │                                               │
+          ▼                                               ▼
+┌───────────────────┐                         ┌───────────────────┐
+│  reform-definer   │                         │  estimate-finder  │
+│  (define reform,  │                         │  (CBO, JCT, Tax   │
+│   map parameters) │                         │   Foundation etc.) │
+└─────────┬─────────┘                         └─────────┬─────────┘
+          └─────────────────┬───────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  CHECKPOINT #1: REVIEW        │
+            │  Reform definition +          │
+            │  external estimates           │
+            └───────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  PHASE 2: ANALYSIS            │
+            │  analysis-writer agent        │
+            │  (analysis.py + results.json) │
+            └───────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  PHASE 2b: CHART SANITY       │
+            │  Household sweep chart —      │
+            │  does shape match intent?     │
+            └───────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  CHECKPOINT #2: REVIEW        │
+            │  PE results vs external       │
+            │  estimates + chart shape       │
+            └───────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  PHASE 3: BLOG POST           │
+            │  blog-writer agent            │
+            │  (markdown with {{}} refs)    │
+            └───────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  PHASE 4: VALIDATION          │
+            │  pipeline-validator agent     │
+            │  (9 automated checks)         │
+            └───────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  CHECKPOINT #3: REVIEW        │
+            │  Full post + validation       │
+            │  report before PR             │
+            └───────────────────────────────┘
+                            │
+                            ▼
+            ┌───────────────────────────────┐
+            │  PHASE 5: PR + DISTRIBUTE     │
+            │  Draft PR (in_review)         │
+            │  Merge = publish              │
+            └───────────────────────────────┘
+                            │
+                            ▼
+                      ┌───────────┐
+                      │   DONE!   │
+                      └───────────┘
+```
 
 ---
 
 ## Key Rules
 
-1. **Zero hard-coded values**: Every number in the blog post comes from results.json via `{{}}` templates
-2. **Every number is traceable**: `source_line` and `source_url` in results.json point to the exact code
-3. **Neutral language**: Describe what policies do, not whether they are good or bad (see policyengine-writing-skill)
-4. **No iframes**: Charts are static `<img>` tags from GitHub Pages with descriptive alt text
-5. **Active voice**: "The reform reduces poverty by 3.2%" not "Poverty is reduced by 3.2%"
-6. **Quantitative precision**: "$15.2 billion" not "significant cost"
-7. **Sentence case headings**: "Budgetary impact" not "Budgetary Impact"
-8. **Show calculations**: Spell out how derived values are computed
+1. **Zero hard-coded values** — every number in the blog post comes from results.json via `{{}}` templates
+2. **Every number is traceable** — `source_line` and `source_url` point to the exact code
+3. **All computation via analysis.py** — never compute impacts inline or with ad-hoc code
+4. **Validate against external estimates** — compare PE results to CBO/JCT/fiscal notes/think tanks
+5. **Human reviews at every gate** — 3 explicit checkpoints, each requires approve/adjust/cancel
+6. **Neutral language** — describe what policies do, not whether they are good or bad
+7. **No iframes** — charts are static `<img>` from GitHub Pages with descriptive alt text
+8. **Draft PR = in_review** — content is NOT published until PR is merged
 
 ---
 
-## Phase 1: Define the Reform
+## Phase 0: Pre-Flight Check
 
-1. **Parse the topic** — identify what policy change to analyze
-2. **Ask clarifying questions** if needed:
-   - What specific parameters change?
-   - What is the baseline (current law, TCJA extension, etc.)?
-   - What year to analyze?
-   - US or UK?
-3. **Identify the PE parameter paths** for the reform:
-   ```python
-   from policyengine.tax_benefit_models.{country} import {country}_latest
-   # Search parameter names matching the topic
-   ```
+**BEFORE doing any research**, check if this analysis already exists:
+
+1. Check if analysis directory already exists in analysis-notebooks repo
+2. Check if a blog post with this topic exists in policyengine-app-v2 posts.json
+
+**If found with published results**: Show existing analysis, ask if re-computation needed.
+**If not found**: Proceed with Phase 1.
 
 ---
 
-## Phase 2: Create Analysis Directory
+## Phase 1: Parallel Research
 
-Create a directory in the analysis-notebooks repo (or a new repo if user prefers):
+Spawn two Task agents in parallel:
+
+### 1a. Reform Definition
+
+```
+Task: Define the reform for "{TOPIC}"
+
+1. Identify what policy changes to analyze
+2. Find the PE parameter paths for the reform
+3. Confirm parameter paths exist in policyengine-us or policyengine-uk
+4. Build the reform definition (parameter paths, values, effective dates)
+5. Determine analysis type: microsimulation, household, or both
+
+Return:
+- Reform parameter paths and values
+- Analysis type
+- Effective dates
+- Any parameters that don't exist yet (blockers)
+```
+
+### 1b. External Estimate Finder
+
+```
+Task: Find external estimates for "{TOPIC}"
+
+Search for existing analyses of this reform:
+- CBO/JCT scores (for federal bills)
+- State fiscal notes (for state bills)
+- Tax Foundation, ITEP, CBPP analyses
+- Academic papers with revenue/distributional estimates
+- Back-of-envelope calculation (ALWAYS required)
+
+For each estimate found, capture:
+- Source name and URL
+- Revenue/cost estimate
+- Time period and methodology
+- How comparable to PE's approach
+
+Return structured estimates for validation.
+```
+
+Wait for both to complete, then combine results.
+
+---
+
+## Checkpoint #1: Reform Definition Review
+
+Present the reform definition AND external estimates for human approval:
+
+```
+═══════════════════════════════════════════════════════════════════════════
+REFORM DEFINITION & EXTERNAL ESTIMATES REVIEW
+═══════════════════════════════════════════════════════════════════════════
+
+TOPIC: {topic}
+COUNTRY: {country}
+YEAR: {year}
+ANALYSIS TYPE: {microsimulation / household / both}
+
+REFORM PARAMETERS:
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Parameter                    │ Current    │ Proposed                   │
+│──────────────────────────────│────────────│────────────────────────────│
+│ {parameter_path}             │ {baseline} │ {reform}                   │
+└─────────────────────────────────────────────────────────────────────────┘
+
+EXTERNAL ESTIMATES:
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Source               │ Estimate      │ Period    │ Link                │
+│──────────────────────│───────────────│───────────│─────────────────────│
+│ CBO/JCT              │ -$15.2B       │ Annual    │ [link]              │
+│ Tax Foundation        │ -$14.8B       │ Annual    │ [link]              │
+│ Back-of-envelope      │ -$16.0B       │ Annual    │ (see calculation)   │
+└─────────────────────────────────────────────────────────────────────────┘
+
+BACK-OF-ENVELOPE CHECK:
+> {Simple calculation showing expected order of magnitude}
+> Example: 15M itemizers × avg $12k SALT deduction × 24% avg rate = ~$43B
+> (Rough estimate — actual varies due to AMT interaction and cap level)
+
+═══════════════════════════════════════════════════════════════════════════
+```
+
+Use `AskUserQuestion` to confirm:
+- Does this reform definition look correct?
+- Are the external estimates reasonable comparisons?
+- Options: **Yes, proceed** / **No, adjust** / **Cancel**
+
+**Do NOT proceed until the user explicitly approves.**
+
+---
+
+## Phase 2: Run Analysis
+
+### 2a. Create Analysis Directory
+
+Create a directory in the analysis-notebooks repo:
 
 ```
 {topic-slug}/
   analysis.py          # Full simulation + results.json generation
   results.json         # Generated by analysis.py
-  charts/              # Generated by analysis.py
+  charts/              # Generated PNGs
   requirements.txt     # policyengine, plotly, kaleido
   README.md            # How to reproduce
 ```
 
-Write requirements.txt:
+### 2b. Spawn analysis-writer Agent
+
 ```
-policyengine>=0.1.0
-plotly>=5.15.0
-kaleido>=0.2.1
-```
+Task: analysis-writer
 
----
+Write and run analysis.py for the following reform:
 
-## Phase 3: Spawn Specialist Agents
-
-Spawn agents sequentially — each phase depends on the previous.
-
-### Agent 1: Analysis Writer
-
-Invoke **analysis-writer** agent:
-```
-Write analysis.py for the following reform:
-
-- Reform: {parsed reform description}
-- Country: {us/uk}
+- Reform: {approved reform definition from Checkpoint #1}
+- Country: {country}
 - Year: {year}
-- Parameter paths: {identified paths from Phase 1}
+- Parameter paths: {approved parameter paths}
 - Analysis type: {microsimulation / household / both}
 - Output directory: {topic-slug}/
 - Repo slug: PolicyEngine/{repo-name}
 
-Follow the instructions in agents/content/analysis-writer.md.
-Use policyengine.results.tracked_value() for every value.
-Use policyengine.results.ResultsJson to validate before writing.
-Use policyengine.utils.plotting.format_fig() for chart styling.
+CRITICAL: Use tracked_value() for every value. Use ResultsJson to validate.
+Use format_fig() for chart styling. ALL computation in analysis.py — no inline.
 ```
 
-**Verify before proceeding:**
-- `results.json` exists and is valid JSON
-- All values have `source_line` and `source_url`
-- `charts/*.png` files exist
-- Source URLs point to real line numbers
+### 2c. Chart Sanity Check
 
-### Agent 2: Blog Writer
+After analysis.py completes, generate a household-level earnings sweep chart to verify the reform's shape:
 
-Invoke **blog-writer** agent:
+**Quick sanity check**: Does the benefit curve match the reform's intent?
+- Tax rate cut → linearly increasing benefit with income
+- CTC expansion → flat benefit up to income limit, then phase-out
+- EITC expansion → triangle shape (phase-in, plateau, phase-out)
+- SALT cap change → benefit concentrated at high incomes
+- UBI → flat benefit, then clawed back via taxes
+
+**If the chart looks wrong**: Investigate before proceeding — likely a parameter mapping error.
+
+---
+
+## Checkpoint #2: Results Validation
+
+Compare PE results against external estimates. This is the most important validation step.
+
 ```
+═══════════════════════════════════════════════════════════════════════════
+RESULTS VALIDATION
+═══════════════════════════════════════════════════════════════════════════
+
+PE RESULTS:
+  Budget impact:       {budget_impact}
+  Poverty change:      {poverty_change}
+  Winners:             {winners_pct}
+  Losers:              {losers_pct}
+  Top decile avg:      {top_decile_avg}
+  Bottom decile avg:   {bottom_decile_avg}
+
+CHART SANITY CHECK:
+  Household sweep shape: {matches intent? describe}
+
+VALIDATION — PE vs EXTERNAL:
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Source               │ Estimate  │ vs PE      │ Difference │ Verdict   │
+│──────────────────────│───────────│────────────│────────────│───────────│
+│ PE (PolicyEngine)    │ -$14.1B   │ —          │ —          │ —         │
+│ CBO/JCT              │ -$15.2B   │ -7.2%      │ < 10%      │ Excellent │
+│ Tax Foundation        │ -$14.8B   │ -4.7%      │ < 10%      │ Excellent │
+│ Back-of-envelope      │ -$16.0B   │ -11.9%     │ 10-25%     │ Acceptable│
+└─────────────────────────────────────────────────────────────────────────┘
+
+THRESHOLDS:
+  < 10%   → Excellent match
+  10-25%  → Acceptable (note methodology differences)
+  25-50%  → Review needed (re-check parameters)
+  > 50%   → Likely error (stop and investigate)
+
+DISCREPANCY EXPLANATION:
+  {1-2 sentences explaining likely sources of difference — e.g., PE uses
+   Enhanced CPS microdata vs CBO's proprietary tax model, static vs dynamic
+   scoring, different base year assumptions}
+
+═══════════════════════════════════════════════════════════════════════════
+```
+
+Use `AskUserQuestion`:
+- Results look correct? External comparison acceptable?
+- Options: **Yes, proceed to blog post** / **Re-run with adjusted parameters** / **Cancel**
+
+**If difference > 50%**: Do NOT offer "proceed" option. Force investigation.
+
+**Do NOT proceed until the user explicitly approves.**
+
+---
+
+## Phase 3: Write Blog Post
+
+Spawn blog-writer agent:
+
+```
+Task: blog-writer
+
 Write a blog post for the following analysis:
 
 - results.json path: {topic-slug}/results.json
-- Reform description: {parsed reform description}
-- Country: {us/uk}
+- Reform description: {approved reform description}
+- Country: {country}
 - Output path: {topic-slug}/post.md
+- External estimates: {sources from Checkpoint #1 — for methodology section}
 
-Follow the instructions in agents/content/blog-writer.md.
-Every number must be a {{}} reference — zero hard-coded values.
-Use neutral tone, active voice, sentence case headings.
+RULES:
+- Every number must be a {{}} reference — zero hard-coded values
+- Neutral tone, active voice, sentence case headings
+- Methodology section must cite PE model version, dataset, and year
+- Methodology section must note comparison to external estimates
+- Include link to analysis repo code
 ```
 
-**Verify before proceeding:**
-- Every `{{name}}` matches a key in results.json
-- No raw numbers outside `{{}}`
-- Methodology section exists with repo link
+---
 
-### Agent 3: Pipeline Validator
+## Phase 4: Automated Validation
 
-Invoke **pipeline-validator** agent:
+Spawn pipeline-validator agent:
+
 ```
+Task: pipeline-validator
+
 Validate the full pipeline output:
 
 - results.json path: {topic-slug}/results.json
 - Blog post path: {topic-slug}/post.md
 - Charts directory: {topic-slug}/charts/
 
-Follow the instructions in agents/content/pipeline-validator.md.
 Run all 9 checks and produce the validation report.
 ```
 
-**If validator reports failures:**
-- Schema/reference errors are **blockers** — fix before proceeding
-- Language/style issues are **warnings** — fix if possible, note if not
+### Validation Checks (9 automated)
+
+| # | Check | Blocker? |
+|---|-------|----------|
+| 1 | results.json schema (source_line, source_url, alt text, row widths) | Yes |
+| 2 | Template references (every `{{}}` resolves, no orphans) | Yes |
+| 3 | No hard-coded numbers (no raw `$` or `%` outside `{{}}`) | Yes |
+| 4 | Neutral language (no value judgments) | Warning |
+| 5 | Active voice (no passive constructions) | Warning |
+| 6 | Sentence case headings | Warning |
+| 7 | Chart accessibility (alt text with chart type + 2-3 data points) | Yes |
+| 8 | Source traceability (source_url contains repo, ends with #L{line}) | Yes |
+| 9 | Post structure (H1 title, key findings, methodology, repo link) | Yes |
+
+**Blockers must pass before proceeding. Warnings should be fixed but don't block.**
 
 ---
 
-## Phase 4: Create Posts Entry
+## Checkpoint #3: Final Review Before PR
 
-Add an entry to `posts.json` in policyengine-app-v2:
+Present the complete post + validation report for human approval:
 
-```json
-{
-  "title": "...",
-  "description": "...",
-  "date": "YYYY-MM-DD",
-  "tags": ["{country}", "policy"],
-  "authors": ["..."],
-  "filename": "{topic-slug}.md",
-  "image": "{topic-slug}.png",
-  "analysis_repo": "PolicyEngine/{repo-name}"
-}
+```
+═══════════════════════════════════════════════════════════════════════════
+FINAL REVIEW BEFORE PR
+═══════════════════════════════════════════════════════════════════════════
+
+VALIDATION REPORT:
+  results.json schema:    ✅
+  Template references:    ✅ (14 resolved, 0 missing, 0 orphaned)
+  Hard-coded numbers:     ✅ (0 found)
+  Neutral language:       ✅ (0 issues)
+  Active voice:           ✅ (0 passive)
+  Sentence case:          ✅
+  Chart accessibility:    ✅ (3 charts checked)
+  Source traceability:    ✅ (14 values checked)
+  Post structure:         ✅
+
+  Result: 9/9 checks passed. Ready for PR.
+
+EXTERNAL VALIDATION:
+  PE vs CBO/JCT:          -7.2% (Excellent)
+  PE vs Tax Foundation:    -4.7% (Excellent)
+  PE vs back-of-envelope:  -11.9% (Acceptable)
+
+POST SUMMARY:
+  Title: {title}
+  Key findings: {3 bullet points}
+  Charts: {N} charts with alt text
+  Tables: {N} tables
+  Values: {N} traceable values
+  Word count: {N}
+
+═══════════════════════════════════════════════════════════════════════════
 ```
 
-The `analysis_repo` field triggers the resolve-posts build step.
+Use `AskUserQuestion`:
+- Ready to create PR?
+- Options: **Yes, create draft PR** / **No, needs edits** / **Cancel**
+
+**Do NOT proceed until the user explicitly approves.**
 
 ---
 
-## Phase 5: Generate Social Content
+## Phase 5: Create PR + Distribute
 
-Use the content-generation skill to create:
+### 5a. Create Analysis PR
 
-1. **Social sharing image** (1200x630) using the social-image template
-2. **Twitter/X post** — key finding + image + link
-3. **LinkedIn post** — more context, professional tone
-
-Social copy must follow the same neutral tone as the blog post:
-
-**Correct:**
-```
-Repealing the SALT cap would cost $15.2 billion in 2026.
-The top income decile receives 42% of total benefits.
-
-Full analysis: [link]
-```
-
-**Wrong:**
-```
-BREAKING: SALT cap repeal is a massive giveaway to the wealthy!
-This shocking analysis reveals who really benefits.
-```
-
----
-
-## Phase 6: Create PRs
-
-### Analysis repo
 ```bash
-cd {topic-slug}
+cd {analysis-directory}
 git add .
 git commit -m "Add {topic} analysis with results.json and charts"
 git push origin main
 ```
 
-### Blog post PR (policyengine-app-v2)
-Use `/create-pr` command for proper PR creation with CI check waiting.
+### 5b. Create Blog Post PR
+
+Create a draft PR in policyengine-app-v2 that adds:
+1. Blog post markdown in `articles/`
+2. posts.json entry with `analysis_repo` field
+
+PR body must include:
+
+```markdown
+## Blog Post: {title}
+
+**Analysis repo**: [PolicyEngine/{repo}](https://github.com/PolicyEngine/{repo})
+
+### Reform
+| Parameter | Current | Proposed |
+|-----------|---------|----------|
+| {param}   | {base}  | {reform} |
+
+### External validation
+| Source | Estimate | vs PE | Verdict |
+|--------|----------|-------|---------|
+| PE (PolicyEngine) | {pe_estimate} | — | — |
+| {source} | {estimate} | {diff}% | {verdict} |
+| Back-of-envelope | {estimate} | {diff}% | {verdict} |
+
+### Key results
+| Metric | Value |
+|--------|-------|
+| Budget impact | {budget_impact} |
+| Poverty change | {poverty_change} |
+| Winners | {winners_pct} |
+
+### Validation
+Pipeline validator: {N}/9 checks passed.
 
 ---
+*Generated by `/publish-analysis` — PolicyEngine Claude Plugin*
+```
 
-## Phase 7: Verify
+**The blog post is NOT published until the PR is merged.** The resolve-posts build step runs on deploy, fetches results.json, and resolves all `{{}}` templates.
 
-Before marking as done, run through this checklist:
-
-| Check | How to verify |
-|-------|---------------|
-| All `{{}}` refs resolve | Search markdown for `{{` — each must match a key in results.json |
-| Charts load | curl each GitHub Pages chart URL — expect 200 |
-| Alt text is descriptive | Each alt starts with chart type and includes 2-3 data points |
-| No hard-coded numbers | Search markdown for raw digits — each should be inside `{{}}` |
-| Neutral language | No "unfortunately", "significant", "massive", "dramatic" |
-| Active voice | No "is reduced by", "are projected by" |
-| Sentence case headings | No title case in H2/H3 headers |
-| Source links work | `source_url` values return 200, point to correct lines |
-| Methodology section | Specifies model version, dataset, year, and assumptions |
-
----
-
-## Phase 8: Distribution Checklist
+### 5c. Distribution Checklist
 
 After merge and deploy:
 
@@ -249,9 +507,42 @@ After merge and deploy:
 - [ ] Post to LinkedIn with key finding + image
 - [ ] Send to newsletter list (if applicable)
 - [ ] Direct outreach to bill sponsors (if bill analysis)
-- [ ] Pitch to relevant reporters
+- [ ] Pitch to relevant journalists
 - [ ] Log in CRM
 - [ ] Confirm GA4 events firing
+
+---
+
+## Final Output
+
+```
+═══════════════════════════════════════════════════════════════════════════
+COMPLETE: {TOPIC}
+═══════════════════════════════════════════════════════════════════════════
+
+ANALYSIS:
+  ✓ analysis.py written and executed
+  ✓ results.json validated (Pydantic schema)
+  ✓ {N} charts generated with alt text
+  ✓ {N} values with source line tracking
+
+VALIDATION:
+  ✓ Pipeline validator: 9/9 checks passed
+  ✓ PE vs external: {best_match}% ({verdict})
+  ✓ Chart sanity check: shape matches intent
+  ✓ Human approved at 3 checkpoints
+
+PRs:
+  Analysis: {analysis_pr_url}
+  Blog post: {blog_pr_url}
+
+NEXT STEPS:
+  1. Review both PRs
+  2. Merge blog post PR to publish
+  3. Run distribution checklist
+
+═══════════════════════════════════════════════════════════════════════════
+```
 
 ---
 
@@ -260,12 +551,46 @@ After merge and deploy:
 | Problem | Cause | Fix |
 |---------|-------|-----|
 | Dataset not found | HDF5 file not available locally | Download from HuggingFace: `hf://policyengine/policyengine-us-data/enhanced_cps_2024.h5` |
-| Memory issues | Microsimulation loads ~60k households | Ensure 8GB+ RAM available. Use `simulation.ensure()` for caching |
-| Chart generation fails | kaleido not installed | `pip install kaleido` or note in results.json that charts need manual generation |
+| Memory issues | Microsimulation loads ~60k households | Ensure 8GB+ RAM available |
+| PE vs external > 50% | Parameter mapping error or methodological mismatch | **Stop.** Re-check parameter paths, compare baseline assumptions, verify reform encoding |
+| PE vs external 25-50% | Moderate discrepancy | Note in methodology section. Check for known differences (static vs dynamic, different base year) |
+| Chart shape wrong | Parameter mapping error | Return to Checkpoint #1, fix parameters, re-run |
 | Unresolvable `{{ref}}` | Key mismatch between markdown and results.json | Fix spelling or add missing key to results.json |
-| Stale source lines | Code changed after generating results.json | Re-run analysis.py to regenerate results.json |
-| Validator fails | Schema or reference errors | Fix blockers before proceeding; warnings can be noted |
+| Stale source lines | Code changed after generating results.json | Re-run analysis.py to regenerate |
+| Validator blockers | Schema or reference errors | Fix before proceeding — do NOT skip |
 
 ---
 
-Start by parsing the topic, then proceed through all phases.
+## Key Principle: All Computation via analysis.py
+
+**NEVER compute impacts inline or with ad-hoc code.** All computation goes through analysis.py because:
+
+1. **Reproducibility** — anyone can re-run the same script
+2. **Auditability** — every value traceable to a specific line
+3. **Schema consistency** — ResultsJson validates output
+4. **Source tracking** — tracked_value() captures line numbers automatically
+
+The agents research and generate the reform definition. analysis.py does computation. The blog post is a presentation layer only.
+
+---
+
+## Agents Used
+
+| Agent | Purpose | Phase |
+|-------|---------|-------|
+| analysis-writer | Write and run analysis.py, produce results.json | 2 |
+| blog-writer | Write blog post with {{}} template refs | 3 |
+| pipeline-validator | 9 automated checks on schema, refs, language | 4 |
+
+## Scripts & Tools
+
+| Tool | Purpose |
+|------|---------|
+| `policyengine.py` | Local microsimulation (not API) |
+| `policyengine.results.tracked_value()` | Auto-capture source line numbers |
+| `policyengine.results.ResultsJson` | Pydantic schema validation |
+| `policyengine.utils.plotting.format_fig()` | PE brand chart styling |
+
+---
+
+Start by checking for existing analysis (Phase 0), then proceed through all phases. Never skip a checkpoint.
