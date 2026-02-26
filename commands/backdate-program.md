@@ -71,9 +71,11 @@ Parse $ARGUMENTS:
 - DPI: 600 if --600dpi, else 300
 ```
 
-### Step 0B: Find or Create Tracking Issue + Draft PR (DELEGATED)
+### Step 0B: Issue + Inventory (SPAWN BOTH IN ONE MESSAGE)
 
-Spawn the `issue-manager` agent to find/create a GitHub issue AND a draft PR for this backdating work. Runs in **parallel** with the inventory (Step 0C).
+These two agents have no dependency on each other. Spawn them in a **single message** so they run concurrently:
+
+**Agent 1: issue-manager** — searches GitHub (network calls)
 
 ```
 subagent_type: "complete:country-models:issue-manager"
@@ -89,18 +91,7 @@ run_in_background: true
 3. Return both the issue number and PR number."
 ```
 
-After the agent completes, store:
-- **ISSUE_NUMBER** — referenced in commit messages, changelog, and final report
-- **PR_NUMBER** — used by `/review-program` in Phase 6, and by `pr-pusher` in Phase 7
-- **BRANCH** — the working branch for all implementation
-
-These are used throughout:
-- Review-fix loop commits: `"Review-fix round {N}: address critical issues (ref #{ISSUE_NUMBER})"`
-- Phase 6: `/review-program {PR_NUMBER} --local --full`
-- Phase 7: `pr-pusher` pushes to the branch and updates the PR
-- Final report: links to issue and PR
-
-### Step 0C: Inventory (DELEGATED)
+**Agent 2: inventory** — scans local files (disk reads)
 
 Spawn an `Explore` agent to inventory existing files:
 
@@ -115,7 +106,19 @@ Spawn an `Explore` agent to inventory existing files:
 Keep CONCISE — paths + earliest dates + structure type only. Max 40 lines."
 ```
 
-Read ONLY the summary file after the agent completes.
+**After both agents complete**, read the inventory summary and store the issue/PR info:
+
+- Read ONLY `/tmp/{st}-{prog}-inventory.md` (max 40 lines)
+- Store from issue-manager:
+  - **ISSUE_NUMBER** — referenced in commit messages, changelog, and final report
+  - **PR_NUMBER** — used by `/review-program` in Phase 6, and by `pr-pusher` in Phase 7
+  - **BRANCH** — the working branch for all implementation
+
+These are used throughout the workflow:
+- Review-fix loop commits: `"Review-fix round {N}: address critical issues (ref #{ISSUE_NUMBER})"`
+- Phase 6: `/review-program {PR_NUMBER} --local --full`
+- Phase 7: `pr-pusher` pushes to the branch, reporter writes PR description
+- Final report: links to issue and PR
 
 ### Step 0C: Create Team
 
