@@ -16,7 +16,7 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
 - **State and program** (required) — e.g., `CT TFA`, `IN TANF`, `KY K-TAP`
 - **Target year** (optional) — how far back to research, e.g., `1997`. Defaults to program inception.
 - **Options**:
-  - `--skip-review` — skip Phase 6 (built-in review-pr / audit-state-tax)
+  - `--skip-review` — skip Phase 6 (built-in /review-program)
   - `--values-only` — skip reference/formula audit (Phase 2), only backdate parameter values
   - `--research-only` — stop after Phase 1 (research), produce impl spec but don't implement
   - `--600dpi` — render all PDFs at 600 DPI instead of 300 DPI (use for scanned docs, poor-quality PDFs, or dense tables that are hard to read at 300 DPI)
@@ -411,21 +411,20 @@ Read ONLY the checkpoint file.
 
 **Skip if `--skip-review`.**
 
-This is the key integration — invoke the actual review commands which run their own specialized agents internally.
+This is the key integration — invoke the consolidated review command which runs code validators + PDF audit in one pass.
 
-### Step 6A: Run /review-pr --local
+### Step 6A: Run /review-program --local --full
 
-Invoke the `review-pr` skill in local-only mode. This internally runs:
-- **@complete:country-models:program-reviewer**: Researches regulations independently, compares to code
-- **@complete:reference-validator**: Checks reference completeness and corroboration
-- **@complete:country-models:implementation-validator**: Checks code patterns
-- **@complete:country-models:edge-case-generator**: Identifies untested scenarios
+Invoke the `review-program` skill in local-only mode with `--full` to audit all implemented parameters. This internally runs:
+- **PDF acquisition** (always on): `complete:country-models:document-collector` discovers and renders source PDFs
+- **Regulatory accuracy**: `complete:country-models:program-reviewer` researches regulations independently, compares to code
+- **Reference quality**: `complete:reference-validator` checks reference completeness and corroboration
+- **Code patterns**: `complete:country-models:implementation-validator` checks code patterns
+- **Test coverage**: `complete:country-models:edge-case-generator` identifies untested scenarios
+- **PDF audit**: 2-5 `general-purpose` agents audit parameter values against PDF screenshots
+- **Mismatch verification**: 600 DPI re-render + text cross-reference for every reported mismatch
 
-### Step 6B: Run /audit-state-tax --local --full (if applicable)
-
-Run this if the program has a single authoritative PDF source (e.g., DSS Standards Chart, state plan with payment tables). Skip if sources are scattered across many documents with no single definitive PDF.
-
-### Step 6C: Fix NEW CRITICAL Issues
+### Step 6B: Fix NEW CRITICAL Issues
 
 If the review found new critical issues not already addressed by Phases 2-5:
 
@@ -502,13 +501,12 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 | 4 | edge-case-gen | `complete:country-models:edge-case-generator` | Purpose-built for boundary condition tests |
 | 5A | validator | `complete:country-models:implementation-validator` | Purpose-built for code pattern checks |
 | 5B | ci-fixer | `complete:country-models:ci-fixer` | Purpose-built for test fix iteration |
-| 6 | review-pr | (invokes /review-pr skill) | Runs 4 validators internally |
-| 6 | audit-state-tax | (invokes /audit-state-tax skill) | PDF-to-code value audit |
+| 6 | review-program | (invokes /review-program skill) | Runs 4 code validators + PDF audit agents in one pass |
 | 6 | review-fixer | `complete:country-models:rules-engineer` | Fix critical issues from review |
 | 7A | pusher | `complete:country-models:pr-pusher` | Purpose-built for changelog + format + push |
 | 7B | reporter | `general-purpose` | Custom report aggregation |
 
-**10 plugin agents + 2 skills invoked + 6 general-purpose agents** (only where no plugin agent fits).
+**10 plugin agents + 1 skill invoked + 6 general-purpose agents** (only where no plugin agent fits).
 
 ---
 
