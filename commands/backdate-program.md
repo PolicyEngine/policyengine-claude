@@ -114,12 +114,12 @@ Create all tasks upfront with dependencies. Adjust count based on inventory.
 | `impl-tests` | Add historical + boundary + dimension tests | `impl-parameters` |
 | `impl-edge-cases` | Generate edge case tests | `impl-tests` |
 | `validate-and-fix` | implementation-validator + ci-fixer + make format | `impl-edge-cases` |
-| `review` | Run /review-program --local --full | `validate-and-fix` |
+| `review-fix-loop` | Review-fix loop: /review-program → fix → re-review until 0 critical (max 3 rounds) | `validate-and-fix` |
 | `finalize` | Changelog, push, final report | `review` |
 
 Skip `audit-references`, `audit-formulas`, `impl-formulas` if `--values-only`.
 Stop after `consolidate` if `--research-only`.
-Skip `review` if `--skip-review`.
+Skip `review-fix-loop` if `--skip-review`.
 
 ### Step 0E: Spawn Research Agents
 
@@ -446,15 +446,32 @@ Read ONLY the checkpoint file.
 
 ---
 
-## Phase 6: Built-In Review
+## Phase 6: Review-Fix Loop
 
 **Skip if `--skip-review`.**
 
-This is the key integration — invoke the consolidated review command which runs code validators + PDF audit in one pass.
+This phase runs `/review-program` and fixes critical issues in a loop until zero critical issues remain (or max iterations reached).
 
-### Step 6A: Run /review-program --local --full
+### Loop Structure
 
-Invoke the `review-program` skill in local-only mode with `--full` to audit all implemented parameters. This internally runs:
+```
+ROUND = 1
+MAX_ROUNDS = 3
+
+while ROUND <= MAX_ROUNDS:
+    1. Run /review-program --local --full
+    2. Read summary → count critical issues
+    3. If critical == 0 → EXIT LOOP (success)
+    4. If ROUND == MAX_ROUNDS → EXIT LOOP (escalate to user)
+    5. If ROUND == 2 → ask user before attempting round 3
+    6. Fix critical issues
+    7. Run make format + tests
+    8. ROUND += 1
+```
+
+### Step 6A: Run /review-program --local --full (Round N)
+
+Invoke the `review-program` skill in local-only mode with `--full`. On **round 1**, this runs the full review:
 - **PDF acquisition** (always on): `complete:country-models:document-collector` discovers and renders source PDFs
 - **Regulatory accuracy**: `complete:country-models:program-reviewer` researches regulations independently, compares to code
 - **Reference quality**: `complete:reference-validator` checks reference completeness and corroboration
@@ -463,15 +480,72 @@ Invoke the `review-program` skill in local-only mode with `--full` to audit all 
 - **PDF audit**: 2-5 `general-purpose` agents audit parameter values against PDF screenshots
 - **Mismatch verification**: 600 DPI re-render + text cross-reference for every reported mismatch
 
-### Step 6B: Fix NEW CRITICAL Issues
+**Note on round 2+**: The `/review-program` command always runs a full review — it has no "incremental" mode. This is by design: fixes can introduce new issues, and PDF audit agents need to re-verify values that may have changed. The cost of a redundant re-check is low compared to missing a regression.
 
-If the review found new critical issues not already addressed by Phases 2-5:
+### Step 6B: Check Results
+
+Read `/tmp/review-program-summary.md` (max 20 lines). Check:
+- **Critical issue count** — the number that matters
+- **Recommended severity** — APPROVE means zero critical issues
+
+**If critical == 0**: Report to user and exit loop.
+
+**If critical > 0 and ROUND < MAX_ROUNDS**: Proceed to Step 6C.
+
+**If critical > 0 and ROUND == 2**: Use `AskUserQuestion` before round 3:
 
 ```
-subagent_type: "complete:country-models:rules-engineer", name: "review-fixer"
-"Fix the critical issues from the review.
+Question: "Review found {N} critical issues after 2 fix rounds. Attempt a 3rd round?"
+Options:
+  - "Yes, try one more round"
+  - "No, stop and show remaining issues"
+```
+
+If user says no, exit loop and include remaining issues in the final report.
+
+**If critical > 0 and ROUND == MAX_ROUNDS (3)**: Exit loop. Report remaining issues to user:
+
+```
+"After {MAX_ROUNDS} review-fix rounds, {N} critical issues remain:
+{one-line summary of each from the summary file}
+These will be noted in the final report for manual resolution."
+```
+
+### Step 6C: Fix Critical Issues
+
+Spawn a fixer agent to address the critical issues found in this round:
+
+```
+subagent_type: "complete:country-models:rules-engineer",
+  team_name: "{st}-{prog}-backdate", name: "review-fixer-{ROUND}"
+
+"Fix the critical issues from the /review-program review (round {ROUND}).
+Read the full review report at /tmp/review-program-full-report.md.
+Focus ONLY on items marked CRITICAL — do not change anything else.
 Load appropriate skills. Apply fixes. Run make format."
 ```
+
+### Step 6D: Verify Fix Didn't Break Tests
+
+```
+subagent_type: "complete:country-models:ci-fixer",
+  team_name: "{st}-{prog}-backdate", name: "ci-fixer-{ROUND}"
+
+"Run tests for {STATE} {PROGRAM} after review-fix round {ROUND}.
+Fix any test failures introduced by the fixes. Run make format."
+```
+
+After ci-fixer completes, increment ROUND and go back to Step 6A.
+
+### Loop Summary
+
+| Round | What happens | Exit condition |
+|-------|-------------|---------------|
+| 1 | Full /review-program → fix criticals → run tests | 0 critical issues |
+| 2 | Full /review-program → fix criticals → run tests | 0 critical issues, or user declines round 3 |
+| 3 | Full /review-program → report remaining issues | Always exits (max reached) |
+
+**Typical outcome**: Most issues are caught and fixed in round 1. Round 2 catches regressions from round 1 fixes. Round 3 is rare — it's a safety net for complex programs with cascading dependencies.
 
 ---
 
@@ -540,8 +614,9 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 | 4 | edge-case-gen | `complete:country-models:edge-case-generator` | Purpose-built for boundary condition tests |
 | 5A | validator | `complete:country-models:implementation-validator` | Purpose-built for code pattern checks |
 | 5B | ci-fixer | `complete:country-models:ci-fixer` | Purpose-built for test fix iteration |
-| 6 | review-program | (invokes /review-program skill) | Runs 4 code validators + PDF audit agents in one pass |
-| 6 | review-fixer | `complete:country-models:rules-engineer` | Fix critical issues from review |
+| 6 | review-program x1-3 | (invokes /review-program skill) | Review-fix loop: runs until 0 critical issues or max 3 rounds |
+| 6 | review-fixer-{N} x1-3 | `complete:country-models:rules-engineer` | Fix critical issues from each review round |
+| 6 | ci-fixer-{N} x1-3 | `complete:country-models:ci-fixer` | Verify fixes don't break tests after each round |
 | 7A | pusher | `complete:country-models:pr-pusher` | Purpose-built for changelog + format + push |
 | 7B | reporter | `general-purpose` | Custom report aggregation |
 
