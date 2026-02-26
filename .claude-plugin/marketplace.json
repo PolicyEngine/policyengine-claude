@@ -62,8 +62,10 @@
       ],
       "commands": [
         "./commands/audit-state-tax.md",
+        "./commands/backdate-program.md",
         "./commands/encode-policy.md",
         "./commands/review-pr.md",
+        "./commands/review-program.md",
         "./commands/fix-pr.md",
         "./commands/create-pr.md"
       ],
@@ -282,10 +284,12 @@
       "commands": [
         "./commands/audit-seo.md",
         "./commands/audit-state-tax.md",
+        "./commands/backdate-program.md",
         "./commands/create-pr.md",
         "./commands/encode-policy.md",
         "./commands/generate-content.md",
         "./commands/review-pr.md",
+        "./commands/review-program.md",
         "./commands/fix-pr.md",
         "./commands/new-tool.md"
       ],
