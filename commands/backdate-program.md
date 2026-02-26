@@ -321,6 +321,12 @@ The `reference-validator` agent is purpose-built for this — it validates that 
 **Additional instructions beyond its defaults:**
 ```
 "Also check these backdate-specific reference issues:
+
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
+These contain real mistakes from past runs. Do NOT repeat them.
+
 1. URL LIVENESS: Test every href with curl -sI. Record broken/redirected URLs.
 2. STATUTE SPECIFICITY: Must cite specific subsection, not parent section.
    BAD: '§ 17b-112'  GOOD: '§ 17b-112(c)'
@@ -553,6 +559,11 @@ Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 Read impl spec at /tmp/{st}-{prog}-impl-spec.md.
 Read existing test files listed in /tmp/{st}-{prog}-inventory.md.
 
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
+These contain real mistakes from past runs. Do NOT repeat them.
+
 COVERAGE REQUIREMENTS:
 1. Existing untested features: test EVERY parameter, not just newly backdated ones
 2. Period transition boundaries: test in the period AFTER every value change date
@@ -579,6 +590,12 @@ The `edge-case-generator` analyzes the variables and parameters to automatically
 "Generate edge case tests for {STATE} {PROGRAM}.
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 Analyze variables and parameters in the program folder.
+
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
+These contain real mistakes from past runs. Do NOT repeat them.
+
 Focus on:
 - Income just above/below thresholds
 - Family size at min/max boundaries
@@ -745,6 +762,11 @@ Apply fixes. Run make format.
 
 REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
 codebase first. PolicyEngine-US likely already has it (fpg, smi, tanf_fpg, ssi, etc.).
+
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
+These contain real mistakes from past runs. Do NOT repeat them.
 
 LEARN FROM PREVIOUS ROUNDS:
 If /tmp/{st}-{prog}-checklist.md exists, read it FIRST. It contains issues
@@ -1081,18 +1103,26 @@ Present to user:
 
 ## Future Runs: Loading Lessons
 
-On future `/backdate-program` runs, implementation agents should load accumulated lessons:
+On future `/backdate-program` runs, the `LEARN FROM PAST SESSIONS` block is already embedded in these agent prompts:
 
-**In Phase 3 agent prompts (parameter-architect, rules-engineer)**, add:
+| Phase | Agent | Has Lessons Block |
+|-------|-------|-------------------|
+| 2 | ref-auditor (reference-validator) | Yes |
+| 3 | impl-parameters (parameter-architect) | Yes |
+| 3 | impl-formulas (rules-engineer) | Yes |
+| 4A | test-creator | Yes |
+| 4B | edge-case-gen | Yes |
+| 6C | review-fixer (rules-engineer) | Yes |
 
+All use the same pattern:
 ```
-"BEFORE STARTING, read the lessons file if it exists:
-- Local: {LESSONS_PATH}
-- Plugin: ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md (if present)
-These are real mistakes from past sessions. Do NOT repeat them."
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
+These contain real mistakes from past runs. Do NOT repeat them.
 ```
 
-This applies to ALL implementation agents, not just fixers. Prevention is better than fixing.
+Prevention is better than fixing — lessons are loaded by all agents that write or validate code/tests/references.
 
 ---
 
@@ -1143,7 +1173,7 @@ This applies to ALL implementation agents, not just fixers. Prevention is better
 | `/tmp/{st}-{prog}-full-audit.md` | Reporter (Phase 7) | Archival only | Full |
 | `/tmp/{st}-{prog}-checklist.md` | review-fixer (Phase 6) | Fix agents (next round), lesson-extractor | Full |
 | `/tmp/{st}-{prog}-new-lessons.md` | lesson-extractor (Phase 8) | Main Claude (read first line only) | Short |
-| `~/.claude/projects/.../memory/agent-lessons.md` | Phase 8B | Phase 3 agents (future runs) | Short (≤50 entries) |
+| `~/.claude/projects/.../memory/agent-lessons.md` | Phase 8B | Phase 2/3/4/6 agents (future runs) | Short (≤50 entries) |
 | `policyengine-claude/lessons/agent-lessons.md` | Phase 8C (PR) | All plugin users (future runs) | Short (≤50 entries) |
 
 **Main Claude reads ONLY "Short" files. Never read "Full" files.**
