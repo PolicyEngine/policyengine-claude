@@ -466,7 +466,21 @@ while ROUND <= MAX_ROUNDS:
     5. If ROUND == 2 → ask user before attempting round 3
     6. Fix critical issues
     7. Run make format + tests
-    8. ROUND += 1
+    8. Commit + push fixes (so next round's gh pr diff sees them)
+    9. ROUND += 1
+```
+
+### Why commit + push is required between rounds
+
+`/review-program` reads the PR code via `gh pr diff $PR_NUMBER`, which fetches the diff from the **GitHub remote API**. Local-only commits are invisible to `gh pr diff`. Therefore each fix round must **commit AND push** so the next review round sees the updated code.
+
+```
+Round 1 review → finds issues in commit A (already on remote)
+Round 1 fix    → commit B + push (fixes from round 1)
+Round 2 review → gh pr diff now includes commit B → reviews the fixed code
+Round 2 fix    → commit C + push (fixes from round 2, if any)
+Round 3 review → gh pr diff includes commits B+C → final check
+Phase 7        → final push (changelog, any remaining changes)
 ```
 
 ### Step 6A: Run /review-program --local --full (Round N)
@@ -525,7 +539,9 @@ Focus ONLY on items marked CRITICAL — do not change anything else.
 Load appropriate skills. Apply fixes. Run make format."
 ```
 
-### Step 6D: Verify Fix Didn't Break Tests
+### Step 6D: Verify Fix & Commit
+
+**6D-1: Run tests and fix failures:**
 
 ```
 subagent_type: "complete:country-models:ci-fixer",
@@ -535,7 +551,17 @@ subagent_type: "complete:country-models:ci-fixer",
 Fix any test failures introduced by the fixes. Run make format."
 ```
 
-After ci-fixer completes, increment ROUND and go back to Step 6A.
+**6D-2: Commit and push fixes:**
+
+After ci-fixer completes, Main Claude commits and pushes so the next round's `/review-program` (which uses `gh pr diff` from the remote) sees the updated code:
+
+```bash
+git add -A
+git commit -m "Review-fix round {ROUND}: address critical issues from /review-program"
+git push
+```
+
+**6D-3: Increment ROUND and go back to Step 6A.**
 
 ### Loop Summary
 
