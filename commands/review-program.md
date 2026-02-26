@@ -334,6 +334,11 @@ Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns.
 - Compare implementation to legal requirements
 - Identify discrepancies between code and law
 - Flag missing program components
+- Check for reinvented variables: PolicyEngine-US has hundreds of existing variables for
+  common concepts (fpg, smi, tanf_fpg, is_tanf_enrolled, ssi, tanf_gross_earned_income,
+  snap_gross_income, etc.). If the PR creates a new variable for a concept that already
+  exists in the codebase, flag it as CRITICAL — the PR should reuse the existing variable.
+  Grep the codebase to verify before flagging.
 - Write findings to /tmp/review-program-regulatory.md
 
 KEY QUESTION: Does this implementation correctly reflect the law?
@@ -398,6 +403,10 @@ Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   that cover date D. Example: if regional_in_effect becomes false at 2022-07-01, the flat
   amount.yaml must have an entry on or before 2022-07-01. A gap means PolicyEngine will
   backward-extrapolate a later value, which may be incorrect. Flag as CRITICAL.
+- Duplicate variable detection: if the PR creates a new variable for a common concept
+  (e.g., FPG, SMI, gross income, enrollment status), Grep the codebase to check if an
+  existing variable already covers it. PolicyEngine-US has hundreds of reusable variables.
+  Flag duplicates as CRITICAL — the PR should reuse the existing variable.
 - Write findings to /tmp/review-program-code.md
 
 KEY QUESTION: Does the code follow PolicyEngine standards?

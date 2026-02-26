@@ -401,6 +401,12 @@ RULES:
 - Fix all reference issues from ref-audit alongside value backdating
 - Use federal fiscal year dates (YYYY-10-01) unless source specifies otherwise
 
+REUSE EXISTING VARIABLES AND PARAMETERS:
+PolicyEngine-US has hundreds of existing variables for common concepts (fpg, smi,
+tanf_fpg, is_tanf_enrolled, ssi, tanf_gross_earned_income, snap_gross_income, etc.).
+Before creating ANY non-program-specific parameter or variable, Grep the codebase to
+check if it already exists. Only create new ones for state-program-specific concepts.
+
 PATTERNS FOR NEW PARAMETERS (Tier B):
 When the impl spec calls for a NEW parameter that didn't exist before, follow these patterns.
 Study existing files in the same program first to match naming and structure.
@@ -463,6 +469,12 @@ LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
 - {LESSONS_PATH}
 - ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
 These contain real mistakes from past runs. Do NOT repeat them.
+
+REUSE EXISTING VARIABLES AND PARAMETERS:
+PolicyEngine-US has hundreds of existing variables for common concepts (fpg, smi,
+tanf_fpg, is_tanf_enrolled, ssi, tanf_gross_earned_income, snap_gross_income, etc.).
+Before creating ANY non-program-specific variable, Grep the codebase to check if it
+already exists. Only create new ones for state-program-specific concepts.
 
 FIXES TO APPLY:
 - Create in_effect boolean parameters (replacing zero-sentinels)
@@ -591,6 +603,9 @@ Boolean toggle date alignment: when a boolean parameter (in_effect, regional_in_
 flat_applies) changes value at date D, verify that ALL parameters it gates have entries
 that cover date D. A gap means PolicyEngine backward-extrapolates a later value, which
 may be incorrect. Flag as CRITICAL.
+Duplicate variable detection: if any new variable was created for a common concept (FPG,
+SMI, gross income, enrollment status), Grep the codebase to check if an existing variable
+already covers it. PolicyEngine-US has hundreds of reusable variables. Flag duplicates.
 Files to validate: parameter and variable files listed in /tmp/{st}-{prog}-inventory.md
 Write findings to /tmp/{st}-{prog}-impl-validation.md."
 ```
@@ -727,6 +742,9 @@ Focus ONLY on items marked CRITICAL — do not change anything else.
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
 Apply fixes. Run make format.
+
+REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
+codebase first. PolicyEngine-US likely already has it (fpg, smi, tanf_fpg, ssi, etc.).
 
 LEARN FROM PREVIOUS ROUNDS:
 If /tmp/{st}-{prog}-checklist.md exists, read it FIRST. It contains issues
