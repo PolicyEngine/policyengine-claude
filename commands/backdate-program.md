@@ -376,7 +376,48 @@ RULES:
 - Descriptions one sentence
 - PDF hrefs include #page=XX (file page number, NOT printed page number)
 - Fix all reference issues from ref-audit alongside value backdating
-- Use federal fiscal year dates (YYYY-10-01) unless source specifies otherwise"
+- Use federal fiscal year dates (YYYY-10-01) unless source specifies otherwise
+
+PATTERNS FOR NEW PARAMETERS (Tier B):
+When the impl spec calls for a NEW parameter that didn't exist before, follow these patterns.
+Study existing files in the same program first to match naming and structure.
+
+Pattern 1 — in_effect boolean (provision that starts/ends at a specific date):
+  Create a new YAML file at the appropriate subfolder with in_effect.yaml:
+  ```yaml
+  # e.g., payment/high_earnings/in_effect.yaml
+  description: {State} uses this indicator to determine whether {provision} applies under {program}.
+  values:
+    {start-date}: false    # before provision existed
+    {effective-date}: true  # when it took effect
+  metadata:
+    unit: bool
+    period: month
+    label: {State} {program} {provision} in effect
+    reference:
+      - title: {specific regulation}
+        href: {url}#page={XX}
+  ```
+  Companion value parameters go alongside (e.g., high_earnings/rate.yaml, high_earnings/reduction_rate.yaml).
+
+Pattern 2 — regional in_effect (provision that varies by region, then stops):
+  Create a boolean parameter controlling the regional/non-regional split:
+  ```yaml
+  # e.g., payment/regional_in_effect.yaml
+  description: {State} uses this indicator to determine whether regional payment standards apply under {program}.
+  values:
+    {start-date}: true     # regional standards active
+    {end-date}: false       # switched to flat statewide standard
+  metadata:
+    unit: bool
+    period: month
+    label: {State} {program} regional payment standards in effect
+    reference:
+      - title: {specific regulation}
+        href: {url}#page={XX}
+  ```
+  Regional value parameters go in subfolder: regional/region_a/amount.yaml, regional/region_b/amount.yaml, etc.
+  Flat statewide parameter at: amount.yaml (same level as regional_in_effect.yaml)."
 ```
 
 ### Tier B/C: New Parameters & Formula Changes (if user-approved)
@@ -400,7 +441,54 @@ FIXES TO APPLY:
 - Wire unused parameters into formulas
 - Remove redundant logic
 - Replace hardcoded numbers in comments with parameter/statute references
-- All logic changes are parameter-driven — NEVER use year-checks (period.start.year)"
+- All logic changes are parameter-driven — NEVER use year-checks (period.start.year)
+
+VARIABLE PATTERNS FOR in_effect AND regional_in_effect:
+Study existing variables in the same program first to match style.
+
+Pattern 1 — Using in_effect for a provision that starts at a specific date:
+  The parameter tree has: high_earnings/in_effect (bool), high_earnings/rate, high_earnings/reduction_rate.
+  In the variable formula, use `if p.high_earnings.in_effect:` to gate the logic:
+  ```python
+  def formula(spm_unit, period, parameters):
+      p = parameters(period).gov.states.{st}.{agency}.{prog}.payment
+      raw_benefit = ...  # base calculation always runs
+      # New provision gated by in_effect boolean
+      if p.high_earnings.in_effect:
+          threshold = p.high_earnings.rate * some_base
+          applies = income >= threshold
+          reduction = 1 - p.high_earnings.reduction_rate
+          return where(applies, raw_benefit * reduction, raw_benefit)
+      return raw_benefit
+  ```
+  The `if p.in_effect:` branch is NEVER entered for periods before the effective date.
+  No year-checks needed — the parameter handles the time logic.
+
+Pattern 2 — Using regional_in_effect for region-based variation:
+  The parameter tree has: regional_in_effect (bool), regional/region_a/amount, regional/region_b/amount, amount (flat).
+  In the variable formula, use `if p.regional_in_effect:` to switch between regional and flat:
+  ```python
+  def formula(spm_unit, period, parameters):
+      p = parameters(period).gov.states.{st}.{agency}.{prog}.payment
+      capped_size = min_(size, p.max_unit_size)
+      if p.regional_in_effect:
+          region = spm_unit.household('{st}_{prog}_region', period)
+          region_a = region == region.possible_values.REGION_A
+          region_c = region == region.possible_values.REGION_C
+          return select(
+              [region_a, region_c],
+              [p.regional.region_a.amount[capped_size],
+               p.regional.region_c.amount[capped_size]],
+              default=p.regional.region_b.amount[capped_size],
+          )
+      return p.amount[capped_size]
+  ```
+  When regional_in_effect is false, it falls through to the flat amount.
+
+CRITICAL: These patterns use `if p.some_bool:` (not `where()`). This works because
+PolicyEngine parameter booleans are scalar per-period — they don't vary across entities.
+Use `where()` for entity-level conditions (income >= threshold), `if p.flag:` for
+period-level switches (provision in effect or not)."
 ```
 
 ---
