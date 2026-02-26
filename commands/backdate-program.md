@@ -19,6 +19,7 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
   - `--skip-review` — skip Phase 6 (built-in review-pr / audit-state-tax)
   - `--values-only` — skip reference/formula audit (Phase 2), only backdate parameter values
   - `--research-only` — stop after Phase 1 (research), produce impl spec but don't implement
+  - `--600dpi` — render all PDFs at 600 DPI instead of 300 DPI (use for scanned docs, poor-quality PDFs, or dense tables that are hard to read at 300 DPI)
 
 **Examples:**
 ```
@@ -26,6 +27,7 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
 /backdate-program IN TANF 2005
 /backdate-program KY K-TAP --values-only
 /backdate-program NE ADC --research-only
+/backdate-program VA TANF --600dpi
 ```
 
 ---
@@ -65,7 +67,8 @@ Parse $ARGUMENTS:
 - STATE_FULL: full state name (e.g., "Connecticut")
 - PROGRAM: program abbreviation (e.g., "tfa", "tanf")
 - TARGET_YEAR: target year (default: program inception year, typically 1996-1997)
-- OPTIONS: --skip-review, --values-only, --research-only
+- OPTIONS: --skip-review, --values-only, --research-only, --600dpi
+- DPI: 600 if --600dpi, else 300
 ```
 
 ### Step 0B: Inventory (DELEGATED)
@@ -141,12 +144,13 @@ Agents communicate directly via `SendMessage` — you do NOT relay.
 
 ```
 discovery → finds PDF URL → messages prep-1: "Download and render: [URL]"
-prep-1 → downloads, renders 300 DPI → messages research-1: "Page map and paths"
+prep-1 → downloads, renders at {DPI} DPI → messages research-1: "Page map and paths"
 research agents → extract values → update task with findings
 ```
 
 **Agent prompts must include:**
 - The inventory file path: `/tmp/{st}-{prog}-inventory.md`
+- PDF rendering DPI: `{DPI}` (pass `pdftoppm -png -r {DPI}` to prep agents)
 - HISTORICAL ERA AWARENESS: check for predecessor program values (AFDC→TANF, FSP→SNAP)
 - Use Wayback Machine for archived sources
 - Escalation rules: EXTERNAL DOCUMENT NEEDED, CROSS-REFERENCE NEEDED
