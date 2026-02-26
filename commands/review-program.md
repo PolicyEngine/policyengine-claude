@@ -158,6 +158,7 @@ If no PDF is found, write that in the manifest and the review will continue with
 
 After the pdf-collector completes, read ONLY `/tmp/review-program-pdf-manifest.md` (max 30 lines). This tells you:
 - Which PDFs were found (if any)
+- **Total page count per PDF** — used in Phase 3 to decide how many audit agents to spawn
 - File paths for agent prompts
 - Topic-to-page mappings for Phase 3
 
@@ -189,7 +190,32 @@ Map changed files to audit topics and assign PDF page ranges:
 | Credits (tax) | `credits/` | pp. E-F from PDF N |
 | Deductions (tax) | `deductions/` | pp. G-H from PDF N |
 
-Fewer agents if the program has fewer topics. More for complex programs with many provisions. Aim for 2-5 PDF audit agents.
+### Large PDF splitting rule
+
+**Main Claude decides agent count** using ONLY the page count from the manifest (a single number — no PDF content is read). Each PDF audit agent should read **at most ~40 pages**. Split by topic first, then by page count:
+
+| Total PDF pages | Min agents | Splitting strategy |
+|-----------------|------------|-------------------|
+| ≤40 | 1-2 | Split by topic only |
+| 41-80 | 2-3 | Split by topic; subdivide any topic >40 pages |
+| 81-150 | 3-4 | Split by topic; subdivide large topics into ~30-40 page chunks |
+| 151+ | 4-5 | Split by topic AND by page range within topics |
+
+**Example**: A 200-page tax instruction booklet with 3 topics (deductions pp.10-60, rates pp.61-90, credits pp.91-180):
+- Agent 1: Deductions pp.10-60 (50 pages → split further)
+  - Agent 1a: Deductions pp.10-35
+  - Agent 1b: Deductions pp.36-60
+- Agent 2: Rates pp.61-90 (30 pages, fine as-is)
+- Agent 3: Credits pp.91-180 (90 pages → split further)
+  - Agent 3a: Credits pp.91-135
+  - Agent 3b: Credits pp.136-180
+
+This yields 5 agents, all running in parallel, none overloaded.
+
+When subdividing a topic, each sub-agent gets:
+- Its page range from the same PDF
+- The SAME repo file list (so both can cross-reference the same parameters)
+- Instructions to only report on values found within their page range
 
 ---
 

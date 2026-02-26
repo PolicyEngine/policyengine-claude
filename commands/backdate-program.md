@@ -104,8 +104,8 @@ Create all tasks upfront with dependencies. Adjust count based on inventory.
 | `secondary-validation` | Download WRDTP/CRS/CBPP cross-check tables | — |
 | `prep-pdf-1` | Download, render, and map first PDF | `discover-sources` |
 | `prep-pdf-2` | Download, render, and map second PDF | `discover-sources` |
-| `research-pdf-1` | Extract parameter values from first PDF | `prep-pdf-1` |
-| `research-pdf-2` | Extract parameter values from second PDF | `prep-pdf-2` |
+| `research-pdf-1-{a,b,...}` | Extract parameter values from first PDF (1-5 agents based on page count) | `prep-pdf-1` |
+| `research-pdf-2-{a,b,...}` | Extract parameter values from second PDF (1-5 agents based on page count) | `prep-pdf-2` |
 | `consolidate` | Merge findings into implementation spec | all research + secondary |
 | `audit-references` | Validate all existing reference URLs and citations | `consolidate` |
 | `audit-formulas` | Review variable formulas vs. regulations | `consolidate` |
@@ -131,8 +131,8 @@ Spawn ALL research agents in a **single message** for maximum parallelism:
 | **secondary-validator** | `general-purpose` | `secondary-validation` (immediate) |
 | **prep-1** | `general-purpose` | Waits for discovery message |
 | **prep-2** | `general-purpose` | Waits for discovery message |
-| **research-1** | `general-purpose` | Waits for prep-1 message |
-| **research-2** | `general-purpose` | Waits for prep-2 message |
+
+**Research agents are spawned AFTER prep agents report page counts** — see "Large PDF Splitting" below.
 
 **Agent type rationale:**
 - `document-collector` is purpose-built for discovering regulatory sources (WebSearch, WebFetch, Bash for curl/pdftotext). It writes to `sources/working_references.md`.
@@ -144,7 +144,8 @@ Agents communicate directly via `SendMessage` — you do NOT relay.
 
 ```
 discovery → finds PDF URL → messages prep-1: "Download and render: [URL]"
-prep-1 → downloads, renders at {DPI} DPI → messages research-1: "Page map and paths"
+prep-1 → downloads, renders at {DPI} DPI → messages Main Claude: "Ready: {path}, {page_count} pages"
+Main Claude → reads page count → spawns research agents with page-range assignments
 research agents → extract values → update task with findings
 ```
 
@@ -165,6 +166,44 @@ research agents → extract values → update task with findings
 - When you find a PDF, message prep-{N}: 'Download and render: [URL] — [title]'
 - Continue searching while prep agents work — don't block"
 ```
+
+**Prep agent prompt additions:**
+```
+"After rendering, message Main Claude (NOT research agents) with:
+- PDF file path
+- Total page count
+- Page offset (preliminary pages before content page 1)
+- Screenshot path pattern
+Main Claude will decide how many research agents to spawn based on page count."
+```
+
+### Large PDF Splitting for Research Agents
+
+**Main Claude decides the research agent count** after each prep agent reports back. Each research agent should read **at most ~40 pages**.
+
+| PDF page count | Research agents per PDF | Assignment |
+|----------------|----------------------|------------|
+| ≤40 | 1 | Full PDF |
+| 41-80 | 2 | Split at midpoint |
+| 81-120 | 3 | ~40 pages each |
+| 121-160 | 4 | ~40 pages each |
+| 161+ | 5 | ~32-40 pages each |
+
+**Spawn all research agents for a PDF in a single message** for maximum parallelism. Each gets:
+- Its assigned page range (e.g., pages 1-40, 41-80, 81-120)
+- The SAME inventory file and parameter file list
+- The SAME escalation rules (CROSS-REFERENCE NEEDED, EXTERNAL DOCUMENT NEEDED)
+- Instructions to only extract values from their assigned pages
+
+**Example**: A 150-page state plan → prep-1 reports 150 pages → Main Claude spawns 4 research agents:
+```
+research-1a: pages 1-38   (program overview, eligibility)
+research-1b: pages 39-76  (income rules, deductions)
+research-1c: pages 77-114 (benefit standards, payment tables)
+research-1d: pages 115-150 (special provisions, appendices)
+```
+
+All 4 run in parallel. The consolidator (Phase 1) merges their findings.
 
 ---
 
@@ -491,7 +530,7 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 | 0E | discovery | `complete:country-models:document-collector` | Purpose-built for finding regulatory sources |
 | 0E | secondary-validator | `general-purpose` | Custom WRDTP/CBPP web research |
 | 0E | prep-1, prep-2 | `general-purpose` | Need Bash for pdftoppm/pdfinfo rendering |
-| 0E | research-1, research-2 | `general-purpose` | Need Read for PNG screenshots + YAML cross-ref |
+| 0E | research-{N}-{a,b,...} (1-5 per PDF) | `general-purpose` | Need Read for PNG screenshots + YAML cross-ref |
 | 1 | consolidator | `general-purpose` | Custom merge logic across all findings |
 | 2 | ref-auditor | `complete:reference-validator` | Purpose-built for reference validation |
 | 2 | formula-reviewer | `complete:country-models:program-reviewer` | Purpose-built for regulation-vs-code comparison |
