@@ -114,7 +114,7 @@ Create all tasks upfront with dependencies. Adjust count based on inventory.
 | `impl-tests` | Add historical + boundary + dimension tests | `impl-parameters` |
 | `impl-edge-cases` | Generate edge case tests | `impl-tests` |
 | `validate-and-fix` | implementation-validator + ci-fixer + make format | `impl-edge-cases` |
-| `review` | Run /review-pr --local and /audit-state-tax --local | `validate-and-fix` |
+| `review` | Run /review-program --local --full | `validate-and-fix` |
 | `finalize` | Changelog, push, final report | `review` |
 
 Skip `audit-references`, `audit-formulas`, `impl-formulas` if `--values-only`.

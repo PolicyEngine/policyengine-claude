@@ -6,6 +6,30 @@ description: Review a program PR — code validation + PDF audit in one pass (re
 
 **READ-ONLY MODE**: This command analyzes the PR and posts a combined review to GitHub WITHOUT making any code changes. Use `/fix-pr` to apply fixes.
 
+## YOUR ROLE: ORCHESTRATOR ONLY
+
+**CRITICAL — Context Window Protection:**
+- You are an orchestrator. You do NOT read diffs, code files, PDF data, or agent finding files.
+- ALL information-gathering work is delegated to agents.
+- You only read files marked as short summaries (≤30 lines each).
+- ALL data flows through files on disk. Agent prompts reference file paths, never paste content.
+
+**You MUST NOT:**
+- Read the PR diff (`/tmp/review-program-diff.txt`)
+- Read parameter YAML files or variable .py files
+- Read PDF text files or PDF screenshots
+- Read individual agent finding files (regulatory, references, code, tests, pdf-audit)
+- Re-render PDFs at 600 DPI yourself
+- Grep through diffs or code files
+
+**You DO:**
+- Parse arguments and resolve PR number
+- Run `gh` commands for small structured JSON (pr view, pr checks)
+- Save diff to disk for agents: `gh pr diff > /tmp/review-program-diff.txt`
+- Read SHORT summary files only: context (≤25 lines), manifest (≤30 lines), summary (≤20 lines)
+- Spawn agents (in parallel where possible)
+- Post the final report using `gh pr comment --body-file`
+
 ## Arguments
 
 `$ARGUMENTS` should contain:
@@ -73,7 +97,7 @@ Options:
 
 ## Phase 1: Gather PR Context + CI Status
 
-Main Claude runs these directly (small structured data, no context risk):
+### Step 1A: Main Claude runs small structured commands only
 
 ```bash
 gh pr view $PR_NUMBER --json title,body,author,baseRefName,headRefName
@@ -81,24 +105,50 @@ gh pr checks $PR_NUMBER
 gh pr diff $PR_NUMBER > /tmp/review-program-diff.txt
 ```
 
-From the diff, identify:
-- **PR type**: New program, bug fix, enhancement, parameter update, or refactor
-- **CI status**: Passing, failing, or pending
-- **State abbreviation** from file paths (e.g., `parameters/gov/states/{st}/`)
-- **Program area** — tax, TANF, SNAP, etc.
-- **Tax/program year** being updated
-- **Files changed**: parameter YAMLs, variable Python files, tests
-- **Topics covered**: rates, deductions, credits, eligibility, benefits, etc.
+**Main Claude does NOT read the diff file.** It only saves it to disk for agents.
 
-Also check for existing PDF references in the PR:
+### Step 1B: Delegate diff analysis to agent (PARALLEL with Phase 2)
 
-```bash
-# Check PR description for PDF links
-gh pr view $PR_NUMBER --json body --jq '.body' | grep -oE 'https?://[^ )]*.pdf[^ )]*'
+Spawn a `general-purpose` agent to analyze the diff and write a short context file.
+Must be `general-purpose` (not Explore) because it needs the Write tool to save the summary to disk.
 
-# Check YAML files in the diff for reference fields
-grep -i 'reference\|source\|\.pdf\|\.gov' /tmp/review-program-diff.txt | head -20
 ```
+subagent_type: "general-purpose"
+name: "context-analyzer"
+run_in_background: true
+
+"Analyze the PR diff at /tmp/review-program-diff.txt and write a context summary.
+
+TASK:
+1. Read /tmp/review-program-diff.txt
+2. Write /tmp/review-program-context.md (MAX 25 LINES):
+
+   ## PR Context
+   - State: {abbreviation} ({full name})
+   - Program area: {tax / TANF / SNAP / etc.}
+   - Year: {year being updated}
+   - PR type: {new program / bug fix / enhancement / parameter update / refactor}
+   - CI status: {from gh pr checks output if available}
+   ## Files Changed
+   - Parameters: {list of YAML file paths}
+   - Variables: {list of .py file paths}
+   - Tests: {list of test file paths}
+   ## Topics
+   - {topic 1}: {file paths}
+   - {topic 2}: {file paths}
+   ## PDF References Found
+   - {any PDF URLs found in PR body or YAML reference fields}
+
+Keep it CONCISE — paths and classifications only. Max 25 lines."
+```
+
+### Step 1C: Read context summary
+
+After the context-analyzer completes, read ONLY `/tmp/review-program-context.md` (max 25 lines). This gives you:
+- State, program, year for agent prompts
+- File lists for agent assignments
+- Topics for Phase 3 splitting
+- PDF URLs found (passed to pdf-collector)
 
 ---
 
@@ -166,17 +216,13 @@ After the pdf-collector completes, read ONLY `/tmp/review-program-pdf-manifest.m
 
 ## Phase 3: Map Files to Topics & Plan Agent Split
 
-Using the PR diff (from Phase 1) and the PDF manifest (from Phase 2), plan the parallel agent split.
+Using the context summary (from Phase 1) and the PDF manifest (from Phase 2), plan the parallel agent split. **Main Claude reads only these two short files** — no diff, no code, no PDFs.
 
 ### Identify repo files to review
 
-**If `--full` flag**: Scan the full repo tree for the state/program:
-```
-parameters/gov/states/{st}/{program}/
-variables/gov/states/{st}/{program}/
-```
+**If `--full` flag**: The context-analyzer noted the state/program path. Spawn a quick `general-purpose` agent (needs Write tool) to list all files under that path and write to `/tmp/review-program-full-filelist.md` (max 30 lines). Read only that file.
 
-**If no `--full` flag**: Use only files from the PR diff.
+**If no `--full` flag**: Use the file lists from `/tmp/review-program-context.md`.
 
 ### Plan agent topic split
 
@@ -446,36 +492,80 @@ STEPS:
    - Confirmation details"
 ```
 
-### Step 5C: Verify ALL Reported Mismatches (CRITICAL)
+### Step 5C: Verify ALL Reported Mismatches (CRITICAL — DELEGATED)
 
-**Never trust agent-reported mismatches without verification.** For each mismatch from PDF audit agents:
+**Never trust agent-reported mismatches without verification.** Main Claude does NOT do verification itself — spawn verification agents.
 
-1. **Re-render at 600 DPI** for the disputed page:
-   ```bash
-   pdftoppm -png -r 600 -f PAGE -l PAGE /tmp/review-pdf-{N}.pdf /tmp/review-600dpi-{page}
-   ```
+For each mismatch reported by PDF audit agents, spawn a **mismatch verification agent**:
 
-2. **Cross-reference with extracted text** — check `/tmp/review-pdf-{N}.txt` to confirm or deny
+```
+subagent_type: "general-purpose"
+name: "verifier-mismatch-{N}"
+run_in_background: true
+```
 
-3. **Check for false positives** — agents commonly misread values in dense tables
+**Prompt:**
+```
+"You are verifying a reported mismatch for a program review.
 
-4. **Check uprating math** — if a parameter uses uprating, manually compute: `last_value x (new_index / old_index)`
+MISMATCH TO VERIFY:
+- Parameter: {param name}
+- Repo value: {from audit agent}
+- Agent-reported PDF value: {from audit agent}
+- PDF page: {from audit agent}
+- PDF file: /tmp/review-pdf-{N}.pdf
+- Text file: /tmp/review-pdf-{N}.txt
 
-5. **Check for logic gaps** — the value may be correct but the formula may not enforce all rules
+STEPS:
+1. Re-render the disputed page at 600 DPI:
+   pdftoppm -png -r 600 -f {PAGE} -l {PAGE} /tmp/review-pdf-{N}.pdf /tmp/review-600dpi-mismatch-{N}
+2. Read the 600 DPI screenshot carefully
+3. Cross-reference with extracted text: read /tmp/review-pdf-{N}.txt and search for the value
+4. Check for false positives — agents commonly misread values in dense tables
+5. If the parameter uses uprating, compute: last_value x (new_index / old_index)
+6. Check for logic gaps — the value may be correct but the formula may not enforce all rules
 
-**Error margin**: Differences should never exceed 1. Flag any difference > 0.3.
+Report to /tmp/review-program-mismatch-{N}.md:
+- CONFIRMED MISMATCH: repo={X}, PDF={Y}, page=#page={NN} — or
+- FALSE POSITIVE: agent misread, actual value is {Z}
+- Evidence: what you see on the 600 DPI screenshot and in extracted text
 
-### Step 5D: Verify Reference Page Numbers
+Error margin: flag any difference > 0.3."
+```
 
-If the PR adds PDF references (`#page=XX`), verify every anchor points to the correct PDF page.
+Spawn ALL mismatch verifiers in a single message for parallelism.
 
-**Common Pitfall: Instruction Page vs PDF Page**
-Authors often use the printed page number instead of the PDF file page number. These differ by the page offset identified in Phase 2.
+### Step 5D: Verify Reference Page Numbers (DELEGATED)
 
-For each file with a reference:
-1. Read the YAML to get the `#page=XX` value
-2. Read the corresponding screenshot to check if the referenced value is on that page
-3. If wrong, find the correct page
+If the PR adds PDF references (`#page=XX`), delegate page number verification to an agent.
+
+```
+subagent_type: "general-purpose"
+name: "verifier-pages"
+run_in_background: true
+```
+
+**Prompt:**
+```
+"You are verifying PDF page number references for a program review.
+
+TASK: Check that every #page=XX reference in the PR points to the correct PDF page.
+
+Common Pitfall: Authors often use the PRINTED page number instead of the PDF FILE page number.
+These differ by the page offset (preliminary pages before content page 1).
+PDF page offset: {offset from manifest}
+
+STEPS:
+1. Read the PR diff at /tmp/review-program-diff.txt
+2. Extract all #page=XX references from YAML files
+3. For each reference, read the PDF screenshot at that page number
+4. Verify the referenced value actually appears on that page
+5. If wrong, find the correct page by searching nearby pages
+
+Report to /tmp/review-program-pages.md:
+- CORRECT: {file} #page=XX — confirmed, [value] found on page
+- WRONG: {file} #page=XX — should be #page=YY, [value] is actually on page YY"
+```
 
 ---
 
@@ -501,6 +591,9 @@ READ these files:
 - /tmp/review-program-pdf-*.md (PDF audit results — all matching files)
 - /tmp/review-program-xref-*.md (cross-reference verifications, if any)
 - /tmp/review-program-ext-*.md (external PDF verifications, if any)
+- /tmp/review-program-mismatch-*.md (600 DPI mismatch verifications, if any)
+- /tmp/review-program-pages.md (page number verifications, if exists)
+- /tmp/review-program-context.md (PR context: state, year, CI status)
 
 TASK:
 1. Merge all findings, removing duplicates
@@ -532,29 +625,40 @@ After the consolidator completes, read ONLY `/tmp/review-program-summary.md` (ma
 
 ## Phase 7: Post / Display Findings
 
-### Step 7A: Read Full Report for Posting
+**Main Claude does NOT read the full report into context.** The consolidator writes a ready-to-post file; Main Claude just pipes it to `gh`.
 
-Read `/tmp/review-program-full-report.md` to get the complete report content.
+### Step 7A: Display or Post
 
-### Step 7B: Display or Post
+**If user chose local-only mode**: Spawn a `general-purpose` agent to read and summarize the full report for display:
 
-**If user chose local-only mode**: Display the full report locally and stop.
+```
+subagent_type: "general-purpose"
+name: "display-agent"
 
-**If user chose to post to GitHub**: Check for existing reviews, then post.
+"Read /tmp/review-program-full-report.md and present it to the user.
+Format it clearly with markdown sections. Include all findings."
+```
+
+Main Claude shows the agent's summary to the user.
+
+**If user chose to post to GitHub**: Post using `--body-file` (no need to read the file into context):
 
 ```bash
 # Check for existing review comments from current user
 CURRENT_USER=$(gh api user --jq '.login')
 EXISTING=$(gh api "/repos/{owner}/{repo}/pulls/$PR_NUMBER/comments" \
   --jq "[.[] | select(.user.login == \"$CURRENT_USER\")] | length")
+
+# Post the report — Main Claude never reads this file
+gh pr comment $PR_NUMBER --body-file /tmp/review-program-full-report.md
 ```
 
-### PR Comment Structure
+### Expected Report Format (written by consolidator)
 
-Post a single combined review:
+The consolidator writes `/tmp/review-program-full-report.md` in this structure:
 
-```bash
-gh pr comment $PR_NUMBER --body "## Program Review
+```
+## Program Review
 
 ### Source Documents
 - **PDF**: [Document title](URL#page=1) ({page count} pages)
@@ -562,24 +666,18 @@ gh pr comment $PR_NUMBER --body "## Program Review
 - **Scope**: {PR changes only / Full audit}
 
 ### Critical (Must Fix)
-
 1. **Regulatory mismatch**: [Description] — [file:line] — PDF [p.NN](URL#page=NN)
 2. **Value mismatch**: [Param] repo: X, PDF: Y — [file:line] — PDF [p.NN](URL#page=NN)
-3. **Hard-coded value**: [Value] in [file:line] — create parameter
-4. **Reference issue**: [File] — [specific problem]
+...
 
 ### Should Address
-
-1. **Pattern violation**: Use \`add()\` instead of manual sum — [file:line]
-2. **Missing test**: Add edge case for [scenario]
-3. **Formatting issue**: [file] — [description/label/values issue]
+1. **Pattern violation**: Use `add()` instead of manual sum — [file:line]
+...
 
 ### Suggestions
-
 1. Consider adding calculation example in docstring
 
 ### PDF Audit Summary
-
 | Category | Count |
 |----------|-------|
 | Confirmed correct | N |
@@ -588,7 +686,6 @@ gh pr comment $PR_NUMBER --body "## Program Review
 | Pre-existing issues | P |
 
 ### Validation Summary
-
 | Check | Result |
 |-------|--------|
 | Regulatory Accuracy | X issues |
@@ -602,35 +699,32 @@ gh pr comment $PR_NUMBER --body "## Program Review
 ### Review Severity: {APPROVE / COMMENT / REQUEST_CHANGES}
 
 ### Next Steps
-
-To auto-fix issues: \`/fix-pr $PR_NUMBER\`
-"
+To auto-fix issues: `/fix-pr {PR_NUMBER}`
 ```
 
 ### CI Failures
 
-If CI is failing, add to the Critical section:
-
-```bash
-gh pr checks $PR_NUMBER --json name,conclusion \
-  --jq '.[] | select(.conclusion == "failure") | "- **CI Failure**: " + .name'
-```
+The context-analyzer (Phase 1) captures CI status. The consolidator includes CI failures in the Critical section based on what validators report.
 
 ---
 
 ## Context Protection Rules
 
 **Main Claude reads ONLY these short files:**
+- `/tmp/review-program-context.md` (max 25 lines) — from context-analyzer
 - `/tmp/review-program-pdf-manifest.md` (max 30 lines) — from pdf-collector
+- `/tmp/review-program-full-filelist.md` (max 30 lines) — from Explore agent, only if `--full`
 - `/tmp/review-program-summary.md` (max 20 lines) — from consolidator
-- `/tmp/review-program-full-report.md` — only at Phase 7 for posting
 
 **All other data flows through files on disk.** Agent prompts reference file paths, never paste content.
 
 **Main Claude MUST NOT read:**
+- The PR diff (`/tmp/review-program-diff.txt`)
 - PDF text files (`/tmp/review-pdf-*.txt`)
-- PDF screenshots (`/tmp/review-pdf-*-page-*.png`)
-- Individual agent finding files (except through the consolidator)
+- PDF screenshots (`/tmp/review-pdf-*-page-*.png`, `/tmp/review-600dpi-*.png`)
+- Parameter YAML files or variable .py files
+- Individual agent finding files (regulatory, references, code, tests, pdf-audit, mismatch, pages)
+- The full report (`/tmp/review-program-full-report.md`) — posted via `--body-file`
 
 ---
 
@@ -638,16 +732,22 @@ gh pr checks $PR_NUMBER --json name,conclusion \
 
 | Phase | Agent | Plugin Type | Why This Agent |
 |-------|-------|-------------|----------------|
+| 1 | context-analyzer | `general-purpose` | Analyzes diff, writes short context summary (needs Write tool) |
 | 2 | pdf-collector | `complete:country-models:document-collector` | Purpose-built for regulatory source discovery |
+| 3 | file-lister (if `--full`) | `general-purpose` | Lists all files for full audit scope (needs Write tool) |
 | 4 | regulatory-reviewer | `complete:country-models:program-reviewer` | Researches regulations independently, compares to code |
 | 4 | reference-checker | `complete:reference-validator` | Reference quality, corroboration, #page= verification |
 | 4 | code-validator | `complete:country-models:implementation-validator` | Code patterns, naming, hard-coded values |
 | 4 | edge-case-checker | `complete:country-models:edge-case-generator` | Missing boundary tests, untested scenarios |
 | 4 | pdf-audit-{topic} x2-5 | `general-purpose` | Need Bash (pdftoppm) + Read (PNG screenshots) |
-| 5 | verifier-{N} (as needed) | `general-purpose` | Cross-ref resolution, 600 DPI re-render |
+| 5A-B | verifier-xref/ext-{N} | `general-purpose` | Cross-ref resolution, external PDF verification |
+| 5C | verifier-mismatch-{N} | `general-purpose` | 600 DPI re-render + text cross-reference |
+| 5D | verifier-pages | `general-purpose` | Page number verification (instruction vs file page) |
 | 6 | consolidator | `general-purpose` | Merges all findings, deduplicates, classifies priority |
+| 7 | display-agent (if local) | `general-purpose` | Reads and presents full report to user |
 
-**5 plugin agents + 3-8 general-purpose agents** (only where no plugin agent fits).
+**5 plugin agents + 1-2 Explore agents + 4-12 general-purpose agents.**
+Main Claude only reads short summaries (≤30 lines) and runs `gh` commands.
 
 ---
 
