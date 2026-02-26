@@ -59,7 +59,15 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
 
 ## Phase 0: Parse Arguments & Inventory
 
-### Step 0A: Parse Arguments
+### Step 0A: Parse Arguments & Clean Up
+
+**Clean up leftover files from previous runs** (prevents stale data from confusing agents):
+```bash
+# Clean /backdate-program files (use {st}-{prog} prefix after parsing)
+rm -f /tmp/{st}-{prog}-*.md
+# Clean /review-program files (Phase 6 invokes /review-program)
+rm -f /tmp/review-program-*.md /tmp/review-pdf-*.{pdf,txt,png} /tmp/review-600dpi-*.png /tmp/review-ext-*.{pdf,txt,png,md}
+```
 
 ```
 Parse $ARGUMENTS:
@@ -159,8 +167,9 @@ Create all tasks upfront with dependencies. Adjust count based on inventory.
 | `impl-tests` | Add historical + boundary + dimension tests | `impl-parameters` |
 | `impl-edge-cases` | Generate edge case tests | `impl-tests` |
 | `validate-and-fix` | implementation-validator + ci-fixer + make format | `impl-edge-cases` |
-| `review-fix-loop` | Review-fix loop: /review-program → fix → re-review until 0 critical (max 3 rounds) | `validate-and-fix` |
-| `finalize` | Changelog, push, final report | `review` |
+| `push-implementation` | Commit + push all Phase 3-5 work to remote | `validate-and-fix` |
+| `review-fix-loop` | Review-fix loop: /review-program → fix → re-review until 0 critical (max 3 rounds) | `push-implementation` |
+| `finalize` | Changelog, push, final report | `review-fix-loop` |
 
 Skip `audit-references`, `audit-formulas`, `impl-formulas` if `--values-only`.
 Stop after `consolidate` if `--research-only`.
@@ -590,6 +599,18 @@ Write SHORT report (max 15 lines) to /tmp/{st}-{prog}-checkpoint.md: PASS/FAIL +
 
 Read ONLY the checkpoint file.
 
+### Step 5C: Push to Remote
+
+**Phase 6 requires code on the remote.** `/review-program` reads the PR via `gh pr diff $PR_NUMBER` (GitHub remote API), so local-only commits are invisible. Push all Phase 3-5 work before entering the review-fix loop:
+
+```bash
+git add -A
+git commit -m "Backdate {STATE} {PROGRAM} parameters to {TARGET_YEAR} (ref #{ISSUE_NUMBER})"
+git push
+```
+
+**Skip this step if `--skip-review`** (Phase 6 won't run).
+
 ---
 
 ## Phase 6: Review-Fix Loop
@@ -618,10 +639,11 @@ while ROUND <= MAX_ROUNDS:
 
 ### Why commit + push is required between rounds
 
-`/review-program` reads the PR code via `gh pr diff $PR_NUMBER`, which fetches the diff from the **GitHub remote API**. Local-only commits are invisible to `gh pr diff`. Therefore each fix round must **commit AND push** so the next review round sees the updated code.
+`/review-program` reads the PR code via `gh pr diff $PR_NUMBER`, which fetches the diff from the **GitHub remote API**. Local-only commits are invisible to `gh pr diff`. Step 5C pushes the initial implementation, and each fix round must also **commit AND push** so the next review round sees the updated code.
 
 ```
-Round 1 review → finds issues in commit A (already on remote)
+Step 5C push   → implementation commits on remote (commit A)
+Round 1 review → gh pr diff sees commit A → reviews implementation
 Round 1 fix    → commit B + push (fixes from round 1)
 Round 2 review → gh pr diff now includes commit B → reviews the fixed code
 Round 2 fix    → commit C + push (fixes from round 2, if any)
@@ -913,11 +935,15 @@ cat /tmp/{st}-{prog}-new-lessons.md >> "$LESSONS_FILE"
 
 Share lessons with all plugin users by proposing them to the policyengine-claude repo.
 
-**Step 8C-1: Check for existing open lessons PR:**
+This uses a **temporary clone** to avoid assumptions about how the plugin is installed (marketplace download, git clone, etc.) and to avoid modifying the user's working directory.
+
+**Step 8C-1: Clone and check for existing open lessons PR:**
 
 ```bash
-PLUGIN_DIR=~/.claude/plugins/marketplaces/policyengine-claude
-cd "$PLUGIN_DIR"
+WORK_DIR=/tmp/{st}-{prog}-lessons-pr
+rm -rf "$WORK_DIR"
+gh repo clone PolicyEngine/policyengine-claude "$WORK_DIR" -- --depth=1
+cd "$WORK_DIR"
 
 # Check for an open lessons PR
 OPEN_PR=$(gh pr list --repo PolicyEngine/policyengine-claude \
@@ -925,28 +951,30 @@ OPEN_PR=$(gh pr list --repo PolicyEngine/policyengine-claude \
   --jq '.[0]')
 ```
 
+**If clone fails** (no `gh` auth, network issues): Skip Step 8C entirely. Lessons are already saved locally in Step 8B. Report: "Lessons saved locally. Plugin PR skipped (could not clone repo)."
+
 **Step 8C-2: Create or update the lessons file:**
 
 ```bash
-LESSONS_PLUGIN="$PLUGIN_DIR/lessons/agent-lessons.md"
-
 if [ -n "$OPEN_PR" ]; then
     # Existing open PR — checkout its branch and append
     BRANCH=$(echo "$OPEN_PR" | jq -r '.headRefName')
+    git fetch origin "$BRANCH"
     git checkout "$BRANCH"
-    git pull
 else
     # No open PR — create a new branch
     BRANCH="lessons/update-$(date +%Y%m%d)"
     git checkout -b "$BRANCH"
-    mkdir -p "$PLUGIN_DIR/lessons"
-    if [ ! -f "$LESSONS_PLUGIN" ]; then
-        echo "# Agent Lessons Learned" > "$LESSONS_PLUGIN"
-        echo "" >> "$LESSONS_PLUGIN"
-        echo "Accumulated from /backdate-program runs across all contributors." >> "$LESSONS_PLUGIN"
-        echo "Loaded by implementation agents on future runs." >> "$LESSONS_PLUGIN"
-        echo "" >> "$LESSONS_PLUGIN"
-    fi
+fi
+
+mkdir -p lessons
+LESSONS_PLUGIN="$WORK_DIR/lessons/agent-lessons.md"
+if [ ! -f "$LESSONS_PLUGIN" ]; then
+    echo "# Agent Lessons Learned" > "$LESSONS_PLUGIN"
+    echo "" >> "$LESSONS_PLUGIN"
+    echo "Accumulated from /backdate-program runs across all contributors." >> "$LESSONS_PLUGIN"
+    echo "Loaded by implementation agents on future runs." >> "$LESSONS_PLUGIN"
+    echo "" >> "$LESSONS_PLUGIN"
 fi
 
 # Append new lessons (the file was already deduplicated in Step 8A)
@@ -960,6 +988,14 @@ git add lessons/agent-lessons.md
 git commit -m "Add lessons from {STATE} {PROGRAM} backdate session"
 git push -u origin "$BRANCH"
 ```
+
+**If push fails** (no write access): Try fork-based workflow:
+```bash
+gh repo fork PolicyEngine/policyengine-claude --clone=false
+git remote add fork "$(gh repo view --json sshUrl --jq '.sshUrl' -- "$(gh api user --jq '.login')/policyengine-claude")"
+git push -u fork "$BRANCH"
+```
+If fork also fails, skip PR creation. Lessons are already saved locally.
 
 **Step 8C-4: Create PR if none exists:**
 
@@ -987,10 +1023,10 @@ EOF
 fi
 ```
 
-**Step 8C-5: Return to the original branch:**
+**Step 8C-5: Clean up temporary clone:**
 
 ```bash
-git checkout -  # Return to previous branch
+rm -rf "$WORK_DIR"
 ```
 
 ### Step 8D: Shutdown Team & Report
