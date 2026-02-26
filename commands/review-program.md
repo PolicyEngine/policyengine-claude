@@ -389,6 +389,11 @@ run_in_background: true
 - Check parameter formatting (descriptions, labels, metadata)
 - Check for changelog fragment: a file must exist at changelog.d/<branch>.<type>.md
   (types: added, changed, fixed, removed, breaking). Flag if missing.
+- Boolean toggle date alignment: when a boolean parameter (in_effect, regional_in_effect,
+  flat_applies) changes value at date D, verify that ALL parameters it gates have entries
+  that cover date D. Example: if regional_in_effect becomes false at 2022-07-01, the flat
+  amount.yaml must have an entry on or before 2022-07-01. A gap means PolicyEngine will
+  backward-extrapolate a later value, which may be incorrect. Flag as CRITICAL.
 - Write findings to /tmp/review-program-code.md
 
 KEY QUESTION: Does the code follow PolicyEngine standards?

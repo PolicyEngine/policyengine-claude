@@ -584,6 +584,10 @@ subagent_type: "complete:country-models:implementation-validator"
 
 "Validate {STATE} {PROGRAM} implementation for PolicyEngine standards compliance.
 Check naming conventions, folder structure, parameter formatting, variable code style.
+Boolean toggle date alignment: when a boolean parameter (in_effect, regional_in_effect,
+flat_applies) changes value at date D, verify that ALL parameters it gates have entries
+that cover date D. A gap means PolicyEngine backward-extrapolates a later value, which
+may be incorrect. Flag as CRITICAL.
 Files to validate: parameter and variable files listed in /tmp/{st}-{prog}-inventory.md
 Write findings to /tmp/{st}-{prog}-impl-validation.md."
 ```
