@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/review-program` command — consolidated PR review combining code validation (4 plugin agents) + PDF audit (2-5 agents) in one pass, with PDF acquisition always on by default
 - `/backdate-program` command — multi-agent orchestration for backdating state program parameters with research, reference/formula audit, implementation, and built-in review phases
 - `--600dpi` flag for both commands to handle scanned docs and dense tables
+- Two-stage mismatch verification in `/review-program` Phase 5: code-path tracing (Step 5C) filters false positives before 600 DPI visual verification (Step 5D)
+- Self-learning lessons mechanism in `/backdate-program` Phase 8: session checklist → persistent local lessons → PR to plugin repo (`lessons/agent-lessons.md`)
+- `in_effect` and `regional_in_effect` boolean toggle patterns added to parameter-patterns and variable-patterns skills (with CT TFA production code examples)
+- Implementation agents (parameter-architect, rules-engineer) now load lessons files on startup to prevent known mistakes
 
 ### Changed
 
