@@ -23,3 +23,11 @@ Loaded by implementation agents on future runs.
 ### WORKFLOW
 - The review-fix loop must continue until 0 critical issues are found OR the max round limit is reached; never stop early when criticals remain, even if other severity levels are clean.
 - When an implementation agent creates a correct pattern (e.g., an `_in_effect` boolean), do not instruct them to remove it in favor of a "simpler" approach that introduces an anti-pattern; trust domain-specific correctness over superficial simplicity.
+# New Lessons from Indiana TANF Backdating Session
+
+## PARAMETER
+- Always verify the full range of dimension values (e.g., family sizes 1–N) against source tables; never trust a summarizer or consolidator that truncates a table early — go back to the PDF.
+- When backdating `max_unit_size` or similar dimension-cap parameters, verify they match the largest dimension present in the source tables for that era; do not assume the cap changed just because the program reformed.
+
+## REFERENCE
+- PDF text extraction can misidentify state or program names from headers, footers, or watermarks; always verify the actual data content of a PDF rather than flagging it based on extracted metadata strings alone.
