@@ -93,22 +93,35 @@ run_in_background: true
 
 **Agent 2: inventory** — scans local files (disk reads)
 
-Spawn an `Explore` agent to inventory existing files:
+Spawn a `general-purpose` agent (needs Write tool) to inventory existing files:
 
 ```
-"Inventory {STATE} {PROGRAM} parameter and variable files. Write a summary to
-/tmp/{st}-{prog}-inventory.md containing:
-- List of parameter YAML files (full paths)
-- Earliest date entry in each file
-- YAML structure pattern (family-size breakdown vs scalar vs scale)
-- List of variable .py files (full paths)
-- List of test .yaml files (full paths)
-Keep CONCISE — paths + earliest dates + structure type only. Max 40 lines."
+subagent_type: "general-purpose"
+name: "inventory"
+run_in_background: true
+
+"Inventory {STATE} {PROGRAM} parameter and variable files. Write TWO files:
+
+1. FULL inventory for agents: /tmp/{st}-{prog}-inventory.md
+   - List of parameter YAML files (full paths)
+   - Earliest date entry in each file
+   - YAML structure pattern (family-size breakdown vs scalar vs scale)
+   - List of variable .py files (full paths)
+   - List of test .yaml files (full paths)
+   No line limit — agents need the complete picture.
+
+2. SHORT summary for orchestrator: /tmp/{st}-{prog}-inventory-summary.md (MAX 10 LINES)
+   - Parameter files: {count}
+   - Variable files: {count}
+   - Test files: {count}
+   - Earliest date found: {YYYY-MM-DD}
+   - Program path: parameters/gov/states/{st}/{prog}/
+   Numbers only — no file paths."
 ```
 
-**After both agents complete**, read the inventory summary and store the issue/PR info:
+**After both agents complete**:
 
-- Read ONLY `/tmp/{st}-{prog}-inventory.md` (max 40 lines)
+- Read ONLY `/tmp/{st}-{prog}-inventory-summary.md` (max 10 lines) — just counts and the program path
 - Store from issue-manager:
   - **ISSUE_NUMBER** — referenced in commit messages, changelog, and final report
   - **PR_NUMBER** — used by `/review-program` in Phase 6, and by `pr-pusher` in Phase 7
@@ -733,7 +746,8 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 
 | File | Written By | Read By | Size |
 |------|-----------|---------|------|
-| `/tmp/{st}-{prog}-inventory.md` | Explore (Phase 0) | Main Claude, agents | Short |
+| `/tmp/{st}-{prog}-inventory.md` | inventory (Phase 0) | Agents only | Full |
+| `/tmp/{st}-{prog}-inventory-summary.md` | inventory (Phase 0) | Main Claude | Short (≤10 lines) |
 | `sources/working_references.md` | document-collector (Phase 0E) | Consolidator | Full |
 | `/tmp/{st}-{prog}-impl-spec.md` | Consolidator (Phase 1) | Impl agents, test agents | Full |
 | `/tmp/{st}-{prog}-impl-summary.md` | Consolidator (Phase 1) | Main Claude | Short |
