@@ -79,6 +79,13 @@ Parse $ARGUMENTS:
 - DPI: 600 if --600dpi, else 300
 ```
 
+**Resolve LESSONS_PATH** (used in Phase 3 agent prompts):
+```bash
+# The auto-memory directory for this project — resolve the concrete path
+LESSONS_PATH=$(ls -d ~/.claude/projects/*/memory 2>/dev/null | head -1)/agent-lessons.md
+```
+Pass `{LESSONS_PATH}` to all implementation agent prompts (Phase 3, Phase 6C).
+
 ### Step 0B: Issue + Inventory (SPAWN BOTH IN ONE MESSAGE)
 
 These two agents have no dependency on each other. Spawn them in a **single message** so they run concurrently:
@@ -95,7 +102,9 @@ run_in_background: true
 1. Search for existing issues related to '{STATE_FULL} {PROGRAM}' backdating.
    If none found, create one with title: 'Backdate {STATE_FULL} {PROGRAM} parameters to {TARGET_YEAR}'.
 2. Search for existing PRs related to '{STATE_FULL} {PROGRAM}'.
-   If none found, create a draft PR with an empty commit on a new branch.
+   If none found, create a new branch and a draft PR. To create the initial commit:
+   - Preferred: create a changelog fragment (echo 'Backdate {STATE_FULL} {PROGRAM} parameters.' > changelog.d/{branch}.added.md)
+   - Fallback: if the repo rejects that, use --allow-empty for the commit
 3. Return both the issue number and PR number."
 ```
 
@@ -379,7 +388,7 @@ Read impl spec at /tmp/{st}-{prog}-impl-spec.md (parameter values to add).
 Read ref audit at /tmp/{st}-{prog}-ref-audit.md (reference fixes to apply).
 
 LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- ~/.claude/projects/{project-slug}/memory/agent-lessons.md
+- {LESSONS_PATH}
 - ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
 These contain real mistakes from past runs. Do NOT repeat them.
 
@@ -451,7 +460,7 @@ Load skills: /policyengine-variable-patterns, /policyengine-code-style,
 Read formula audit at /tmp/{st}-{prog}-formula-audit.md.
 
 LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- ~/.claude/projects/{project-slug}/memory/agent-lessons.md
+- {LESSONS_PATH}
 - ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
 These contain real mistakes from past runs. Do NOT repeat them.
 
@@ -572,9 +581,12 @@ Focus on:
 
 ```
 subagent_type: "complete:country-models:implementation-validator"
-```
 
-Checks naming conventions, folder structure, parameter formatting, variable code style, and compliance with PolicyEngine standards.
+"Validate {STATE} {PROGRAM} implementation for PolicyEngine standards compliance.
+Check naming conventions, folder structure, parameter formatting, variable code style.
+Files to validate: parameter and variable files listed in /tmp/{st}-{prog}-inventory.md
+Write findings to /tmp/{st}-{prog}-impl-validation.md."
+```
 
 ### Step 5B: CI Fixer
 
@@ -604,7 +616,8 @@ Read ONLY the checkpoint file.
 **Phase 6 requires code on the remote.** `/review-program` reads the PR via `gh pr diff $PR_NUMBER` (GitHub remote API), so local-only commits are invisible. Push all Phase 3-5 work before entering the review-fix loop:
 
 ```bash
-git add -A
+# Stage only the program's directories — avoid staging unintended files
+git add policyengine_us/parameters/gov/states/{st}/ policyengine_us/variables/gov/states/{st}/ policyengine_us/tests/policy/baseline/gov/states/{st}/
 git commit -m "Backdate {STATE} {PROGRAM} parameters to {TARGET_YEAR} (ref #{ISSUE_NUMBER})"
 git push
 ```
@@ -735,7 +748,8 @@ Fix any test failures introduced by the fixes. Run make format."
 After ci-fixer completes, Main Claude commits and pushes so the next round's `/review-program` (which uses `gh pr diff` from the remote) sees the updated code:
 
 ```bash
-git add -A
+# Stage only the program's directories — avoid staging unintended files
+git add policyengine_us/parameters/gov/states/{st}/ policyengine_us/variables/gov/states/{st}/ policyengine_us/tests/policy/baseline/gov/states/{st}/
 git commit -m "Review-fix round {ROUND}: address critical issues from /review-program"
 git push
 ```
@@ -902,11 +916,7 @@ RULES FOR GENERALIZATION:
 - Be specific enough to be actionable, general enough to apply across programs"
 ```
 
-Where `{persistent_lessons_path}` is:
-```
-~/.claude/projects/{project-slug}/memory/agent-lessons.md
-```
-(Same directory as MEMORY.md — it persists across conversations for this project.)
+Where `{persistent_lessons_path}` is `{LESSONS_PATH}` (resolved in Phase 0A — same directory as MEMORY.md, persists across conversations).
 
 ### Step 8B: Persist Locally
 
@@ -918,7 +928,7 @@ After the lesson-extractor completes, read `/tmp/{st}-{prog}-new-lessons.md`.
 
 ```bash
 # Create the file if it doesn't exist
-LESSONS_FILE=~/.claude/projects/{project-slug}/memory/agent-lessons.md
+LESSONS_FILE="$LESSONS_PATH"
 if [ ! -f "$LESSONS_FILE" ]; then
     echo "# Agent Lessons Learned" > "$LESSONS_FILE"
     echo "" >> "$LESSONS_FILE"
@@ -963,7 +973,7 @@ if [ -n "$OPEN_PR" ]; then
     git checkout "$BRANCH"
 else
     # No open PR — create a new branch
-    BRANCH="lessons/update-$(date +%Y%m%d)"
+    BRANCH="lessons/update-$(date +%Y%m%d)-{st}-{prog}"
     git checkout -b "$BRANCH"
 fi
 
@@ -1050,8 +1060,8 @@ On future `/backdate-program` runs, implementation agents should load accumulate
 
 ```
 "BEFORE STARTING, read the lessons file if it exists:
-- Local: {persistent_lessons_path}
-- Plugin: {plugin_dir}/lessons/agent-lessons.md (if present)
+- Local: {LESSONS_PATH}
+- Plugin: ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md (if present)
 These are real mistakes from past sessions. Do NOT repeat them."
 ```
 

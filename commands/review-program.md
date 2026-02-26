@@ -387,6 +387,8 @@ run_in_background: true
 - Identify entity-level issues
 - Flag incomplete implementations (TODOs, stubs)
 - Check parameter formatting (descriptions, labels, metadata)
+- Check for changelog fragment: a file must exist at changelog.d/<branch>.<type>.md
+  (types: added, changed, fixed, removed, breaking). Flag if missing.
 - Write findings to /tmp/review-program-code.md
 
 KEY QUESTION: Does the code follow PolicyEngine standards?
@@ -670,13 +672,15 @@ TASK: Check that every #page=XX reference in the PR points to the correct PDF pa
 Common Pitfall: Authors often use the PRINTED page number instead of the PDF FILE page number.
 These differ by the page offset (preliminary pages before content page 1).
 PDF page offset: {offset from manifest}
+PDF manifest: /tmp/review-program-pdf-manifest.md (contains screenshot path patterns and PDF file paths)
 
 STEPS:
-1. Read the PR diff at /tmp/review-program-diff.txt
-2. Extract all #page=XX references from YAML files
-3. For each reference, read the PDF screenshot at that page number
-4. Verify the referenced value actually appears on that page
-5. If wrong, find the correct page by searching nearby pages
+1. Read /tmp/review-program-pdf-manifest.md to get screenshot path patterns
+2. Read the PR diff at /tmp/review-program-diff.txt
+3. Extract all #page=XX references from YAML files
+4. For each reference, read the PDF screenshot at that page number
+5. Verify the referenced value actually appears on that page
+6. If wrong, find the correct page by searching nearby pages
 
 Report to /tmp/review-program-pages.md:
 - CORRECT: {file} #page=XX — confirmed, [value] found on page
@@ -763,11 +767,6 @@ Main Claude shows the agent's summary to the user.
 **If user chose to post to GitHub**: Post using `--body-file` (no need to read the file into context):
 
 ```bash
-# Check for existing review comments from current user
-CURRENT_USER=$(gh api user --jq '.login')
-EXISTING=$(gh api "/repos/{owner}/{repo}/pulls/$PR_NUMBER/comments" \
-  --jq "[.[] | select(.user.login == \"$CURRENT_USER\")] | length")
-
 # Post the report — Main Claude never reads this file
 gh pr comment $PR_NUMBER --body-file /tmp/review-program-full-report.md
 ```
