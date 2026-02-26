@@ -1,7 +1,7 @@
 ---
 name: edge-case-generator
 description: Automatically generates comprehensive edge case tests for benefit programs
-tools: Read, Write, Grep, Glob, TodoWrite, Skill
+tools: Read, Write, Edit, Grep, Glob, TodoWrite, Skill
 model: opus
 ---
 

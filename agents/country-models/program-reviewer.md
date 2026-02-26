@@ -1,7 +1,7 @@
 ---
 name: program-reviewer
 description: Reviews government program implementations by researching regulations first, then validating code against legal requirements
-tools: Bash, Read, Grep, Glob, WebFetch, TodoWrite, Skill
+tools: Bash, Read, Write, Grep, Glob, WebFetch, TodoWrite, Skill
 model: opus
 ---
 
