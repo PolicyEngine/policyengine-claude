@@ -443,6 +443,7 @@ run_in_background: true
 **PDF Audit Agent Prompt Template:**
 ```
 "You are auditing {State}'s {year} {program} parameters against the official source document.
+Load skills: /policyengine-parameter-patterns, /policyengine-period-patterns.
 
 TASK: Report only — do NOT edit any files.
 
@@ -571,6 +572,8 @@ run_in_background: true
 ```
 "You are a code-path verifier for a program review. An audit agent reported a MISMATCH
 and you must determine if it's a real issue or a false positive.
+Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
+  /policyengine-period-patterns, /policyengine-code-style.
 
 REPORTED MISMATCH:
 - Parameter: {parameter name and file path}
@@ -634,6 +637,7 @@ run_in_background: true
 **Prompt:**
 ```
 "You are visually verifying a reported mismatch that has passed code-path verification.
+Load skills: /policyengine-parameter-patterns, /policyengine-period-patterns.
 
 MISMATCH TO VERIFY:
 - Parameter: {param name}
