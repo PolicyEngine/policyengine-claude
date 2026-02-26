@@ -424,7 +424,7 @@ Do NOT guess values you haven't seen. Flag it and move on."
 
 ## Phase 5: Verification
 
-After all Phase 4 agents complete, handle flags and verify mismatches.
+After all Phase 4 agents complete, handle flags and verify mismatches. Steps 5A-5B handle flags in parallel. Step 5C filters mismatches via code-path tracing. Step 5D visually confirms only surviving mismatches. Step 5E checks page numbers.
 
 ### Step 5A: Handle CROSS-REFERENCE NEEDED Flags
 
@@ -492,11 +492,79 @@ STEPS:
    - Confirmation details"
 ```
 
-### Step 5C: Verify ALL Reported Mismatches (CRITICAL — DELEGATED)
+### Step 5C: Code-Path Verification of Mismatches (CRITICAL)
 
-**Never trust agent-reported mismatches without verification.** Main Claude does NOT do verification itself — spawn verification agents.
+**Never trust agent-reported mismatches without verification.** Agents commonly produce false positives because:
+- The parameter is only used in a deprecated code path (e.g., pre-2023)
+- The value is automatically inherited from a federal variable
+- The parameter interacts with other parameters in a way the audit agent didn't trace
+- A boolean flag (`in_effect`, `flat_applies`) disables the code path for the target year
 
-For each mismatch reported by PDF audit agents, spawn a **mismatch verification agent**:
+**For each MISMATCH** reported by PDF audit agents, spawn a **code-path verifier**:
+
+```
+subagent_type: "general-purpose"
+name: "verifier-codepath-{N}"
+run_in_background: true
+```
+
+**Prompt:**
+```
+"You are a code-path verifier for a program review. An audit agent reported a MISMATCH
+and you must determine if it's a real issue or a false positive.
+
+REPORTED MISMATCH:
+- Parameter: {parameter name and file path}
+- Repo value: {value from audit agent report}
+- Agent-reported PDF value: {value from audit agent report}
+- Audit agent's reasoning: {summary from their report file /tmp/review-program-pdf-{topic}.md}
+- Target year: {year from Phase 1}
+
+YOUR TASK:
+1. Read the audit agent's report at /tmp/review-program-pdf-{topic}.md to understand
+   their full reasoning for this mismatch
+2. Read the parameter file to confirm the repo value
+3. Grep for ALL usages of this parameter across the codebase
+4. For each variable that references this parameter, trace the call chain:
+   - Is it called from the {year}+ code path?
+   - Or only from a deprecated/disabled path?
+   - Is the code path gated by an in_effect or flat_applies boolean that is
+     false for {year}?
+5. Check if the parameter's value actually affects the target year's computation
+   by following the execution flow from the top-level variable down to this parameter
+6. Check if the value might be correct due to interaction with other parameters
+   (e.g., a flag that disables the feature, a separate variable that overrides it,
+   an uprating mechanism that transforms the stored value)
+
+VERDICT must be one of:
+- CONFIRMED: The mismatch is real — parameter IS used in {year} calculations and the value
+  differs from the PDF. Include the code path trace showing how the parameter is reached.
+- REJECTED: The parameter does NOT affect {year} calculations — explain why
+  (e.g., gated by in_effect=false, only used in pre-{year} branch, overridden by another param)
+- INCONCLUSIVE: Unable to fully determine — explain what's unclear
+
+Report to /tmp/review-program-codepath-{N}.md:
+- Verdict: {CONFIRMED / REJECTED / INCONCLUSIVE}
+- Parameter: {name}
+- Code path trace: {top-level variable → ... → this parameter}
+- Reasoning: {detailed explanation}
+- If REJECTED: what code path evidence disproves the mismatch"
+```
+
+**Spawn ALL code-path verifiers in a single message for parallelism.** Wait for all to complete before proceeding.
+
+**After all verifiers complete:**
+- **CONFIRMED** mismatches → proceed to Step 5D (600 DPI visual verification)
+- **REJECTED** mismatches → excluded from Step 5D, but noted as "investigated and cleared" in the consolidator input
+- **INCONCLUSIVE** mismatches → proceed to Step 5D (treat as potentially real)
+
+Main Claude reads ONLY the verdict line from each `/tmp/review-program-codepath-{N}.md` (first line). It does NOT read the full reasoning — that's for the consolidator.
+
+### Step 5D: Visual Verification of Confirmed Mismatches (600 DPI)
+
+**Only process mismatches that were CONFIRMED or INCONCLUSIVE in Step 5C.** Skip REJECTED mismatches entirely.
+
+For each surviving mismatch, spawn a **visual verification agent**:
 
 ```
 subagent_type: "general-purpose"
@@ -506,12 +574,13 @@ run_in_background: true
 
 **Prompt:**
 ```
-"You are verifying a reported mismatch for a program review.
+"You are visually verifying a reported mismatch that has passed code-path verification.
 
 MISMATCH TO VERIFY:
 - Parameter: {param name}
 - Repo value: {from audit agent}
 - Agent-reported PDF value: {from audit agent}
+- Code-path verdict: {CONFIRMED or INCONCLUSIVE, from Step 5C}
 - PDF page: {from audit agent}
 - PDF file: /tmp/review-pdf-{N}.pdf
 - Text file: /tmp/review-pdf-{N}.txt
@@ -533,9 +602,9 @@ Report to /tmp/review-program-mismatch-{N}.md:
 Error margin: flag any difference > 0.3."
 ```
 
-Spawn ALL mismatch verifiers in a single message for parallelism.
+Spawn ALL visual verifiers in a single message for parallelism.
 
-### Step 5D: Verify Reference Page Numbers (DELEGATED)
+### Step 5E: Verify Reference Page Numbers (DELEGATED)
 
 If the PR adds PDF references (`#page=XX`), delegate page number verification to an agent.
 
@@ -591,22 +660,25 @@ READ these files:
 - /tmp/review-program-pdf-*.md (PDF audit results — all matching files)
 - /tmp/review-program-xref-*.md (cross-reference verifications, if any)
 - /tmp/review-program-ext-*.md (external PDF verifications, if any)
-- /tmp/review-program-mismatch-*.md (600 DPI mismatch verifications, if any)
+- /tmp/review-program-codepath-*.md (code-path verification verdicts, if any)
+- /tmp/review-program-mismatch-*.md (600 DPI visual verifications, if any)
 - /tmp/review-program-pages.md (page number verifications, if exists)
 - /tmp/review-program-context.md (PR context: state, year, CI status)
 
 TASK:
 1. Merge all findings, removing duplicates
 2. If multiple validators flag the same issue, combine into one with highest priority
-3. Classify each finding:
-   - CRITICAL (Must Fix): regulatory mismatches, value mismatches (verified at 600 DPI),
+3. For mismatches: only include those that passed BOTH code-path verification (Step 5C)
+   AND visual verification (Step 5D). Note REJECTED mismatches as 'investigated and cleared'.
+4. Classify each finding:
+   - CRITICAL (Must Fix): regulatory mismatches, value mismatches (code-path confirmed + 600 DPI verified),
      hard-coded values, missing/non-corroborating references, CI failures, incorrect formulas
    - SHOULD ADDRESS: code pattern violations, missing edge case tests, naming conventions,
      period usage errors, formatting issues (params & vars)
    - SUGGESTIONS: documentation improvements, performance optimizations, code style
 
-4. Write FULL report to /tmp/review-program-full-report.md (for archival/posting)
-5. Write SHORT summary to /tmp/review-program-summary.md (MAX 20 LINES):
+5. Write FULL report to /tmp/review-program-full-report.md (for archival/posting)
+6. Write SHORT summary to /tmp/review-program-summary.md (MAX 20 LINES):
    - Critical count + one-line descriptions
    - Should count
    - Suggestion count
@@ -681,7 +753,8 @@ The consolidator writes `/tmp/review-program-full-report.md` in this structure:
 | Category | Count |
 |----------|-------|
 | Confirmed correct | N |
-| Mismatches (verified) | M |
+| Mismatches (code-path confirmed + visually verified) | M |
+| Mismatches rejected (code-path cleared) | R |
 | Unmodeled items | K |
 | Pre-existing issues | P |
 
@@ -723,7 +796,7 @@ The context-analyzer (Phase 1) captures CI status. The consolidator includes CI 
 - PDF text files (`/tmp/review-pdf-*.txt`)
 - PDF screenshots (`/tmp/review-pdf-*-page-*.png`, `/tmp/review-600dpi-*.png`)
 - Parameter YAML files or variable .py files
-- Individual agent finding files (regulatory, references, code, tests, pdf-audit, mismatch, pages)
+- Individual agent finding files (regulatory, references, code, tests, pdf-audit, codepath, mismatch, pages)
 - The full report (`/tmp/review-program-full-report.md`) — posted via `--body-file`
 
 ---
@@ -741,8 +814,9 @@ The context-analyzer (Phase 1) captures CI status. The consolidator includes CI 
 | 4 | edge-case-checker | `complete:country-models:edge-case-generator` | Missing boundary tests, untested scenarios |
 | 4 | pdf-audit-{topic} x2-5 | `general-purpose` | Need Bash (pdftoppm) + Read (PNG screenshots) |
 | 5A-B | verifier-xref/ext-{N} | `general-purpose` | Cross-ref resolution, external PDF verification |
-| 5C | verifier-mismatch-{N} | `general-purpose` | 600 DPI re-render + text cross-reference |
-| 5D | verifier-pages | `general-purpose` | Page number verification (instruction vs file page) |
+| 5C | verifier-codepath-{N} | `general-purpose` | Code-path tracing to filter false positive mismatches |
+| 5D | verifier-mismatch-{N} | `general-purpose` | 600 DPI re-render of CONFIRMED/INCONCLUSIVE mismatches |
+| 5E | verifier-pages | `general-purpose` | Page number verification (instruction vs file page) |
 | 6 | consolidator | `general-purpose` | Merges all findings, deduplicates, classifies priority |
 | 7 | display-agent (if local) | `general-purpose` | Reads and presents full report to user |
 
@@ -756,14 +830,14 @@ Main Claude only reads short summaries (≤30 lines) and runs `gh` commands.
 1. **READ-ONLY**: Never edit files. Never switch branches. This is a review.
 2. **PDF always on**: pdf-collector always runs. If no PDF found, manifest says so and Phase 4 runs code validators only.
 3. **300 DPI minimum**: Always render PDFs at 300 DPI. Use 600 DPI for mismatch verification (or if `--600dpi` flag).
-4. **Verify all mismatches**: Never trust agent-reported mismatches without 600 DPI + text cross-reference.
-5. **Agents stay in scope**: Agents only read their assigned pages. Cross-references and external PDFs get separate verification agents.
-6. **Always cite pages**: Every finding must include a `#page=XX` citation (file page, NOT printed page). Exception: single-page PDFs.
-7. **Error margin <= 1**: Flag any difference > 0.3 between repo and PDF values.
-8. **Context preservation**: Never read large PDFs in Main Claude's context. Always delegate to agents.
-9. **Multiple PDFs supported**: Collector downloads up to 5. Manifest maps PDF-to-topic. Audit agents read from whichever PDF covers their topic.
-10. **No PDF gracefully handled**: Skip PDF audit agents, run code-only validators, note in report.
-11. **Changelog**: Every PR needs a towncrier fragment in `changelog.d/<branch>.<type>.md`.
+4. **Two-stage mismatch verification**: Every mismatch must pass BOTH code-path verification (Step 5C — is the parameter reachable in the target year?) AND visual verification (Step 5D — 600 DPI + text cross-reference). Never include a mismatch in the final report without both checks.
+5. **Trace code paths**: A parameter mismatch is only real if the parameter is actually used in the target year's computation. Always verify the parameter is reachable from the top-level variable — check for `in_effect` gates, deprecated branches, and overriding parameters.
+7. **Always cite pages**: Every finding must include a `#page=XX` citation (file page, NOT printed page). Exception: single-page PDFs.
+8. **Error margin <= 1**: Flag any difference > 0.3 between repo and PDF values.
+9. **Context preservation**: Never read large PDFs in Main Claude's context. Always delegate to agents.
+10. **Multiple PDFs supported**: Collector downloads up to 5. Manifest maps PDF-to-topic. Audit agents read from whichever PDF covers their topic.
+11. **No PDF gracefully handled**: Skip PDF audit agents, run code-only validators, note in report.
+12. **Changelog**: Every PR needs a towncrier fragment in `changelog.d/<branch>.<type>.md`.
 
 ---
 
@@ -775,7 +849,8 @@ Before starting:
 - [ ] I will NOT switch branches
 - [ ] I will spawn pdf-collector in Phase 2 (ALWAYS)
 - [ ] I will render PDFs at {DPI} DPI minimum
-- [ ] I will verify all agent-reported mismatches at 600 DPI
+- [ ] I will verify all mismatches via Step 5C code-path tracing before visual verification
+- [ ] I will verify confirmed/inconclusive mismatches at 600 DPI in Step 5D
 - [ ] I will spawn verification agents for cross-references and external PDFs
 - [ ] I will include #page=XX citations for all findings
 - [ ] I will read ONLY short summary files — never raw PDFs or full agent reports
