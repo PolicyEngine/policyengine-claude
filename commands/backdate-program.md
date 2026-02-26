@@ -577,9 +577,12 @@ After tests pass, run make format as a final step."
 
 ### Quick Audit (context-safe)
 
-Spawn an Explore agent to check ci-fixer's work:
+Spawn a `general-purpose` agent (needs Write tool for the report file) to check ci-fixer's work:
 
 ```
+subagent_type: "general-purpose"
+name: "quick-auditor"
+
 "Review git diff of changes. Check for: hard-coded values to pass tests,
 year-check conditionals (period.start.year), altered parameter values.
 Write SHORT report (max 15 lines) to /tmp/{st}-{prog}-checkpoint.md: PASS/FAIL + issues."
@@ -1061,7 +1064,7 @@ This applies to ALL implementation agents, not just fixers. Prevention is better
 | `/tmp/{st}-{prog}-ref-audit.md` | reference-validator (Phase 2) | parameter-architect | Full |
 | `/tmp/{st}-{prog}-formula-audit.md` | program-reviewer (Phase 2) | rules-engineer | Full |
 | `/tmp/{st}-{prog}-phase2-summary.md` | program-reviewer (Phase 2) | Main Claude | Short |
-| `/tmp/{st}-{prog}-checkpoint.md` | Explore (Phase 5) | Main Claude | Short |
+| `/tmp/{st}-{prog}-checkpoint.md` | quick-auditor (Phase 5) | Main Claude | Short |
 | `/tmp/{st}-{prog}-final-report.md` | Reporter (Phase 7) | Main Claude | Short |
 | `/tmp/{st}-{prog}-pr-description.md` | Reporter (Phase 7) | gh pr edit --body-file | Full |
 | `/tmp/{st}-{prog}-full-audit.md` | Reporter (Phase 7) | Archival only | Full |

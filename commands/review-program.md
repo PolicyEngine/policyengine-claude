@@ -820,7 +820,7 @@ The context-analyzer (Phase 1) captures CI status. The consolidator includes CI 
 | 6 | consolidator | `general-purpose` | Merges all findings, deduplicates, classifies priority |
 | 7 | display-agent (if local) | `general-purpose` | Reads and presents full report to user |
 
-**5 plugin agents + 1-2 Explore agents + 4-12 general-purpose agents.**
+**5 plugin agents + 5-14 general-purpose agents.**
 Main Claude only reads short summaries (≤30 lines) and runs `gh` commands.
 
 ---
@@ -832,6 +832,7 @@ Main Claude only reads short summaries (≤30 lines) and runs `gh` commands.
 3. **300 DPI minimum**: Always render PDFs at 300 DPI. Use 600 DPI for mismatch verification (or if `--600dpi` flag).
 4. **Two-stage mismatch verification**: Every mismatch must pass BOTH code-path verification (Step 5C — is the parameter reachable in the target year?) AND visual verification (Step 5D — 600 DPI + text cross-reference). Never include a mismatch in the final report without both checks.
 5. **Trace code paths**: A parameter mismatch is only real if the parameter is actually used in the target year's computation. Always verify the parameter is reachable from the top-level variable — check for `in_effect` gates, deprecated branches, and overriding parameters.
+6. **Agents stay in scope**: Agents only read their assigned pages. Cross-references and external PDFs get separate verification agents.
 7. **Always cite pages**: Every finding must include a `#page=XX` citation (file page, NOT printed page). Exception: single-page PDFs.
 8. **Error margin <= 1**: Flag any difference > 0.3 between repo and PDF values.
 9. **Context preservation**: Never read large PDFs in Main Claude's context. Always delegate to agents.
