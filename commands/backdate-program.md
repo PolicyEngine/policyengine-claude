@@ -8,6 +8,8 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
 
 **READ THE PLAN**: Detailed agent prompts, lessons learned, and state-specific notes are in the memory file `state-tanf-backdate-plan.md`. This command is the executable orchestration layer.
 
+**GLOBAL RULE — PDF Page Numbers**: Every PDF reference href MUST end with `#page=XX` (the file page number, NOT the printed page number). The ONLY exception is single-page PDFs. This rule applies to ALL agents in ALL phases — research, implementation, audit, and finalize. Include this instruction in every agent prompt that touches parameter YAML files.
+
 ## Arguments
 
 `$ARGUMENTS` should contain:
@@ -104,13 +106,13 @@ Create all tasks upfront with dependencies. Adjust count based on inventory.
 | `consolidate` | Merge findings into implementation spec | all research + secondary |
 | `audit-references` | Validate all existing reference URLs and citations | `consolidate` |
 | `audit-formulas` | Review variable formulas vs. regulations | `consolidate` |
-| `impl-standards` | Add date entries to family-size breakdown files | `audit-references`, `audit-formulas` |
-| `impl-scalars` | Add date entries to scalar parameter files | `audit-references`, `audit-formulas` |
+| `impl-parameters` | Add date entries + fix references in parameter files | `audit-references`, `audit-formulas` |
 | `impl-formulas` | Apply formula fixes (if user-approved) | `audit-formulas` |
-| `impl-tests` | Add historical + boundary + dimension tests | `impl-standards`, `impl-scalars` |
-| `validate-and-fix` | implementation-validator + ci-fixer + make format | `impl-tests` |
+| `impl-tests` | Add historical + boundary + dimension tests | `impl-parameters` |
+| `impl-edge-cases` | Generate edge case tests | `impl-tests` |
+| `validate-and-fix` | implementation-validator + ci-fixer + make format | `impl-edge-cases` |
 | `review` | Run /review-pr --local and /audit-state-tax --local | `validate-and-fix` |
-| `finalize` | Consolidate audit, fix mismatches, changelog, report | `review` |
+| `finalize` | Changelog, push, final report | `review` |
 
 Skip `audit-references`, `audit-formulas`, `impl-formulas` if `--values-only`.
 Stop after `consolidate` if `--research-only`.
@@ -122,12 +124,18 @@ Spawn ALL research agents in a **single message** for maximum parallelism:
 
 | Agent Name | Type | Starts On |
 |------------|------|-----------|
-| **discovery** | `general-purpose` | `discover-sources` (immediate) |
+| **discovery** | `complete:country-models:document-collector` | `discover-sources` (immediate) |
 | **secondary-validator** | `general-purpose` | `secondary-validation` (immediate) |
 | **prep-1** | `general-purpose` | Waits for discovery message |
 | **prep-2** | `general-purpose` | Waits for discovery message |
 | **research-1** | `general-purpose` | Waits for prep-1 message |
 | **research-2** | `general-purpose` | Waits for prep-2 message |
+
+**Agent type rationale:**
+- `document-collector` is purpose-built for discovering regulatory sources (WebSearch, WebFetch, Bash for curl/pdftotext). It writes to `sources/working_references.md`.
+- Prep agents need Bash (pdftoppm, pdfinfo) + Read + SendMessage — `general-purpose` is required for PDF rendering.
+- Research agents need Read (PNG screenshots) + Read (YAML files) + SendMessage — `general-purpose` is required for PDF reading.
+- Secondary validator needs WebSearch + WebFetch for WRDTP/CBPP — `general-purpose` works.
 
 Agents communicate directly via `SendMessage` — you do NOT relay.
 
@@ -144,6 +152,16 @@ research agents → extract values → update task with findings
 - Escalation rules: EXTERNAL DOCUMENT NEEDED, CROSS-REFERENCE NEEDED
 - Continue working while waiting — never block on an escalation
 
+**document-collector prompt additions:**
+```
+"In addition to your standard research workflow, also:
+- Search for ALL historical state plan periods (not just the current one)
+- Search Wayback Machine for archived versions of web-based sources
+- Check ACF (federal) for approved state plans: site:acf.hhs.gov {State} {PROGRAM}
+- When you find a PDF, message prep-{N}: 'Download and render: [URL] — [title]'
+- Continue searching while prep agents work — don't block"
+```
+
 ---
 
 ## Phase 1: Consolidation & Checkpoint
@@ -159,7 +177,8 @@ subagent_type: "general-purpose", team_name: "{st}-{prog}-backdate", name: "cons
 1. Read ALL task findings from task list (TaskList + TaskGet)
 2. Read inventory at /tmp/{st}-{prog}-inventory.md
 3. Read existing parameter YAML files listed in inventory
-4. Merge into FINAL IMPLEMENTATION SPEC: /tmp/{st}-{prog}-impl-spec.md
+4. Read sources/working_references.md from document-collector
+5. Merge into FINAL IMPLEMENTATION SPEC: /tmp/{st}-{prog}-impl-spec.md
    - For EACH parameter file: exact date entries to add, with values + PDF citations
    - Reconcile conflicts (later documents supersede earlier)
    - Reconcile secondary source discrepancies (primary sources win)
@@ -184,30 +203,51 @@ Read ONLY `/tmp/{st}-{prog}-impl-summary.md`. Present to user:
 
 Spawn two agents in parallel:
 
-### ref-auditor
+### Reference Auditor
 
 ```
-subagent_type: "general-purpose", team_name: "{st}-{prog}-backdate", name: "ref-auditor"
-
-"Audit reference quality for {STATE} {PROGRAM}.
-Read inventory at /tmp/{st}-{prog}-inventory.md for file list.
-For EACH parameter YAML: check URL liveness (curl -sI), statute specificity
-(subsection level), reference title descriptiveness, session law vs permanent
-statute, instruction page vs PDF page confusion, corroborating references,
-historical state plan coverage. Write to /tmp/{st}-{prog}-ref-audit.md."
+subagent_type: "complete:reference-validator",
+  team_name: "{st}-{prog}-backdate", name: "ref-auditor"
 ```
 
-### formula-reviewer
+The `reference-validator` agent is purpose-built for this — it validates that all parameters have proper references that corroborate values. It checks: missing references, format (page numbers, detailed sections), value corroboration, and jurisdiction match.
+
+**Additional instructions beyond its defaults:**
+```
+"Also check these backdate-specific reference issues:
+1. URL LIVENESS: Test every href with curl -sI. Record broken/redirected URLs.
+2. STATUTE SPECIFICITY: Must cite specific subsection, not parent section.
+   BAD: '§ 17b-112'  GOOD: '§ 17b-112(c)'
+3. REFERENCE TITLE DESCRIPTIVENESS: Title must distinguish what this ref is FOR.
+   BAD: 'State Plan 2024-2026'  GOOD: 'State Plan 2024-2026, High Earnings Provision'
+4. SESSION LAW vs PERMANENT STATUTE: Flag session law refs (Public Act, SB, HB)
+   that should cite permanent statutes instead.
+5. INSTRUCTION PAGE vs PDF PAGE: Verify #page=XX is the file page, not the printed
+   page number. Render the page and confirm content matches.
+6. HISTORICAL PLAN COVERAGE: Check for refs to ALL relevant plan periods.
+Write findings to /tmp/{st}-{prog}-ref-audit.md."
+```
+
+### Formula Reviewer
 
 ```
-subagent_type: "general-purpose", team_name: "{st}-{prog}-backdate", name: "formula-reviewer"
+subagent_type: "complete:country-models:program-reviewer",
+  team_name: "{st}-{prog}-backdate", name: "formula-reviewer"
+```
 
-"Review {STATE} {PROGRAM} variable formulas for correctness.
-Read inventory at /tmp/{st}-{prog}-inventory.md for file list.
+The `program-reviewer` agent is purpose-built for this — it researches regulations FIRST (independently of code), then validates code against legal requirements. This catches formula gaps and missing provisions.
+
+**Additional instructions beyond its defaults:**
+```
+"Focus on these backdate-specific formula issues:
+1. UNUSED PARAMETERS: Check every parameter YAML — is each one used in a formula?
+   A parameter that exists but is never read means the feature is unimplemented.
+2. ZERO-SENTINEL ANTI-PATTERN: Flag params where value=0 means 'not in effect'.
+   Should be an explicit in_effect boolean parameter instead.
+3. REDUNDANT LOGIC: Flag mathematically unnecessary operations.
+4. HARDCODED COMMENTS: Flag comments with specific numbers (e.g., '92%', '171% FPG').
+5. ERA HANDLING: Verify formula uses parameter-driven branching, NOT year-checks.
 Read impl spec at /tmp/{st}-{prog}-impl-spec.md for regulatory context.
-Load skills: /policyengine-variable-patterns, /policyengine-code-style.
-Check: unused parameters, zero-sentinel anti-patterns, redundant logic,
-hardcoded values in comments, missing regulatory provisions, era handling.
 Write findings to /tmp/{st}-{prog}-formula-audit.md.
 Write SHORT summary (max 15 lines) to /tmp/{st}-{prog}-phase2-summary.md."
 ```
@@ -227,43 +267,71 @@ Spawn implementation agents in parallel. Each reads specs from disk — NOT from
 
 ### Tier A: Parameter Backdating (most common)
 
-**Two parallel agents:**
+```
+subagent_type: "complete:country-models:parameter-architect",
+  team_name: "{st}-{prog}-backdate", name: "impl-parameters"
+```
 
-| Agent | Type | Scope |
-|-------|------|-------|
-| `impl-standards` | `general-purpose` | Family-size breakdown files |
-| `impl-scalars` | `general-purpose` | Scalar parameter files |
+The `parameter-architect` agent designs and modifies parameter structures with proper federal/state separation and zero hard-coding. It has Read, Write, Edit, MultiEdit, Grep, Glob, Skill access.
 
-Each agent:
-1. Loads skills: `/policyengine-parameter-patterns`, `/policyengine-period-patterns`
-2. Reads `/tmp/{st}-{prog}-impl-spec.md` (parameter values)
-3. Reads `/tmp/{st}-{prog}-ref-audit.md` (reference fixes)
-4. Adds date entries AND applies reference fixes
-5. Rules: preserve YAML structure, chronological order, no duplicate values, descriptions one sentence, PDF hrefs include `#page=XX`
+**Instructions:**
+```
+"Add historical date entries to {STATE} {PROGRAM} parameter files AND apply reference fixes.
+Load skills: /policyengine-parameter-patterns, /policyengine-period-patterns.
+Read impl spec at /tmp/{st}-{prog}-impl-spec.md (parameter values to add).
+Read ref audit at /tmp/{st}-{prog}-ref-audit.md (reference fixes to apply).
+
+RULES:
+- Preserve existing YAML structure EXACTLY (indentation, key ordering, metadata)
+- Add entries in chronological order (earliest first, before existing entries)
+- NO DUPLICATE VALUES: if value unchanged, one entry at earliest date only
+- Descriptions one sentence
+- PDF hrefs include #page=XX (file page number, NOT printed page number)
+- Fix all reference issues from ref-audit alongside value backdating
+- Use federal fiscal year dates (YYYY-10-01) unless source specifies otherwise"
+```
 
 ### Tier B/C: New Parameters & Formula Changes (if user-approved)
 
-| Agent | Type | Scope |
-|-------|------|-------|
-| `impl-formulas` | `general-purpose` | Formula fixes from formula-audit |
+```
+subagent_type: "complete:country-models:rules-engineer",
+  team_name: "{st}-{prog}-backdate", name: "impl-formulas"
+```
 
-This agent:
-1. Loads skills: `/policyengine-variable-patterns`, `/policyengine-code-style`, `/policyengine-parameter-patterns`, `/policyengine-period-patterns`, `/policyengine-vectorization`
-2. Reads `/tmp/{st}-{prog}-formula-audit.md`
-3. Creates `in_effect` boolean parameters (replacing zero-sentinels)
-4. Wires unused parameters into formulas
-5. Removes redundant logic, hardcoded comments
-6. **All logic changes are parameter-driven — NEVER use year-checks**
+The `rules-engineer` agent implements government benefit program rules with zero hard-coded values and complete parameterization. It has the full tool set (Read, Write, Edit, MultiEdit, Grep, Glob, Bash, Skill).
+
+**Instructions:**
+```
+"Apply formula fixes for {STATE} {PROGRAM} identified in the formula audit.
+Load skills: /policyengine-variable-patterns, /policyengine-code-style,
+  /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
+Read formula audit at /tmp/{st}-{prog}-formula-audit.md.
+
+FIXES TO APPLY:
+- Create in_effect boolean parameters (replacing zero-sentinels)
+- Wire unused parameters into formulas
+- Remove redundant logic
+- Replace hardcoded numbers in comments with parameter/statute references
+- All logic changes are parameter-driven — NEVER use year-checks (period.start.year)"
+```
 
 ---
 
 ## Phase 4: Tests
 
-After implementation agents complete:
+After implementation agents complete, spawn TWO test agents in sequence:
+
+### Step 4A: Test Creator
 
 ```
-subagent_type: "general-purpose", name: "test-agent"
+subagent_type: "complete:country-models:test-creator",
+  team_name: "{st}-{prog}-backdate", name: "test-creator"
+```
 
+The `test-creator` agent creates comprehensive integration tests ensuring realistic calculations. It has Read, Write, Edit, MultiEdit, Grep, Glob, Bash, Skill access.
+
+**Instructions:**
+```
 "Add tests for {STATE} {PROGRAM} backdating.
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 Read impl spec at /tmp/{st}-{prog}-impl-spec.md.
@@ -281,6 +349,26 @@ GOTCHAS:
 - Period: Only YYYY-01 or YYYY (no YYYY-10, no full dates)"
 ```
 
+### Step 4B: Edge Case Generator
+
+```
+subagent_type: "complete:country-models:edge-case-generator",
+  team_name: "{st}-{prog}-backdate", name: "edge-case-gen"
+```
+
+The `edge-case-generator` analyzes the variables and parameters to automatically generate comprehensive edge case tests (boundary conditions, zero values, maximums).
+
+**Instructions:**
+```
+"Generate edge case tests for {STATE} {PROGRAM}.
+Analyze variables and parameters in the program folder.
+Focus on:
+- Income just above/below thresholds
+- Family size at min/max boundaries
+- Zero income, maximum income
+- Interaction between features (e.g., housing subsidy + high earner reduction)"
+```
+
 ---
 
 ## Phase 5: Validation & Fix
@@ -291,11 +379,14 @@ GOTCHAS:
 subagent_type: "complete:country-models:implementation-validator"
 ```
 
+Checks naming conventions, folder structure, parameter formatting, variable code style, and compliance with PolicyEngine standards.
+
 ### Step 5B: CI Fixer
 
 ```
 subagent_type: "complete:country-models:ci-fixer"
-"Run tests, fix failures, iterate until all pass. After tests pass, run make format."
+"Run tests for {STATE} {PROGRAM}, fix failures, iterate until all pass.
+After tests pass, run make format as a final step."
 ```
 
 ### Quick Audit (context-safe)
@@ -316,39 +407,27 @@ Read ONLY the checkpoint file.
 
 **Skip if `--skip-review`.**
 
-This is the key integration — instead of custom audit agents replicating what review-pr and audit-state-tax already do well, invoke the actual commands.
+This is the key integration — invoke the actual review commands which run their own specialized agents internally.
 
 ### Step 6A: Run /review-pr --local
 
-Invoke the review-pr command on the current branch's PR in local-only mode. This runs:
-- **program-reviewer**: Researches regulations independently, compares to code
-- **reference-validator**: Checks reference completeness and corroboration
-- **implementation-validator**: Checks code patterns (adds, add(), periods, entities)
-- **edge-case-generator**: Identifies untested scenarios
+Invoke the `review-pr` skill in local-only mode. This internally runs:
+- **@complete:country-models:program-reviewer**: Researches regulations independently, compares to code
+- **@complete:reference-validator**: Checks reference completeness and corroboration
+- **@complete:country-models:implementation-validator**: Checks code patterns
+- **@complete:country-models:edge-case-generator**: Identifies untested scenarios
 
 ### Step 6B: Run /audit-state-tax --local --full (if applicable)
 
-Run this if the program has a single authoritative PDF source (e.g., DSS Standards Chart, state plan with tables). Skip if sources are scattered across many documents.
+Run this if the program has a single authoritative PDF source (e.g., DSS Standards Chart, state plan with payment tables). Skip if sources are scattered across many documents with no single definitive PDF.
 
-### Step 6C: Consolidate Review Findings
+### Step 6C: Fix NEW CRITICAL Issues
 
-Spawn a consolidation agent to merge review-pr and audit-state-tax findings:
-
-```
-"Read the review-pr and audit-state-tax output. Categorize findings into:
-- ALREADY FIXED: issues that Phases 2-5 already addressed
-- NEW CRITICAL: issues requiring code changes
-- NEW SUGGESTIONS: minor improvements
-Write SHORT report (max 20 lines) to /tmp/{st}-{prog}-review-summary.md."
-```
-
-### Step 6D: Fix NEW CRITICAL Issues
-
-If the review found new critical issues, spawn a fix agent:
+If the review found new critical issues not already addressed by Phases 2-5:
 
 ```
-subagent_type: "general-purpose", name: "review-fixer"
-"Fix the critical issues listed in /tmp/{st}-{prog}-review-summary.md.
+subagent_type: "complete:country-models:rules-engineer", name: "review-fixer"
+"Fix the critical issues from the review.
 Load appropriate skills. Apply fixes. Run make format."
 ```
 
@@ -356,22 +435,41 @@ Load appropriate skills. Apply fixes. Run make format."
 
 ## Phase 7: Finalize
 
-### Step 7A: Final Report (DELEGATED)
+### Step 7A: Push & Changelog
 
 ```
-subagent_type: "general-purpose", name: "finalizer"
+subagent_type: "complete:country-models:pr-pusher",
+  team_name: "{st}-{prog}-backdate", name: "pusher"
+```
 
-"Finalize {STATE} {PROGRAM} backdating.
+The `pr-pusher` agent ensures PRs are properly formatted with changelog, linting, and tests before pushing. It handles:
+- Creating changelog fragment in `changelog.d/` (see Changelog section below)
+- Running `make format`
+- Pushing the branch
+
+**Changelog format (towncrier fragments):**
+```bash
+echo "Description of change." > changelog.d/<branch-name>.<type>.md
+```
+Types: `added` (minor bump), `changed` (patch), `fixed` (patch), `removed` (minor), `breaking` (major).
+**DO NOT** edit `CHANGELOG.md` directly or use `changelog_entry.yaml` (deprecated).
+
+### Step 7B: Final Report (DELEGATED)
+
+Spawn a `general-purpose` agent to write the final report:
+
+```
+"Finalize {STATE} {PROGRAM} backdating report.
 1. Read all findings from task list
-2. Consolidate into report: MATCHES (count), MISMATCHES (detail), MISSING, reference fixes
-3. Fix any remaining confirmed mismatches
-4. Run make format
-5. Create changelog fragment in changelog.d/
-6. Write SHORT final report (max 25 lines) to /tmp/{st}-{prog}-final-report.md
-7. Write FULL detailed report to /tmp/{st}-{prog}-full-audit.md (archival)"
+2. Write SHORT final report (max 25 lines) to /tmp/{st}-{prog}-final-report.md:
+   - Total parameters verified, date entries added
+   - Reference fixes applied, formula improvements made
+   - Review findings addressed
+   - Remaining issues (if any)
+3. Write FULL detailed report to /tmp/{st}-{prog}-full-audit.md (archival)"
 ```
 
-### Step 7B: Present Summary
+### Step 7C: Present Summary
 
 Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 - Total parameters verified
@@ -383,20 +481,47 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 
 ---
 
+## Agent Summary
+
+| Phase | Agent | Plugin Type | Why This Agent |
+|-------|-------|-------------|----------------|
+| 0E | discovery | `complete:country-models:document-collector` | Purpose-built for finding regulatory sources |
+| 0E | secondary-validator | `general-purpose` | Custom WRDTP/CBPP web research |
+| 0E | prep-1, prep-2 | `general-purpose` | Need Bash for pdftoppm/pdfinfo rendering |
+| 0E | research-1, research-2 | `general-purpose` | Need Read for PNG screenshots + YAML cross-ref |
+| 1 | consolidator | `general-purpose` | Custom merge logic across all findings |
+| 2 | ref-auditor | `complete:reference-validator` | Purpose-built for reference validation |
+| 2 | formula-reviewer | `complete:country-models:program-reviewer` | Purpose-built for regulation-vs-code comparison |
+| 3 | impl-parameters | `complete:country-models:parameter-architect` | Purpose-built for parameter YAML design |
+| 3 | impl-formulas | `complete:country-models:rules-engineer` | Purpose-built for formula implementation |
+| 4 | test-creator | `complete:country-models:test-creator` | Purpose-built for integration tests |
+| 4 | edge-case-gen | `complete:country-models:edge-case-generator` | Purpose-built for boundary condition tests |
+| 5A | validator | `complete:country-models:implementation-validator` | Purpose-built for code pattern checks |
+| 5B | ci-fixer | `complete:country-models:ci-fixer` | Purpose-built for test fix iteration |
+| 6 | review-pr | (invokes /review-pr skill) | Runs 4 validators internally |
+| 6 | audit-state-tax | (invokes /audit-state-tax skill) | PDF-to-code value audit |
+| 6 | review-fixer | `complete:country-models:rules-engineer` | Fix critical issues from review |
+| 7A | pusher | `complete:country-models:pr-pusher` | Purpose-built for changelog + format + push |
+| 7B | reporter | `general-purpose` | Custom report aggregation |
+
+**10 plugin agents + 2 skills invoked + 6 general-purpose agents** (only where no plugin agent fits).
+
+---
+
 ## Files on Disk (Handoff Mechanism)
 
 | File | Written By | Read By | Size |
 |------|-----------|---------|------|
 | `/tmp/{st}-{prog}-inventory.md` | Explore (Phase 0) | Main Claude, agents | Short |
-| `/tmp/{st}-{prog}-impl-spec.md` | Consolidator (Phase 1) | Impl agents, test agent | Full |
+| `sources/working_references.md` | document-collector (Phase 0E) | Consolidator | Full |
+| `/tmp/{st}-{prog}-impl-spec.md` | Consolidator (Phase 1) | Impl agents, test agents | Full |
 | `/tmp/{st}-{prog}-impl-summary.md` | Consolidator (Phase 1) | Main Claude | Short |
-| `/tmp/{st}-{prog}-ref-audit.md` | ref-auditor (Phase 2) | Impl agents | Full |
-| `/tmp/{st}-{prog}-formula-audit.md` | formula-reviewer (Phase 2) | Impl agents | Full |
-| `/tmp/{st}-{prog}-phase2-summary.md` | formula-reviewer (Phase 2) | Main Claude | Short |
+| `/tmp/{st}-{prog}-ref-audit.md` | reference-validator (Phase 2) | parameter-architect | Full |
+| `/tmp/{st}-{prog}-formula-audit.md` | program-reviewer (Phase 2) | rules-engineer | Full |
+| `/tmp/{st}-{prog}-phase2-summary.md` | program-reviewer (Phase 2) | Main Claude | Short |
 | `/tmp/{st}-{prog}-checkpoint.md` | Explore (Phase 5) | Main Claude | Short |
-| `/tmp/{st}-{prog}-review-summary.md` | Consolidator (Phase 6) | Main Claude, fixer | Short |
-| `/tmp/{st}-{prog}-final-report.md` | Finalizer (Phase 7) | Main Claude | Short |
-| `/tmp/{st}-{prog}-full-audit.md` | Finalizer (Phase 7) | Archival only | Full |
+| `/tmp/{st}-{prog}-final-report.md` | Reporter (Phase 7) | Main Claude | Short |
+| `/tmp/{st}-{prog}-full-audit.md` | Reporter (Phase 7) | Archival only | Full |
 
 **Main Claude reads ONLY "Short" files. Never read "Full" files.**
 
@@ -416,13 +541,13 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 ## Anti-Patterns This Workflow Prevents
 
 1. **Wrong effective dates from era conflation**: Research agents check for predecessor program values
-2. **Broken reference URLs**: ref-auditor validates all hrefs
-3. **Generic statute references**: ref-auditor checks subsection specificity
-4. **Zero-sentinel anti-patterns**: formula-reviewer flags `rate: 0` → creates `in_effect` boolean
-5. **Unused parameters**: formula-reviewer catches params not wired into formulas
-6. **Hardcoded comments**: formula-reviewer flags specific numbers in comments
+2. **Broken reference URLs**: reference-validator validates all hrefs
+3. **Generic statute references**: reference-validator checks subsection specificity
+4. **Zero-sentinel anti-patterns**: program-reviewer flags `rate: 0` → rules-engineer creates `in_effect` boolean
+5. **Unused parameters**: program-reviewer catches params not wired into formulas
+6. **Hardcoded comments**: program-reviewer flags specific numbers in comments
 7. **Duplicate date entries**: Consolidator flags same value at multiple dates
-8. **Session law URLs**: ref-auditor migrates to permanent statute URLs
-9. **Untested existing features**: Test agent inventories ALL params for coverage
-10. **Missing transition boundary tests**: Test agent adds tests after every value-change date
-11. **Instruction page vs PDF page**: ref-auditor distinguishes file page from printed page
+8. **Session law URLs**: reference-validator migrates to permanent statute URLs
+9. **Untested existing features**: test-creator inventories ALL params for coverage
+10. **Missing transition boundary tests**: test-creator adds tests after every value-change date
+11. **Instruction page vs PDF page**: reference-validator distinguishes file page from printed page
