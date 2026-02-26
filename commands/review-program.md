@@ -329,6 +329,7 @@ run_in_background: true
 **Prompt:**
 ```
 "Review {State} {PROGRAM} PR #{PR_NUMBER} for regulatory accuracy.
+Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns.
 - Research regulations FIRST (independent of code)
 - Compare implementation to legal requirements
 - Identify discrepancies between code and law
@@ -354,6 +355,7 @@ run_in_background: true
 **Prompt:**
 ```
 "Validate references in {State} {PROGRAM} PR #{PR_NUMBER}.
+Load skills: /policyengine-parameter-patterns.
 - Find parameters missing references
 - Check reference format (page numbers, detailed sections)
 - Verify references corroborate values
@@ -380,6 +382,8 @@ run_in_background: true
 **Prompt:**
 ```
 "Validate code patterns in {State} {PROGRAM} PR #{PR_NUMBER}.
+Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
+  /policyengine-code-style, /policyengine-period-patterns.
 - Find hard-coded values in formulas
 - Check variable naming conventions
 - Verify correct patterns (adds, add(), add() > 0)
@@ -412,6 +416,7 @@ run_in_background: true
 **Prompt:**
 ```
 "Analyze test coverage for {State} {PROGRAM} PR #{PR_NUMBER}.
+Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 - Identify missing boundary tests
 - Find untested edge cases
 - Check parameter combinations not tested

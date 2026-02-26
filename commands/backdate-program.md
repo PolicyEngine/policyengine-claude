@@ -565,6 +565,7 @@ The `edge-case-generator` analyzes the variables and parameters to automatically
 **Instructions:**
 ```
 "Generate edge case tests for {STATE} {PROGRAM}.
+Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 Analyze variables and parameters in the program folder.
 Focus on:
 - Income just above/below thresholds
@@ -583,6 +584,8 @@ Focus on:
 subagent_type: "complete:country-models:implementation-validator"
 
 "Validate {STATE} {PROGRAM} implementation for PolicyEngine standards compliance.
+Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
+  /policyengine-code-style, /policyengine-period-patterns.
 Check naming conventions, folder structure, parameter formatting, variable code style.
 Boolean toggle date alignment: when a boolean parameter (in_effect, regional_in_effect,
 flat_applies) changes value at date D, verify that ALL parameters it gates have entries
@@ -721,7 +724,9 @@ subagent_type: "complete:country-models:rules-engineer",
 "Fix the critical issues from the /review-program review (round {ROUND}).
 Read the full review report at /tmp/review-program-full-report.md.
 Focus ONLY on items marked CRITICAL — do not change anything else.
-Load appropriate skills. Apply fixes. Run make format.
+Load skills: /policyengine-variable-patterns, /policyengine-code-style,
+  /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
+Apply fixes. Run make format.
 
 LEARN FROM PREVIOUS ROUNDS:
 If /tmp/{st}-{prog}-checklist.md exists, read it FIRST. It contains issues
