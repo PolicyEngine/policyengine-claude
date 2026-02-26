@@ -934,6 +934,124 @@ class wa_capital_gains_tax(Variable):
 - ❌ The branching depends on a per-entity condition like income or age (use `where()` instead)
 - ❌ A new bracket was added to an existing scale using `.inf` (no variable changes needed — `.calc()` works as before; see parameter patterns skill)
 
+### Gating Provisions with `in_effect` Boolean
+
+**When a provision starts or ends at a specific date**, use `if p.provision.in_effect:` to gate the entire logic block. The parameter side has an `in_effect.yaml` boolean (see parameter patterns skill). The variable wraps the provision's logic in a plain `if` block.
+
+**Real-world example — CT TFA high-earnings reduction (new in 2024):**
+
+```python
+class ct_tfa(Variable):
+    value_type = float
+    entity = SPMUnit
+    definition_period = MONTH
+    unit = USD
+    defined_for = "ct_tfa_eligible"
+
+    def formula(spm_unit, period, parameters):
+        p = parameters(period).gov.states.ct.dss.tfa.payment
+        payment_standard = spm_unit("ct_tfa_payment_standard", period)
+        countable_unearned_income = spm_unit(
+            "ct_tfa_countable_unearned_income", period
+        )
+        raw_benefit = max_(payment_standard - countable_unearned_income, 0)
+
+        # Per CGS § 17b-112(d), high earners have their benefit reduced.
+        # This provision did not exist before 2024.
+        if p.high_earnings.in_effect:
+            gross_earnings = add(
+                spm_unit, period, ["tanf_gross_earned_income"]
+            )
+            fpg = spm_unit("tanf_fpg", period)
+            high_income_threshold = p.high_earnings.rate * fpg
+            high_income = gross_earnings >= high_income_threshold
+            reduction_multiplier = 1 - p.high_earnings.reduction_rate
+            return where(
+                high_income,
+                raw_benefit * reduction_multiplier,
+                raw_benefit,
+            )
+        return raw_benefit
+```
+
+**Key points:**
+- `if p.high_earnings.in_effect:` uses Python `if` because it's a **parameter** (scalar boolean), not a per-entity variable
+- The `if` block is NEVER entered for periods before the effective date (2024)
+- Inside the `if` block, `where()` IS used for per-entity branching (some households have high income, others don't)
+- The provision's sub-parameters (`rate`, `reduction_rate`) are only accessed inside the guarded block
+
+**When to use this pattern:**
+- ✅ A new provision is added by legislation at a specific date
+- ✅ An existing provision is repealed at a specific date
+- ✅ The provision gates an entire block of logic with its own sub-parameters
+
+**When NOT to use this pattern:**
+- ❌ The branching depends on a per-entity condition (use `where()` instead)
+- ❌ The parameter structure changes (use `flat_applies` pattern above)
+
+### Regional Variation with `regional_in_effect` Boolean
+
+**When a program transitions between regional and statewide payment standards**, use `if p.regional_in_effect:` to switch between regional enum lookup and flat parameter access.
+
+**Real-world example — CT TFA payment standard (regional before 2022, flat after):**
+
+```python
+class ct_tfa_payment_standard(Variable):
+    value_type = float
+    entity = SPMUnit
+    definition_period = MONTH
+    unit = USD
+    defined_for = StateCode.CT
+
+    def formula(spm_unit, period, parameters):
+        p = parameters(period).gov.states.ct.dss.tfa.payment
+        size = spm_unit("spm_unit_size", period.this_year)
+        capped_size = min_(size, p.max_unit_size)
+
+        if p.regional_in_effect:
+            region = spm_unit.household("ct_tfa_region", period)
+            region_a = region == region.possible_values.REGION_A
+            region_c = region == region.possible_values.REGION_C
+            return select(
+                [region_a, region_c],
+                [
+                    p.regional.region_a.amount[capped_size],
+                    p.regional.region_c.amount[capped_size],
+                ],
+                default=p.regional.region_b.amount[capped_size],
+            )
+
+        return p.amount[capped_size]
+```
+
+**Key points:**
+- `if p.regional_in_effect:` uses Python `if` — scalar parameter boolean
+- Inside the `if` block, `select()` handles per-entity branching by region enum
+- The `default` parameter in `select()` handles regions not explicitly listed
+- When `regional_in_effect` is `false`, falls through to the flat `p.amount[capped_size]`
+- Region enum variable (`ct_tfa_region`) is only accessed when regional variation is active
+
+**When to use this pattern:**
+- ✅ Program transitions from regional to statewide standards (or vice versa)
+- ✅ Regional lookup uses an enum variable with `select()`
+- ✅ The flat and regional parameter trees have different structures
+
+**When NOT to use this pattern:**
+- ❌ Regional variation always applies (just use regional parameters directly)
+- ❌ The variation is by household characteristic, not geography (use `where()`)
+
+### Choosing Between Boolean Toggle Patterns (Summary)
+
+All three patterns use `if p.boolean:` branching on a scalar parameter. Here's when to use each:
+
+| Pattern | Parameter Side | Variable Side | Use Case |
+|---|---|---|---|
+| `flat_applies` | Folder with flat + bracket + toggle | `if p.flat_applies:` switches access method | Structure changes (flat → brackets) |
+| `in_effect` | Single `in_effect.yaml` + sibling params | `if p.provision.in_effect:` gates logic block | Provision starts/ends at date |
+| `regional_in_effect` | Single boolean + regional/ folder + flat | `if p.regional_in_effect:` switches lookup | Regional ↔ statewide transition |
+
+**Common rule:** All use Python `if` (not `where`) because parameters are scalar booleans at a given instant — the entire population uses the same code path for a given period.
+
 ---
 
 ## Accessing Baseline Parameters in Reform Simulations

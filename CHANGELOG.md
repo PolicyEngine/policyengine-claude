@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.11.0] - 2026-02-26
+
+### Added
+
+- `/review-program` command — consolidated PR review combining code validation + PDF audit in one pass; works for any PR type (state programs, federal parameters, infrastructure, API, frontend)
+- `/backdate-program` command — multi-agent orchestration for backdating state program parameters with research, reference/formula audit, implementation, and built-in review phases
+- `--600dpi` flag for both commands to handle scanned docs and dense tables
+- `--local-diff` flag for `/review-program` to review unpushed local work (reads `git diff` instead of `gh pr diff`)
+- `--skip-pdf` flag for `/review-program` to skip PDF acquisition on infrastructure/refactoring PRs
+- Two-stage mismatch verification in `/review-program` Phase 5: code-path tracing (Step 5C) filters false positives before 600 DPI visual verification (Step 5D)
+- Self-learning lessons mechanism in `/backdate-program` Phase 8: session checklist → persistent local lessons → PR to plugin repo (`lessons/agent-lessons.md`)
+- `in_effect` and `regional_in_effect` boolean toggle patterns added to parameter-patterns and variable-patterns skills (with CT TFA production code examples)
+- Implementation agents (parameter-architect, rules-engineer) now load lessons files on startup to prevent known mistakes
+- Write tool added to `reference-validator` and `program-reviewer` agents
+- Edit tool added to `edge-case-generator` agent
+- `/tmp` cleanup at start of both commands to prevent stale data from previous runs
+
+### Changed
+
+- `/backdate-program` Phase 6 now invokes `/review-program --local --full` instead of separate `/review-pr` + `/audit-state-tax`
+- `/backdate-program` Phase 5 now pushes to remote before Phase 6 review-fix loop
+- `/backdate-program` Phase 8C uses temporary clone instead of modifying plugin install directory
+- `/review-program` scope-aware agent selection: skips regulatory/reference validators for non-program PRs
+
 ## [3.9.1] - 2026-02-18
 
 ### Added
@@ -59,6 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.11.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.10.0...3.11.0
+[3.9.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.7.0...3.9.1
 [3.7.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.6.1...3.7.0
 [3.6.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.5.0...3.6.1
 [3.5.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.4.1...3.5.0

@@ -630,16 +630,114 @@ brackets:
 
 **Real-world reference:** [policyengine-us PR #7107](https://github.com/PolicyEngine/policyengine-us/pull/7107) — Ohio 2025 income tax update (HB 96 personal exemption and joint filing credit MAGI caps).
 
-### Choosing Between the Two Approaches
+### Choosing Between the Three Boolean Toggle Approaches
 
-Both the **flat→bracket transition** and the **`.inf` new bracket** patterns handle parameters that change over time, but they solve different problems:
+The **flat→bracket transition**, **`.inf` new bracket**, and **`in_effect` provision gating** patterns all handle parameters that change over time, but they solve different problems:
 
-| | Flat→Bracket Transition | `.inf` New Bracket |
-|---|---|---|
-| **Problem** | Structure type changes (e.g., flat value → bracket scale) | New bracket added to an existing scale |
-| **Parameter side** | Split into folder with separate files + boolean toggle | Add bracket with `.inf` threshold for base year |
-| **Variable side** | Requires `if p.toggle:` branching to choose access method | No changes — `.calc()` works as before |
-| **Example** | WA capital gains: flat 7% → tiered 7%/9.9% | OH exemptions: 3 brackets → 4 brackets with phase-out |
+| | Flat→Bracket Transition | `.inf` New Bracket | `in_effect` Provision Gating |
+|---|---|---|---|
+| **Problem** | Structure type changes (flat → brackets) | New bracket added to existing scale | A provision starts or ends at a specific date |
+| **Parameter side** | Split into folder + boolean toggle | Add bracket with `.inf` threshold | Single `in_effect.yaml` boolean |
+| **Variable side** | `if p.toggle:` to choose access method | No changes — `.calc()` works | `if p.in_effect:` gates entire logic block |
+| **Example** | WA capital gains: flat 7% → tiered 7%/9.9% | OH exemptions: 3→4 brackets | CT TFA high earnings reduction (new in 2024) |
+
+### Provision Gating with `in_effect` Boolean
+
+**When a provision starts (or ends) at a specific date**, create a boolean parameter that gates the entire logic block in the variable formula. This is different from `flat_applies` — it doesn't switch between two parameter access methods, it controls whether a block of logic runs at all.
+
+**Use case:** A new program feature is added by legislation (e.g., a high-earnings reduction that didn't exist before 2024), or an existing feature is repealed.
+
+**`in_effect.yaml`** — Boolean that tracks when the provision is active:
+```yaml
+# e.g., payment/high_earnings/in_effect.yaml
+description: Connecticut uses this indicator to determine whether the high-earnings benefit reduction applies under the Temporary Family Assistance program.
+
+values:
+  1997-01-01: false
+  2024-01-01: true
+
+metadata:
+  unit: bool
+  period: month
+  label: Connecticut TFA high earnings reduction in effect
+  reference:
+    - title: State of Connecticut TANF State Plan 2024-2026, High Earnings Provision
+      href: https://portal.ct.gov/dss/-/media/departments-and-agencies/dss/state-plans-and-federal-reports/tanf-state-plan/ct-tanf-state-plan-2024---2026---41524-amendment.pdf#page=10
+    - title: Connecticut General Statutes § 17b-112(d)
+      href: https://cga.ct.gov/current/pub/chap_319s.htm#sec_17b-112
+```
+
+**Sibling parameters** — The provision's actual values live alongside `in_effect.yaml`:
+```
+payment/high_earnings/
+├── in_effect.yaml      # false before 2024, true from 2024
+├── rate.yaml            # FPL multiplier threshold (e.g., 0.75)
+└── reduction_rate.yaml  # Benefit reduction rate (e.g., 0.25)
+```
+
+**See variable patterns skill for the corresponding variable-side logic (`if p.high_earnings.in_effect:`).**
+
+**When to use this pattern:**
+- ✅ A new provision is added by legislation at a specific date
+- ✅ An existing provision is repealed at a specific date
+- ✅ The provision gates an entire block of logic (not just a parameter access method)
+- ✅ The provision has its own sub-parameters (rates, thresholds) that only make sense when active
+
+**When NOT to use this pattern:**
+- ❌ The parameter structure itself changes (use flat→bracket transition)
+- ❌ A new bracket is added to an existing scale (use `.inf` pattern)
+- ❌ A simple value changes over time (just add a new date entry)
+
+### Regional Variation with `regional_in_effect` Boolean
+
+**When a program has regional payment variations that start or end at a specific date**, create a boolean that switches between regional lookup and a flat statewide amount.
+
+**Use case:** A state originally had different payment standards by region, then consolidated to a single statewide amount (or vice versa).
+
+**`regional_in_effect.yaml`** — Boolean that tracks when regional variation applies:
+```yaml
+# e.g., payment/regional_in_effect.yaml
+description: Connecticut uses this indicator to determine whether regional payment standards apply under the Temporary Family Assistance program.
+
+values:
+  1997-01-01: true
+  2022-07-01: false
+
+metadata:
+  unit: bool
+  period: month
+  label: Connecticut TFA regional payment standards in effect
+  reference:
+    - title: Connecticut General Statutes § 17b-104(c)
+      href: https://cga.ct.gov/current/pub/chap_319s.htm#sec_17b-104
+    - title: State of Connecticut TANF State Plan 2021-2023
+      href: https://portal.ct.gov/dss/-/media/departments-and-agencies/dss/state-plans-and-federal-reports/tanf-state-plan/ct-tanf-plan-2021-2023--draft.pdf#page=57
+```
+
+**Folder structure** — Regional amounts AND the flat statewide amount coexist:
+```
+payment/
+├── regional_in_effect.yaml          # true before 2022-07, false after
+├── regional/
+│   ├── region_a/amount.yaml         # Regional amounts (by household size)
+│   ├── region_b/amount.yaml
+│   └── region_c/amount.yaml
+├── amount.yaml                      # Flat statewide amount (used when regional_in_effect is false)
+└── max_unit_size.yaml
+```
+
+**See variable patterns skill for the corresponding variable-side logic (`if p.regional_in_effect:`).**
+
+**When to use this pattern:**
+- ✅ A program transitions from regional to statewide payment standards (or vice versa)
+- ✅ Regional variation is controlled by legislation at a specific date
+- ✅ The regional and flat structures are fundamentally different (enum lookup vs simple index)
+
+**When NOT to use this pattern:**
+- ❌ Regional variation always applies (just use the regional parameters directly)
+- ❌ The variation is by household characteristic, not geographic region (use `where()` in variable)
+
+**Real-world reference:** Connecticut TFA payment standards — regional (Region A/B/C) before July 2022, flat statewide amount after.
 
 ---
 

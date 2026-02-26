@@ -1,7 +1,7 @@
 ---
 name: reference-validator
 description: Validates that all parameters have proper references that corroborate the values
-tools: Read, Grep, Glob, WebFetch, TodoWrite, Skill
+tools: Read, Write, Grep, Glob, WebFetch, TodoWrite, Skill
 model: opus
 ---
 
