@@ -71,7 +71,36 @@ Parse $ARGUMENTS:
 - DPI: 600 if --600dpi, else 300
 ```
 
-### Step 0B: Inventory (DELEGATED)
+### Step 0B: Find or Create Tracking Issue + Draft PR (DELEGATED)
+
+Spawn the `issue-manager` agent to find/create a GitHub issue AND a draft PR for this backdating work. Runs in **parallel** with the inventory (Step 0C).
+
+```
+subagent_type: "complete:country-models:issue-manager"
+name: "issue-manager"
+run_in_background: true
+
+"Find or create a GitHub issue and draft PR for backdating {STATE_FULL} {PROGRAM} parameters.
+
+1. Search for existing issues related to '{STATE_FULL} {PROGRAM}' backdating.
+   If none found, create one with title: 'Backdate {STATE_FULL} {PROGRAM} parameters to {TARGET_YEAR}'.
+2. Search for existing PRs related to '{STATE_FULL} {PROGRAM}'.
+   If none found, create a draft PR with an empty commit on a new branch.
+3. Return both the issue number and PR number."
+```
+
+After the agent completes, store:
+- **ISSUE_NUMBER** — referenced in commit messages, changelog, and final report
+- **PR_NUMBER** — used by `/review-program` in Phase 6, and by `pr-pusher` in Phase 7
+- **BRANCH** — the working branch for all implementation
+
+These are used throughout:
+- Review-fix loop commits: `"Review-fix round {N}: address critical issues (ref #{ISSUE_NUMBER})"`
+- Phase 6: `/review-program {PR_NUMBER} --local --full`
+- Phase 7: `pr-pusher` pushes to the branch and updates the PR
+- Final report: links to issue and PR
+
+### Step 0C: Inventory (DELEGATED)
 
 Spawn an `Explore` agent to inventory existing files:
 
@@ -596,22 +625,68 @@ echo "Description of change." > changelog.d/<branch-name>.<type>.md
 Types: `added` (minor bump), `changed` (patch), `fixed` (patch), `removed` (minor), `breaking` (major).
 **DO NOT** edit `CHANGELOG.md` directly or use `changelog_entry.yaml` (deprecated).
 
-### Step 7B: Final Report (DELEGATED)
+### Step 7B: Final Report + PR Description (DELEGATED)
 
-Spawn a `general-purpose` agent to write the final report:
+Spawn a `general-purpose` agent to write the final report AND the PR description:
 
 ```
+subagent_type: "general-purpose",
+  team_name: "{st}-{prog}-backdate", name: "reporter"
+
 "Finalize {STATE} {PROGRAM} backdating report.
 1. Read all findings from task list
-2. Write SHORT final report (max 25 lines) to /tmp/{st}-{prog}-final-report.md:
+2. Read the last /review-program summary at /tmp/review-program-summary.md
+3. Read the impl spec summary at /tmp/{st}-{prog}-impl-summary.md
+4. Write SHORT final report (max 25 lines) to /tmp/{st}-{prog}-final-report.md:
    - Total parameters verified, date entries added
    - Reference fixes applied, formula improvements made
-   - Review findings addressed
-   - Remaining issues (if any)
-3. Write FULL detailed report to /tmp/{st}-{prog}-full-audit.md (archival)"
+   - Review-fix loop rounds completed, remaining issues (if any)
+   - Issue #{ISSUE_NUMBER}, PR #{PR_NUMBER}
+5. Write FULL detailed report to /tmp/{st}-{prog}-full-audit.md (archival)
+6. Write PR description to /tmp/{st}-{prog}-pr-description.md using this format:
+
+   ## Summary
+   Backdates {STATE_FULL} {PROGRAM} parameters to {TARGET_YEAR} and improves code quality.
+   Closes #{ISSUE_NUMBER}
+
+   ## Changes
+   - **Parameters backdated**: {count} files, {count} date entries added
+   - **Reference fixes**: {count} (broken URLs, generic statutes, page corrections)
+   - **Formula improvements**: {list if any}
+   - **Tests added**: {count} new test cases
+
+   ## Regulatory Sources
+   - [Source 1 title](URL#page=XX)
+   - [Source 2 title](URL#page=XX)
+
+   ## Review Summary
+   - Review-fix loop: {N} rounds, {0/N} critical issues remaining
+   - {X} parameters verified against PDF, {Y} confirmed correct
+
+   ## Needs Human Decision
+   {Include this section ONLY if there are unresolved items. Omit entirely if none.}
+   - [ ] {Unresolved critical issue from review-fix loop, with context}
+   - [ ] {Source conflict: two PDFs disagree on value X — which is correct?}
+   - [ ] {Missing source: no PDF found for date range YYYY-YYYY}
+   - [ ] {Formula ambiguity: regulation is unclear about [specific rule]}
+   - [ ] {Tier C change not implemented: [description] — needs user approval}
+
+   ## Test Plan
+   - [ ] All existing tests pass
+   - [ ] New historical tests pass
+   - [ ] Edge case tests pass
+   - [ ] Microsimulation check (if applicable)"
 ```
 
-### Step 7C: Present Summary
+### Step 7C: Update PR Description
+
+After the reporter completes, Main Claude updates the PR description using `--body-file` (no need to read the file into context):
+
+```bash
+gh pr edit $PR_NUMBER --body-file /tmp/{st}-{prog}-pr-description.md
+```
+
+### Step 7D: Present Summary
 
 Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 - Total parameters verified
@@ -627,6 +702,7 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 
 | Phase | Agent | Plugin Type | Why This Agent |
 |-------|-------|-------------|----------------|
+| 0B | issue-manager | `complete:country-models:issue-manager` | Finds/creates tracking issue + draft PR |
 | 0E | discovery | `complete:country-models:document-collector` | Purpose-built for finding regulatory sources |
 | 0E | secondary-validator | `general-purpose` | Custom WRDTP/CBPP web research |
 | 0E | prep-1, prep-2 | `general-purpose` | Need Bash for pdftoppm/pdfinfo rendering |
@@ -644,9 +720,9 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 | 6 | review-fixer-{N} x1-3 | `complete:country-models:rules-engineer` | Fix critical issues from each review round |
 | 6 | ci-fixer-{N} x1-3 | `complete:country-models:ci-fixer` | Verify fixes don't break tests after each round |
 | 7A | pusher | `complete:country-models:pr-pusher` | Purpose-built for changelog + format + push |
-| 7B | reporter | `general-purpose` | Custom report aggregation |
+| 7B | reporter | `general-purpose` | Final report + PR description with unresolved items |
 
-**10 plugin agents + 1 skill invoked + 6 general-purpose agents** (only where no plugin agent fits).
+**11 plugin agents + 1 skill invoked + 6 general-purpose agents** (only where no plugin agent fits).
 
 ---
 
@@ -663,6 +739,7 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 | `/tmp/{st}-{prog}-phase2-summary.md` | program-reviewer (Phase 2) | Main Claude | Short |
 | `/tmp/{st}-{prog}-checkpoint.md` | Explore (Phase 5) | Main Claude | Short |
 | `/tmp/{st}-{prog}-final-report.md` | Reporter (Phase 7) | Main Claude | Short |
+| `/tmp/{st}-{prog}-pr-description.md` | Reporter (Phase 7) | gh pr edit --body-file | Full |
 | `/tmp/{st}-{prog}-full-audit.md` | Reporter (Phase 7) | Archival only | Full |
 
 **Main Claude reads ONLY "Short" files. Never read "Full" files.**
