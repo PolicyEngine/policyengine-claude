@@ -6,14 +6,15 @@ description: Initialize a new PolicyEngine dashboard repository — creates GitH
 
 Set up a new, empty GitHub repository for a PolicyEngine dashboard and prepare it for the `/create-dashboard` workflow.
 
-**Input:** `$ARGUMENTS` should be the dashboard name in kebab-case (e.g., `child-poverty-dashboard`). If `$ARGUMENTS` is empty, ask the user to provide a name.
+**Input:** `$ARGUMENTS` should be the dashboard name in kebab-case (e.g., `child-poverty-dashboard`).
 
-**Validate the name:**
-- Must be kebab-case (lowercase letters, numbers, hyphens only)
-- No spaces, no uppercase
-- Should be descriptive of the dashboard's purpose
+If `$ARGUMENTS` is empty or not valid kebab-case (lowercase letters, numbers, hyphens only), use `AskUserQuestion` to ask:
 
-If the name is not valid, ask the user to provide a corrected name before proceeding.
+```
+question: "What should the dashboard be called? Use kebab-case (e.g., child-poverty-dashboard)."
+header: "Name"
+options: [] (free text only — let the user type via "Other")
+```
 
 ## Step 1: Permission Check
 
@@ -59,13 +60,19 @@ Determine the default clone location — the parent directory of the current wor
 dirname "$(pwd)"
 ```
 
-Present to the user:
+Use `AskUserQuestion` to confirm:
 
-> The repository will be cloned to: `PARENT_DIR/DASHBOARD_NAME`
->
-> Is this location okay, or would you prefer a different path?
+```
+question: "Where should the repo be cloned?"
+header: "Clone path"
+options:
+  - label: "PARENT_DIR/DASHBOARD_NAME (Recommended)"
+    description: "Same parent directory as your current working directory"
+  - label: "Choose a different path"
+    description: "You'll type the full path you want"
+```
 
-Wait for the user to confirm or provide an alternative path. Use the confirmed path for the next step.
+If the user selects "Other" or "Choose a different path", use their provided path. Use the confirmed path for the next step.
 
 ## Step 4: Clone the Repository
 

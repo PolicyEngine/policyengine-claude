@@ -6,7 +6,13 @@ description: Orchestrates multi-agent workflow to create a PolicyEngine dashboar
 
 Coordinate the multi-agent workflow to create a complete PolicyEngine dashboard. The user provides a natural-language description (typically 2-3 paragraphs) of what the dashboard should do.
 
-**Input:** $ARGUMENTS should contain or reference the dashboard description. If $ARGUMENTS is empty, ask the user to describe the dashboard they want.
+**Input:** $ARGUMENTS should contain or reference the dashboard description. If $ARGUMENTS is empty, use `AskUserQuestion`:
+
+```
+question: "Please describe the dashboard you want to create (2-3 paragraphs covering purpose, audience, key metrics, and any specific policy variables)."
+header: "Description"
+options: [] (free text — let the user type via "Other")
+```
 
 **Precondition:** Run this from inside a dashboard repository created via `/init-dashboard`. The command assumes the current working directory IS the dashboard repo with `.claude/settings.json` already configured.
 
@@ -31,22 +37,26 @@ Present the plan summary to the user. The plan includes:
 4. API endpoints needed
 5. Test plan
 
-**Ask the user:**
-> Here is the implementation plan for your dashboard. Please review:
->
-> [plan summary]
->
-> You can:
-> - **Approve** to proceed with implementation
-> - **Modify** specific sections (tell me what to change)
-> - **Reject** to start over with a different approach
+Present the plan summary, then use `AskUserQuestion`:
 
-**Do NOT proceed until the user explicitly approves.**
+```
+question: "How does this implementation plan look?"
+header: "Plan review"
+options:
+  - label: "Approve"
+    description: "Proceed with implementation as planned"
+  - label: "Modify"
+    description: "Request changes to specific sections before proceeding"
+  - label: "Reject"
+    description: "Start over with a different approach"
+```
 
-If the user requests modifications:
+**Do NOT proceed until the user selects "Approve".**
+
+If the user selects "Modify" (or provides changes via "Other"):
 1. Edit `plan.yaml` with the requested changes
 2. Re-present the updated plan
-3. Wait for approval again
+3. Ask for approval again using `AskUserQuestion`
 
 ## Phase 2: Scaffold
 
@@ -145,9 +155,19 @@ If the validator reports failures:
 
 3. **Re-run both validators** (dashboard-validator and design-token-validator) after fixes.
 
-4. **Maximum 3 iteration cycles.** If still failing after 3 cycles:
-   - Present the remaining failures to the user
-   - Ask if they want to continue fixing or accept the current state
+4. **Maximum 3 iteration cycles.** If still failing after 3 cycles, present the remaining failures and use `AskUserQuestion`:
+
+   ```
+   question: "There are still validation failures after 3 fix cycles. How would you like to proceed?"
+   header: "Failures"
+   options:
+     - label: "Accept as-is"
+       description: "Proceed to review with the remaining issues noted"
+     - label: "Keep fixing"
+       description: "Try another round of fixes"
+     - label: "Stop"
+       description: "Stop the workflow here so you can investigate manually"
+   ```
 
 ## Phase 6: Human Review
 
