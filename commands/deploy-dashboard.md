@@ -67,7 +67,7 @@ Present the output to the user. Verify:
 - Active profile is `policyengine`
 - Workspace is `policyengine`
 
-**If authentication fails or shows wrong workspace:**
+**If authentication fails or shows wrong workspace:** Stop and display instructions:
 
 > **Modal authentication required.** Your CLI is not configured for the `policyengine` workspace.
 >
@@ -81,17 +81,33 @@ Present the output to the user. Verify:
 
 **Do NOT proceed until `modal token info` shows `Workspace: policyengine`.**
 
+**If authentication succeeds**, use `AskUserQuestion` to confirm before proceeding:
+
+```
+question: "Modal is authenticated to the policyengine workspace. Proceed with deployment?"
+header: "Modal auth"
+options:
+  - label: "Proceed"
+    description: "Continue to environment selection and deploy"
+  - label: "Cancel"
+    description: "Stop deployment"
+```
+
 ### 3b. Environment selection (human gate)
 
-Ask the user which Modal environment to deploy to:
+Use `AskUserQuestion` to select the Modal environment:
 
-> Which Modal environment should this deploy to?
->
-> - **main** — Production (default)
-> - **staging** — Pre-production testing
-> - **testing** — Development/CI
-
-Default to `main` for production deployments.
+```
+question: "Which Modal environment should this deploy to?"
+header: "Environment"
+options:
+  - label: "main (Recommended)"
+    description: "Production — policyengine--app-func.modal.run"
+  - label: "staging"
+    description: "Pre-production testing — policyengine-staging--app-func.modal.run"
+  - label: "testing"
+    description: "Development/CI — policyengine-testing--app-func.modal.run"
+```
 
 ### 3c. Deploy
 
@@ -190,9 +206,25 @@ Add entry to `app/src/data/apps/apps.json`:
 }
 ```
 
-Ask the user for:
-- Author slug (check existing entries for format)
-- Cover image (if `displayWithResearch: true`)
+Use `AskUserQuestion` to gather required metadata:
+
+```
+question: "What is the author slug for the apps.json entry? (Check existing entries in apps.json for format, e.g., 'max-ghenis')"
+header: "Author"
+options: [] (free text — let the user type via "Other")
+```
+
+If `displayWithResearch: true`, also ask:
+
+```
+question: "Do you have a cover image for the apps.json listing?"
+header: "Cover image"
+options:
+  - label: "I'll provide one"
+    description: "You'll give me the image file or path"
+  - label: "Skip for now"
+    description: "Use a placeholder — you can add a cover image later"
+```
 
 ```bash
 git add app/src/data/apps/apps.json
