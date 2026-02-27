@@ -244,6 +244,7 @@
         "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
         "./skills/tools-and-apis/policyengine-interactive-tools-skill",
         "./skills/tools-and-apis/policyengine-vercel-deployment-skill",
+        "./skills/tools-and-apis/policyengine-modal-deployment-skill",
         "./skills/tools-and-apis/policyengine-api-v2-skill",
         "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
@@ -383,7 +384,8 @@
         "./skills/content/content-generation-skill",
         "./skills/technical-patterns/seo-checklist-skill",
         "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
-        "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill"
+        "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
+        "./skills/tools-and-apis/policyengine-modal-deployment-skill"
       ]
     }
   ]
