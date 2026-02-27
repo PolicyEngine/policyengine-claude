@@ -164,10 +164,10 @@ Create all tasks upfront with dependencies. Adjust count based on inventory.
 |------|-------------|-----------|
 | `discover-sources` | Find all historical PDFs for {STATE} {PROGRAM} | — |
 | `secondary-validation` | Download WRDTP/CRS/CBPP cross-check tables | — |
-| `prep-pdf-1` | Download, render, and map first PDF | `discover-sources` |
-| `prep-pdf-2` | Download, render, and map second PDF | `discover-sources` |
-| `research-pdf-1-{a,b,...}` | Extract parameter values from first PDF (1-5 agents based on page count) | `prep-pdf-1` |
-| `research-pdf-2-{a,b,...}` | Extract parameter values from second PDF (1-5 agents based on page count) | `prep-pdf-2` |
+| `prep-pdf-1` | Download and render first PDF (slim — no page mapping) | `discover-sources` |
+| `prep-pdf-2` | Download and render second PDF (slim — no page mapping) | `discover-sources` |
+| `research-pdf-1-{a,b,...}` | Self-map sections + extract parameter values from first PDF (1-5 agents based on page count) | `prep-pdf-1` |
+| `research-pdf-2-{a,b,...}` | Self-map sections + extract parameter values from second PDF (1-5 agents based on page count) | `prep-pdf-2` |
 | `consolidate` | Merge findings into implementation spec | all research + secondary |
 | `audit-references` | Validate all existing reference URLs and citations | `consolidate` |
 | `audit-formulas` | Review variable formulas vs. regulations | `consolidate` |
@@ -199,17 +199,17 @@ Spawn ALL research agents in a **single message** for maximum parallelism:
 
 **Agent type rationale:**
 - `document-collector` is purpose-built for discovering regulatory sources (WebSearch, WebFetch, Bash for curl/pdftotext). It writes to `sources/working_references.md`.
-- Prep agents need Bash (pdftoppm, pdfinfo) + Read + SendMessage — `general-purpose` is required for PDF rendering.
-- Research agents need Read (PNG screenshots) + Read (YAML files) + SendMessage — `general-purpose` is required for PDF reading.
+- Prep agents need Bash (pdftoppm, pdfinfo) — `general-purpose` is required for PDF rendering. **Prep agents are intentionally slim** — they only download, render, and report page count. They do NOT create page maps or read full PDF text (this caused context blowouts in past runs).
+- Research agents need Read (PNG screenshots) + Read (YAML files) + SendMessage — `general-purpose` is required for PDF reading. Research agents **self-map** their assigned pages (identify sections before extracting values).
 - Secondary validator needs WebSearch + WebFetch for WRDTP/CBPP — `general-purpose` works.
 
 Agents communicate directly via `SendMessage` — you do NOT relay.
 
 ```
 discovery → finds PDF URL → messages prep-1: "Download and render: [URL]"
-prep-1 → downloads, renders at {DPI} DPI → messages Main Claude: "Ready: {path}, {page_count} pages"
+prep-1 → downloads, renders at {DPI} DPI → messages Main Claude: "Ready: {path}, {page_count} pages, TOC hint: ..."
 Main Claude → reads page count → spawns research agents with page-range assignments
-research agents → extract values → update task with findings
+research agents → self-map sections in their page range → extract values → update task with findings
 ```
 
 **Agent prompts must include:**
@@ -230,13 +230,40 @@ research agents → extract values → update task with findings
 - Continue searching while prep agents work — don't block"
 ```
 
-**Prep agent prompt additions:**
+**Prep agent prompt — SLIM (context-safe):**
 ```
-"After rendering, message Main Claude (NOT research agents) with:
-- PDF file path
-- Total page count
-- Page offset (preliminary pages before content page 1)
-- Screenshot path pattern
+"You are a lightweight PDF renderer. Your ONLY job is to download, render, and report — NOT to analyze content.
+
+When you receive a message from the discovery agent with a PDF URL:
+
+1. Download:
+   curl -L -o /tmp/{st}-{prog}-{doc_id}.pdf '[URL]'
+
+2. Get page count:
+   pdfinfo /tmp/{st}-{prog}-{doc_id}.pdf | grep Pages
+
+3. Render at {DPI} DPI:
+   pdftoppm -png -r {DPI} /tmp/{st}-{prog}-{doc_id}.pdf /tmp/{st}-{prog}-{doc_id}-page
+
+4. Quick TOC hint (ONLY first 5 pages — do NOT read more):
+   pdftotext -f 1 -l 5 /tmp/{st}-{prog}-{doc_id}.pdf - | head -80
+
+5. Message Main Claude (NOT research agents) with:
+   - PDF file path
+   - Total page count
+   - Screenshot path pattern (e.g., /tmp/{st}-{prog}-{doc_id}-page-*.png)
+   - TOC hint (the first ~80 lines of text, if a table of contents was found)
+   - Page offset if obvious from the first few pages (e.g., cover page before page 1)
+
+DO NOT:
+- Read the full pdftotext output (this blows your context window)
+- Read any PNG screenshots (research agents will do this)
+- Create a detailed page map (research agents self-map their assigned pages)
+- Analyze the PDF content in any way
+
+If the PDF fails to download or is corrupt, message the discovery agent:
+  'DOWNLOAD FAILED: [URL] — [error]. Can you find an alternative source?'
+
 Main Claude will decide how many research agents to spawn based on page count."
 ```
 
@@ -256,17 +283,59 @@ Main Claude will decide how many research agents to spawn based on page count."
 - Its assigned page range (e.g., pages 1-40, 41-80, 81-120)
 - The SAME inventory file and parameter file list
 - The SAME escalation rules (CROSS-REFERENCE NEEDED, EXTERNAL DOCUMENT NEEDED)
-- Instructions to only extract values from their assigned pages
+- The TOC hint from prep (if available) — helps orient but is NOT a substitute for reading pages
+- Instructions to self-map their section, then extract values
+
+**Research agent prompt template:**
+```
+"You are extracting {PROGRAM} parameter values from a PDF for {STATE}.
+
+Your assigned page range: pages {START}-{END} of /tmp/{st}-{prog}-{doc_id}-page-*.png
+TOC hint from prep agent (first 5 pages only): {TOC_HINT_OR_'None available'}
+
+STEP 1 — SELF-MAP (do this first):
+Quickly scan your assigned page screenshots to identify what sections/topics they cover:
+- Payment standards tables
+- Income eligibility limits (gross/net)
+- Earned income disregards / deductions
+- Resource limits
+- Eligibility criteria
+- Special provisions
+Note the page numbers for each section you find.
+
+STEP 2 — EXTRACT VALUES:
+For EVERY parameter value you find, record:
+- Parameter name (payment standard, need standard, gross income limit, etc.)
+- Value (dollar amount, percentage, etc.)
+- Family size (if applicable — record the full table)
+- Effective date (look for 'effective [date]', fiscal year headers, amendment dates)
+- PDF page number (for citation — use file page number, NOT printed page number)
+- Exact quote or table header that confirms the value
+
+STEP 3 — CROSS-REFERENCE:
+Read the existing repo parameter files listed in /tmp/{st}-{prog}-inventory.md.
+For each repo parameter, note whether you found a corresponding value in your pages.
+If not found, note 'NOT FOUND IN MY PAGE RANGE' (another agent may have it).
+
+STEP 4 — REPORT:
+Update your task with findings. Include your section map at the top so the
+consolidator knows what topics each page range covered.
+
+ESCALATION RULES:
+- If your pages reference a different document: 'EXTERNAL DOCUMENT NEEDED: [title] at [URL]'
+- If a value depends on content outside your page range: 'CROSS-REFERENCE NEEDED: [description]'
+- Continue working on other values — do NOT block on escalations."
+```
 
 **Example**: A 150-page state plan → prep-1 reports 150 pages → Main Claude spawns 4 research agents:
 ```
-research-1a: pages 1-38   (program overview, eligibility)
-research-1b: pages 39-76  (income rules, deductions)
-research-1c: pages 77-114 (benefit standards, payment tables)
-research-1d: pages 115-150 (special provisions, appendices)
+research-1a: pages 1-38
+research-1b: pages 39-76
+research-1c: pages 77-114
+research-1d: pages 115-150
 ```
 
-All 4 run in parallel. The consolidator (Phase 1) merges their findings.
+All 4 run in parallel. Each self-maps its section, then extracts values. The consolidator (Phase 1) merges their findings and reconciles cross-references.
 
 ---
 
@@ -1133,8 +1202,8 @@ Prevention is better than fixing — lessons are loaded by all agents that write
 | 0B | issue-manager | `complete:country-models:issue-manager` | Finds/creates tracking issue + draft PR |
 | 0E | discovery | `complete:country-models:document-collector` | Purpose-built for finding regulatory sources |
 | 0E | secondary-validator | `general-purpose` | Custom WRDTP/CBPP web research |
-| 0E | prep-1, prep-2 | `general-purpose` | Need Bash for pdftoppm/pdfinfo rendering |
-| 0E | research-{N}-{a,b,...} (1-5 per PDF) | `general-purpose` | Need Read for PNG screenshots + YAML cross-ref |
+| 0E | prep-1, prep-2 | `general-purpose` | Slim: Bash for curl/pdftoppm/pdfinfo only — no page mapping |
+| 0E | research-{N}-{a,b,...} (1-5 per PDF) | `general-purpose` | Self-map sections + Read PNG screenshots + YAML cross-ref |
 | 1 | consolidator | `general-purpose` | Custom merge logic across all findings |
 | 2 | ref-auditor | `complete:reference-validator` | Purpose-built for reference validation |
 | 2 | formula-reviewer | `complete:country-models:program-reviewer` | Purpose-built for regulation-vs-code comparison |

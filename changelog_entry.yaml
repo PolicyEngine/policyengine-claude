@@ -1,11 +1,6 @@
-- bump: minor
+- bump: patch
   changes:
-    added:
-      - Add poverty analysis patterns (child poverty, deep poverty, SPM) to microsimulation skill
-      - Add poverty-related trigger keywords to microsimulation skill description
-      - Add common variables reference to microsimulation skill
-      - Add budgetary cost decomposition pattern
-      - Add current law context lookup pattern
     changed:
-      - Update analysis skill to cross-reference microsimulation skill for population-level estimates
-      - Clarify when .values extraction is appropriate (filtered subgroup analysis)
+      - Slim down backdate-program prep agents to prevent context blowouts — prep now only downloads, renders, and reports page count (no page mapping or full text extraction)
+      - Add self-mapping step to research agents — each agent identifies sections within its assigned page range before extracting values
+      - Add structured research agent prompt template with TOC hint passthrough from prep
