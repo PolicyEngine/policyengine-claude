@@ -8,6 +8,11 @@ Deploy a completed PolicyEngine dashboard to production. Run this AFTER merging 
 
 **Precondition:** The user should be on the `main` branch with a clean working tree and the dashboard code merged.
 
+## Skills Used
+
+- **policyengine-vercel-deployment-skill** — Frontend deployment (all dashboards)
+- **policyengine-modal-deployment-skill** — Backend deployment (only if `custom-backend` pattern)
+
 ## Step 1: Verify Prerequisites
 
 ```bash
@@ -18,7 +23,7 @@ git branch --show-current
 git status
 
 # Verify build passes
-cd frontend && npm ci && npm run build && npx vitest run
+npm ci && npm run build && npx vitest run
 ```
 
 **If not on main:** Tell the user to merge their feature branch first:
@@ -39,47 +44,108 @@ cat plan.yaml
 ```
 
 Extract:
-- `dashboard.name` - for Vercel project and Modal app names
-- `data_pattern` - determines if Modal deploy is needed
-- `embedding.register_in_apps_json` - determines if apps.json update is needed
-- `embedding.slug` - the URL slug for policyengine.org
+- `dashboard.name` — for Vercel project and Modal app names
+- `data_pattern` — determines if Modal deploy is needed (`custom-backend` vs `api-v2-alpha`)
+- `tech_stack.framework` — should be `react-nextjs` (env var prefix: `NEXT_PUBLIC_*`)
+- `embedding.register_in_apps_json` — determines if apps.json update is needed
+- `embedding.slug` — the URL slug for policyengine.org
 
 ## Step 3: Deploy Backend (if custom-backend)
 
-**Only if `data_pattern: custom-backend`:**
+**Only if `data_pattern: custom-backend`.** If `api-v2-alpha`, skip to Step 4.
+
+See `policyengine-modal-deployment-skill` for the full Modal deployment reference.
+
+### 3a. Authentication check (human gate)
 
 ```bash
-cd api
+modal token info
+modal profile list
+```
 
-# Deploy to Modal under policyengine workspace
+Present the output to the user. Verify:
+- Active profile is `policyengine`
+- Workspace is `policyengine`
+
+**If authentication fails or shows wrong workspace:**
+
+> **Modal authentication required.** Your CLI is not configured for the `policyengine` workspace.
+>
+> Please run:
+> ```bash
+> modal token new --profile policyengine
+> modal profile activate policyengine
+> ```
+>
+> If you don't have access, ask a PolicyEngine workspace owner for an invite.
+
+**Do NOT proceed until `modal token info` shows `Workspace: policyengine`.**
+
+### 3b. Environment selection (human gate)
+
+Ask the user which Modal environment to deploy to:
+
+> Which Modal environment should this deploy to?
+>
+> - **main** — Production (default)
+> - **staging** — Pre-production testing
+> - **testing** — Development/CI
+
+Default to `main` for production deployments.
+
+### 3c. Deploy
+
+```bash
+# Guard against env var override
 unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
-modal deploy modal_app.py
+
+# Deploy to the selected environment
+modal deploy modal_app.py --env SELECTED_ENV
 ```
 
-Verify the Modal endpoint is live:
+### 3d. Verify endpoint
+
+Construct the URL from the app name and function name in `modal_app.py`:
+
+- Pattern: `https://policyengine--APP_NAME-FUNCTION_NAME.modal.run`
+- With non-main environment: `https://policyengine-ENV--APP_NAME-FUNCTION_NAME.modal.run`
+
 ```bash
-curl -s -o /dev/null -w "%{http_code}" https://policyengine--DASHBOARD_NAME-calculate.modal.run/health
+# Health check (if endpoint exists)
+curl -s -w "\n%{http_code}" https://policyengine--DASHBOARD_NAME-health.modal.run
+
+# Test the calculation endpoint
+curl -s -X POST https://policyengine--DASHBOARD_NAME-calculate.modal.run \
+  -H "Content-Type: application/json" \
+  -d '{"test": true}'
 ```
 
-**If deploy fails:** Report error and STOP. Common issues:
-- Missing Modal authentication (need `modal token set`)
-- Python dependency version conflicts
-- Memory/timeout limits
+**If deploy fails:** Report error and STOP. See the `policyengine-modal-deployment-skill` troubleshooting table.
 
-After successful deploy, set the API URL in Vercel:
+### 3e. Set API URL in Vercel
+
+After successful Modal deploy, set the API URL as a Vercel environment variable.
+
 ```bash
-vercel env add VITE_API_URL production
+vercel env add NEXT_PUBLIC_API_URL production
 # Enter: https://policyengine--DASHBOARD_NAME-calculate.modal.run
 ```
 
 ## Step 4: Deploy Frontend to Vercel
 
+See `policyengine-vercel-deployment-skill` for the full Vercel deployment reference.
+
 ```bash
-# Link to Vercel (if not already linked)
+# Link to Vercel under PolicyEngine team (if not already linked)
 vercel link --scope policy-engine
 
 # Deploy to production
-vercel --prod --yes
+vercel --prod --yes --scope policy-engine
+```
+
+If a Modal backend was deployed in Step 3, force-rebuild to pick up the new env var:
+```bash
+vercel --prod --force --yes --scope policy-engine
 ```
 
 Capture the production URL from the output.
@@ -160,6 +226,7 @@ Present deployment summary to the user:
 > - **Vercel project:** DASHBOARD_NAME
 > [If custom backend:]
 > - **API endpoint:** https://policyengine--DASHBOARD_NAME-calculate.modal.run
+> - **Modal environment:** SELECTED_ENV
 > [If registered:]
 > - **apps.json PR:** PR_URL (will be available at policyengine.org/COUNTRY/SLUG after merge)
 >
@@ -172,10 +239,11 @@ Present deployment summary to the user:
 
 ## Error Recovery
 
-| Issue | Fix |
-|-------|-----|
-| Vercel deploy fails | Check `vercel.json` config, ensure frontend/ builds |
-| Modal deploy fails | Check Python deps, Modal auth, function timeouts |
-| 404 on Vercel URL | Wait 30s for propagation, check Vercel dashboard |
-| API returns errors | Check Modal logs: `modal app logs DASHBOARD_NAME` |
-| Hash sync broken | Check postMessage calls in embedding.ts |
+| Issue | Fix | Reference |
+|-------|-----|-----------|
+| Vercel deploy fails | Check `vercel.json` config, ensure project builds | `policyengine-vercel-deployment-skill` |
+| Modal deploy fails | Check Python deps, Modal auth, function timeouts | `policyengine-modal-deployment-skill` |
+| Wrong Modal workspace | `modal profile activate policyengine` | `policyengine-modal-deployment-skill` |
+| 404 on Vercel URL | Wait 30s for propagation, check Vercel dashboard | `policyengine-vercel-deployment-skill` |
+| API returns errors | Check Modal logs: `modal app logs DASHBOARD_NAME` | `policyengine-modal-deployment-skill` |
+| Hash sync broken | Check postMessage calls in embedding.ts | `policyengine-interactive-tools-skill` |
