@@ -40,7 +40,14 @@ Install PolicyEngine-themed spinner verbs (the loading messages that appear whil
     "Querying HMRC",
     "Means-testing the telly licence",
     "Freezing the thresholds",
-    "Preserving the triple lock"
+    "Preserving the triple lock",
+    "Scoring the autumn budget",
+    "Estimating impacts",
+    "Building the baseline",
+    "Reforming the tax code",
+    "Calculating taxes",
+    "Simulating policy",
+    "Crunching the numbers"
   ]
 }
 ```
