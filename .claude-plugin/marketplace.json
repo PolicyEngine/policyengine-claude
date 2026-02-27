@@ -291,7 +291,8 @@
         "./commands/review-pr.md",
         "./commands/review-program.md",
         "./commands/fix-pr.md",
-        "./commands/new-tool.md"
+        "./commands/new-tool.md",
+        "./commands/setup-verbs.md"
       ],
       "skills": [
         "./skills/domain-knowledge/policyengine-us-skill",
