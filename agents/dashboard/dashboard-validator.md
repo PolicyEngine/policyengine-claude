@@ -47,7 +47,6 @@ Validates a dashboard implementation against the approved `plan.yaml`, runs all 
 ### 1. Build Verification
 
 ```bash
-cd frontend
 npm ci
 npm run build
 ```
@@ -58,7 +57,6 @@ npm run build
 ### 2. Test Suite
 
 ```bash
-cd frontend
 npx vitest run --reporter=verbose
 ```
 
@@ -71,12 +69,10 @@ Scan all CSS and TSX files for hardcoded values:
 
 ```bash
 # Check for hardcoded hex colors (should use design tokens)
-grep -rn '#[0-9a-fA-F]\{3,8\}' frontend/src/ --include='*.css' --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.'
+grep -rn '#[0-9a-fA-F]\{3,8\}' app/ components/ lib/ --include='*.css' --include='*.tsx' --include='*.ts' | grep -v node_modules | grep -v '.test.'
 
-# Check for hardcoded pixel spacing (should use tokens)
-grep -rn 'padding:\s*[0-9]' frontend/src/ --include='*.css' | grep -v node_modules
-grep -rn 'margin:\s*[0-9]' frontend/src/ --include='*.css' | grep -v node_modules
-grep -rn 'gap:\s*[0-9]' frontend/src/ --include='*.css' | grep -v node_modules
+# Check for hardcoded pixel spacing in Tailwind className strings
+grep -rn 'className.*[0-9]px' app/ components/ --include='*.tsx' | grep -v node_modules
 ```
 
 **Allowed exceptions:**
@@ -93,11 +89,11 @@ grep -rn 'gap:\s*[0-9]' frontend/src/ --include='*.css' | grep -v node_modules
 ### 4. Typography Check
 
 ```bash
-# Verify Inter font is loaded
-grep -rn 'Inter' frontend/index.html
+# Verify Inter font is loaded via next/font/google
+grep -rn 'Inter' app/layout.tsx
 
-# Check for other fonts (should only be Inter)
-grep -rn 'font-family' frontend/src/ --include='*.css' | grep -v 'pe-font-family' | grep -v node_modules
+# Check for hardcoded font-family (should use Tailwind PE classes)
+grep -rn 'fontFamily\|font-family' app/ components/ --include='*.tsx' --include='*.css' | grep -v node_modules | grep -v 'pe-font\|tailwind\|globals'
 ```
 
 **PASS criteria:** Inter is loaded. No other font families used except via design tokens.
@@ -108,8 +104,8 @@ Read all component files and check headings/labels:
 
 ```bash
 # Find potential ALL CAPS or Title Case text in components
-grep -rn '<h[1-6]>' frontend/src/ --include='*.tsx' | grep -v node_modules
-grep -rn 'label=' frontend/src/ --include='*.tsx' | grep -v node_modules
+grep -rn '<h[1-6]>' app/ components/ --include='*.tsx' | grep -v node_modules
+grep -rn 'label=' app/ components/ --include='*.tsx' | grep -v node_modules
 ```
 
 Manually verify each heading and label uses sentence case (only first word capitalized, plus proper nouns).
@@ -120,8 +116,8 @@ Manually verify each heading and label uses sentence case (only first word capit
 ### 6. Responsive Design Check
 
 ```bash
-# Verify media queries exist
-grep -rn '@media' frontend/src/ --include='*.css' | grep -v node_modules
+# Verify Tailwind responsive prefixes are used
+grep -rn 'md:\|sm:\|lg:' app/ components/ --include='*.tsx' | grep -v node_modules
 ```
 
 Check that:
@@ -138,13 +134,13 @@ Check for required embedding functionality:
 
 ```bash
 # Country detection from hash
-grep -rn 'getCountryFromHash\|country.*hash' frontend/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules
+grep -rn 'getCountryFromHash\|country.*hash' app/ lib/ components/ --include='*.ts' --include='*.tsx' | grep -v node_modules
 
 # Hash sync with postMessage
-grep -rn 'postMessage\|hashchange' frontend/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules
+grep -rn 'postMessage\|hashchange' app/ lib/ components/ --include='*.ts' --include='*.tsx' | grep -v node_modules
 
 # Share URLs pointing to policyengine.org
-grep -rn 'policyengine.org' frontend/src/ --include='*.ts' --include='*.tsx' | grep -v node_modules
+grep -rn 'policyengine.org' app/ lib/ components/ --include='*.ts' --include='*.tsx' | grep -v node_modules
 ```
 
 **PASS criteria:** All three embedding features present.
@@ -155,7 +151,7 @@ grep -rn 'policyengine.org' frontend/src/ --include='*.ts' --include='*.tsx' | g
 Read `plan.yaml` and verify:
 - Every endpoint in `api_v2_integration.endpoints_needed` has a corresponding client function
 - Every variable in the plan's components has a path from API response to component prop
-- Types in `api/types.ts` match what components expect
+- Types in `lib/api/types.ts` match what components expect
 
 **PASS criteria:** All endpoints and variables are connected.
 **FAIL criteria:** Orphaned endpoints or variables with no data path.
@@ -177,10 +173,10 @@ For each component in the plan:
 
 ```bash
 # Check for loading state handling
-grep -rn 'isPending\|isLoading\|loading' frontend/src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+grep -rn 'isPending\|isLoading\|loading' app/ components/ --include='*.tsx' | grep -v node_modules | grep -v '.test.'
 
 # Check for error state handling
-grep -rn 'isError\|error' frontend/src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.'
+grep -rn 'isError\|error' app/ components/ --include='*.tsx' | grep -v node_modules | grep -v '.test.'
 ```
 
 **PASS criteria:** Components that display API data handle both loading and error states.
@@ -213,10 +209,10 @@ Present results as a structured report:
 - `HouseholdInputs.test.tsx`: "renders income slider"
   - Expected: slider with max=500000
   - Actual: slider with max=100000
-  - File: frontend/src/components/__tests__/HouseholdInputs.test.tsx:23
+  - File: __tests__/HouseholdInputs.test.tsx:23
 
 #### Category 5: Sentence case
-- frontend/src/components/Header.tsx:12
+- components/Header.tsx:12
   - Found: "Tax Liability Calculator"
   - Should be: "Tax liability calculator"
 

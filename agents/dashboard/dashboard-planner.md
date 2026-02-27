@@ -178,9 +178,9 @@ custom_backend:
 
 tech_stack:
   # Fixed - not configurable
-  framework: react-vite
+  framework: react-nextjs
   ui: "@policyengine/design-system"
-  styling: css-with-design-tokens
+  styling: tailwind-with-design-tokens
   font: inter
   testing: vitest
   charts: recharts

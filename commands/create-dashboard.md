@@ -72,7 +72,7 @@ If the user requests modifications:
 
 After plan approval, invoke @complete:dashboard:dashboard-scaffold agent to:
 - Create a new GitHub repository under `PolicyEngine/`
-- Generate project structure (Vite, React, TypeScript, CI)
+- Generate project structure (Next.js App Router, React, TypeScript, Tailwind, CI)
 - Create API client stubs matching the plan
 - Set up embedding boilerplate
 - Create `CLAUDE.md` and `README.md`
@@ -103,10 +103,10 @@ Invoke @complete:dashboard:backend-builder agent to:
 Invoke @complete:dashboard:frontend-builder agent to:
 - Study referenced app-v2 component patterns
 - Implement input forms from the plan
-- Implement charts following app-v2 patterns with design system tokens
+- Implement charts following app-v2 patterns with Tailwind + PE design tokens
 - Implement metric cards
-- Wire App.tsx with React Query
-- Implement responsive CSS
+- Wire page component with React Query
+- Implement responsive design using Tailwind utility classes
 - Write component tests
 
 **Quality Gate**: All components render. Component tests pass. Build compiles.
@@ -139,12 +139,25 @@ Invoke @complete:dashboard:dashboard-validator agent to run the full validation 
 
 **The validator returns a structured report with PASS/FAIL per category.**
 
+### Phase 5B: Frontend Spec Validation
+
+Invoke @complete:dashboard:dashboard-design-token-validator agent to validate frontend spec compliance:
+
+1. Tailwind CSS is used for styling (no plain CSS modules)
+2. Next.js App Router is the framework (no Vite)
+3. `@policyengine/design-system` tokens are integrated via Tailwind config
+4. No hardcoded colors, spacing, or fonts where tokens exist
+
+**The validator loads the `policyengine-frontend-builder-spec-skill` dynamically** to determine its validation criteria. It does NOT maintain its own copy of requirements.
+
+**Quality Gate**: The agent returns a compliance report with PASS/FAIL per requirement.
+
 ### Iteration Loop
 
 If the validator reports failures:
 
 1. **Determine which agent should fix each failure:**
-   - Design token / CSS issues → frontend-builder
+   - Design token / Tailwind / Next.js issues → frontend-builder (loads frontend-builder-spec skill)
    - API type mismatches → backend-builder or integrator
    - Missing data flow → integrator
    - Missing components → frontend-builder
@@ -152,7 +165,7 @@ If the validator reports failures:
 
 2. **Re-invoke the appropriate agent** with the specific failures to fix.
 
-3. **Re-run the validator** after fixes.
+3. **Re-run both validators** (dashboard-validator and design-token-validator) after fixes.
 
 4. **Maximum 3 iteration cycles.** If still failing after 3 cycles:
    - Present the remaining failures to the user
@@ -188,7 +201,7 @@ git push
 >
 > ### Next steps
 > 1. Review the code on the feature branch
-> 2. Run `npm run dev` in `frontend/` to see the dashboard locally
+> 2. Run `npm run dev` to see the dashboard locally
 > 3. Request any changes (I can make them on the branch)
 > 4. When satisfied, merge `feature/initial-implementation` into `main`
 > 5. Run `/deploy-dashboard` to deploy
@@ -196,6 +209,14 @@ git push
 > **Note:** If using the api-v2-alpha data pattern, the dashboard currently uses
 > stub data. Real API integration will be connected when the v2 alpha alignment
 > agent is available.
+
+## Phase 6.5: Update Overview
+
+Invoke @complete:dashboard:dashboard-overview-updater agent to:
+- Check if any dashboard ecosystem components changed during this run
+- Update the `/dashboard-overview` command if needed
+
+This phase is silent — it does not require user interaction.
 
 **WORKFLOW COMPLETE.** The user now owns the branch and decides when to merge and deploy.
 
@@ -248,5 +269,8 @@ git push
 3. **Phase 3A**: Backend → verify → report
 4. **Phase 3B**: Frontend → verify → report
 5. **Phase 4**: Integrate → verify → report
-6. **Phase 5**: Validate → iterate if needed → report
-7. **Phase 6**: Commit → present to user → DONE
+6. **Phase 5A**: Validate → report
+7. **Phase 5B**: Spec validate → report
+8. **Phase 5 loop**: Iterate fixes if needed (max 3 cycles)
+9. **Phase 6**: Commit → present to user → DONE
+10. **Phase 6.5**: Update overview (silent)
