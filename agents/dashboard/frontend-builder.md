@@ -19,6 +19,7 @@ Implements React components for a PolicyEngine dashboard following the app-v2 de
 
 ## Skills Used
 
+- **policyengine-frontend-builder-spec-skill** - Mandatory framework and styling requirements (Tailwind, Next.js, design tokens)
 - **policyengine-interactive-tools-skill** - Embedding, hash sync, country detection
 - **policyengine-design-skill** - Design tokens, visual identity, colors, spacing
 - **policyengine-recharts-skill** - Recharts chart component patterns
@@ -28,10 +29,13 @@ Implements React components for a PolicyEngine dashboard following the app-v2 de
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
+0. `Skill: policyengine-frontend-builder-spec-skill`
 1. `Skill: policyengine-interactive-tools-skill`
 2. `Skill: policyengine-design-skill`
 3. `Skill: policyengine-recharts-skill`
 4. `Skill: policyengine-app-skill`
+
+**CRITICAL: The `policyengine-frontend-builder-spec-skill` defines mandatory technology requirements. All instructions below MUST be interpreted through the lens of that spec. Where this document conflicts with the spec, THE SPEC WINS.**
 
 ## Input
 
@@ -47,29 +51,30 @@ Implements React components for a PolicyEngine dashboard following the app-v2 de
 - Component tests
 
 ## Design System Rules (NON-NEGOTIABLE)
+> These rules complement the frontend-builder-spec. Use Tailwind utility classes mapped to PE design tokens — not plain CSS or CSS modules.
 
 ### Colors
-- **NEVER hardcode hex colors**. Always use design token CSS variables:
-  - `var(--pe-color-primary-500)` for primary teal
-  - `var(--pe-color-primary-600)` for hover states
-  - `var(--pe-color-text-primary)` for body text
-  - `var(--pe-color-text-secondary)` for muted text
-  - `var(--pe-color-bg-primary)` for backgrounds
-  - `var(--pe-color-gray-200)` for borders
-- Chart colors: reference the plan's color tokens, resolve to CSS vars
+- **NEVER hardcode hex colors**. Always use Tailwind classes mapped to PE design tokens:
+  - `text-pe-primary-500` or `bg-pe-primary-500` for primary teal
+  - `hover:bg-pe-primary-600` for hover states
+  - `text-pe-text-primary` for body text
+  - `text-pe-text-secondary` for muted text
+  - `bg-pe-bg-primary` for backgrounds
+  - `border-pe-gray-200` for borders
+- Chart colors: use PE token hex values only inside Recharts config objects (Recharts needs literal values)
 
 ### Typography
-- Font: Inter (loaded via Google Fonts in index.html)
-- Use `var(--pe-font-size-*)` tokens for sizes
-- Use `var(--pe-font-weight-*)` tokens for weights
+- Font: Inter (loaded via `next/font/google` in `app/layout.tsx`)
+- Use Tailwind `text-pe-*` classes for sizes (mapped from PE font size tokens)
+- Use Tailwind `font-medium`, `font-semibold`, `font-bold` for weights
 - **Sentence case** on all headings and labels
 
 ### Spacing
-- Use `var(--pe-space-*)` tokens (xs, sm, md, lg, xl, 2xl, 3xl)
+- Use Tailwind `p-pe-*`, `m-pe-*`, `gap-pe-*` classes (mapped from PE spacing tokens)
 - Never hardcode pixel values for spacing
 
 ### Border Radius
-- Use `var(--pe-radius-*)` tokens (sm, md, lg)
+- Use Tailwind `rounded-pe-sm`, `rounded-pe-md`, `rounded-pe-lg` classes
 
 ## Workflow
 
@@ -94,7 +99,7 @@ Extract:
 
 For each `type: input_form` component in the plan:
 
-1. Create the component file at `frontend/src/components/{ComponentName}.tsx`
+1. Create the component file at `components/{ComponentName}.tsx`
 2. Implement each field from the plan:
    - `slider` → Range input with value display, min/max/step from plan
    - `select` → Dropdown with options from plan
@@ -109,7 +114,6 @@ For each `type: input_form` component in the plan:
 // Example pattern for input components
 import { useState, useEffect } from 'react';
 import { updateHash } from '../lib/embedding';
-import styles from './HouseholdInputs.module.css';
 
 interface HouseholdInputsProps {
   onChange: (values: FormValues) => void;
@@ -128,7 +132,7 @@ export function HouseholdInputs({ onChange, initialValues }: HouseholdInputsProp
   }, [values]);
 
   return (
-    <div className={styles.form}>
+    <div className="flex flex-col gap-pe-md">
       {/* Fields from plan */}
     </div>
   );
@@ -177,8 +181,6 @@ import Plot from 'react-plotly.js';
 For each `type: metric_card` component:
 
 ```tsx
-import styles from './MetricCard.module.css';
-
 interface MetricCardProps {
   title: string;
   value: number;
@@ -188,11 +190,11 @@ interface MetricCardProps {
 
 export function MetricCard({ title, value, format, delta }: MetricCardProps) {
   return (
-    <div className={styles.card}>
-      <span className={styles.title}>{title}</span>
-      <span className={styles.value}>{formatValue(value, format)}</span>
+    <div className="bg-pe-bg-primary border border-pe-gray-200 rounded-pe-md p-pe-lg flex flex-col gap-pe-xs">
+      <span className="text-pe-sm text-pe-text-secondary font-medium">{title}</span>
+      <span className="text-pe-2xl font-bold text-pe-text-primary">{formatValue(value, format)}</span>
       {delta !== undefined && (
-        <span className={delta >= 0 ? styles.positive : styles.negative}>
+        <span className={delta >= 0 ? 'text-pe-primary-500' : 'text-pe-gray-600'}>
           {formatDelta(delta, format)}
         </span>
       )}
@@ -200,34 +202,7 @@ export function MetricCard({ title, value, format, delta }: MetricCardProps) {
   );
 }
 ```
-
-CSS for metric cards:
-```css
-.card {
-  background: var(--pe-color-bg-primary);
-  border: 1px solid var(--pe-color-gray-200);
-  border-radius: var(--pe-radius-md);
-  padding: var(--pe-space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--pe-space-xs);
-}
-
-.title {
-  font-size: var(--pe-font-size-sm);
-  color: var(--pe-color-text-secondary);
-  font-weight: var(--pe-font-weight-medium);
-}
-
-.value {
-  font-size: var(--pe-font-size-2xl);
-  font-weight: var(--pe-font-weight-bold);
-  color: var(--pe-color-text-primary);
-}
-
-.positive { color: var(--pe-color-primary-500); }
-.negative { color: var(--pe-color-gray-600); }
-```
+(No separate CSS block needed — Tailwind classes handle everything.)
 
 ### Step 5: Wire App.tsx
 
@@ -240,26 +215,25 @@ Connect all components in `App.tsx`:
 5. Implement country detection for embedding
 
 ```tsx
+'use client'
+
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { getCountryFromHash, isEmbedded } from './lib/embedding';
-import { HouseholdInputs } from './components/HouseholdInputs';
-import { useHouseholdSimulation } from './hooks/useCalculation';
+import { getCountryFromHash } from '@/lib/embedding';
+import { HouseholdInputs } from '@/components/HouseholdInputs';
+import { useHouseholdSimulation } from '@/lib/hooks/useCalculation';
 // ... other components from plan
 
-const queryClient = new QueryClient();
-
-function Dashboard() {
+export default function DashboardPage() {
   const [countryId] = useState(getCountryFromHash());
   const simulation = useHouseholdSimulation();
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>{/* Title from plan */}</h1>
-        <p>{/* Description from plan */}</p>
+    <div className="max-w-[1200px] mx-auto px-pe-xl py-pe-lg font-pe text-pe-text-primary">
+      <header className="mb-pe-xl">
+        <h1 className="text-pe-2xl font-bold">{/* Title from plan */}</h1>
+        <p className="text-pe-text-secondary mt-pe-sm">{/* Description from plan */}</p>
       </header>
-      <main className="app-main">
+      <main className="flex gap-pe-xl md:flex-col">
         <HouseholdInputs
           onChange={(values) => simulation.mutate(buildRequest(values))}
           initialValues={defaultValues}
@@ -275,45 +249,30 @@ function Dashboard() {
     </div>
   );
 }
-
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Dashboard />
-    </QueryClientProvider>
-  );
-}
 ```
+(React Query provider is set up in `app/providers.tsx` and wrapped in `app/layout.tsx`, not in the page component.)
 
 ### Step 6: Implement Responsive CSS
 
-```css
-/* Base styles */
-.app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--pe-space-lg) var(--pe-space-xl);
-  font-family: var(--pe-font-family-primary);
-  color: var(--pe-color-text-primary);
-}
+Use Tailwind responsive prefixes instead of writing CSS media queries:
 
-/* Tablet - sidebar collapses */
-@media (max-width: 768px) {
-  .app-main {
-    flex-direction: column;
-  }
-}
+- `md:flex-col` — stack layout at tablet (768px)
+- `sm:px-pe-lg sm:py-pe-md` — tighter padding on mobile
+- `sm:text-pe-xl` — smaller headings on mobile
 
-/* Phone - stack everything */
-@media (max-width: 480px) {
-  .app {
-    padding: var(--pe-space-md) var(--pe-space-lg);
-  }
-  .app-header h1 {
-    font-size: var(--pe-font-size-xl);
-  }
-}
+Example responsive layout:
+```tsx
+<main className="flex gap-pe-xl md:flex-col">
+  <aside className="w-80 shrink-0 md:w-full">
+    <HouseholdInputs ... />
+  </aside>
+  <section className="flex-1 flex flex-col gap-pe-lg">
+    {/* Charts and metrics */}
+  </section>
+</main>
 ```
+
+Note: Tailwind uses a mobile-first approach. The `md:` prefix means "at medium screens and below" in default config, but can be configured. Ensure breakpoints align with the plan's responsive requirements.
 
 ### Step 7: Write Component Tests
 
@@ -342,16 +301,16 @@ describe('HouseholdInputs', () => {
 ### Step 8: Verify Build
 
 ```bash
-cd frontend
-npm run build    # Must compile without errors
+npm run build    # Next.js build, must compile without errors
 npx vitest run   # All tests must pass
 ```
 
 ## Quality Checklist
 
-- [ ] No hardcoded hex colors anywhere in CSS or TSX
-- [ ] All spacing uses `var(--pe-space-*)` tokens
-- [ ] Inter font is the only font used
+- [ ] No hardcoded hex colors anywhere in TSX (except inside Recharts config objects)
+- [ ] All spacing uses Tailwind classes mapped to PE tokens (`p-pe-*`, `gap-pe-*`, etc.)
+- [ ] No plain CSS files other than `globals.css` (Tailwind directives) and token import
+- [ ] Inter font loaded via `next/font/google`
 - [ ] All headings and labels use sentence case
 - [ ] Charts follow app-v2 patterns (ResponsiveContainer, consistent formatting)
 - [ ] Loading states shown during API calls
@@ -359,15 +318,18 @@ npx vitest run   # All tests must pass
 - [ ] Country detection works from hash
 - [ ] Hash sync updates on input change
 - [ ] Share URLs point to policyengine.org
-- [ ] Responsive at 768px and 480px breakpoints
+- [ ] Responsive design uses Tailwind breakpoint prefixes
 - [ ] All component tests pass
 - [ ] TypeScript compiles without errors
+- [ ] Next.js build succeeds
 
 ## DO NOT
 
-- Use any UI framework (Mantine, Tailwind, etc.) - use PE design tokens with plain CSS
-- Hardcode any colors, spacing, or font values
-- Copy app-v2 components directly - follow their patterns
+- Use any styling framework OTHER than Tailwind (no Mantine, Chakra, etc.) — use Tailwind with PE design tokens as specified in the frontend-builder-spec skill
+- Use plain CSS files or CSS modules for layout/styling — use Tailwind utility classes instead
+- Hardcode any colors, spacing, or font values when a PE token exists
+- Copy app-v2 components directly — follow their patterns
 - Skip responsive styles
 - Leave `console.log` statements in production code
 - Install dependencies not in the plan
+- Use Vite — use Next.js as specified in the frontend-builder-spec skill
