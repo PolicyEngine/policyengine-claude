@@ -1,11 +1,11 @@
 ---
 name: policyengine-frontend-builder-spec
-description: Mandatory frontend technology requirements for PolicyEngine dashboards — Tailwind CSS, Next.js App Router, and @policyengine/design-system token integration
+description: Mandatory frontend technology requirements for PolicyEngine dashboards and interactive tools — Tailwind CSS, Next.js (App Router), @policyengine/design-system token integration, Vercel deployment
 ---
 
 # Frontend builder spec
 
-Authoritative specification for all PolicyEngine dashboard frontend projects. Any agent building or validating a dashboard frontend MUST load this skill and follow every requirement below. Where another agent's instructions conflict with this spec, **this spec wins**.
+Authoritative specification for all PolicyEngine frontend projects (dashboards and interactive tools). Any agent building or validating a frontend MUST load this skill and follow every requirement below. Where another agent's instructions conflict with this spec, **this spec wins**.
 
 ## Mandatory requirements
 
@@ -32,27 +32,25 @@ The application MUST use **Tailwind CSS** for all styling. Tailwind utility clas
 The application MUST install and import the `@policyengine/design-system` package. Design tokens MUST be used **wherever a matching token exists** for the value needed. Custom values are acceptable ONLY when no matching token exists.
 
 - MUST install: `npm install @policyengine/design-system`
-- MUST import the CSS tokens in `app/layout.tsx` (before `globals.css`):
-  ```tsx
-  import '@policyengine/design-system/tokens.css'
-  import './globals.css'
-  ```
+- MUST import the CSS tokens **before** any other stylesheets — in `app/layout.tsx` before `globals.css`
 - MUST map PE tokens into the Tailwind config via `theme.extend` (see integration pattern below)
 - MUST NOT hardcode hex color values when a PE color token exists
 - MUST NOT hardcode pixel spacing values when a PE spacing token exists
 - MUST NOT hardcode font-family values — use the PE font token
 - MAY use custom values when no PE token covers the need (e.g., chart-specific dimensions, animation durations)
 
-### 3. Next.js
+### 3. Framework: Next.js (App Router)
 
-The application MUST use **Next.js** with the **App Router** and **TypeScript**.
+The application MUST use **Next.js with the App Router**.
 
 - MUST use `create-next-app` or equivalent to scaffold with App Router
 - MUST have `next.config.ts` at the project root
 - MUST have an `app/` directory with `layout.tsx` and `page.tsx`
 - MUST use TypeScript (`.ts`/`.tsx` files, `tsconfig.json`)
-- MUST NOT use Vite as the bundler
 - MUST NOT use the Pages Router (`pages/` directory)
+- MUST NOT use Vite as the application bundler (Vite is only used by Vitest for testing)
+- MUST NOT use other bundlers (Webpack, Parcel, esbuild, etc.)
+- MUST NOT use other meta-frameworks (Remix, Gatsby, Astro, etc.)
 
 ### 4. Vercel deployment
 
@@ -61,7 +59,8 @@ The application MUST be deployed using **Vercel**.
 - MUST have a `vercel.json` at the project root with appropriate configuration
 - MUST use `output: 'export'` in `next.config.ts` for static export, unless the dashboard requires server-side rendering
 - MUST configure the Vercel project to build from the repository root (not a subdirectory)
-- MUST set any required environment variables (e.g., `NEXT_PUBLIC_API_V2_URL`) in the Vercel project settings
+- MUST set any required environment variables in the Vercel project settings using the `NEXT_PUBLIC_*` prefix
+- MUST deploy under the `policy-engine` Vercel scope
 - MUST NOT deploy using other hosting platforms (Netlify, AWS Amplify, GitHub Pages, etc.) for the frontend
 
 ## Tailwind + design token integration pattern
@@ -146,7 +145,7 @@ export default {
 } satisfies Config
 ```
 
-### app/layout.tsx
+### Next.js: app/layout.tsx
 
 ```tsx
 import '@policyengine/design-system/tokens.css'
@@ -223,12 +222,13 @@ DASHBOARD_NAME/
 ## Package dependencies
 
 **Production:**
-- `next`, `react`, `react-dom`
+- `next`
+- `react`, `react-dom`
 - `tailwindcss`, `postcss`, `autoprefixer`
 - `@policyengine/design-system`
 - `@tanstack/react-query`
-- `recharts` (if charts in plan)
-- `react-plotly.js`, `plotly.js-dist-min` (if maps in plan)
+- `recharts` (if charts)
+- `react-plotly.js`, `plotly.js-dist-min` (if maps)
 - `axios`
 
 **Development:**
@@ -236,9 +236,9 @@ DASHBOARD_NAME/
 - `vitest`, `@vitejs/plugin-react`, `jsdom`
 - `@testing-library/react`, `@testing-library/jest-dom`
 
-## Testing with Next.js
+## Testing
 
-Vitest remains the test runner. Configure `vitest.config.ts`:
+Vitest is the test runner. Configure `vitest.config.ts`:
 
 ```ts
 import { defineConfig } from 'vitest/config'
@@ -258,14 +258,17 @@ Note: `@vitejs/plugin-react` is only used by Vitest for JSX transform during tes
 
 ## What NOT to do
 
-- MUST NOT use Vite as the application bundler
+- MUST NOT use Vite as the application bundler — only Next.js is allowed (Vite is used only by Vitest for testing)
+- MUST NOT use other bundlers (Webpack, Parcel, esbuild)
+- MUST NOT use other meta-frameworks (Remix, Gatsby, Astro)
+- MUST NOT use the Next.js Pages Router — use App Router only
 - MUST NOT use plain CSS files or CSS modules for layout/styling
 - MUST NOT use styled-components, emotion, or vanilla-extract
 - MUST NOT use Mantine, Chakra UI, Material UI, or other component frameworks for styling
 - MUST NOT hardcode hex color values when a PE color token exists
 - MUST NOT hardcode pixel spacing values when a PE spacing token exists
 - MUST NOT hardcode font-family values — use the PE font token via Tailwind
-- MUST NOT use the Next.js Pages Router — use App Router only
+- MUST NOT deploy to platforms other than Vercel
 
 ## Related skills
 
