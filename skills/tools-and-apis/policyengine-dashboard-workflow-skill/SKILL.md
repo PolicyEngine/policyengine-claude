@@ -15,6 +15,7 @@ The dashboard workflow is a multi-agent pipeline that takes a few paragraphs des
 
 | Command | Purpose |
 |---------|---------|
+| `/init-dashboard` | Create a new GitHub repo, clone locally, set up dashboard-builder plugin |
 | `/create-dashboard` | Full pipeline: plan → scaffold → implement → validate → review |
 | `/deploy-dashboard` | Deploy a completed dashboard to Vercel (and optionally Modal) |
 | `/dashboard-overview` | List all dashboard builder ecosystem components |
@@ -24,7 +25,7 @@ The dashboard workflow is a multi-agent pipeline that takes a few paragraphs des
 | Agent | Phase | Role |
 |-------|-------|------|
 | `dashboard-planner` | 1 | Produces structured plan YAML from description |
-| `dashboard-scaffold` | 2 | Creates new repo with Next.js + Tailwind project structure |
+| `dashboard-scaffold` | 2 | Generates Next.js + Tailwind project structure into the current repo |
 | `backend-builder` | 3 | Builds API stubs or custom Modal backend |
 | `frontend-builder` | 3 | Builds React components with Tailwind + PE design tokens |
 | `dashboard-integrator` | 4 | Wires frontend to backend, handles data flow |
@@ -35,7 +36,7 @@ The dashboard workflow is a multi-agent pipeline that takes a few paragraphs des
 ## Workflow Phases
 
 ```
-Phase 0: Permission check
+Pre-req: /init-dashboard (creates repo + clones locally)
 Phase 1: Plan ──→ [HUMAN APPROVAL] ──→ Phase 2: Scaffold
   ──→ Phase 3: Implement (backend + frontend)
   ──→ Phase 4: Integrate

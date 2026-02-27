@@ -8,27 +8,7 @@ Coordinate the multi-agent workflow to create a complete PolicyEngine dashboard.
 
 **Input:** $ARGUMENTS should contain or reference the dashboard description. If $ARGUMENTS is empty, ask the user to describe the dashboard they want.
 
-## Phase 0: Permission Check
-
-Before anything else, verify the user can create repositories in the PolicyEngine GitHub organization:
-
-```bash
-gh api orgs/PolicyEngine/memberships/$( gh api user --jq '.login' ) --jq '.role' 2>&1
-```
-
-**If the command succeeds** and returns `admin` or `member`: proceed to Phase 1.
-
-**If the command fails** (404, 403, or any error): stop immediately and display:
-
-> **Permission check failed.** The `/create-dashboard` workflow needs to create a new repository under the `PolicyEngine` GitHub organization, but your current GitHub account does not appear to have the required permissions.
->
-> To use this workflow, you need:
-> - **Membership** in the [PolicyEngine GitHub organization](https://github.com/PolicyEngine)
-> - **Repository creation** privileges within the org
->
-> Please ask a PolicyEngine org admin to add your GitHub account, then try again.
-
-**Do NOT proceed past this point if the permission check fails.**
+**Precondition:** Run this from inside a dashboard repository created via `/init-dashboard`. The command assumes the current working directory IS the dashboard repo with `.claude/settings.json` already configured.
 
 ## Phase 1: Plan
 
@@ -71,18 +51,16 @@ If the user requests modifications:
 ## Phase 2: Scaffold
 
 After plan approval, invoke @complete:dashboard:dashboard-scaffold agent to:
-- Create a new GitHub repository under `PolicyEngine/`
-- Generate project structure (Next.js App Router, React, TypeScript, Tailwind, CI)
+- Generate project structure into the current working directory (Next.js App Router, React, TypeScript, Tailwind, CI)
 - Create API client stubs matching the plan
 - Set up embedding boilerplate
 - Create `CLAUDE.md` and `README.md`
-- Make initial commit on `main`, then create feature branch
-- Push feature branch
+- Create feature branch and push
 
-**Quality Gate**: Repository exists, build passes, initial test passes.
+**Quality Gate**: Build passes, initial test passes.
 
 Report to user:
-> Repository created: `PolicyEngine/{name}`
+> Scaffold generated in current directory.
 > Feature branch: `feature/initial-implementation`
 > Scaffold builds and tests pass. Proceeding to implementation.
 
@@ -178,7 +156,6 @@ After validation passes (or the user accepts remaining issues):
 ### Commit and Present for Review
 
 ```bash
-cd /tmp/DASHBOARD_NAME
 git add -A
 git commit -m "Implement dashboard from plan"
 git push
@@ -201,7 +178,7 @@ git push
 >
 > ### Next steps
 > 1. Review the code on the feature branch
-> 2. Run `npm run dev` to see the dashboard locally
+> 2. Run `bun run dev` to see the dashboard locally
 > 3. Request any changes (I can make them on the branch)
 > 4. When satisfied, merge `feature/initial-implementation` into `main`
 > 5. Run `/deploy-dashboard` to deploy
@@ -227,13 +204,13 @@ This phase is silent — it does not require user interaction.
 | Category | Example | Action |
 |----------|---------|--------|
 | **Recoverable** | Test failure, lint error, type mismatch | Validator catches → fix cycle |
-| **Blocking** | GitHub API down, npm install fails | Stop and report to user |
+| **Blocking** | GitHub API down, bun install fails | Stop and report to user |
 | **Plan issue** | Description too vague, no matching PE variables | Return to Phase 1 |
 
 ### Error Handling by Phase
 
 - **Phase 1 (Plan)**: If planner can't produce a plan, ask user for clarification.
-- **Phase 2 (Scaffold)**: If repo creation fails, report error and STOP.
+- **Phase 2 (Scaffold)**: If file generation or bun install fails, report error and STOP.
 - **Phase 3 (Implement)**: If agent fails, report which agent and what error. Wait for user.
 - **Phase 4 (Integrate)**: If wiring fails, report type mismatches. May need Phase 3 re-run.
 - **Phase 5 (Validate)**: Iteration loop handles most failures. Stop after 3 cycles if unresolved.

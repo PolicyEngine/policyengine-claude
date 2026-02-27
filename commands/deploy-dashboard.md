@@ -23,7 +23,7 @@ git branch --show-current
 git status
 
 # Verify build passes
-npm ci && npm run build && npx vitest run
+bun install --frozen-lockfile && bun run build && bunx vitest run
 ```
 
 **If not on main:** Tell the user to merge their feature branch first:

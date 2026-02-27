@@ -10,6 +10,7 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 
 | Command | Description |
 |---------|-------------|
+| `/init-dashboard` | Creates a new GitHub repo, clones locally, and sets up the dashboard-builder plugin |
 | `/create-dashboard` | Orchestrates multi-agent workflow to create a PolicyEngine dashboard from a natural-language description |
 | `/deploy-dashboard` | Deploys a completed dashboard to Vercel (and optionally Modal) and registers it in the app |
 | `/dashboard-overview` | This command — lists all dashboard builder ecosystem components |
@@ -19,7 +20,7 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 | Agent | Phase | Description |
 |-------|-------|-------------|
 | `dashboard-planner` | 1 — Plan | Analyzes natural-language descriptions and produces structured plan YAML |
-| `dashboard-scaffold` | 2 — Scaffold | Creates new GitHub repo with Next.js + Tailwind project structure |
+| `dashboard-scaffold` | 2 — Scaffold | Generates Next.js + Tailwind project structure into the current repo |
 | `backend-builder` | 3A — Implement | Builds API stubs for v2 alpha integration or custom Modal backends |
 | `frontend-builder` | 3B — Implement | Builds React components with Tailwind + PE design tokens |
 | `dashboard-integrator` | 4 — Integrate | Wires frontend components to backend API client, handles data flow |
@@ -46,7 +47,7 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 ## Workflow phases
 
 ```
-Phase 0:  Permission check
+Pre-req: /init-dashboard (creates repo + clones locally)
 Phase 1:  Plan (dashboard-planner) → HUMAN APPROVAL
 Phase 2:  Scaffold (dashboard-scaffold)
 Phase 3A: Backend (backend-builder)

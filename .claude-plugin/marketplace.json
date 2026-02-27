@@ -235,6 +235,7 @@
         "./agents/dashboard/dashboard-overview-updater.md"
       ],
       "commands": [
+        "./commands/init-dashboard.md",
         "./commands/create-dashboard.md",
         "./commands/deploy-dashboard.md",
         "./commands/dashboard-overview.md"
@@ -342,6 +343,7 @@
         "./commands/review-program.md",
         "./commands/fix-pr.md",
         "./commands/new-tool.md",
+        "./commands/init-dashboard.md",
         "./commands/create-dashboard.md",
         "./commands/deploy-dashboard.md",
         "./commands/dashboard-overview.md"
