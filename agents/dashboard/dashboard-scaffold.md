@@ -1,6 +1,6 @@
 ---
 name: dashboard-scaffold
-description: Creates a new GitHub repository and project structure from an approved dashboard plan
+description: Generates project structure from an approved dashboard plan into the current working directory
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill
 model: opus
 ---
@@ -15,7 +15,7 @@ model: opus
 
 # Dashboard Scaffold Agent
 
-Creates a new GitHub repository with complete project structure from an approved `plan.yaml`.
+Generates complete project structure from an approved `plan.yaml` into the current working directory. The repository must already exist (created via `/init-dashboard`).
 
 ## Skills Used
 
@@ -44,9 +44,9 @@ Creates a new GitHub repository with complete project structure from an approved
 
 ## Output
 
-- A new GitHub repository under `PolicyEngine/` with the project scaffold
+- Project scaffold files generated in the current working directory
 - All code on a feature branch (not main)
-- Initial commit with scaffold, CI, and README
+- Scaffold commit with all generated files, CI, and README
 
 ## Workflow
 
@@ -63,19 +63,9 @@ Extract key values:
 - `tech_stack` - confirms fixed stack choices
 - `components` - informs which dependencies to install
 
-### Step 2: Create the Repository
+### Step 2: Create Project Structure
 
-```bash
-# Create the project directory
-mkdir -p /tmp/DASHBOARD_NAME
-cd /tmp/DASHBOARD_NAME
-
-# Initialize git
-git init
-git checkout -b main
-```
-
-### Step 3: Create Project Structure
+The repository already exists (created by `/init-dashboard`) and the current working directory is the repo root. Generate files directly here.
 
 #### For API v2 Alpha pattern:
 
@@ -130,7 +120,7 @@ DASHBOARD_NAME/
 └── ...
 ```
 
-### Step 4: Generate Core Files
+### Step 3: Generate Core Files
 
 #### CLAUDE.md
 
@@ -149,20 +139,20 @@ Generate a CLAUDE.md following the pattern from existing applets (givecalc, ctc-
 ## Development
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ## Testing
 
 ```bash
-npx vitest run
+bunx vitest run
 ```
 
 ## Build
 
 ```bash
-npm run build
+bun run build
 ```
 
 ## Design standards
@@ -303,11 +293,15 @@ export async function calculateHousehold(
 
 #### .claude/settings.json
 
+**Skip this file if it already exists** — `/init-dashboard` creates it with the correct plugin configuration.
+
+If it does not exist, create it:
+
 ```json
 {
   "plugins": {
     "marketplaces": ["PolicyEngine/policyengine-claude"],
-    "auto_install": ["app-development@policyengine-claude"]
+    "auto_install": ["dashboard-builder@policyengine-claude"]
   }
 }
 ```
@@ -326,9 +320,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npx vitest run
-      - run: npm run build
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx vitest run
+      - run: bun run build
 ```
 
 #### Embedding Boilerplate
@@ -369,7 +364,7 @@ export function getShareUrl(countryId: string, slug: string): string {
 
 Generate `__tests__/page.test.tsx` with a basic render test.
 
-### Step 5: Create Skeleton Components
+### Step 4: Create Skeleton Components
 
 For each component in `plan.yaml`, create a skeleton file:
 - Input forms: Basic form with fields from plan, wired to state
@@ -382,30 +377,23 @@ Each skeleton should:
 - Include a `// TODO: Implement` comment where real logic goes
 - Export the component
 
-### Step 6: Initialize Git and Push
+### Step 5: Commit and Create Feature Branch
+
+The repository and remote already exist (created by `/init-dashboard`). Commit the scaffold and create a feature branch:
 
 ```bash
-cd /tmp/DASHBOARD_NAME
-
-# Initial commit on main
 git add -A
 git commit -m "Initial scaffold from dashboard plan"
-
-# Create GitHub repo
-gh repo create PolicyEngine/DASHBOARD_NAME --public --source=. --push
-
-# Create feature branch for development
 git checkout -b feature/initial-implementation
 git push -u origin feature/initial-implementation
 ```
 
-### Step 7: Verify
+### Step 6: Verify
 
 ```bash
-cd /tmp/DASHBOARD_NAME
-npm install
-npm run build  # Should succeed with skeleton components
-npx vitest run  # Initial test should pass
+bun install
+bun run build  # Should succeed with skeleton components
+bunx vitest run  # Initial test should pass
 ```
 
 If either fails, fix before proceeding.
@@ -421,7 +409,7 @@ If either fails, fix before proceeding.
 - [ ] Embedding boilerplate is in place
 - [ ] API client stubs match the plan's endpoint signatures
 - [ ] CI workflow is configured
-- [ ] `.claude/settings.json` auto-installs the app-development plugin
+- [ ] `.claude/settings.json` auto-installs the dashboard-builder plugin
 - [ ] `vercel.json` is configured for frontend deployment
 - [ ] Feature branch is created and pushed
 - [ ] Build passes on the scaffold

@@ -31,7 +31,7 @@ The application MUST use **Tailwind CSS** for all styling. Tailwind utility clas
 
 The application MUST install and import the `@policyengine/design-system` package. Design tokens MUST be used **wherever a matching token exists** for the value needed. Custom values are acceptable ONLY when no matching token exists.
 
-- MUST install: `npm install @policyengine/design-system`
+- MUST install: `bun add @policyengine/design-system`
 - MUST import the CSS tokens **before** any other stylesheets — in `app/layout.tsx` before `globals.css`
 - MUST map PE tokens into the Tailwind config via `theme.extend` (see integration pattern below)
 - MUST NOT hardcode hex color values when a PE color token exists
@@ -52,7 +52,18 @@ The application MUST use **Next.js with the App Router**.
 - MUST NOT use other bundlers (Webpack, Parcel, esbuild, etc.)
 - MUST NOT use other meta-frameworks (Remix, Gatsby, Astro, etc.)
 
-### 4. Vercel deployment
+### 4. Package manager: bun (preferred)
+
+The application SHOULD use **bun** as the package manager. Bun is strongly preferred over npm for its speed and compatibility.
+
+- SHOULD use `bun install` instead of `npm install`
+- SHOULD use `bun run dev`, `bun run build` instead of `npm run dev`, `npm run build`
+- SHOULD use `bunx vitest run` instead of `npx vitest run`
+- SHOULD have a `bun.lock` lockfile (not `package-lock.json`)
+- MAY fall back to npm if bun is not available on the system, but bun is the default
+- MUST NOT use yarn or pnpm
+
+### 5. Vercel deployment
 
 The application MUST be deployed using **Vercel**.
 
