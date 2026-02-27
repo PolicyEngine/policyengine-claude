@@ -217,9 +217,9 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - `api-reviewer` - Review Flask/API code
 - `app-reviewer` - Review React/app code
 
-## Slash Commands (4 Total)
+## Slash Commands
 
-**`/create-pr [title]`** 🆕
+**`/create-pr [title]`**
 - Create PR as draft and wait for CI to pass
 - Actually polls CI status (doesn't give up!)
 - Marks ready when all checks pass
@@ -243,17 +243,23 @@ Develop PolicyEngine software across country models, API, app, and data packages
 - Push updates automatically
 - Example: `/fix-pr 123`
 
+**`/setup-verbs`**
+- Install PolicyEngine-themed spinner verbs into your Claude Code settings
+- Loading messages become things like "Microsimulating", "Means-testing", "Scoring the bill"
+- Preserves all existing settings — only adds/replaces spinner verbs
+- Available in the `complete` plugin
+
 ## Available Plugins (7)
 
 | Plugin | Audience | Agents | Commands | Skills |
 |--------|----------|--------|----------|--------|
 | **essential** | Users | 0 | 0 | 4 |
-| **country-models** | Contributors | 16 | 4 | 15 |
+| **country-models** | Contributors | 17 | 7 | 15 |
 | **api-development** | Contributors | 1 | 3 | 7 |
-| **app-development** | Contributors | 1 | 3 | 7 |
-| **analysis-tools** | Analysts | 0 | 0 | 9 |
-| **data-science** | Analysts/Contributors | 0 | 0 | 10 |
-| **complete** | All | 21 | 4 | 24 |
+| **app-development** | Contributors | 5 | 5 | 9 |
+| **analysis-tools** | Analysts | 0 | 0 | 12 |
+| **data-science** | Analysts/Contributors | 0 | 0 | 12 |
+| **complete** | All | 32 | 11 | 32 |
 
 ## Installation
 

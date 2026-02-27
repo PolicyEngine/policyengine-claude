@@ -21,9 +21,6 @@
       },
       "license": "MIT",
       "hooks": "./hooks/hooks.json",
-      "commands": [
-        "./commands/setup-verbs.md"
-      ],
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
