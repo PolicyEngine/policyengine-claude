@@ -201,7 +201,7 @@ function selectFixture(request: HouseholdSimulationRequest): HouseholdSimulation
 
 ### Step 4: Build React Query Hooks
 
-Create `frontend/src/hooks/useCalculation.ts`:
+Create `lib/hooks/useCalculation.ts`:
 
 ```typescript
 import { useMutation } from '@tanstack/react-query';
@@ -218,7 +218,7 @@ export function useHouseholdSimulation() {
 
 ### Step 5: Write Tests
 
-Create `frontend/src/api/__tests__/client.test.ts`:
+Create `lib/api/__tests__/client.test.ts`:
 - Test that stub functions return data matching the expected types
 - Test that fixture data has correct field names
 - Test error handling paths
@@ -251,10 +251,10 @@ def calculate(params: dict):
 
 ### Step 2: Create Frontend Client
 
-Generate `frontend/src/api/client.ts` that calls the Modal endpoint:
+Generate `lib/api/client.ts` that calls the Modal endpoint:
 
 ```typescript
-const API_URL = import.meta.env.VITE_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL
   || 'https://policyengine--DASHBOARD_NAME-calculate.modal.run';
 
 export async function calculate(params: CalculateRequest): Promise<CalculateResponse> {

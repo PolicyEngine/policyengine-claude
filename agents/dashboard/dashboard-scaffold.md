@@ -19,6 +19,7 @@ Creates a new GitHub repository with complete project structure from an approved
 
 ## Skills Used
 
+- **policyengine-frontend-builder-spec-skill** - Mandatory framework and styling requirements (Next.js, Tailwind, design tokens)
 - **policyengine-interactive-tools-skill** - Project scaffolding patterns, embedding boilerplate
 - **policyengine-design-skill** - Design tokens, CSS setup
 - **policyengine-vercel-deployment-skill** - Vercel configuration
@@ -28,10 +29,13 @@ Creates a new GitHub repository with complete project structure from an approved
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
+0. `Skill: policyengine-frontend-builder-spec-skill`
 1. `Skill: policyengine-interactive-tools-skill`
 2. `Skill: policyengine-design-skill`
 3. `Skill: policyengine-vercel-deployment-skill`
 4. `Skill: policyengine-standards-skill`
+
+**CRITICAL: The `policyengine-frontend-builder-spec-skill` defines the project structure, framework, and styling approach. Follow its specifications for project scaffolding. Where this document conflicts with the spec, THE SPEC WINS.**
 
 ## Input
 
@@ -82,29 +86,30 @@ DASHBOARD_NAME/
 │       └── ci.yml
 ├── .claude/
 │   └── settings.json
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   ├── index.css
-│   │   ├── api/
-│   │   │   ├── client.ts          # API v2 alpha stub client
-│   │   │   ├── types.ts           # Request/response types from plan
-│   │   │   └── fixtures.ts        # Mock data for stubs
-│   │   ├── components/
-│   │   │   └── (from plan.yaml components)
-│   │   ├── hooks/
-│   │   │   └── useCalculation.ts
-│   │   └── __tests__/
-│   │       └── App.test.tsx
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── tsconfig.app.json
-│   ├── tsconfig.node.json
-│   ├── vite.config.ts
-│   ├── vitest.config.ts
-│   ├── eslint.config.js
-│   └── index.html
+├── app/
+│   ├── layout.tsx                  # Root layout — imports tokens.css + globals.css
+│   ├── page.tsx                    # Main dashboard page
+│   ├── globals.css                 # @tailwind directives only
+│   └── providers.tsx               # React Query provider (client component)
+├── components/
+│   └── (from plan.yaml components)
+├── lib/
+│   ├── api/
+│   │   ├── client.ts              # API v2 alpha stub client
+│   │   ├── types.ts               # Request/response types from plan
+│   │   └── fixtures.ts            # Mock data for stubs
+│   ├── embedding.ts
+│   └── hooks/
+│       └── useCalculation.ts
+├── public/
+├── __tests__/
+│   └── page.test.tsx
+├── tailwind.config.ts
+├── postcss.config.js
+├── next.config.ts
+├── package.json
+├── tsconfig.json
+├── vitest.config.ts
 ├── plan.yaml                       # The approved plan
 ├── CLAUDE.md
 ├── README.md
@@ -116,8 +121,8 @@ DASHBOARD_NAME/
 
 ```
 DASHBOARD_NAME/
-├── ... (same frontend as above)
-├── api/
+├── ... (same structure as above)
+├── backend/
 │   ├── modal_app.py
 │   ├── requirements.txt
 │   └── tests/
@@ -138,13 +143,12 @@ Generate a CLAUDE.md following the pattern from existing applets (givecalc, ctc-
 
 ## Architecture
 
-- `frontend/` - Vite React-TS app with @policyengine/design-system
+- Next.js App Router with Tailwind CSS and @policyengine/design-system tokens
 - [Backend description based on data pattern]
 
 ## Development
 
 ```bash
-cd frontend
 npm install
 npm run dev
 ```
@@ -152,21 +156,19 @@ npm run dev
 ## Testing
 
 ```bash
-cd frontend
 npx vitest run
 ```
 
 ## Build
 
 ```bash
-cd frontend
 npm run build
 ```
 
 ## Design standards
-- Uses @policyengine/design-system tokens
-- Primary teal: var(--pe-color-primary-500)
-- Font: Inter (via design system)
+- Uses Tailwind CSS with @policyengine/design-system tokens mapped in tailwind.config.ts
+- Primary teal: `bg-pe-primary-500` / `text-pe-primary-500`
+- Font: Inter (via next/font/google)
 - Sentence case for all headings
 - Charts follow policyengine-app-v2 patterns
 ```
@@ -174,53 +176,103 @@ npm run build
 #### package.json
 
 Generate from the fixed tech stack, including:
-- `react`, `react-dom` (^19)
+- `next`, `react`, `react-dom` (^19)
+- `tailwindcss`, `postcss`, `autoprefixer`
 - `@policyengine/design-system`
 - `recharts` (if charts in plan)
 - `react-plotly.js` (if maps in plan)
 - `@tanstack/react-query`
 - `axios`
-- Dev: `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `typescript`, `vite`, `@vitejs/plugin-react`, `jsdom`
+- Dev: `vitest`, `@vitejs/plugin-react`, `@testing-library/react`, `@testing-library/jest-dom`, `typescript`, `@types/react`, `@types/react-dom`, `@types/node`, `jsdom`
 
-#### vite.config.ts
+#### next.config.ts
 
 ```typescript
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import type { NextConfig } from 'next'
 
-export default defineConfig({
-  plugins: [react()],
-  base: "/",
-});
+const nextConfig: NextConfig = {
+  output: 'export',  // Static export for Vercel
+}
+
+export default nextConfig
 ```
 
-#### index.html
+#### tailwind.config.ts
 
-Include Inter font and design system tokens:
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TITLE - PolicyEngine</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+Generate `tailwind.config.ts` following the pattern from `policyengine-frontend-builder-spec-skill` — extend `colors`, `spacing`, `fontFamily`, `fontSize`, and `borderRadius` with PE design token custom property references.
+
+#### postcss.config.js
+
+```javascript
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+```
+
+#### app/globals.css
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+#### app/layout.tsx
+
+The root layout imports design system tokens and sets up Inter font:
+
+```tsx
+import '@policyengine/design-system/tokens.css'
+import './globals.css'
+import { Inter } from 'next/font/google'
+import type { Metadata } from 'next'
+
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'TITLE - PolicyEngine',
+  description: 'DESCRIPTION from plan',
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
+    </html>
+  )
+}
+```
+
+#### app/providers.tsx
+
+Client component wrapping React Query:
+
+```tsx
+'use client'
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState } from 'react'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient())
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  )
+}
 ```
 
 #### API Client Stubs (for api-v2-alpha pattern)
 
-Generate `frontend/src/api/types.ts` with TypeScript interfaces matching the plan's endpoint inputs/outputs.
+Generate `lib/api/types.ts` with TypeScript interfaces matching the plan's endpoint inputs/outputs.
 
-Generate `frontend/src/api/fixtures.ts` with mock data from `plan.yaml`'s `stub_fixtures`.
+Generate `lib/api/fixtures.ts` with mock data from `plan.yaml`'s `stub_fixtures`.
 
-Generate `frontend/src/api/client.ts` with:
+Generate `lib/api/client.ts` with:
 - Functions matching each endpoint in the plan
 - Currently returns fixture data
 - Clearly marked with `// TODO: Replace with real API v2 alpha calls` comments
@@ -233,7 +285,7 @@ Generate `frontend/src/api/client.ts` with:
 import { fixtures } from './fixtures';
 import type { HouseholdRequest, HouseholdResponse } from './types';
 
-const API_V2_BASE_URL = import.meta.env.VITE_API_V2_URL || '';
+const API_V2_BASE_URL = process.env.NEXT_PUBLIC_API_V2_URL || '';
 
 /**
  * Stub: Calculate household impacts
@@ -274,14 +326,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: cd frontend && npm ci
-      - run: cd frontend && npx vitest run
-      - run: cd frontend && npm run build
+      - run: npm ci
+      - run: npx vitest run
+      - run: npm run build
 ```
 
 #### Embedding Boilerplate
 
-Generate country detection, hash sync, and share URL helpers in `frontend/src/lib/embedding.ts`:
+Generate country detection, hash sync, and share URL helpers in `lib/embedding.ts`:
 
 ```typescript
 export function getCountryFromHash(): string {
@@ -315,7 +367,7 @@ export function getShareUrl(countryId: string, slug: string): string {
 
 #### Initial Test File
 
-Generate `frontend/src/__tests__/App.test.tsx` with a basic render test.
+Generate `__tests__/page.test.tsx` with a basic render test.
 
 ### Step 5: Create Skeleton Components
 
@@ -350,7 +402,7 @@ git push -u origin feature/initial-implementation
 ### Step 7: Verify
 
 ```bash
-cd /tmp/DASHBOARD_NAME/frontend
+cd /tmp/DASHBOARD_NAME
 npm install
 npm run build  # Should succeed with skeleton components
 npx vitest run  # Initial test should pass
@@ -362,7 +414,8 @@ If either fails, fix before proceeding.
 
 - [ ] `plan.yaml` is included in the repo
 - [ ] `CLAUDE.md` follows existing applet patterns
-- [ ] `package.json` has all required dependencies
+- [ ] `package.json` has all required dependencies (Next.js, Tailwind, etc.)
+- [ ] tailwind.config.ts maps PE design tokens
 - [ ] Design system tokens are imported (not hardcoded colors)
 - [ ] Inter font is loaded
 - [ ] Embedding boilerplate is in place

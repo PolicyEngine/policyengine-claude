@@ -230,13 +230,17 @@
         "./agents/dashboard/backend-builder.md",
         "./agents/dashboard/frontend-builder.md",
         "./agents/dashboard/dashboard-integrator.md",
-        "./agents/dashboard/dashboard-validator.md"
+        "./agents/dashboard/dashboard-validator.md",
+        "./agents/dashboard/dashboard-design-token-validator.md",
+        "./agents/dashboard/dashboard-overview-updater.md"
       ],
       "commands": [
         "./commands/create-dashboard.md",
-        "./commands/deploy-dashboard.md"
+        "./commands/deploy-dashboard.md",
+        "./commands/dashboard-overview.md"
       ],
       "skills": [
+        "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
         "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
         "./skills/tools-and-apis/policyengine-interactive-tools-skill",
         "./skills/tools-and-apis/policyengine-vercel-deployment-skill",
@@ -317,6 +321,8 @@
         "./agents/dashboard/frontend-builder.md",
         "./agents/dashboard/dashboard-integrator.md",
         "./agents/dashboard/dashboard-validator.md",
+        "./agents/dashboard/dashboard-design-token-validator.md",
+        "./agents/dashboard/dashboard-overview-updater.md",
         "./agents/legislation-statute-analyzer.md",
         "./agents/reference-validator.md",
         "./agents/shared/model-evaluator.md",
@@ -336,7 +342,8 @@
         "./commands/fix-pr.md",
         "./commands/new-tool.md",
         "./commands/create-dashboard.md",
-        "./commands/deploy-dashboard.md"
+        "./commands/deploy-dashboard.md",
+        "./commands/dashboard-overview.md"
       ],
       "skills": [
         "./skills/domain-knowledge/policyengine-us-skill",
@@ -375,7 +382,8 @@
         "./skills/documentation/policyengine-plugin-maintenance-skill",
         "./skills/content/content-generation-skill",
         "./skills/technical-patterns/seo-checklist-skill",
-        "./skills/tools-and-apis/policyengine-dashboard-workflow-skill"
+        "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
+        "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill"
       ]
     }
   ]

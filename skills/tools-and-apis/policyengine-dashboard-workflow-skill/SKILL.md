@@ -17,26 +17,31 @@ The dashboard workflow is a multi-agent pipeline that takes a few paragraphs des
 |---------|---------|
 | `/create-dashboard` | Full pipeline: plan → scaffold → implement → validate → review |
 | `/deploy-dashboard` | Deploy a completed dashboard to Vercel (and optionally Modal) |
+| `/dashboard-overview` | List all dashboard builder ecosystem components |
 
 ### Agents
 
 | Agent | Phase | Role |
 |-------|-------|------|
 | `dashboard-planner` | 1 | Produces structured plan YAML from description |
-| `dashboard-scaffold` | 2 | Creates new repo with project structure |
+| `dashboard-scaffold` | 2 | Creates new repo with Next.js + Tailwind project structure |
 | `backend-builder` | 3 | Builds API stubs or custom Modal backend |
-| `frontend-builder` | 3 | Builds React components with design system |
+| `frontend-builder` | 3 | Builds React components with Tailwind + PE design tokens |
 | `dashboard-integrator` | 4 | Wires frontend to backend, handles data flow |
-| `dashboard-validator` | 5 | Validates against plan, runs tests, checks design |
+| `dashboard-validator` | 5A | Validates against plan, runs tests, checks design |
+| `dashboard-design-token-validator` | 5B | Validates frontend spec compliance (Tailwind, Next.js, tokens) |
+| `dashboard-overview-updater` | Post | Updates dashboard-overview command if ecosystem changed |
 
 ## Workflow Phases
 
 ```
+Phase 0: Permission check
 Phase 1: Plan ──→ [HUMAN APPROVAL] ──→ Phase 2: Scaffold
   ──→ Phase 3: Implement (backend + frontend)
   ──→ Phase 4: Integrate
-  ──→ Phase 5: Validate ──→ [fix loop, max 3 cycles]
+  ──→ Phase 5A: Validate ──→ Phase 5B: Spec validate ──→ [fix loop, max 3 cycles]
   ──→ Phase 6: [HUMAN REVIEW] ──→ DONE
+  ──→ Phase 6.5: Update overview (silent)
 
 Separately: /deploy-dashboard (after user merges to main)
 ```
@@ -64,7 +69,7 @@ The dashboard is built against the PolicyEngine API v2 alpha interface. During d
 | `POST /analysis/compare/economy` | Multi-scenario comparison |
 | `POST /analysis/compare/household` | Household scenario comparison |
 
-**Switching from stubs to real API:** Set `VITE_API_V2_URL` environment variable. The client code checks this and switches from fixture returns to real HTTP calls.
+**Switching from stubs to real API:** Set `NEXT_PUBLIC_API_V2_URL` environment variable. The client code checks this and switches from fixture returns to real HTTP calls.
 
 ### Custom Backend (escape hatch)
 
@@ -82,43 +87,42 @@ Use only when the dashboard needs something v2 alpha cannot provide:
 
 | Layer | Technology | Source |
 |-------|-----------|--------|
-| Framework | React 19 + Vite + TypeScript | Fixed |
+| Framework | Next.js (App Router) + React 19 + TypeScript | Fixed |
 | UI tokens | `@policyengine/design-system` | From app-v2 |
-| Styling | CSS with design token variables | Fixed |
-| Font | Inter (via Google Fonts) | Fixed |
+| Styling | Tailwind CSS with design token integration | Fixed |
+| Font | Inter (via `next/font/google`) | Fixed |
 | Charts | Recharts | Following app-v2 patterns |
 | Maps | react-plotly.js | Following app-v2 patterns |
 | Data fetching | TanStack React Query | Fixed |
 | Testing | Vitest + React Testing Library | Fixed |
 | Deployment | Vercel (frontend) + Modal (backend) | Fixed |
 
+See `policyengine-frontend-builder-spec-skill` for the full mandatory technology specification.
+
 ### Design Token Usage
 
-All visual values must come from the `@policyengine/design-system` CSS custom properties:
+All visual values must come from `@policyengine/design-system` tokens, accessed via Tailwind utility classes mapped in `tailwind.config.ts`:
 
-```css
-/* Colors */
-var(--pe-color-primary-500)     /* Primary teal */
-var(--pe-color-primary-600)     /* Hover state */
-var(--pe-color-text-primary)    /* Body text */
-var(--pe-color-text-secondary)  /* Muted text */
-var(--pe-color-bg-primary)      /* Backgrounds */
-var(--pe-color-gray-200)        /* Borders */
+```tsx
+// Colors — use Tailwind classes mapped to PE tokens
+<div className="bg-pe-primary-500 text-white">        {/* Primary teal */}
+<div className="hover:bg-pe-primary-600">              {/* Hover state */}
+<span className="text-pe-text-primary">               {/* Body text */}
+<span className="text-pe-text-secondary">             {/* Muted text */}
+<div className="bg-pe-bg-primary">                    {/* Backgrounds */}
+<div className="border border-pe-gray-200">           {/* Borders */}
 
-/* Spacing */
-var(--pe-space-xs)  var(--pe-space-sm)  var(--pe-space-md)
-var(--pe-space-lg)  var(--pe-space-xl)  var(--pe-space-2xl)
+// Spacing
+<div className="p-pe-lg gap-pe-md m-pe-xl">
 
-/* Typography */
-var(--pe-font-family-primary)   /* Inter */
-var(--pe-font-size-sm)  var(--pe-font-size-md)  var(--pe-font-size-lg)
-var(--pe-font-weight-medium)  var(--pe-font-weight-bold)
+// Typography
+<span className="font-pe text-pe-sm font-medium">
 
-/* Borders */
-var(--pe-radius-sm)  var(--pe-radius-md)  var(--pe-radius-lg)
+// Border radius
+<div className="rounded-pe-md">
 ```
 
-**Never hardcode hex colors, pixel spacing, or font values.** The validator checks for violations.
+**Never hardcode hex colors, pixel spacing, or font values.** Both the dashboard-validator and dashboard-design-token-validator check for violations.
 
 ### Chart Patterns
 
@@ -166,8 +170,9 @@ custom_backend:       # Only if custom-backend
   endpoints: [{ name, method, inputs, outputs, policyengine_variables }]
 
 tech_stack:           # Fixed values, included for documentation
-  framework: react-vite
+  framework: react-nextjs
   ui: "@policyengine/design-system"
+  styling: tailwind-with-design-tokens
   charts: recharts
   testing: vitest
 
@@ -202,7 +207,7 @@ See `policyengine-interactive-tools-skill` for full embedding documentation.
 
 ## Validation Checklist
 
-The validator checks 10 categories:
+The dashboard-validator checks 10 categories:
 
 1. Build compiles without errors
 2. All tests pass
@@ -214,6 +219,12 @@ The validator checks 10 categories:
 8. All plan components implemented
 9. Loading and error states handled
 10. Chart ResponsiveContainer wrappers
+
+The dashboard-design-token-validator additionally validates:
+- Tailwind CSS is used (no plain CSS modules)
+- Next.js App Router is the framework (no Vite)
+- `@policyengine/design-system` tokens are integrated via Tailwind config
+- No hardcoded values where tokens exist
 
 ## Deployment
 
