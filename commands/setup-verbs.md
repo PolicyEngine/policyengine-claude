@@ -33,7 +33,14 @@ Install PolicyEngine-themed spinner verbs (the loading messages that appear whil
     "Sunsetting provisions",
     "Scoring the bill",
     "Applying the benefit reduction rate",
-    "Overfitting"
+    "Overfitting",
+    "Simulating takeup",
+    "Inflation adjusting",
+    "Ignoring behavioral responses",
+    "Querying HMRC",
+    "Means-testing the telly licence",
+    "Freezing the thresholds",
+    "Preserving the triple lock"
   ]
 }
 ```
