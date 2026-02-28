@@ -28,6 +28,7 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 - **policyengine-period-patterns-skill** - Handling different definition periods
 - **policyengine-code-style-skill** - Formula optimization, eliminating unnecessary variables
 - **policyengine-code-organization-skill** - Naming conventions and folder structure
+- **policyengine-healthcare** - Healthcare program architecture, eligibility patterns, program interactions
 
 ## First: Load Required Skills
 
@@ -40,6 +41,7 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 5. `Skill: policyengine-period-patterns-skill`
 6. `Skill: policyengine-code-style-skill`
 7. `Skill: policyengine-code-organization-skill`
+8. `Skill: policyengine-healthcare`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
