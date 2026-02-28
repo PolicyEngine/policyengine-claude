@@ -741,6 +741,80 @@ payment/
 
 ---
 
+## 6.5 Bracket parameter path syntax (for reforms and Python access)
+
+**CRITICAL: When referencing bracket/scale parameters in reform dicts or Python code, the bracket index goes directly on the scale node, NOT on a `.brackets` sub-path.**
+
+The YAML file defines brackets as a list, but the parameter tree flattens them. The bracket index attaches to the node that *contains* the brackets list, not to a child called `brackets`.
+
+### Correct syntax
+
+```python
+# Tax bracket rates — index on the scale node directly
+"gov.states.ca.tax.income.rates.single[8].rate"
+"gov.states.ca.tax.income.rates.single[8].threshold"
+
+# UK income tax rates
+"gov.hmrc.income_tax.rates.uk[0].rate"
+"gov.hmrc.income_tax.rates.uk[1].threshold"
+
+# CTC amount (bracket-based parameter)
+"gov.irs.credits.ctc.amount.base[0].amount"
+
+# EITC phase-out thresholds
+"gov.irs.credits.eitc.phase_out.start[0].amount"
+```
+
+### Wrong syntax (common mistake)
+
+```python
+# ❌ WRONG — there is no ".brackets" in the path
+"gov.states.ca.tax.income.rates.single.brackets[8].rate"
+"gov.irs.credits.ctc.amount.base.brackets[0].amount"
+
+# ❌ WRONG — missing bracket index entirely
+"gov.states.ca.tax.income.rates.single.rate"
+"gov.irs.credits.ctc.amount.base.amount"
+```
+
+### How to determine the correct path
+
+1. **Find the YAML file** in the parameters directory (e.g., `parameters/gov/states/ca/tax/income/rates/single.yaml`)
+2. **The parameter path** is the directory path with dots, ending at the YAML filename (without `.yaml`)
+3. **Add the bracket index** directly: `path.to.scale_file[N].rate` or `path.to.scale_file[N].threshold`
+4. **Verify in Python:**
+   ```python
+   from policyengine_us import CountryTaxBenefitSystem
+   p = CountryTaxBenefitSystem().parameters
+   # Navigate to the node and check:
+   print(p.gov.irs.credits.ctc.amount.base[0].amount("2026-01-01"))
+   ```
+
+### Using bracket paths in Reform.from_dict()
+
+```python
+from policyengine_core.reforms import Reform
+
+# ✅ Correct
+reform = Reform.from_dict({
+    'gov.irs.credits.ctc.amount.base[0].amount': {
+        '2026-01-01.2100-12-31': 3000
+    },
+    'gov.states.ca.tax.income.rates.single[8].rate': {
+        '2026-01-01.2100-12-31': 0.143
+    },
+}, 'policyengine_us')
+
+# ❌ Wrong — will fail or silently not apply
+reform = Reform.from_dict({
+    'gov.irs.credits.ctc.amount.base.brackets[0].amount': {
+        '2026-01-01.2100-12-31': 3000
+    },
+}, 'policyengine_us')
+```
+
+---
+
 ## 7. Validation Checklist
 
 Before creating parameters:

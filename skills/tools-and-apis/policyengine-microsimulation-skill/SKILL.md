@@ -7,7 +7,12 @@ description: |
   "how much would it cost", "how much would the policy cost", "total cost of", "aggregate impact",
   "cost to the government", "revenue loss", "fiscal impact",
   "poverty impact", "child poverty", "deep poverty", "poverty rate", "poverty reduction",
-  "how many people lifted out of poverty", "SPM poverty", "distributional impact".
+  "how many people lifted out of poverty", "SPM poverty", "distributional impact",
+  "state tax", "state-level", "California", "New York",
+  "UBI", "universal basic income", "flat tax", "standard deduction",
+  "winners and losers", "winners", "losers",
+  "inequality", "Gini", "decile",
+  "SALT", "marginal tax rate", "effective tax rate".
   NOT for single-household calculations like "what would my benefit be" — use policyengine-us or policyengine-uk for those.
   Use this skill's code pattern, but explore the codebase to find specific parameter paths if needed.
 ---
@@ -76,6 +81,47 @@ print(f"Total cost: ${change.sum()/1e9:,.1f}B")
 print(f"Share losing: {(change < 0).mean():.1%}")
 ```
 
+## API methods
+
+- `Microsimulation.calc()` (US) — returns MicroSeries (weighted). Use this for all US microsimulation.
+- `Microsimulation.calculate()` (UK) — returns MicroSeries (weighted). Use this for all UK microsimulation.
+- Both return MicroSeries with automatic weighting. Use `.sum()`, `.mean()`, arithmetic operators.
+
+## Creating reforms
+
+### US (policyengine_us.Microsimulation)
+```python
+from policyengine_us import Microsimulation
+from policyengine_core.reforms import Reform
+
+reform = Reform.from_dict({
+    'gov.irs.credits.ctc.amount.base[0].amount': {'2026-01-01.2100-12-31': 3600},
+}, 'policyengine_us')
+
+baseline = Microsimulation()
+reformed = Microsimulation(reform=reform)
+```
+
+### UK (policyengine_uk.Microsimulation)
+```python
+from policyengine_uk import Microsimulation
+
+# UK: pass reform dict directly — do NOT use Reform.from_dict()
+reform = {
+    'gov.hmrc.income_tax.allowances.personal_allowance.amount': {'2026-01-01.2100-12-31': 15000}
+}
+
+baseline = Microsimulation()
+reformed = Microsimulation(reform=reform)
+```
+
+**IMPORTANT**: For UK, pass the dict directly to `Microsimulation(reform=dict)`. `Reform.from_dict()` works for US but causes errors in UK.
+
+### Dataset argument
+- **National**: Omit dataset argument entirely (default is correct)
+- **State-level**: `Microsimulation(dataset='hf://policyengine/policyengine-us-data/states/NY.h5')`
+- **Never** pass short strings like `dataset="cps_2024"` — use full HF URLs or omit
+
 ## Available Datasets (HuggingFace)
 
 ```python
@@ -90,6 +136,12 @@ sim = Microsimulation(dataset='hf://policyengine/policyengine-us-data/districts/
 ```
 
 **For congressional district analysis** (representative's constituents, district-level impacts), use the `policyengine-district-analysis` skill which has complete examples.
+
+### Memory considerations
+
+State-level datasets are large (~590MB each). Loading two Microsimulation objects simultaneously (baseline + reformed) requires ~2GB+ RAM. Options:
+- **Preferred**: Use the national dataset (default) — it includes all states with proper weighting
+- **If state-calibrated weights needed**: Compute baseline values first, delete the baseline object (`del baseline`), then create the reformed simulation
 
 ## Key MicroSeries Methods
 
@@ -120,9 +172,9 @@ reformed_income = reformed.calc('household_net_income', period=2026, map_to='per
 print(f"Baseline Gini: {baseline_income.gini():.4f}")
 print(f"Reform Gini:   {reformed_income.gini():.4f}")
 
-# Poverty rate (boolean MicroSeries)
-in_poverty = baseline.calc('spm_unit_is_in_spm_poverty', map_to='person', period=2026)
-print(f"SPM poverty rate: {in_poverty.mean():.1%}")
+# Poverty rate (boolean MicroSeries — .mean() gives weighted rate)
+baseline_in_poverty = baseline.calc('person_in_poverty', period=2026, map_to='person')
+print(f"SPM poverty rate: {baseline_in_poverty.mean():.1%}")
 
 # Decile-level analysis
 income.decile_rank()    # Assign decile ranks (1-10)
@@ -130,80 +182,102 @@ income.decile_rank()    # Assign decile ranks (1-10)
 
 ## Poverty analysis
 
-### Overall and child poverty (person-level)
+### Overall and child poverty
 
-For poverty rates, you need to filter by subgroup. This requires extracting `.values` for masking — this is the one case where `.values` is appropriate.
+Use `household_weight` (the only calibrated weight) with MicroSeries arithmetic for all poverty calculations. No `.values` or `np.sum()` needed.
 
 ```python
 from policyengine_us import Microsimulation
-import numpy as np
 
 baseline = Microsimulation()
 reformed = Microsimulation(reform=reform)
 
 YEAR = 2026
 
-# Extract person weights and poverty indicators
-pw = baseline.calc("person_weight", period=YEAR).values
-is_child = baseline.calc("is_child", period=YEAR).values.astype(bool)
+# Overall poverty rate — .mean() gives weighted rate automatically
+baseline_in_poverty = baseline.calc('person_in_poverty', period=YEAR, map_to='person')
+reform_in_poverty = reformed.calc('person_in_poverty', period=YEAR, map_to='person')
+baseline_poverty_rate = baseline_in_poverty.mean()
+reform_poverty_rate = reform_in_poverty.mean()
+print(f"Poverty: {baseline_poverty_rate:.1%} → {reform_poverty_rate:.1%}")
 
-baseline_pov = baseline.calc("person_in_poverty", period=YEAR).values
-reform_pov = reformed.calc("person_in_poverty", period=YEAR).values
-
-def poverty_rate(indicator, weights, mask=None):
-    if mask is not None:
-        return np.sum(indicator[mask] * weights[mask]) / weights[mask].sum()
-    return np.sum(indicator * weights) / weights.sum()
-
-# Overall poverty
-overall_bl = poverty_rate(baseline_pov, pw)
-overall_rf = poverty_rate(reform_pov, pw)
-
-# Child poverty
-child_bl = poverty_rate(baseline_pov, pw, is_child)
-child_rf = poverty_rate(reform_pov, pw, is_child)
+# Child poverty rate — filter by is_child, then .mean()
+is_child = baseline.calc('is_child', period=YEAR)
+baseline_child_pov_rate = (baseline_in_poverty * is_child).sum() / is_child.sum()
+reform_child_pov_rate = (reform_in_poverty * is_child).sum() / is_child.sum()
+print(f"Child poverty: {baseline_child_pov_rate:.1%} → {reform_child_pov_rate:.1%}")
 
 # People lifted out of poverty
-lifted = np.sum((baseline_pov - reform_pov) * pw)
-children_lifted = np.sum((baseline_pov[is_child] - reform_pov[is_child]) * pw[is_child])
+total_people = baseline_in_poverty.sum() / baseline_in_poverty.mean()  # total weighted pop
+people_lifted = (baseline_poverty_rate - reform_poverty_rate) * total_people
+children_lifted = (baseline_child_pov_rate - reform_child_pov_rate) * is_child.sum()
 ```
 
-### Deep poverty (SPM unit level)
+> **WARNING: Never subtract boolean MicroSeries directly.** NumPy 2.4+ raises `TypeError` on boolean subtraction (`True - False`). Use `.mean()` to get float rates first, then subtract:
+> ```python
+> # ❌ DON'T: diff = baseline_in_poverty - reform_in_poverty  # TypeError in numpy 2.4+
+> # ✅ DO: compute rates with .mean(), then subtract floats
+> baseline_rate = baseline_in_poverty.mean()
+> reform_rate = reform_in_poverty.mean()
+> reduction_pp = baseline_rate - reform_rate
+> ```
 
-`in_deep_poverty` is at the SPM unit level, not person level. Weight by unit size/children count:
+### Deep poverty
+
+`in_deep_poverty` is at the SPM unit level. Use `household_weight` mapped to the appropriate entity level:
 
 ```python
-baseline_deep = baseline.calc("in_deep_poverty", period=YEAR).values
-reform_deep = reformed.calc("in_deep_poverty", period=YEAR).values
-spm_w = baseline.calc("spm_unit_weight", period=YEAR).values
-spm_size = baseline.calc("spm_unit_size", period=YEAR).values
-spm_children = baseline.calc("spm_unit_count_children", period=YEAR).values
+# Deep poverty — person-level via map_to
+baseline_in_deep_poverty = baseline.calc('in_deep_poverty', period=YEAR, map_to='person')
+reform_in_deep_poverty = reformed.calc('in_deep_poverty', period=YEAR, map_to='person')
 
-# Overall deep poverty rate (person-weighted)
-total_persons = np.sum(spm_size * spm_w)
-deep_bl = np.sum(baseline_deep * spm_size * spm_w) / total_persons
-deep_rf = np.sum(reform_deep * spm_size * spm_w) / total_persons
+baseline_deep_rate = baseline_in_deep_poverty.mean()
+reform_deep_rate = reform_in_deep_poverty.mean()
+print(f"Deep poverty: {baseline_deep_rate:.1%} → {reform_deep_rate:.1%}")
 
 # Deep child poverty rate
-total_children = np.sum(spm_children * spm_w)
-deep_child_bl = np.sum(baseline_deep * spm_children * spm_w) / total_children
-deep_child_rf = np.sum(reform_deep * spm_children * spm_w) / total_children
+is_child = baseline.calc('is_child', period=YEAR)
+baseline_deep_child_rate = (baseline_in_deep_poverty * is_child).sum() / is_child.sum()
+reform_deep_child_rate = (reform_in_deep_poverty * is_child).sum() / is_child.sum()
+print(f"Deep child poverty: {baseline_deep_child_rate:.1%} → {reform_deep_child_rate:.1%}")
 ```
 
-### When .values IS appropriate
+### Subgroup analysis note
 
-The "never use .values" rule has one exception: **filtered/subgroup analysis** where you need boolean masking across arrays. When computing poverty rates by age, race, or other subgroups, extract `.values` and apply weights manually:
+MicroSeries arithmetic handles subgroup analysis — you should rarely need `.values`. Multiply by a boolean MicroSeries to filter (e.g., `pov * is_child * pw`) and use `.sum()` / `.mean()` directly.
+
+## UK microsimulation
+
+### Key differences from US
+
+- **UK uses `.calculate()`, NOT `.calc()`** — `policyengine_uk.Microsimulation` does NOT have a `.calc()` method at all. Always use `.calculate()`.
+- **UK reform**: Pass a plain dict directly to `Microsimulation(reform=dict)`. Do NOT use `Reform.from_dict()` — it causes errors with UK.
+- **UK poverty variables**: `in_poverty_bhc` (before housing costs) and `in_poverty_ahc` (after housing costs) — both at **household** level. UK poverty analysis typically reports both BHC and AHC rates; always note which measure you are using.
+- **UK entity structure**: `household` (not SPM unit), `benunit` (benefit unit), `person`. Use `household_weight` and `household_count_people` for person-weighted rates.
+
+### Example: UK personal allowance reform with poverty analysis
 
 ```python
-# ✅ OK to use .values for filtered analysis
-pw = sim.calc("person_weight", period=YEAR).values
-mask = sim.calc("is_child", period=YEAR).values.astype(bool)
-pov = sim.calc("person_in_poverty", period=YEAR).values
-child_poverty_rate = np.sum(pov[mask] * pw[mask]) / pw[mask].sum()
+from policyengine_uk import Microsimulation
 
-# ✅ ALSO OK - MicroSeries for unfiltered totals
-total_cost = reformed.calc("household_net_income", period=YEAR).sum() - \
-             baseline.calc("household_net_income", period=YEAR).sum()
+reform = {'gov.hmrc.income_tax.allowances.personal_allowance.amount': {'2026-01-01.2100-12-31': 15000}}
+
+baseline = Microsimulation()
+reformed = Microsimulation(reform=reform)
+
+# Cost
+baseline_income = baseline.calculate('household_net_income', period=2026)
+reform_income = reformed.calculate('household_net_income', period=2026)
+cost = (reform_income - baseline_income).sum()
+
+# Poverty (BHC) — map to person level for .mean()
+baseline_in_poverty = baseline.calculate('in_poverty_bhc', period=2026, map_to='person')
+reform_in_poverty = reformed.calculate('in_poverty_bhc', period=2026, map_to='person')
+baseline_rate = baseline_in_poverty.mean()
+reform_rate = reform_in_poverty.mean()
+
+print(f"Cost: £{cost / 1e9:,.1f}B")
+print(f"Poverty (BHC): {baseline_rate:.1%} → {reform_rate:.1%}")
 ```
 
 ## CRITICAL: Budgetary impact calculation
@@ -278,20 +352,58 @@ grep -r "salt" policyengine_us/parameters/gov/irs/ --include="*.yaml"
 
 **Patterns:** Filing status variants (SINGLE, JOINT, etc.), bracket syntax `[index]`, date format `'YYYY-MM-DD.YYYY-MM-DD'`
 
+### CRITICAL: Bracket path syntax for scale parameters
+
+When referencing bracket/scale parameters, the bracket index goes directly on the scale node — there is NO `.brackets` in the path.
+
+```python
+# ✅ Correct — bracket index on the scale node
+'gov.irs.credits.ctc.amount.base[0].amount'
+'gov.states.ca.tax.income.rates.single[8].rate'
+'gov.states.ca.tax.income.rates.single[8].threshold'
+
+# ❌ Wrong — ".brackets" does not exist in the path
+'gov.irs.credits.ctc.amount.base.brackets[0].amount'
+'gov.states.ca.tax.income.rates.single.brackets[8].rate'
+```
+
+The YAML file has a `brackets:` list, but the parameter tree flattens it. The index attaches to the node containing the brackets (the YAML filename without `.yaml`), not to a child called `brackets`.
+
+To verify a path, inspect the parameter tree:
+```python
+from policyengine_us import CountryTaxBenefitSystem
+p = CountryTaxBenefitSystem().parameters
+print(p.gov.irs.credits.ctc.amount.base[0].amount("2026-01-01"))
+```
+
+### Two types of bracket parameters
+
+1. **ParameterScale** (marginal rate schedules, single YAML with `brackets:` at root):
+   - Path: `parent_node.scale_name[index].rate` or `.threshold`
+   - Example: `gov.states.ca.tax.income.rates.single[8].rate`
+
+2. **ParameterNode with indexed children** (folder-based, separate YAML files):
+   - Path: `node_name[index].child_name`
+   - Example: `gov.irs.credits.ctc.amount.base[0].amount`
+
+Both use `[index]` syntax in Reform.from_dict() — the difference is in the YAML structure. Use `CountryTaxBenefitSystem().parameters` to navigate and verify paths.
+
 ## Common variables for microsimulation
 
+### Weights
+- `household_weight` — the only calibrated weight. Use `map_to='person'` or `map_to='spm_unit'` to project it to other entity levels.
+
 ### Person-level
-- `person_weight` — survey weight
 - `person_in_poverty` — SPM poverty indicator (boolean)
 - `is_child` — under 18
 - `age`, `employment_income`
 
 ### Household-level
 - `household_net_income` — net income after taxes/transfers
-- `household_weight` — survey weight
+- `household_count_people` — number of people in household
 
 ### SPM unit-level
-- `spm_unit_weight`, `spm_unit_size`, `spm_unit_count_children`
+- `spm_unit_size`, `spm_unit_count_children`
 - `in_poverty`, `in_deep_poverty`
 
 ### Tax/benefit variables

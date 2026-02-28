@@ -76,7 +76,7 @@ sim = Simulation(situation=household)
 # - Period conversions
 
 # When you calculate
-result = sim.calculate("income_tax", 2024)
+result = sim.calculate("income_tax", 2026)
 
 # Core:
 # 1. Checks if already calculated
@@ -245,7 +245,7 @@ grep -r "trace" policyengine_core/simulations/
 
 # Enable in your code:
 simulation.trace = True
-simulation.calculate("income_tax", 2024)
+simulation.calculate("income_tax", 2026)
 ```
 
 ### Period Handling
@@ -404,10 +404,10 @@ tree ../policyengine-us/policyengine_us/parameters/gov/
 Core caches calculations automatically:
 ```python
 # First call calculates
-tax1 = sim.calculate("income_tax", 2024)
+tax1 = sim.calculate("income_tax", 2026)
 
 # Second call returns cached value
-tax2 = sim.calculate("income_tax", 2024)  # Instant
+tax2 = sim.calculate("income_tax", 2026)  # Instant
 ```
 
 ### Performance Optimization: Batching Parameter Lookups
@@ -461,7 +461,7 @@ grep -r "parameters(period)" policyengine_core/parameters/
 # Set variable to zero in reform
 reform = {
     "income_tax": {
-        "2024-01-01.2100-12-31": 0
+        "2026-01-01.2100-12-31": 0
     }
 }
 ```

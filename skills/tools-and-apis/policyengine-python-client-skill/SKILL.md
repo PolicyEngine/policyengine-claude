@@ -112,7 +112,7 @@ from policyengine import Simulation
 # Define reform (increase CTC to $5,000)
 reform = {
     "gov.irs.credits.ctc.amount.base_amount": {
-        "2024-01-01.2100-12-31": 5000
+        "2026-01-01.2100-12-31": 5000
     }
 }
 

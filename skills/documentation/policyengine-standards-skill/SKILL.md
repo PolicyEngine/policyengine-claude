@@ -175,7 +175,7 @@ def test_california_eitc_calculation():
     """Test California EITC for family with 2 children earning $30,000."""
     situation = create_family(income=30000, num_children=2, state="CA")
     sim = Simulation(situation=situation)
-    ca_eitc = sim.calculate("ca_eitc", 2024)[0]
+    ca_eitc = sim.calculate("ca_eitc", 2026)[0]
 
     # Test fails initially (feature not implemented yet)
     assert ca_eitc == 3000, "CA EITC should be $3,000 for this household"
@@ -234,9 +234,9 @@ def test_ctc_for_two_children():
     )
 
     sim = Simulation(situation=situation)
-    ctc = sim.calculate("ctc", 2024)[0]
+    ctc = sim.calculate("ctc", 2026)[0]
 
-    assert ctc == 4000, "CTC should be $2,000 per child"
+    assert ctc == 4400, "CTC should be $2,200 per child"
 ```
 
 **React (Jest + RTL):**
@@ -339,7 +339,7 @@ def test_new_york_empire_state_child_credit():
     )
 
     sim = Simulation(situation=situation)
-    credit = sim.calculate("ny_empire_state_child_credit", 2024)[0]
+    credit = sim.calculate("ny_empire_state_child_credit", 2026)[0]
 
     assert credit == 330, "Should receive $330 for child under 4"
 
@@ -403,7 +403,7 @@ def calculate_tax(income: float, state: str) -> float:
 
 # Error handling - catch specific exceptions
 try:
-    result = simulation.calculate("income_tax", 2024)
+    result = simulation.calculate("income_tax", 2026)
 except KeyError as e:
     raise ValueError(f"Invalid variable name: {e}")
 ```
@@ -416,9 +416,9 @@ def test_ctc_calculation():
     """Test Child Tax Credit calculation for family with 2 children."""
     situation = create_family(income=50000, num_children=2)
     sim = Simulation(situation=situation)
-    ctc = sim.calculate("ctc", 2024)[0]
+    ctc = sim.calculate("ctc", 2026)[0]
 
-    assert ctc == 4000, "CTC should be $2000 per child"
+    assert ctc == 4400, "CTC should be $2200 per child"
 ```
 
 **Run tests:**

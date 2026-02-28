@@ -297,7 +297,7 @@ from policyengine_uk import Microsimulation
 
 # Uses enhanced FRS under the hood
 sim = Microsimulation()
-sim.calculate('student_loan_repayment', period='2024')
+sim.calculate('student_loan_repayment', period='2026')
 # Uses imputed student_loan_balance variable
 ```
 

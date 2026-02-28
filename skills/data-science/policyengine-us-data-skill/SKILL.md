@@ -268,7 +268,7 @@ from policyengine_us_data import EnhancedCPS_2024
 
 # Uses enhanced CPS with PUF imputations
 sim = Microsimulation(dataset=EnhancedCPS_2024)
-sim.calculate('self_employment_tax', period=2024)
+sim.calculate('self_employment_tax', period=2026)
 # Uses imputed self_employment_income, farm_income, etc.
 ```
 

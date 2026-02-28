@@ -111,8 +111,8 @@ from policyengine_us import Simulation
 
 # Define reform
 reform = {
-    "gov.irs.credits.ctc.amount.base_amount": {
-        "2024-01-01.2100-12-31": 5000
+    "gov.irs.credits.ctc.amount.base[0].amount": {
+        "2026-01-01.2100-12-31": 5000
     }
 }
 
@@ -124,11 +124,11 @@ for income in incomes:
     # Baseline
     situation = create_situation(income=income)
     sim_baseline = Simulation(situation=situation)
-    tax_baseline = sim_baseline.calculate("income_tax", 2024)[0]
+    tax_baseline = sim_baseline.calculate("income_tax", 2026)[0]
 
     # Reform
     sim_reform = Simulation(situation=situation, reform=reform)
-    tax_reform = sim_reform.calculate("income_tax", 2024)[0]
+    tax_reform = sim_reform.calculate("income_tax", 2026)[0]
 
     results.append({
         "income": income,
@@ -171,10 +171,10 @@ for name, params in households.items():
     sim_reform = Simulation(situation=situation, reform=reform)
 
     case_studies[name] = {
-        "baseline_tax": sim_baseline.calculate("income_tax", 2024)[0],
-        "reform_tax": sim_reform.calculate("income_tax", 2024)[0],
-        "ctc_baseline": sim_baseline.calculate("ctc", 2024)[0],
-        "ctc_reform": sim_reform.calculate("ctc", 2024)[0]
+        "baseline_tax": sim_baseline.calculate("income_tax", 2026)[0],
+        "reform_tax": sim_reform.calculate("income_tax", 2026)[0],
+        "ctc_baseline": sim_baseline.calculate("ctc", 2026)[0],
+        "ctc_reform": sim_reform.calculate("ctc", 2026)[0]
     }
 
 case_df = pd.DataFrame(case_studies).T
@@ -194,10 +194,10 @@ for state in states:
 
     state_results.append({
         "state": state,
-        "baseline_net_income": sim_baseline.calculate("household_net_income", 2024)[0],
-        "reform_net_income": sim_reform.calculate("household_net_income", 2024)[0],
-        "change": (sim_reform.calculate("household_net_income", 2024)[0] -
-                  sim_baseline.calculate("household_net_income", 2024)[0])
+        "baseline_net_income": sim_baseline.calculate("household_net_income", 2026)[0],
+        "reform_net_income": sim_reform.calculate("household_net_income", 2026)[0],
+        "change": (sim_reform.calculate("household_net_income", 2026)[0] -
+                  sim_baseline.calculate("household_net_income", 2026)[0])
     })
 
 state_df = pd.DataFrame(state_results)
@@ -216,16 +216,16 @@ situation_with_axes = {
         "count": 1001,
         "min": 0,
         "max": 200000,
-        "period": 2024
+        "period": 2026
     }]]
 }
 
 sim_baseline = Simulation(situation=situation_with_axes)
 sim_reform = Simulation(situation=situation_with_axes, reform=reform)
 
-incomes = sim_baseline.calculate("employment_income", 2024)
-baseline_net = sim_baseline.calculate("household_net_income", 2024)
-reform_net = sim_reform.calculate("household_net_income", 2024)
+incomes = sim_baseline.calculate("employment_income", 2026)
+baseline_net = sim_baseline.calculate("household_net_income", 2026)
+reform_net = sim_reform.calculate("household_net_income", 2026)
 
 gains = reform_net - baseline_net
 
@@ -365,16 +365,16 @@ if st.button("Calculate"):
     with col1:
         st.metric(
             "Baseline Tax",
-            f"${sim_baseline.calculate('income_tax', 2024)[0]:,.0f}"
+            f"${sim_baseline.calculate('income_tax', 2026)[0]:,.0f}"
         )
     with col2:
         st.metric(
             "Reform Tax",
-            f"${sim_reform.calculate('income_tax', 2024)[0]:,.0f}"
+            f"${sim_reform.calculate('income_tax', 2026)[0]:,.0f}"
         )
     with col3:
-        change = (sim_reform.calculate('income_tax', 2024)[0] -
-                 sim_baseline.calculate('income_tax', 2024)[0])
+        change = (sim_reform.calculate('income_tax', 2026)[0] -
+                 sim_baseline.calculate('income_tax', 2026)[0])
         st.metric("Change", f"${change:,.0f}", delta=f"${-change:,.0f}")
 ```
 
@@ -388,7 +388,7 @@ results = []
 for income in incomes:
     situation = create_situation(income=income, state=selected_state)
     sim = Simulation(situation=situation, reform=reform)
-    results.append(sim.calculate("household_net_income", 2024)[0])
+    results.append(sim.calculate("household_net_income", 2026)[0])
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=incomes, y=results, line=dict(color=TEAL)))
@@ -418,7 +418,7 @@ import plotly.graph_objects as go
 from policyengine_us import Simulation
 
 # Cell 3: Configuration
-YEAR = 2024
+YEAR = 2026
 STATES = ["CA", "NY", "TX", "FL"]
 
 # Cell 4+: Analysis sections with markdown headers
@@ -457,11 +457,11 @@ This skill includes example templates in the `examples/` directory:
 ## Common Pitfalls
 
 ### Pitfall 1: Not Using Consistent Year
-**Problem:** Mixing 2024 and 2025 calculations
+**Problem:** Mixing years across calculations
 
 **Solution:** Define year constant at top:
 ```python
-CURRENT_YEAR = 2024
+CURRENT_YEAR = 2026
 # Use everywhere
 simulation.calculate("income_tax", CURRENT_YEAR)
 ```
@@ -475,12 +475,12 @@ simulation.calculate("income_tax", CURRENT_YEAR)
 for income in incomes:
     situation = create_situation(income=income)
     sim = Simulation(situation=situation)
-    results.append(sim.calculate("income_tax", 2024)[0])
+    results.append(sim.calculate("income_tax", 2026)[0])
 
 # FAST
 situation_with_axes = create_situation_with_axes(incomes)
 sim = Simulation(situation=situation_with_axes)
-results = sim.calculate("income_tax", 2024)  # Array of all results
+results = sim.calculate("income_tax", 2026)  # Array of all results
 ```
 
 ### Pitfall 3: Forgetting to Compare Baseline and Reform
@@ -489,8 +489,8 @@ results = sim.calculate("income_tax", 2024)  # Array of all results
 **Solution:** Always show both:
 ```python
 results = {
-    "baseline": sim_baseline.calculate("income_tax", 2024),
-    "reform": sim_reform.calculate("income_tax", 2024),
+    "baseline": sim_baseline.calculate("income_tax", 2026),
+    "reform": sim_reform.calculate("income_tax", 2026),
     "change": reform - baseline
 }
 ```
@@ -527,8 +527,8 @@ def test_reform_increases_ctc():
     sim_baseline = Simulation(situation=situation)
     sim_reform = Simulation(situation=situation, reform=reform)
 
-    ctc_baseline = sim_baseline.calculate("ctc", 2024)[0]
-    ctc_reform = sim_reform.calculate("ctc", 2024)[0]
+    ctc_baseline = sim_baseline.calculate("ctc", 2026)[0]
+    ctc_reform = sim_reform.calculate("ctc", 2026)[0]
 
     assert ctc_reform > ctc_baseline, "Reform should increase CTC"
     assert ctc_reform == 5000 * 2, "CTC should be $5000 per child"

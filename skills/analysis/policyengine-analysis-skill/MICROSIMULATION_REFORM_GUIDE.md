@@ -1,5 +1,7 @@
 # Microsimulation reform implementation guide
 
+> **Note**: Always use MicroSeries arithmetic (`.sum()`, `.mean()`, `*`, `>`) instead of extracting `.values` and using numpy. MicroSeries handles weighting automatically. Only use `household_weight` — it's the only calibrated weight.
+
 Guide for implementing policy reforms and microsimulation analysis in PolicyEngine  UK ONLY projects.
 
 ## Overview
@@ -249,10 +251,10 @@ reform = Scenario(simulation_modifier=variable_override_modifier)
 def conditional_modifier(sim: Simulation):
     for year in range(2026, 2030):
         # Get eligibility criteria
-        has_children = sim.calculate("benunit_count_children", year, map_to="benunit").values > 0
+        has_children = sim.calculate("benunit_count_children", year, map_to="benunit").values > 0  # Prefer MicroSeries arithmetic where possible; .values needed here for np.where below
 
         # Get baseline amount
-        baseline_uc = sim.calculate("universal_credit", year, map_to="benunit").values
+        baseline_uc = sim.calculate("universal_credit", year, map_to="benunit").values  # .values used for np.where; prefer MicroSeries for aggregations
 
         # Create modified amount (only for those with children)
         modified_uc = np.where(
@@ -348,7 +350,7 @@ def add_helper_variable(sim: Simulation):
 
     # Now use it in subsequent calculations
     for year in range(2026, 2030):
-        working_count = sim.calculate("working_adults_count", year, map_to="benunit").values
+        working_count = sim.calculate("working_adults_count", year, map_to="benunit").values  # .values for element-wise logic; prefer MicroSeries for aggregations
         # Apply logic based on working_count...
 ```
 
@@ -422,7 +424,7 @@ def create_base_simulation(scenario=None, dataset=None):
         combined = s if combined is None else combined + s
 
     return Microsimulation(
-        dataset=dataset or "enhanced_frs_2023_24",
+        dataset=dataset,  # Omit or use HF URL like 'hf://policyengine/policyengine-uk-data/...' — never pass short dataset names
         scenario=combined
     )
 ```
@@ -624,7 +626,7 @@ sim.set_input("universal_credit", 2026, baseline_amount)
 
 **Right:**
 ```python
-baseline_amount = sim.calculate("universal_credit", 2026).values  # Get numpy array
+baseline_amount = sim.calculate("universal_credit", 2026).values  # .values needed here to .copy() and mutate; prefer MicroSeries for aggregations
 new_amount = baseline_amount.copy()  # Explicit copy
 new_amount[eligible] += 500
 sim.set_input("universal_credit", 2026, new_amount)

@@ -11,15 +11,15 @@ import plotly.graph_objects as go
 from policyengine_us import Simulation
 
 # Configuration
-CURRENT_YEAR = 2024
+CURRENT_YEAR = 2026
 INCOME_MIN = 0
 INCOME_MAX = 200000
 INCOME_STEPS = 101
 
 # Define your reform here
 REFORM = {
-    "gov.irs.credits.ctc.amount.base_amount": {
-        "2024-01-01.2100-12-31": 5000  # Example: Increase CTC to $5,000
+    "gov.irs.credits.ctc.amount.base[0].amount": {
+        "2026-01-01.2100-12-31": 5000  # Example: Increase CTC to $5,000
     }
 }
 

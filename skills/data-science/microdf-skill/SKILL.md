@@ -148,8 +148,8 @@ situation_with_axes = {...}  # See policyengine-us-skill
 sim = Simulation(situation=situation_with_axes)
 
 # Get results as arrays
-incomes = sim.calculate("household_net_income", 2024)
-weights = sim.calculate("household_weight", 2024)
+incomes = sim.calculate("household_net_income", 2026)
+weights = sim.calculate("household_weight", 2026)
 
 # Create MicroDataFrame
 df = pd.DataFrame({'income': incomes, 'weight': weights})
@@ -265,9 +265,9 @@ grep -A 20 "def.*decomp" microdf/
 import microdf as mdf
 
 # Get simulation results
-baseline_income = baseline_sim.calculate("household_net_income", 2024)
-reform_income = reform_sim.calculate("household_net_income", 2024)
-weights = baseline_sim.calculate("household_weight", 2024)
+baseline_income = baseline_sim.calculate("household_net_income", 2026)
+reform_income = reform_sim.calculate("household_net_income", 2026)
+weights = baseline_sim.calculate("household_weight", 2026)
 
 # Create MicroDataFrame
 df = pd.DataFrame({
@@ -293,11 +293,11 @@ from policyengine_us import Simulation
 baseline_sim = Simulation(situation=situation)
 reform_sim = Simulation(situation=situation, reform=reform)
 
-# Get incomes
-baseline_income = baseline_sim.calculate("spm_unit_net_income", 2024)
-reform_income = reform_sim.calculate("spm_unit_net_income", 2024)
-spm_threshold = baseline_sim.calculate("spm_unit_poverty_threshold", 2024)
-weights = baseline_sim.calculate("spm_unit_weight", 2024)
+# Get incomes — use household_weight (the only calibrated weight) mapped to spm_unit
+baseline_income = baseline_sim.calculate("spm_unit_net_income", 2026)
+reform_income = reform_sim.calculate("spm_unit_net_income", 2026)
+spm_threshold = baseline_sim.calculate("spm_unit_poverty_threshold", 2026)
+weights = baseline_sim.calculate("household_weight", 2026, map_to="spm_unit")
 
 # Calculate poverty rates
 df_baseline = mdf.MicroDataFrame(
