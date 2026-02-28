@@ -807,7 +807,7 @@ git submodule update --init --recursive
 
 4. **Test with Claude Code**
 
-5. **Submit PR with changelog_entry.yaml**
+5. **Add a changelog fragment to `changelog.d/` and submit PR**
 
 ### Skill Guidelines
 
