@@ -42,5 +42,5 @@ This bypasses the cache and picks up changes on restart.
    ---
    ```
 3. Add the skill path to the relevant plugin(s) in `marketplace.json`
-4. Bump the version
+4. Add a changelog fragment to `changelog.d/` (version is bumped automatically on merge)
 5. Test with `--plugin-dir` before pushing
