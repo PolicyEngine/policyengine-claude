@@ -1,0 +1,1 @@
+Add changelog enforcement and auto version bumping — fragment-based changelog entries in `changelog.d/`, CI check that blocks PRs without fragments, and automatic version bump + CHANGELOG.md generation on merge to main

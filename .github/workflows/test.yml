@@ -7,6 +7,28 @@ on:
     branches: [master, main]
 
 jobs:
+  check-changelog:
+    name: Check changelog fragment
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require changelog fragment
+        run: |
+          FRAGMENT_COUNT=$(find changelog.d -type f ! -name '.gitkeep' | wc -l)
+          if [ "$FRAGMENT_COUNT" -eq 0 ]; then
+            echo "❌ No changelog fragment found in changelog.d/"
+            echo ""
+            echo "Please add a changelog fragment before merging:"
+            echo "  echo 'Description of change' > changelog.d/my-change.{type}.md"
+            echo ""
+            echo "Types: added, changed, fixed, removed, breaking"
+            exit 1
+          fi
+          echo "✅ Found $FRAGMENT_COUNT changelog fragment(s)"
+
   validate-marketplace:
     name: Validate marketplace.json
     runs-on: ubuntu-latest
@@ -181,6 +203,29 @@ jobs:
           done
 
           echo "✅ All referenced skills exist"
+
+      - name: Check version consistency
+        run: |
+          TOP_VERSION=$(jq -r '.version' .claude-plugin/marketplace.json)
+          echo "Top-level version: $TOP_VERSION"
+          MISMATCH=false
+
+          PLUGIN_COUNT=$(jq '.plugins | length' .claude-plugin/marketplace.json)
+          for i in $(seq 0 $((PLUGIN_COUNT - 1))); do
+            PLUGIN_NAME=$(jq -r ".plugins[$i].name" .claude-plugin/marketplace.json)
+            PLUGIN_VERSION=$(jq -r ".plugins[$i].version" .claude-plugin/marketplace.json)
+            if [ "$PLUGIN_VERSION" != "$TOP_VERSION" ]; then
+              echo "❌ Plugin '$PLUGIN_NAME' version $PLUGIN_VERSION != top-level $TOP_VERSION"
+              MISMATCH=true
+            else
+              echo "  ✅ $PLUGIN_NAME: $PLUGIN_VERSION"
+            fi
+          done
+
+          if [ "$MISMATCH" = true ]; then
+            exit 1
+          fi
+          echo "✅ All plugin versions match: $TOP_VERSION"
 
       - name: Summary
         run: |
