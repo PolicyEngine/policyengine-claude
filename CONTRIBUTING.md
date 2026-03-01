@@ -14,36 +14,22 @@ This bypasses the cache and picks up changes on restart.
 
 ### Publishing Changes
 
-**IMPORTANT: Always bump the version AND populate changelog_entry.yaml when making changes.**
-
-Claude Code caches plugins by version. If you push changes without bumping the version, users won't get the updates even after running `/plugin update`.
+**Versions and CHANGELOG.md are managed automatically.** Do NOT manually edit version fields in `marketplace.json` or `CHANGELOG.md`.
 
 1. Make your changes
-2. Populate `changelog_entry.yaml` with your changes:
-   ```yaml
-   - bump: patch  # or minor/major
-     changes:
-       added:
-         - Description of new feature
-       changed:
-         - Description of change
-       fixed:
-         - Description of fix
+2. Add a changelog fragment:
+   ```bash
+   echo "Description of your change" > changelog.d/my-change.added.md
    ```
-3. Bump the version in `.claude-plugin/marketplace.json`:
-   - Bump ALL version fields (marketplace version + each plugin's version)
-   - Use semver: patch for fixes, minor for new features, major for breaking changes
-4. Run `make changelog` to auto-generate CHANGELOG.md (consistent with other PE repos)
-5. Commit and push to main
-6. Users can then `/plugin update` to get the new version
+   Fragment filename format: `{name}.{type}.md`
 
-Example version bump:
-```bash
-# Bump from 3.4.0 to 3.4.1
-sed -i '' 's/"version": "3.4.0"/"version": "3.4.1"/g' .claude-plugin/marketplace.json
-```
-
-**DO NOT edit CHANGELOG.md directly** - it's auto-generated from changelog_entry.yaml via `make changelog`.
+   Types: `added`, `changed`, `fixed`, `removed`, `breaking`
+3. Commit and push — CI enforces that every PR includes at least one fragment
+4. On merge to main, CI automatically:
+   - Bumps the version in `marketplace.json` (`breaking` → major, `added`/`removed` → minor, `changed`/`fixed` → patch)
+   - Generates a new `CHANGELOG.md` entry from all fragments
+   - Deletes consumed fragments
+5. Users can then `/plugin update` to get the new version
 
 ### Adding New Skills
 
@@ -56,5 +42,5 @@ sed -i '' 's/"version": "3.4.0"/"version": "3.4.1"/g' .claude-plugin/marketplace
    ---
    ```
 3. Add the skill path to the relevant plugin(s) in `marketplace.json`
-4. Bump the version
+4. Add a changelog fragment to `changelog.d/` (version is bumped automatically on merge)
 5. Test with `--plugin-dir` before pushing

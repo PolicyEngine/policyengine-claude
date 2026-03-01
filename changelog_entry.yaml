@@ -1,6 +1,0 @@
-- bump: patch
-  changes:
-    changed:
-      - Slim down backdate-program prep agents to prevent context blowouts — prep now only downloads, renders, and reports page count (no page mapping or full text extraction)
-      - Add self-mapping step to research agents — each agent identifies sections within its assigned page range before extracting values
-      - Add structured research agent prompt template with TOC hint passthrough from prep
