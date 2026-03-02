@@ -197,19 +197,6 @@ def create_ira_extension():
 
 Also see existing reforms in `policyengine_us/reforms/aca/` for production examples of variable-override ACA reforms.
 
-#### Simple ACA parameter changes (scalar values)
-
-For ACA parameters that ARE scalar (not list-valued), `Reform.from_dict` works fine:
-
-```python
-# Changing the PTC income eligibility cap — this IS scalar
-reform = Reform.from_dict({
-    'gov.aca.ptc_income_eligibility[2].amount': {
-        '2026-01-01.2100-12-31': True
-    },
-}, 'policyengine_us')
-```
-
 ### Population-level healthcare analysis
 
 ```python
@@ -325,10 +312,6 @@ ANALYSIS_YEAR = 2026
 class my_reform_variable(Variable):
     definition_period = YEAR  # Gets the period constant from model_api
 ```
-
-#### `Reform.from_dict` does not work for ACA parameters
-
-The ACA contribution percentages are **list-valued** YAML parameters (thresholds, initial rates, final rates), which don't fit the `Reform.from_dict({'param.path': {'date': value}})` pattern. You need a **variable-override reform** instead. See the existing reforms in `policyengine_us/reforms/aca/` for examples, and the complete IRA extension example below.
 
 #### `slcsp` returns $0 for ineligible people
 
