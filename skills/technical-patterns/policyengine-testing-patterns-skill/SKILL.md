@@ -122,6 +122,27 @@ Use numbered cases with descriptions:
 - name: Case 1 - single parent  # Wrong punctuation
 ```
 
+### Adding Cases to Existing Test Files
+
+**CRITICAL: Always append new test cases at the bottom of the file.** Never insert cases in the middle of existing tests.
+
+```yaml
+# Existing file has Cases 1-3
+# ✅ CORRECT - Add Case 4 at the bottom:
+- name: Case 3, income above threshold.
+  ...
+
+- name: Case 4, new edge case scenario.
+  ...
+
+# ❌ WRONG - Inserting between existing cases and renumbering:
+- name: Case 1, ...
+- name: Case 2, new case inserted here.    # Renumbered!
+- name: Case 3, was previously Case 2.     # Renumbered!
+```
+
+**Why:** Inserting in the middle forces renumbering of existing cases, which creates noisy diffs and makes review harder. Appending at the bottom keeps existing cases untouched.
+
 ### Person Names
 
 Use generic sequential names:
@@ -481,6 +502,34 @@ Before submitting tests:
         snap: 200  # Receives SNAP
   output:
     program_categorical_eligible: true
+```
+
+### Negative Income — Benefit Cap
+
+Always include a test that verifies benefits are capped at the maximum payment amount when countable income is negative. This prevents the bug where `max_benefit - (-N) = max_benefit + N`, inflating benefits beyond the payment standard.
+
+```yaml
+# Tests that benefits are capped at the maximum payment amount,
+# even when countable income is negative.
+# Prevents: benefit = max - (-5M) = 5M+
+- name: Case N, negative countable income does not inflate benefit.
+  period: 2025-01
+  input:
+    people:
+      person1:
+        age: 30
+        self_employment_income: -60_000_000  # -$5M/month
+      person2:
+        age: 8
+    spm_units:
+      spm_unit:
+        members: [person1, person2]
+    households:
+      household:
+        members: [person1, person2]
+        state_code: XX
+  output:
+    xx_tanf: 300  # Capped at max payment standard, not 5M+
 ```
 
 ---

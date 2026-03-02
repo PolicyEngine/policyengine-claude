@@ -416,32 +416,21 @@ return max_(countable, 0)
 - Disregard percentage pattern
 - Rare cases where unearned has separate deductions
 
-### Step 3.5: Filter Out Non-Simulatable Rules (CRITICAL)
+### Step 3.5: Time-Limited Rules
 
-**PolicyEngine Architecture Constraints (from loaded skill)**
+**PolicyEngine supports modeling time-limited disregards. DO implement these — DO NOT skip them.**
 
-Before parameterizing ANYTHING, verify it CAN be simulated:
+Refer to the **policyengine-variable-patterns-skill** "Modeling Time-Limited Rules" section for patterns:
 
-**DO NOT parameterize or implement:**
-- ❌ Time limits (lifetime benefit limits)
-- ❌ Work history requirements (ANY historical requirement)
-- ❌ Waiting periods (ANY delayed eligibility)
-- ❌ Progressive sanctions (ANY escalating rules)
-- ❌ Enforcement of time-limited rules
-
-**DO implement with comments:**
-- ⚠️ Time-limited deductions (implement but note the limitation)
-- ⚠️ First X months disregards (apply as if always available)
-
-Example for time-limited deductions:
+1. **Calendar month** — Use when disregard varies by month of the year:
 ```python
-def formula(spm_unit, period, parameters):
-    # NOTE: This disregard only applies for first 4 months of employment
-    # PolicyEngine cannot track employment duration, so we apply it always
-    # Actual rule: [State Code Citation]
-    disregard = p.earned_income_disregard_rate
-    return earned * (1 - disregard)
+month = period.start.month
+tlp_rate = p.time_limited_percentage.rate.calc(month)
 ```
+
+2. **`applicable_months` split** — Use when year is split into periods with different rates.
+
+**Separate concept: `is_tanf_enrolled`** — Use when a state's regulation explicitly defines different rules for applicants vs. recipients (e.g., TX: applicants get 1/3, recipients get 90%). This is an applicant/recipient policy distinction, not time-limit modeling.
 
 ### Step 4: Create Parameters
 
@@ -587,7 +576,7 @@ When invoked to fix issues, you MUST:
 | **Regulation reference** | Complex calculations | `# Per OAR 461-155-0020(2)(a)` |
 | **Calculation order** | Multi-step formulas | `# Step 1: Gross income before disregards` |
 | **Non-obvious logic** | When code doesn't match intuition | `# Apply disregard BEFORE adding unearned (state-specific)` |
-| **Limitation notes** | Non-simulatable rules | `# NOTE: 4-month limit cannot be tracked` |
+| **Implementation notes** | Non-obvious design choices | `# Disregard rate varies by calendar month` |
 
 ### ❌ DON'T - Obvious or verbose comments
 ```python
@@ -619,7 +608,6 @@ def formula(spm_unit, period, parameters):
     # Step 2: Apply disregards BEFORE combining (state-specific order)
     net_earned = max_(adult_earned - p.earned_income_disregard, 0)
 
-    # NOTE: 4-month transitional disregard cannot be tracked
     return net_earned + gross_unearned
 ```
 
@@ -628,7 +616,7 @@ def formula(spm_unit, period, parameters):
 2. **YES: Regulation references** for complex or non-obvious calculations
 3. **YES: Step numbers** for multi-step formulas (helps reviewers follow logic)
 4. **YES: Non-obvious logic** when calculation order or approach differs from intuition
-5. **YES: Brief NOTE** about PolicyEngine limitations (one line)
+5. **YES: Brief NOTE** about implementation decisions (one line)
 6. **NO multi-paragraph explanations** - keep it to one line per comment
 7. **Aim for 2-4 comments per formula** - not zero, not excessive
 

@@ -213,7 +213,7 @@ Add missing tests for:
 - [variable2]: Missing zero income case
 - [variable3]: Missing maximum household size case
 
-Add to existing test files.
+Always append new cases at the bottom of existing test files. Never insert in the middle — this renumbers existing cases and creates noisy diffs.
 ```
 
 ### Step 3C: Fix Naming Issues
