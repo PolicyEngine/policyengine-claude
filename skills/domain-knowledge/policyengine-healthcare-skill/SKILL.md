@@ -68,7 +68,7 @@ Most benefit programs (SNAP, TANF, EITC) have a single income test and a single 
 | `aca_magi` | tax_unit | Delegates to `medicaid_magi` via `adds = ["medicaid_magi"]` |
 | `aca_magi_fraction` | tax_unit | Income as percentage of FPL |
 | `aca_required_contribution_percentage` | tax_unit | Household's required premium contribution rate |
-| `slcsp` | tax_unit | Second-lowest silver plan premium (monthly, definition_period=MONTH) |
+| `slcsp` | tax_unit | Second-lowest silver plan premium (monthly, definition_period=MONTH). **Returns $0 for ineligible people** — the model skips the calculation when someone doesn't qualify for ACA. To get the unsubsidized benchmark premium regardless of eligibility, look at the underlying rating area cost parameters directly. |
 | `takes_up_aca_if_eligible` | tax_unit | Take-up flag (default rate varies) |
 
 #### CHIP
@@ -329,6 +329,17 @@ class my_reform_variable(Variable):
 #### `Reform.from_dict` does not work for ACA parameters
 
 The ACA contribution percentages are **list-valued** YAML parameters (thresholds, initial rates, final rates), which don't fit the `Reform.from_dict({'param.path': {'date': value}})` pattern. You need a **variable-override reform** instead. See the existing reforms in `policyengine_us/reforms/aca/` for examples, and the complete IRA extension example below.
+
+#### `slcsp` returns $0 for ineligible people
+
+The `slcsp` variable (second-lowest silver plan premium) returns $0 when the person is not ACA-eligible — the model skips the premium lookup entirely. If you need the unsubsidized benchmark premium for comparison purposes (e.g., "what would this person pay without subsidies?"), you can't just read `slcsp`. Instead, look up the premium from the rating area cost parameters directly:
+
+```python
+from policyengine_us import CountryTaxBenefitSystem
+p = CountryTaxBenefitSystem().parameters
+# state_rating_area_cost is indexed by state and rating area
+p.gov.aca.state_rating_area_cost("2026-01-01")
+```
 
 #### `healthcare_benefit_value` entity mapping in population analysis
 
