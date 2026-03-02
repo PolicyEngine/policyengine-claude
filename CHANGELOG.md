@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.1] - 2026-03-02
+
+### Changed
+
+- Replace outdated single-period time-limit guidance with implementable patterns (calendar month, applicable_months), add negative income benefit cap test pattern, and enforce appending test cases at bottom of files
+
 ## [3.13.0] - 2026-03-01
 
 ### Added
@@ -89,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.13.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.13.0...3.13.1
 [3.13.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.11.0...3.13.0
 [3.11.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.10.0...3.11.0
 [3.9.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.7.0...3.9.1
