@@ -1,0 +1,273 @@
+---
+description: Orchestrates multi-agent workflow to create a PolicyEngine dashboard from a natural-language description
+---
+
+# Creating dashboard from description
+
+Coordinate the multi-agent workflow to create a complete PolicyEngine dashboard. The user provides a natural-language description (typically 2-3 paragraphs) of what the dashboard should do.
+
+**Input:** $ARGUMENTS should contain or reference the dashboard description. If $ARGUMENTS is empty, use `AskUserQuestion`:
+
+```
+question: "Please describe the dashboard you want to create (2-3 paragraphs covering purpose, audience, key metrics, and any specific policy variables)."
+header: "Description"
+options: [] (free text — let the user type via "Other")
+```
+
+**Precondition:** Run this from inside a dashboard repository created via `/init-dashboard`. The command assumes the current working directory IS the dashboard repo with `.claude/settings.json` already configured.
+
+## Phase 1: Plan
+
+Invoke @complete:dashboard:dashboard-planner agent to:
+- Analyze the natural-language description
+- Research existing PolicyEngine dashboards for patterns
+- Map requirements to PolicyEngine variables and API v2 alpha endpoints
+- Determine data pattern (api-v2-alpha default, custom-backend escape hatch)
+- Design components, charts, and test criteria
+- Write `plan.yaml` to the working directory
+
+**Quality Gate**: The agent returns a structured plan and human-readable summary.
+
+### Human Approval Gate
+
+Present the plan summary to the user. The plan includes:
+1. Dashboard name, purpose, and audience
+2. Data pattern and justification
+3. Component list (inputs, charts, metrics)
+4. API endpoints needed
+5. Test plan
+
+Present the plan summary, then use `AskUserQuestion`:
+
+```
+question: "How does this implementation plan look?"
+header: "Plan review"
+options:
+  - label: "Approve"
+    description: "Proceed with implementation as planned"
+  - label: "Modify"
+    description: "Request changes to specific sections before proceeding"
+  - label: "Reject"
+    description: "Start over with a different approach"
+```
+
+**Do NOT proceed until the user selects "Approve".**
+
+If the user selects "Modify" (or provides changes via "Other"):
+1. Edit `plan.yaml` with the requested changes
+2. Re-present the updated plan
+3. Ask for approval again using `AskUserQuestion`
+
+## Phase 2: Scaffold
+
+After plan approval, invoke @complete:dashboard:dashboard-scaffold agent to:
+- Generate project structure into the current working directory (Next.js App Router, React, TypeScript, Tailwind, CI)
+- Create API client stubs matching the plan
+- Set up embedding boilerplate
+- Create `CLAUDE.md` and `README.md`
+- Create feature branch and push
+
+**Quality Gate**: Build passes, initial test passes.
+
+Report to user:
+> Scaffold generated in current directory.
+> Feature branch: `feature/initial-implementation`
+> Scaffold builds and tests pass. Proceeding to implementation.
+
+## Phase 3: Implement
+
+### Step 3A: Backend
+
+Invoke @complete:dashboard:backend-builder agent to:
+- Build typed API stubs (if api-v2-alpha pattern) with fixture data
+- OR build Modal backend (if custom-backend pattern)
+- Create React Query hooks
+- Write API tests
+
+**Quality Gate**: API client compiles. Stub tests pass (or Python tests for custom backend).
+
+### Step 3B: Frontend
+
+Invoke @complete:dashboard:frontend-builder agent to:
+- Study referenced app-v2 component patterns
+- Implement input forms from the plan
+- Implement charts following app-v2 patterns with Tailwind + PE design tokens
+- Implement metric cards
+- Wire page component with React Query
+- Implement responsive design using Tailwind utility classes
+- Write component tests
+
+**Quality Gate**: All components render. Component tests pass. Build compiles.
+
+## Phase 4: Integrate
+
+Invoke @complete:dashboard:dashboard-integrator agent to:
+- Wire frontend components to API client
+- Build request builders (form state → API request)
+- Build response transformers (API response → component props)
+- Implement loading, error, and empty states
+- Configure caching
+- Verify end-to-end data flow
+
+**Quality Gate**: Build compiles. All tests pass. Data flows from input to output.
+
+## Phase 5: Validate
+
+Invoke @complete:dashboard:dashboard-validator agent to run the full validation suite:
+
+1. Build verification
+2. Test suite
+3. Design token compliance (no hardcoded colors/spacing)
+4. Typography (Inter font, sentence case)
+5. Responsive design (768px, 480px breakpoints)
+6. Embedding compliance (country detection, hash sync, share URLs)
+7. API contract compliance
+8. Component completeness (all plan components implemented)
+9. Loading/error state coverage
+
+**The validator returns a structured report with PASS/FAIL per category.**
+
+### Phase 5B: Frontend Spec Validation
+
+Invoke @complete:dashboard:dashboard-design-token-validator agent to validate frontend spec compliance:
+
+1. Tailwind CSS is used for styling (no plain CSS modules)
+2. Next.js App Router is the framework (no Vite)
+3. `@policyengine/design-system` tokens are integrated via Tailwind config
+4. No hardcoded colors, spacing, or fonts where tokens exist
+
+**The validator loads the `policyengine-frontend-builder-spec-skill` dynamically** to determine its validation criteria. It does NOT maintain its own copy of requirements.
+
+**Quality Gate**: The agent returns a compliance report with PASS/FAIL per requirement.
+
+### Iteration Loop
+
+If the validator reports failures:
+
+1. **Determine which agent should fix each failure:**
+   - Design token / Tailwind / Next.js issues → frontend-builder (loads frontend-builder-spec skill)
+   - API type mismatches → backend-builder or integrator
+   - Missing data flow → integrator
+   - Missing components → frontend-builder
+   - Test failures → whichever agent owns the failing code
+
+2. **Re-invoke the appropriate agent** with the specific failures to fix.
+
+3. **Re-run both validators** (dashboard-validator and design-token-validator) after fixes.
+
+4. **Maximum 3 iteration cycles.** If still failing after 3 cycles, present the remaining failures and use `AskUserQuestion`:
+
+   ```
+   question: "There are still validation failures after 3 fix cycles. How would you like to proceed?"
+   header: "Failures"
+   options:
+     - label: "Accept as-is"
+       description: "Proceed to review with the remaining issues noted"
+     - label: "Keep fixing"
+       description: "Try another round of fixes"
+     - label: "Stop"
+       description: "Stop the workflow here so you can investigate manually"
+   ```
+
+## Phase 6: Human Review
+
+After validation passes (or the user accepts remaining issues):
+
+### Commit and Present for Review
+
+```bash
+git add -A
+git commit -m "Implement dashboard from plan"
+git push
+```
+
+**Present to the user:**
+
+> ## Dashboard ready for review
+>
+> Repository: `PolicyEngine/{name}`
+> Branch: `feature/initial-implementation`
+>
+> ### Validation results
+> [Summary from validator - X/10 categories passed]
+>
+> ### What's implemented
+> - [List components from plan]
+> - Data pattern: [api-v2-alpha / custom-backend]
+> - [Note about stub data if api-v2-alpha]
+>
+> ### Next steps
+> 1. Review the code on the feature branch
+> 2. Run `bun run dev` to see the dashboard locally
+> 3. Request any changes (I can make them on the branch)
+> 4. When satisfied, merge `feature/initial-implementation` into `main`
+> 5. Run `/deploy-dashboard` to deploy
+>
+> **Note:** If using the api-v2-alpha data pattern, the dashboard currently uses
+> stub data. Real API integration will be connected when the v2 alpha alignment
+> agent is available.
+
+## Phase 6.5: Update Overview
+
+Invoke @complete:dashboard:dashboard-overview-updater agent to:
+- Check if any dashboard ecosystem components changed during this run
+- Update the `/dashboard-overview` command if needed
+
+This phase is silent — it does not require user interaction.
+
+**WORKFLOW COMPLETE.** The user now owns the branch and decides when to merge and deploy.
+
+## Error Handling
+
+### Error Categories
+
+| Category | Example | Action |
+|----------|---------|--------|
+| **Recoverable** | Test failure, lint error, type mismatch | Validator catches → fix cycle |
+| **Blocking** | GitHub API down, bun install fails | Stop and report to user |
+| **Plan issue** | Description too vague, no matching PE variables | Return to Phase 1 |
+
+### Error Handling by Phase
+
+- **Phase 1 (Plan)**: If planner can't produce a plan, ask user for clarification.
+- **Phase 2 (Scaffold)**: If file generation or bun install fails, report error and STOP.
+- **Phase 3 (Implement)**: If agent fails, report which agent and what error. Wait for user.
+- **Phase 4 (Integrate)**: If wiring fails, report type mismatches. May need Phase 3 re-run.
+- **Phase 5 (Validate)**: Iteration loop handles most failures. Stop after 3 cycles if unresolved.
+- **Phase 6 (Review)**: Present whatever state the dashboard is in.
+
+### Escalation
+
+1. Agent encounters error → attempt fix within agent
+2. Fix fails → validator catches on next cycle
+3. Validator fix cycle fails 3 times → report to user
+4. Never proceed to next phase with a broken build
+
+## Execution Instructions
+
+**YOUR ROLE**: You are an orchestrator ONLY. You must:
+1. Invoke agents using the Task tool
+2. Wait for their completion
+3. Check quality gates
+4. Present results to the user at approval gates
+5. Proceed to the next phase only after gates pass
+
+**YOU MUST NOT**:
+- Write dashboard code yourself
+- Skip the Phase 1 human approval gate
+- Skip the Phase 6 human review
+- Deploy the dashboard (that's `/deploy-dashboard`)
+- Merge any branches
+
+**Execution Flow:**
+
+1. **Phase 1**: Plan → present to user → WAIT for approval
+2. **Phase 2**: Scaffold → verify build → report
+3. **Phase 3A**: Backend → verify → report
+4. **Phase 3B**: Frontend → verify → report
+5. **Phase 4**: Integrate → verify → report
+6. **Phase 5A**: Validate → report
+7. **Phase 5B**: Spec validate → report
+8. **Phase 5 loop**: Iterate fixes if needed (max 3 cycles)
+9. **Phase 6**: Commit → present to user → DONE
+10. **Phase 6.5**: Update overview (silent)
