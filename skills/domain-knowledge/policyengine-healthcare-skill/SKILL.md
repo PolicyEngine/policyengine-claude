@@ -227,6 +227,20 @@ for low, high in brackets:
 
 ### Known pitfalls
 
+#### Healthcare is not included in standard net income
+
+The standard `household_net_income` variable does **not** include the value of healthcare benefits. To get a net income measure that accounts for Medicaid, ACA subsidies, and other health benefits, use:
+
+```python
+net_income = sim.calculate("household_net_income_including_health_benefits", YEAR)
+```
+
+This matters for any analysis comparing total household resources across reform scenarios that change healthcare eligibility.
+
+#### "IRA reform" means extending IRA-era ACA subsidy brackets
+
+In PolicyEngine context, "IRA reform" is shorthand for extending the Inflation Reduction Act's enhanced ACA premium tax credit brackets beyond their 2025 sunset. The IRA (2022) temporarily expanded ACA subsidies by lowering required contribution percentages and removing the 400% FPL subsidy cliff. These enhancements are scheduled to expire — "IRA reform" typically means making them permanent or extending them.
+
 #### Use state datasets for state analysis
 
 The national CPS dataset can give implausible state-level results. For example, national CPS showed 76% employer-sponsored insurance at 100-138% FPL in Utah — the state-calibrated dataset gives much more realistic estimates.
