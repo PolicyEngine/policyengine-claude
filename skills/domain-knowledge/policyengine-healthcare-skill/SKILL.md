@@ -68,7 +68,7 @@ Most benefit programs (SNAP, TANF, EITC) have a single income test and a single 
 | `aca_magi` | tax_unit | Delegates to `medicaid_magi` via `adds = ["medicaid_magi"]` |
 | `aca_magi_fraction` | tax_unit | Income as percentage of FPL |
 | `aca_required_contribution_percentage` | tax_unit | Household's required premium contribution rate |
-| `slcsp` | tax_unit | Second-lowest silver plan premium (monthly, definition_period=MONTH) |
+| `slcsp` | tax_unit | Second-lowest silver plan premium (monthly, definition_period=MONTH). **Returns $0 for ineligible people** — the model skips the calculation when someone doesn't qualify for ACA. To get the unsubsidized benchmark premium regardless of eligibility, look at the underlying rating area cost parameters directly. |
 | `takes_up_aca_if_eligible` | tax_unit | Take-up flag (default rate varies) |
 
 #### CHIP
@@ -144,25 +144,70 @@ def create_medicaid_expansion_repeal(state="UT"):
     return reform
 ```
 
-#### ACA subsidy changes
+#### IRA subsidy extension (variable-override reform)
+
+The most common ACA policy question: extending the IRA-enhanced subsidies beyond their 2025 sunset. **`Reform.from_dict()` does not work** for ACA contribution rate parameters because they are list-valued (threshold + initial + final arrays). Use a variable-override reform instead:
 
 ```python
-def modify_aca_contribution_rates():
-    """Modify ACA required contribution percentages."""
+from policyengine_us import Microsimulation
+from policyengine_core.reforms import Reform
+
+ANALYSIS_YEAR = 2026  # Don't use "YEAR" — it shadows model_api.YEAR
+
+# Look up actual parameter values to build the reform
+from policyengine_us import CountryTaxBenefitSystem
+p = CountryTaxBenefitSystem().parameters
+contrib = p.gov.aca.required_contribution_percentage
+
+# Check what values look like pre/post sunset
+print("2025 initial rates:", contrib.initial("2025-01-01"))  # IRA-enhanced
+print("2026 initial rates:", contrib.initial("2026-01-01"))  # Post-sunset (higher)
+
+# Option A: Use Reform.from_dict for the scalar parameters that DO work
+reform = Reform.from_dict({
+    # The 400% FPL cap removal (IRA made subsidies available above 400%)
+    'gov.aca.ptc_income_eligibility[2].amount': {
+        f'{ANALYSIS_YEAR}-01-01.2100-12-31': True
+    },
+}, 'policyengine_us')
+
+# Option B: For contribution rates (list-valued), use modify_parameters
+from policyengine_core.periods import instant
+
+def create_ira_extension():
     def modify_parameters(parameters):
-        # The contribution percentage has sub-keys: threshold, initial, final
-        # Increase the initial contribution rate at a given FPL bracket
-        parameters.gov.aca.required_contribution_percentage.initial.update(
-            start=instant(f"{YEAR}-01-01"),
-            stop=instant("2100-12-31"),
-            value=0.06,  # 6% instead of current rate
-        )
+        # Restore IRA-era contribution percentages
+        # You need to set each bracket's initial and final rates
+        for bracket_param in ['initial', 'final']:
+            getattr(
+                parameters.gov.aca.required_contribution_percentage,
+                bracket_param,
+            ).update(
+                start=instant(f"{ANALYSIS_YEAR}-01-01"),
+                stop=instant("2100-12-31"),
+                value=getattr(contrib, bracket_param)("2025-01-01"),
+            )
         return parameters
 
     class reform(Reform):
         def apply(self):
             self.modify_parameters(modify_parameters)
     return reform
+```
+
+Also see existing reforms in `policyengine_us/reforms/aca/` for production examples of variable-override ACA reforms.
+
+#### Simple ACA parameter changes (scalar values)
+
+For ACA parameters that ARE scalar (not list-valued), `Reform.from_dict` works fine:
+
+```python
+# Changing the PTC income eligibility cap — this IS scalar
+reform = Reform.from_dict({
+    'gov.aca.ptc_income_eligibility[2].amount': {
+        '2026-01-01.2100-12-31': True
+    },
+}, 'policyengine_us')
 ```
 
 ### Population-level healthcare analysis
@@ -226,6 +271,79 @@ for low, high in brackets:
 ```
 
 ### Known pitfalls
+
+#### PTC does not flow into `household_net_income` (biggest time sink)
+
+The microsimulation skill says to use `household_net_income` change as the budgetary cost measure. **This does not work for ACA premium tax credit reforms.** The PTC is classified as an in-kind health benefit, not a refundable tax credit, so it flows through a separate chain:
+
+```
+aca_ptc → premium_tax_credit → household_health_benefits → household_benefits
+```
+
+There is a toggle parameter `gov.simulation.include_health_benefits_in_net_income` that defaults to **False**. With the default, PTC changes produce a **$0 change in `household_net_income`**.
+
+**How to measure PTC impact instead:**
+
+```python
+# Option 1: Use household_net_income_including_health_benefits
+baseline_hni = baseline.calc("household_net_income_including_health_benefits", period=YEAR)
+reformed_hni = reformed.calc("household_net_income_including_health_benefits", period=YEAR)
+cost = (reformed_hni - baseline_hni).sum()
+
+# Option 2: Measure the PTC change directly
+baseline_ptc = baseline.calc("aca_ptc", period=YEAR).sum()
+reformed_ptc = reformed.calc("aca_ptc", period=YEAR).sum()
+ptc_cost = reformed_ptc - baseline_ptc
+
+# Option 3: Enable the toggle in the reform
+# Add gov.simulation.include_health_benefits_in_net_income = True
+# Then household_net_income will include PTC
+```
+
+#### "IRA reform" means extending IRA-era ACA subsidy brackets
+
+In PolicyEngine context, "IRA reform" is shorthand for extending the Inflation Reduction Act's enhanced ACA premium tax credit brackets beyond their 2025 sunset. The IRA (2022) temporarily expanded ACA subsidies by lowering required contribution percentages and removing the 400% FPL subsidy cliff. These enhancements are scheduled to expire — "IRA reform" typically means making them permanent or extending them.
+
+See the variable-override reform example below for how to implement this.
+
+#### `YEAR` constant shadows `model_api.YEAR`
+
+If you define `YEAR = 2026` in the same file where you also define a reform variable class, it shadows the `YEAR` period constant imported from `model_api`. This breaks `definition_period = YEAR` on variable classes:
+
+```python
+# ❌ This breaks — YEAR is now 2026 (int), not the period constant
+from policyengine_us.model_api import *
+YEAR = 2026  # Shadows model_api.YEAR
+
+class my_reform_variable(Variable):
+    definition_period = YEAR  # Gets 2026, not the YEAR period constant!
+
+# ✅ Use a different name for the analysis year
+from policyengine_us.model_api import *
+ANALYSIS_YEAR = 2026
+
+class my_reform_variable(Variable):
+    definition_period = YEAR  # Gets the period constant from model_api
+```
+
+#### `Reform.from_dict` does not work for ACA parameters
+
+The ACA contribution percentages are **list-valued** YAML parameters (thresholds, initial rates, final rates), which don't fit the `Reform.from_dict({'param.path': {'date': value}})` pattern. You need a **variable-override reform** instead. See the existing reforms in `policyengine_us/reforms/aca/` for examples, and the complete IRA extension example below.
+
+#### `slcsp` returns $0 for ineligible people
+
+The `slcsp` variable (second-lowest silver plan premium) returns $0 when the person is not ACA-eligible — the model skips the premium lookup entirely. If you need the unsubsidized benchmark premium for comparison purposes (e.g., "what would this person pay without subsidies?"), you can't just read `slcsp`. Instead, look up the premium from the rating area cost parameters directly:
+
+```python
+from policyengine_us import CountryTaxBenefitSystem
+p = CountryTaxBenefitSystem().parameters
+# state_rating_area_cost is indexed by state and rating area
+p.gov.aca.state_rating_area_cost("2026-01-01")
+```
+
+#### `healthcare_benefit_value` entity mapping in population analysis
+
+`healthcare_benefit_value` is a household-level variable that aggregates a tax-unit-level variable (`aca_ptc`). When you use `map_to='person'`, the benefit value gets spread across all household members, including those not in the affected tax unit. This can produce a "mystery group" that appears to gain healthcare benefit value but shows no change in `aca_ptc`. Measure PTC impact at the tax-unit level when possible.
 
 #### Use state datasets for state analysis
 
@@ -380,11 +498,13 @@ parameters/gov/aca/
 │   ├── default.yaml                    # Federal 3:1 ratio
 │   ├── al.yaml, dc.yaml, ...          # 7 states with custom curves
 │   └── ny.yaml, vt.yaml               # Family tier states
-├── required_contribution_percentage/
-│   ├── threshold.yaml                  # FPL brackets
-│   ├── initial.yaml                    # Initial contribution rates by bracket
-│   └── final.yaml                      # Final contribution rates by bracket
-└── ptc_income_eligibility.yaml         # 100-400%+ FPL range
+├── required_contribution_percentage/   # ⚠️ LIST-VALUED — not scalar!
+│   ├── threshold.yaml                  # FPL bracket boundaries (list)
+│   ├── initial.yaml                    # Initial contribution rates by bracket (list)
+│   └── final.yaml                      # Final contribution rates by bracket (list)
+│   # These three files form parallel arrays. Reform.from_dict() cannot modify
+│   # list-valued parameters — use modify_parameters() instead.
+└── ptc_income_eligibility.yaml         # 100-400%+ FPL range (bracket-indexed)
 ```
 
 ### ACA geographic complexity

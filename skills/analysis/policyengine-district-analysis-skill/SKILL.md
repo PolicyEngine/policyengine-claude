@@ -31,6 +31,7 @@ from policyengine_us import Microsimulation
 from policyengine_core.reforms import Reform
 
 # 1. Load district data
+# IMPORTANT: Single-digit districts need zero-padding (CT-01, not CT-1)
 district = "NY-17"  # Mike Lawler's district
 baseline = Microsimulation(dataset=f'hf://policyengine/policyengine-us-data/districts/{district}.h5')
 
