@@ -45,37 +45,39 @@ This ensures you have the complete patterns and standards loaded for reference t
    - Official calculators and examples
    - Amendment histories and effective dates
 
-**CRITICAL: Flag Non-Simulatable Rules**
+**CRITICAL: Document Time-Limited Rules**
 
-When you encounter the following in documentation, **FLAG them as non-simulatable**:
+When you encounter time-limited rules (disregards that expire after N months, rates that change by calendar month), **document them clearly** so they can be properly implemented. These ARE simulatable.
 
-⚠️ **CANNOT be fully simulated** (single-period architecture):
-- Time limits (ANY lifetime or cumulative limits)
-- Work history requirements (worked X of last Y periods)
-- Waiting periods (benefits start after X time)
-- Progressive sanctions (escalating penalties)
-- Any rule requiring historical tracking
+✅ **Time-limited disregards** — supported via calendar month or applicable_months split:
+- Disregard rates that change by calendar month (e.g., "50% for months 1-6, 35% for months 7-9")
+- Disregards that expire after N months (e.g., "75% disregard for first 4 months")
+- Split-year rates (e.g., "100% disregard for first 6 months, partial for remaining")
 
-⚠️ **Partially simulatable** (implement with limitations):
-- Time-limited deductions (e.g., "75% disregard for first 4 months")
-- First X months benefits (apply as if always available)
+✅ **Applicant vs. Recipient distinctions** — supported via `is_tanf_enrolled` (separate concept from time limits):
+- Use when regulation explicitly defines different rules by enrollment status (e.g., TX: applicants get 1/3, recipients get 90%)
 
 Mark these clearly in your documentation:
 ```markdown
-### ⚠️ Non-Simulatable Rules (Architecture Limitation)
-- **Time Limit**: [X]-month lifetime limit [CANNOT ENFORCE - requires history]
-- **Work Requirement**: Must work [X] hours/week for [Y] months [CANNOT TRACK]
+### Time-Limited Disregards
+- **Months 1-6**: 50% disregard
+- **Months 7-9**: 35% disregard
+- **Months 10-12**: 25% disregard
+- **Source**: [citation]
 
-### ⚠️ Partially Simulatable (Time-Limited Benefits)
-- **Earned Income Disregard**: 75% for first 4 months [APPLIED ALWAYS - cannot track months]
-- **Work Expense Deduction**: $120 for first 12 months [APPLIED ALWAYS - cannot track duration]
+### Applicant vs. Recipient Rules (if applicable)
+- **Earned Income Disregard (Applicant)**: 20%
+- **Earned Income Disregard (Recipient)**: 50%
+- **Source**: [citation]
 ```
 
-✅ **CAN be simulated** (current point-in-time):
-- Current income limits
-- Current resource limits
+✅ **CAN be simulated:**
+- Current income limits and resource limits
 - Current benefit calculations
 - Current household composition
+- Current deductions and disregards
+- Time-limited disregard schedules
+- Applicant vs. recipient branching
 
 2. **Handle PDF Documents (Download and Extract)**
 

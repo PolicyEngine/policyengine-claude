@@ -202,6 +202,7 @@ grep -A 20 "employment_income" /policyengine_us/tests/policy/baseline/gov/states
 3. **Fix Test Failures**
    - Analyze failure output
    - Fix test or implementation based on documentation
+   - When adding test cases to existing files, always append at the bottom — never insert in the middle (renumbering existing cases creates noisy diffs)
    - Re-run tests locally
 
 4. **Iterate Until Pass**

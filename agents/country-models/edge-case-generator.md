@@ -211,6 +211,8 @@ For each detected pattern:
 
 ## Output Format
 
+**CRITICAL: When adding cases to an existing test file, always append new cases at the bottom. Never insert in the middle — this renumbers existing cases and creates noisy diffs.**
+
 Generate test files with clear documentation:
 
 ```yaml

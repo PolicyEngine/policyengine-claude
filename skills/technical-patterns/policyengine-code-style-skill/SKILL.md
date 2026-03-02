@@ -441,9 +441,9 @@ def formula(spm_unit, period, parameters):
 ### Comment Rules
 
 1. **NO comments explaining what code does** - variable names should be clear
-2. **OK: Brief NOTE about PolicyEngine limitations** (one line):
+2. **OK: Brief NOTE about implementation decisions** (one line):
    ```python
-   # NOTE: Time limit cannot be tracked in PolicyEngine
+   # NOTE: Disregard rate varies by calendar month
    ```
 3. **NO multi-line explanations** of what the code calculates
 

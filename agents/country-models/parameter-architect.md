@@ -86,23 +86,25 @@ When creating parameters, you MUST:
 
 ### Step 3: Identify Parameterizable Values
 
-**FIRST: Check policyengine-variable-patterns-skill "PolicyEngine Architecture Constraints"**
+**FIRST: Check policyengine-variable-patterns-skill "Modeling Time-Limited Rules"**
 
-**DO NOT parameterize non-simulatable rules:**
-- ❌ Time limits (lifetime/cumulative limits)
-- ❌ Work history requirements
-- ❌ Waiting periods
-- ❌ Progressive sanctions
-- ❌ Month counters for enforcement
+**DO parameterize time-limited values:**
+- ✅ Time-varying disregard rates — bracket-style parameters keyed by month
+- ✅ Split-year rates — use `applicable_months` parameter
+- ✅ Applicant vs. recipient rates (when regulation defines them separately) — separate parameter files
 
-**DO parameterize (but document limitations):**
-- ⚠️ Time-limited deduction amounts (note they're time-limited in description)
-- ⚠️ First X months disregard rates (note the time limitation)
-
-Example for time-limited parameter:
+Example for time-varying disregard (bracket by month):
 ```yaml
-description: Indiana excludes this share of earned income from TANF calculations for the first 4 consecutive months of employment.
-# NOTE: PolicyEngine applies this disregard without tracking employment months
+# .../time_limited_percentage/rate.yaml
+brackets:
+  - threshold:
+      2024-01-01: 1
+    amount:
+      2024-01-01: 0.5    # Months 1-6: 50%
+  - threshold:
+      2024-01-01: 7
+    amount:
+      2024-01-01: 0.25   # Months 7-12: 25%
 ```
 
 **DO parameterize point-in-time values:**
