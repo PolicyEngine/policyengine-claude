@@ -443,15 +443,15 @@ If audit found critical issues, fix before proceeding.
 
 **Skip if `--skip-review` flag is set.**
 
-This phase mirrors the backdate-program review-fix loop exactly.
+**CRITICAL: Every round spawns completely fresh agents.** Do NOT resume agents from previous rounds. Each review and each fix must start with a new agent that reads the current state from disk files. This ensures no stale context carries over between rounds.
 
 ### For each round (1 to 3):
 
-#### Step 4A: Run review
+#### Step 4A: Run review (NEW agent)
 
-Use skill: `/review-program`
+Spawn a **new** invocation of skill `/review-program` — do NOT resume any previous review agent.
 
-The review will analyze the reform against its regulatory sources.
+The review will analyze the reform against its regulatory sources by reading the current code on disk.
 
 #### Step 4B: Count critical issues
 
@@ -461,26 +461,30 @@ Read the review output. Count issues marked as CRITICAL.
 - If **>0 critical issues** and round < 3 → Continue to Step 4C
 - If **>0 critical issues** and round = 3 → Ask user whether to proceed or abort
 
-#### Step 4C: Fix issues
+#### Step 4C: Fix issues (NEW agent)
 
-Invoke @complete:country-models:rules-engineer ("review-fixer"):
+Invoke a **new** @complete:country-models:rules-engineer agent — do NOT resume the previous round's fixer:
 
 ```
 Load skills: /policyengine-reform-patterns
 
 Fix the critical issues found in the review. Read:
-- {PREFIX}-checklist.md (the review findings)
-- The reform files that need fixing
+- {PREFIX}-checklist.md (the review findings from this round)
+- The reform files that need fixing (read current state from disk)
 
 Fix each critical issue. Do NOT fix warnings unless they're trivial.
 
 After fixing, write updated {PREFIX}-checklist.md with status of each issue.
+
+IMPORTANT: You are a fresh agent. Do not assume any prior context — read all files you need from disk.
 ```
 
-#### Step 4D: Re-test and push
+#### Step 4D: Re-test and push (NEW agents)
 
-Invoke @complete:country-models:ci-fixer to run tests again.
-Then push with @complete:country-models:pr-pusher (review reads from remote via `gh pr diff`).
+Invoke a **new** @complete:country-models:ci-fixer to run tests again.
+Then invoke a **new** @complete:country-models:pr-pusher to push (review reads from remote via `gh pr diff`).
+
+**Do NOT resume ci-fixer or pr-pusher from previous rounds.**
 
 ---
 
