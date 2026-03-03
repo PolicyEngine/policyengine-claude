@@ -1,1 +1,0 @@
-Add `/encode-reform` command for implementing contributed policy reforms (proposed bills, policy experiments) with multi-agent orchestration, and `policyengine-reform-patterns` skill covering factory functions, `gov/contrib/` paths, `in_effect` toggles, and reform test patterns with explicit precedence rules over baseline skills.

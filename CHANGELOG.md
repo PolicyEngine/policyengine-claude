@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.0] - 2026-03-03
+
+### Added
+
+- Add `/encode-reform` command for implementing contributed policy reforms (proposed bills, policy experiments) with multi-agent orchestration, and `policyengine-reform-patterns` skill covering factory functions, `gov/contrib/` paths, `in_effect` toggles, and reform test patterns with explicit precedence rules over baseline skills.
+
 ## [3.13.3] - 2026-03-02
 
 ### Changed
@@ -107,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.14.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.13.3...3.14.0
 [3.13.3]: https://github.com/PolicyEngine/policyengine-claude/compare/3.13.2...3.13.3
 [3.13.2]: https://github.com/PolicyEngine/policyengine-claude/compare/3.13.1...3.13.2
 [3.13.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.13.0...3.13.1
