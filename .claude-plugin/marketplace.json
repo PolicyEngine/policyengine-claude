@@ -139,12 +139,15 @@
       "license": "MIT",
       "agents": [
         "./agents/app/app-reviewer.md",
+        "./agents/app/component-test-writer.md",
+        "./agents/app/design-token-validator.md",
         "./agents/app/seo-meta-checker.md",
         "./agents/app/seo-crawlability-checker.md",
         "./agents/app/seo-performance-checker.md",
         "./agents/app/seo-content-checker.md"
       ],
       "commands": [
+        "./commands/create-new-component.md",
         "./commands/create-pr.md",
         "./commands/review-pr.md",
         "./commands/fix-pr.md",
@@ -306,6 +309,8 @@
       "agents": [
         "./agents/api/api-reviewer.md",
         "./agents/app/app-reviewer.md",
+        "./agents/app/component-test-writer.md",
+        "./agents/app/design-token-validator.md",
         "./agents/app/seo-meta-checker.md",
         "./agents/app/seo-crawlability-checker.md",
         "./agents/app/seo-performance-checker.md",
@@ -347,6 +352,7 @@
         "./commands/audit-seo.md",
         "./commands/audit-state-tax.md",
         "./commands/backdate-program.md",
+        "./commands/create-new-component.md",
         "./commands/create-pr.md",
         "./commands/encode-policy.md",
         "./commands/encode-policy-v2.md",
