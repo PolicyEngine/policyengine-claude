@@ -64,6 +64,7 @@
         "./commands/audit-state-tax.md",
         "./commands/backdate-program.md",
         "./commands/encode-policy.md",
+        "./commands/encode-reform.md",
         "./commands/review-pr.md",
         "./commands/review-program.md",
         "./commands/fix-pr.md",
@@ -85,6 +86,7 @@
         "./skills/technical-patterns/policyengine-review-patterns-skill",
         "./skills/technical-patterns/policyengine-code-style-skill",
         "./skills/technical-patterns/policyengine-code-organization-skill",
+        "./skills/technical-patterns/policyengine-reform-patterns-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill"
       ]
@@ -290,6 +292,7 @@
         "./commands/backdate-program.md",
         "./commands/create-pr.md",
         "./commands/encode-policy.md",
+        "./commands/encode-reform.md",
         "./commands/generate-content.md",
         "./commands/review-pr.md",
         "./commands/review-program.md",
@@ -323,6 +326,7 @@
         "./skills/technical-patterns/policyengine-review-patterns-skill",
         "./skills/technical-patterns/policyengine-code-style-skill",
         "./skills/technical-patterns/policyengine-code-organization-skill",
+        "./skills/technical-patterns/policyengine-reform-patterns-skill",
         "./skills/data-science/microdf-skill",
         "./skills/data-science/microimpute-skill",
         "./skills/data-science/microcalibrate-skill",
