@@ -459,7 +459,7 @@ Read the review output. Count issues marked as CRITICAL.
 
 - If **0 critical issues** → Exit loop, proceed to Phase 5
 - If **>0 critical issues** and round < 3 → Continue to Step 4C
-- If **>0 critical issues** and round = 3 → Ask user whether to proceed or abort
+- If **>0 critical issues** and round = 3 → Report remaining issues to user and STOP (3 rounds exhausted)
 
 #### Step 4C: Fix issues (NEW agent)
 
