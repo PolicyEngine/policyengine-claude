@@ -15,7 +15,7 @@ async function main() {
     console.log("  --skip-init   Skip repo creation (use current directory)\n");
     console.log("Environment variables (see .env.example):");
     console.log("  SUPABASE_URL          (required) Supabase project URL");
-    console.log("  SUPABASE_ANON_KEY     (required) Supabase anon key");
+    console.log("  SUPABASE_PUBLISHABLE_KEY (required) Supabase publishable key");
     console.log("  PE_DEFAULT_MODEL      (optional) Default model, default: claude-opus-4-6");
     console.log("  PE_TOTAL_BUDGET_USD   (optional) Max spend, default: $25.00");
     console.log("  PE_VERBOSE            (optional) Enable verbose logging");

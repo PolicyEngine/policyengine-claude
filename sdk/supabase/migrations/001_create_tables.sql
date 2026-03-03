@@ -76,7 +76,7 @@ create index if not exists idx_quality_gates_phase on public.quality_gates(phase
 create index if not exists idx_quality_gates_run on public.quality_gates(run_id);
 create index if not exists idx_quality_gates_type on public.quality_gates(gate_type);
 
--- Row Level Security: allow anon inserts and selects for multi-user shared DB
+-- Row Level Security: allow publishable-key inserts and selects for multi-user shared DB
 alter table public.dashboard_runs enable row level security;
 alter table public.phase_runs enable row level security;
 alter table public.quality_gates enable row level security;
