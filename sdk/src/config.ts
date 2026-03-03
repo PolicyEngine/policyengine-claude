@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 
 export interface Config {
   supabaseUrl: string;
-  supabaseAnonKey: string;
+  supabasePublishableKey: string;
   defaultModel: string;
   totalBudgetUsd: number;
   maxValidationIterations: number;
@@ -38,7 +38,7 @@ export function getConfig(): Config {
 
   cachedConfig = {
     supabaseUrl: requireEnv("SUPABASE_URL"),
-    supabaseAnonKey: requireEnv("SUPABASE_ANON_KEY"),
+    supabasePublishableKey: requireEnv("SUPABASE_PUBLISHABLE_KEY"),
     defaultModel: process.env.PE_DEFAULT_MODEL ?? "claude-opus-4-6",
     totalBudgetUsd: parseFloat(process.env.PE_TOTAL_BUDGET_USD ?? "25.00"),
     maxValidationIterations: parseInt(
