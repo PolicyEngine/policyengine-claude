@@ -175,6 +175,78 @@ export default function Home() {
 }
 ```
 
+### Alternative: Tailwind v4 + ui-kit stack
+
+For tools with complex UI needs (multiple inputs, tables, charts), use `@policyengine/ui-kit` with Tailwind CSS v4 instead of plain CSS:
+
+**Additional dependencies:**
+```bash
+npm install @policyengine/ui-kit tailwindcss @tailwindcss/vite
+```
+
+**Update `vite.config.js`:**
+```js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  base: '/',
+});
+```
+
+**Replace `src/styles.css` with `src/globals.css`:**
+```css
+@import 'tailwindcss';
+@import '@policyengine/ui-kit/styles.css';
+
+@theme {
+  /* Colors — bridge PE tokens into Tailwind */
+  --color-pe-primary-500: var(--pe-color-primary-500);
+  --color-pe-primary-600: var(--pe-color-primary-600);
+  --color-pe-text-primary: var(--pe-color-text-primary);
+  --color-pe-text-secondary: var(--pe-color-text-secondary);
+  --color-pe-bg-primary: var(--pe-color-bg-primary);
+  --color-pe-border-light: var(--pe-color-border-light);
+  /* ... add more as needed from policyengine-frontend-builder-spec-skill */
+
+  /* Font sizes — override Tailwind defaults with PE values.
+   * Tailwind v4 uses --text-* namespace to generate text-* utilities. */
+  --text-*: initial;
+  --text-xs: var(--pe-font-size-xs);
+  --text-sm: var(--pe-font-size-sm);
+  --text-base: var(--pe-font-size-base);
+  --text-lg: var(--pe-font-size-lg);
+  --text-xl: var(--pe-font-size-xl);
+  --text-2xl: var(--pe-font-size-2xl);
+
+  /* Spacing */
+  --spacing-pe-sm: var(--pe-space-sm);
+  --spacing-pe-md: var(--pe-space-md);
+  --spacing-pe-lg: var(--pe-space-lg);
+  --spacing-pe-xl: var(--pe-space-xl);
+
+  /* Font families */
+  --font-pe: var(--pe-font-family-primary), 'Inter', sans-serif;
+}
+```
+
+**Use ui-kit components and Tailwind classes:**
+```jsx
+import { MetricCard, Button, CurrencyInput, InputGroup } from '@policyengine/ui-kit';
+
+// Standard Tailwind classes map to PE values
+<div className="p-pe-lg text-sm text-pe-text-primary">
+  <MetricCard label="Net income change" value={3200} format="currency" />
+  <Button variant="default">Calculate</Button>
+</div>
+```
+
+**When to use Tailwind + ui-kit:** Tools with multiple input types, data tables, charts, or growing complexity.
+
+**When to use plain CSS (default above):** Simple single-input/single-output tools where minimal dependencies are preferred.
+
 ## Step 4: Data pattern boilerplate
 
 Based on the user's choice, add the appropriate data fetching code.

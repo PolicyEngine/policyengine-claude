@@ -1,6 +1,6 @@
 ---
 name: dashboard-design-token-validator
-description: Validates that a dashboard implementation meets all mandatory frontend spec requirements (Tailwind, Next.js, design tokens)
+description: Validates that a dashboard implementation meets all mandatory frontend spec requirements (Tailwind v4, Next.js, design tokens, ui-kit)
 tools: Read, Bash, Glob, Grep, Skill
 model: opus
 ---
@@ -47,26 +47,37 @@ Validates that a dashboard implementation complies with all mandatory frontend t
 After loading `policyengine-frontend-builder-spec-skill`, read through the loaded content and extract every statement containing "MUST", "MUST NOT", or "MAY". Build an internal checklist of requirements to validate.
 
 Group requirements into categories:
-- **Tailwind CSS** requirements
+- **Tailwind CSS v4** requirements
 - **Design token** requirements
 - **Next.js** requirements
+- **ui-kit** requirements
 
-### Step 2: Validate Tailwind CSS Usage
+### Step 2: Validate Tailwind CSS v4 Usage
 
-Check for required Tailwind infrastructure:
+Check for required Tailwind v4 infrastructure:
 
 ```bash
-# tailwind.config.ts exists
-ls tailwind.config.ts
+# globals.css has @import "tailwindcss" (v4 style)
+grep -n '@import.*tailwindcss' app/globals.css
 
-# postcss.config exists
-ls postcss.config.js || ls postcss.config.mjs
-
-# globals.css has Tailwind directives
-grep -n '@tailwind' app/globals.css
+# globals.css has @theme block with var(--pe-*) bridges
+grep -c 'var(--pe-' app/globals.css
 
 # tailwindcss is in package.json dependencies
 grep '"tailwindcss"' package.json
+```
+
+Check that prohibited Tailwind v3 patterns are absent:
+
+```bash
+# FAIL if tailwind.config.ts or tailwind.config.js exists
+test ! -f tailwind.config.ts && test ! -f tailwind.config.js && echo "PASS: No tailwind config" || echo "FAIL: tailwind.config found (Tailwind v4 uses @theme in CSS)"
+
+# FAIL if postcss.config exists
+test ! -f postcss.config.js && test ! -f postcss.config.mjs && echo "PASS: No postcss config" || echo "FAIL: postcss.config found (not needed for Tailwind v4)"
+
+# FAIL if @tailwind directives exist
+grep -rn '@tailwind' app/ --include='*.css' && echo "FAIL: @tailwind directives found (use @import 'tailwindcss')" || echo "PASS: No @tailwind directives"
 ```
 
 Check that prohibited patterns are absent:
@@ -75,7 +86,7 @@ Check that prohibited patterns are absent:
 # No CSS module files
 find . -name '*.module.css' -not -path './node_modules/*' -not -path './.next/*'
 
-# No plain CSS files besides globals.css and tokens
+# No plain CSS files besides globals.css
 find . -name '*.css' -not -name 'globals.css' -not -path './node_modules/*' -not -path './.next/*'
 ```
 
@@ -110,24 +121,19 @@ test ! -d pages && echo "PASS: No pages directory" || echo "FAIL: pages/ directo
 
 ### Step 4: Validate Design Token Usage
 
-Check that the design system package is installed and imported:
+Check that the design system tokens are loaded via CDN:
 
 ```bash
-# @policyengine/design-system is in package.json
-grep '@policyengine/design-system' package.json
-
-# tokens.css is imported in layout.tsx
-grep -n 'design-system' app/layout.tsx
+# tokens.css loaded via CDN link in layout.tsx
+grep -n 'unpkg.com/@policyengine/design-system' app/layout.tsx
 ```
 
-Check that the Tailwind config maps PE tokens:
+Check that the `@theme` block bridges PE tokens:
 
 ```bash
-# tailwind.config.ts references PE custom properties
-grep -c 'pe-color\|pe-space\|pe-radius\|pe-font' tailwind.config.ts
+# globals.css has @theme block with PE token bridges
+grep -c 'var(--pe-color\|var(--pe-space\|var(--pe-radius\|var(--pe-font' app/globals.css
 ```
-
-Read `tailwind.config.ts` and verify it extends `colors`, `spacing`, `fontFamily`, and `borderRadius` with `var(--pe-*)` references.
 
 Check for hardcoded values that should use tokens:
 
@@ -139,7 +145,28 @@ grep -rn '#[0-9a-fA-F]\{3,8\}' app/ components/ --include='*.tsx' --include='*.t
 grep -rn 'fontFamily\|font-family' components/ app/ --include='*.tsx' --include='*.css' | grep -v node_modules | grep -v 'pe-font\|tailwind\|globals'
 ```
 
-### Step 5: Compile Report
+### Step 5: Validate ui-kit Integration
+
+```bash
+# @policyengine/ui-kit is in package.json
+grep '@policyengine/ui-kit' package.json
+
+# ui-kit styles are imported in layout.tsx
+grep -n 'ui-kit/styles.css' app/layout.tsx
+
+# ui-kit components are actually used
+grep -rn "from '@policyengine/ui-kit'" app/ components/ --include='*.tsx' --include='*.ts' | head -10
+```
+
+### Step 6: Validate Package Manager
+
+```bash
+# bun.lock exists (not package-lock.json)
+test -f bun.lock && echo "PASS: bun.lock found" || echo "WARN: bun.lock not found"
+test ! -f package-lock.json && echo "PASS: No package-lock.json" || echo "FAIL: package-lock.json found (use bun)"
+```
+
+### Step 7: Compile Report
 
 Produce a structured report following this format:
 
@@ -155,9 +182,11 @@ Produce a structured report following this format:
 
 | # | Requirement (from spec) | Status | Evidence |
 |---|------------------------|--------|----------|
-| 1 | MUST use Tailwind CSS | PASS | tailwind.config.ts found, Tailwind classes in 15 files |
-| 2 | MUST use Next.js App Router | PASS | app/layout.tsx found, next in package.json |
-| 3 | MUST import @policyengine/design-system | FAIL | Package not in package.json |
+| 1 | MUST use Tailwind CSS v4 | PASS | globals.css has @import "tailwindcss" + @theme block |
+| 2 | MUST NOT have tailwind.config.ts | PASS | File not found |
+| 3 | MUST use Next.js App Router | PASS | app/layout.tsx found, next in package.json |
+| 4 | MUST install @policyengine/ui-kit | FAIL | Package not in package.json |
+| 5 | MUST load tokens via CDN | PASS | CDN link in layout.tsx |
 | ... | ... | ... | ... |
 
 ### Failures (if any)
@@ -169,7 +198,7 @@ Produce a structured report following this format:
 
 ### Recommended Fixes
 
-1. Install missing package: `npm install @policyengine/design-system`
+1. Install missing package: `bun add @policyengine/ui-kit`
 2. Replace `#319795` at components/Chart.tsx:42 with `text-pe-primary-500`
 ```
 

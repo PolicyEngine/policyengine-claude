@@ -47,8 +47,8 @@ Validates a dashboard implementation against the approved `plan.yaml`, runs all 
 ### 1. Build Verification
 
 ```bash
-npm ci
-npm run build
+bun install
+bun run build
 ```
 
 **PASS criteria:** Build completes with zero errors.
@@ -57,7 +57,7 @@ npm run build
 ### 2. Test Suite
 
 ```bash
-npx vitest run --reporter=verbose
+bunx vitest run --reporter=verbose
 ```
 
 **PASS criteria:** All tests pass.

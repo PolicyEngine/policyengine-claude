@@ -102,7 +102,7 @@ See `policyengine-frontend-builder-spec-skill` for the full mandatory technology
 
 ### Design Token Usage
 
-All visual values must come from `@policyengine/design-system` tokens, accessed via Tailwind utility classes mapped in `tailwind.config.ts`:
+All visual values must come from `@policyengine/design-system` tokens, accessed via Tailwind utility classes bridged in the `@theme` block of `globals.css`:
 
 ```tsx
 // Colors — use Tailwind classes mapped to PE tokens
@@ -116,8 +116,8 @@ All visual values must come from `@policyengine/design-system` tokens, accessed 
 // Spacing
 <div className="p-pe-lg gap-pe-md m-pe-xl">
 
-// Typography
-<span className="font-pe text-pe-sm font-medium">
+// Typography (font sizes override Tailwind defaults — use standard text-xs, text-sm, etc.)
+<span className="font-pe text-sm font-medium">
 
 // Border radius
 <div className="rounded-pe-md">
