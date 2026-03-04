@@ -1,5 +1,5 @@
 ---
-description: Scaffold a new PolicyEngine interactive tool (Vite + React + design system + embedding boilerplate)
+description: Scaffold a new PolicyEngine interactive tool (Next.js 14 + Tailwind 4 + design system + embedding boilerplate)
 ---
 
 # New interactive tool scaffold
@@ -12,7 +12,7 @@ Ask the user for:
 1. **Tool name** (kebab-case, e.g., `marriage`, `aca-calc`, `salary-sacrifice-tool`)
 2. **Countries** (us, uk, or both)
 3. **Data pattern** — how the tool gets model results:
-   - **A) Precomputed** — Static JSON shipped with the app (best for finite parameter spaces)
+   - **A) Precomputed** — Static JSON or CSV shipped with the app (best for finite parameter spaces)
    - **B) PolicyEngine API** — Direct calls to `api.policyengine.org/us/calculate` (best for household calculators)
    - **C) Custom Modal API** — Python serverless function with policyengine-us/uk (best when main API doesn't support needed variables/reforms)
 4. **Brief description** of what the tool calculates
@@ -20,84 +20,109 @@ Ask the user for:
 ## Step 2: Create the project
 
 ```bash
-# Create Vite + React project
-npm create vite@latest TOOL_NAME -- --template react
+# Create Next.js 14 + Tailwind project
+bunx create-next-app@14 TOOL_NAME --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd TOOL_NAME
 
 # Install dependencies
-npm install @policyengine/design-system
-npm install -D vitest
+bun add @policyengine/design-system recharts
+bun add -D vitest
+```
 
-# If using Recharts for charts:
-npm install recharts
+If using code highlighting:
+```bash
+bun add prism-react-renderer
 ```
 
 ## Step 3: Generate project files
 
 Create the following files with the content specified below. Replace `TOOL_NAME`, `TOOL_TITLE`, `DESCRIPTION`, and `COUNTRY_ID` with actual values.
 
-### vite.config.js
-
-```js
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-
-export default defineConfig({
-  plugins: [react()],
-  base: "/",
-});
-```
-
-### index.html
-
-Replace the default `<head>` content with:
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TOOL_TITLE — PolicyEngine</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/@policyengine/design-system/dist/tokens.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
-```
-
-### src/main.jsx
+### app/layout.jsx
 
 ```jsx
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./styles.css";
+import "./globals.css";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+export const metadata = {
+  title: "TOOL_TITLE | PolicyEngine",
+  description: "DESCRIPTION",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/@policyengine/design-system/dist/tokens.css"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
 ```
 
-### src/App.jsx
+**Important:** Load `tokens.css` via CDN `<link>` in `<head>`. The `@import` from `node_modules` does not work with the Next.js CSS pipeline.
+
+### app/globals.css
+
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-pe-primary-50: var(--pe-color-primary-50);
+  --color-pe-primary-500: var(--pe-color-primary-500);
+  --color-pe-primary-600: var(--pe-color-primary-600);
+  --color-pe-primary-700: var(--pe-color-primary-700);
+
+  --color-pe-gray-50: var(--pe-color-gray-50);
+  --color-pe-gray-100: var(--pe-color-gray-100);
+  --color-pe-gray-200: var(--pe-color-gray-200);
+
+  --color-pe-error: var(--pe-color-error);
+
+  --color-pe-bg-primary: var(--pe-color-bg-primary);
+  --color-pe-text-primary: var(--pe-color-text-primary);
+  --color-pe-text-secondary: var(--pe-color-text-secondary);
+  --color-pe-text-tertiary: var(--pe-color-text-tertiary);
+
+  --color-pe-border-light: var(--pe-color-border-light);
+}
+
+body {
+  font-family: var(--pe-font-family-primary);
+  color: var(--pe-color-text-primary);
+  background: var(--pe-color-bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+```
+
+### app/page.jsx
 
 ```jsx
+"use client";
+
 import { useState } from "react";
 
+const PE_LOGO_URL =
+  "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.png";
+
 function getCountryFromHash() {
+  if (typeof window === "undefined") return "us";
   const params = new URLSearchParams(window.location.hash.slice(1));
   return params.get("country") || "us";
 }
 
-export default function App() {
+export default function Home() {
   const [countryId] = useState(getCountryFromHash());
-  const isEmbedded = window.self !== window.top;
+  const isEmbedded =
+    typeof window !== "undefined" && window.self !== window.top;
 
   function updateHash(params) {
     const p = new URLSearchParams();
@@ -119,12 +144,22 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>TOOL_TITLE</h1>
-        <p>DESCRIPTION</p>
+    <div className="min-h-screen">
+      <header
+        style={{
+          backgroundColor: "var(--pe-color-primary-700)",
+          color: "white",
+          padding: "var(--pe-space-lg) var(--pe-space-xl)",
+        }}
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={PE_LOGO_URL} alt="PolicyEngine" className="h-7" />
+            <h1 className="text-xl font-semibold">TOOL_TITLE</h1>
+          </div>
+        </div>
       </header>
-      <main className="app-main">
+      <main className="max-w-6xl mx-auto p-6">
         {/* Your tool UI goes here */}
       </main>
     </div>
@@ -132,93 +167,19 @@ export default function App() {
 }
 ```
 
-### src/styles.css
+### vercel.json
 
-```css
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+```json
+{
+  "framework": "nextjs"
 }
-
-body {
-  font-family: var(--pe-font-family-primary);
-  color: var(--pe-color-text-primary);
-  background: var(--pe-color-bg-primary);
-  line-height: 1.5;
-}
-
-.app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--pe-space-lg) var(--pe-space-xl);
-}
-
-.app-header {
-  margin-bottom: var(--pe-space-3xl);
-}
-
-.app-header h1 {
-  font-size: var(--pe-font-size-2xl);
-  font-weight: var(--pe-font-weight-bold);
-  margin-bottom: var(--pe-space-xs);
-}
-
-.app-header p {
-  color: var(--pe-color-text-secondary);
-  font-size: var(--pe-font-size-sm);
-}
-
-.button-primary {
-  background: var(--pe-color-primary-500);
-  color: white;
-  border: none;
-  border-radius: var(--pe-radius-md);
-  padding: var(--pe-space-sm) var(--pe-space-xl);
-  font-family: inherit;
-  font-size: var(--pe-font-size-sm);
-  font-weight: var(--pe-font-weight-semibold);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.button-primary:hover {
-  background: var(--pe-color-primary-600);
-}
-
-.button-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .app {
-    padding: var(--pe-space-md) var(--pe-space-lg);
-  }
-}
-
-@media (max-width: 480px) {
-  .app-header h1 {
-    font-size: var(--pe-font-size-xl);
-  }
-}
-```
-
-### favicon.svg
-
-```svg
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <circle cx="16" cy="16" r="14" fill="#319795"/>
-  <text x="16" y="21" text-anchor="middle" font-family="system-ui" font-size="16" font-weight="700" fill="white">$</text>
-</svg>
 ```
 
 ## Step 4: Data pattern boilerplate
 
 Based on the user's choice, add the appropriate data fetching code.
 
-**For Pattern B (PolicyEngine API):** Create `src/api.js`:
+**For Pattern B (PolicyEngine API):** Create `lib/api.js`:
 
 ```js
 const API_BASE = "https://api.policyengine.org";
@@ -251,10 +212,12 @@ def calculate(params: dict):
     return {"result": float(sim.calculate("variable_name", 2025).sum())}
 ```
 
-And `src/api.js`:
+And `lib/api.js`:
 
 ```js
-const API_URL = import.meta.env.VITE_API_URL || "https://policyengine--TOOL_NAME-calculate.modal.run";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://policyengine--TOOL_NAME-calculate.modal.run";
 
 export async function calculate(params) {
   const res = await fetch(API_URL, {
@@ -288,7 +251,7 @@ If using Pattern C (Modal):
 ```bash
 unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
 modal deploy modal_app.py
-vercel env add VITE_API_URL production
+vercel env add NEXT_PUBLIC_API_URL production
 # Enter the Modal URL
 vercel --prod --force --yes --scope policy-engine
 ```
@@ -304,7 +267,7 @@ Add entry to `policyengine-app-v2/app/src/data/apps/apps.json`. Use the auto-ass
 curl -s -o /dev/null -w "%{http_code}" https://VERCEL_URL/
 
 # Start dev server for local development
-npm run dev
+bun run dev
 ```
 
 ## Reference

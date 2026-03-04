@@ -1,0 +1,1 @@
+Standardize interactive tools on Next.js 14 + Tailwind 4 (remove Vite), add Recharts getCssVar pattern, Prism code highlighting, Pattern D (precomputed CSV), zero-hardcoded-colors rule, and rewrite /new-tool command for Next.js.
