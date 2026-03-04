@@ -214,7 +214,7 @@ export function useIncomeVariation(baseValues: FormValues, countryId: string) {
 
 ```bash
 cd frontend
-npm run dev  # Start dev server
+bun run dev  # Start dev server
 ```
 
 Manually verify (or instruct the user to verify):
@@ -227,7 +227,7 @@ Manually verify (or instruct the user to verify):
 
 Then run tests:
 ```bash
-npx vitest run
+bunx vitest run
 ```
 
 ## Quality Checklist

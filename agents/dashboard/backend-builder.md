@@ -130,7 +130,7 @@ Create a client module that:
 import type { HouseholdSimulationRequest, HouseholdSimulationResult } from './types';
 import { fixtures } from './fixtures';
 
-const API_V2_BASE_URL = import.meta.env.VITE_API_V2_URL || '';
+const API_V2_BASE_URL = process.env.NEXT_PUBLIC_API_V2_URL || '';
 const USE_STUBS = !API_V2_BASE_URL;
 
 // STUB: Simulated network delay for realistic UX testing
@@ -155,7 +155,7 @@ export async function simulateHousehold(
     return selectFixture(request);
   }
 
-  // Real v2 alpha implementation (activated when VITE_API_V2_URL is set)
+  // Real v2 alpha implementation (activated when NEXT_PUBLIC_API_V2_URL is set)
   const jobRes = await fetch(`${API_V2_BASE_URL}/simulate/household`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -298,8 +298,8 @@ After building the backend:
 
 ```bash
 cd frontend
-npm run build  # Types must compile
-npx vitest run  # API tests must pass
+bun run build  # Types must compile
+bunx vitest run  # API tests must pass
 ```
 
 If custom backend:
