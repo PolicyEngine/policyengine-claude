@@ -1,1 +1,1 @@
-Add Next.js + Tailwind 4 setup, Recharts token integration (getCssVar pattern), Prism code highlighting, Pattern D (precomputed CSV), and zero-hardcoded-colors checklist to interactive tools skill.
+Standardize interactive tools on Next.js 14 + Tailwind 4 (remove Vite), add Recharts getCssVar pattern, Prism code highlighting, Pattern D (precomputed CSV), zero-hardcoded-colors rule, and rewrite /new-tool command for Next.js.

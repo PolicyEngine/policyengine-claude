@@ -14,22 +14,24 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 - ACA reforms calculator (`PolicyEngine/aca-calc`) — precomputed data
 - State legislative tracker (`PolicyEngine/state-legislative-tracker`) — static data
 - UK salary sacrifice tool (`PolicyEngine/uk-salary-sacrifice-analysis`)
+- SNAP BBCE repeal dashboard (`PolicyEngine/snap-bbce-repeal`) — precomputed CSV dashboard
 
 ## Stack
 
-**Two supported setups:**
+**Next.js 14 + Tailwind 4 + Recharts** for all tools (embeddable and standalone).
 
-| | Vite + React (default) | Next.js + Tailwind 4 |
-|---|---|---|
-| **When** | Small interactive tools that embed in policyengine.org | Standalone dashboards / analysis sites |
-| **CSS** | Plain CSS with `var(--pe-*)` custom properties | Tailwind 4 with `@theme` mapping PE tokens |
-| **Charts** | Recharts | Recharts |
-| **Code highlighting** | Prism React Renderer | Prism React Renderer |
-| **Testing** | Vitest | Vitest or Jest |
-| **Deploy** | Vercel under `policy-engine` scope | Vercel under `policy-engine` scope |
+| Component | Choice |
+|-----------|--------|
+| Framework | Next.js 14 (App Router) |
+| CSS | Tailwind 4 with `@theme` mapping PE tokens |
+| Charts | Recharts |
+| Code highlighting | Prism React Renderer |
+| Testing | Vitest |
+| Deploy | Vercel under `policy-engine` scope |
+| Package manager | `bun` (not npm) |
 
-**Shared requirements (both setups):**
-- `@policyengine/design-system` tokens (CDN link or npm)
+**Requirements:**
+- `@policyengine/design-system` tokens (CDN link in `layout.jsx`)
 - Inter font via Google Fonts CDN
 - Recharts for charts
 - **NEVER hardcode hex colors or font names** — always use `var(--pe-color-*)` and `var(--pe-font-family-primary)`
@@ -40,7 +42,7 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 
 Choose based on what the tool needs from PolicyEngine:
 
-### Pattern A: Precomputed data
+### Pattern A: Precomputed JSON
 
 Best when the parameter space is small enough to enumerate, or the tool shows static analysis results.
 
@@ -48,7 +50,7 @@ Best when the parameter space is small enough to enumerate, or the tool shows st
 
 ```
 ┌─────────────┐    ┌──────────┐    ┌───────────┐
-│ Python script│───>│ JSON file│───>│ React app │
+│ Python script│───>│ JSON file│───>│ Next.js   │
 │ (one-time)  │    │ (static) │    │ (fast)    │
 └─────────────┘    └──────────┘    └───────────┘
 ```
@@ -91,7 +93,7 @@ Best when the tool calculates household-level impacts with varying incomes/demog
 
 ```
 ┌───────────┐    ┌──────────────────┐    ┌──────────┐
-│ React app │───>│ api.policyengine │───>│ Results  │
+│ Next.js   │───>│ api.policyengine │───>│ Results  │
 │ (browser) │<───│ .org/us/calculate │<───│          │
 └───────────┘    └──────────────────┘    └──────────┘
 ```
@@ -138,7 +140,7 @@ Best when you need variables or calculations not in the main PolicyEngine API �
 
 ```
 ┌───────────┐    ┌──────────────────┐    ┌──────────────┐
-│ React app │───>│ Modal serverless │───>│ policyengine │
+│ Next.js   │───>│ Modal serverless │───>│ policyengine │
 │ (browser) │<───│ Python function  │<───│ -us (local)  │
 └───────────┘    └──────────────────┘    └──────────────┘
 ```
@@ -176,7 +178,7 @@ modal deploy modal_app.py
 
 **Frontend:**
 ```js
-const API_URL = import.meta.env.VITE_API_URL || "https://policyengine--my-tool-calculate.modal.run";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://policyengine--my-tool-calculate.modal.run";
 
 async function calculate(params) {
   const res = await fetch(API_URL, {
@@ -190,7 +192,7 @@ async function calculate(params) {
 
 **Set Vercel env var:**
 ```bash
-vercel env add VITE_API_URL production
+vercel env add NEXT_PUBLIC_API_URL production
 # Enter: https://policyengine--my-tool-calculate.modal.run
 vercel --prod --force --yes --scope policy-engine
 ```
@@ -199,54 +201,113 @@ vercel --prod --force --yes --scope policy-engine
 
 **Failure mode:** Modal apps can silently disappear. If frontend gets network errors, `curl` the Modal URL — if 404, redeploy.
 
+### Pattern D: Precomputed CSV dashboard
+
+For analysis repos that precompute data with Python microsimulation pipelines:
+
+```
+┌─────────────────┐    ┌──────────┐    ┌────────────────┐
+│ Python pipeline  │───>│ CSV files│───>│ Next.js app    │
+│ (Microsimulation)│    │ public/  │    │ (static export)│
+└─────────────────┘    └──────────┘    └────────────────┘
+```
+
+**Python side:** Pipeline generates CSVs to `public/data/`.
+**Frontend side:** Fetch CSVs at runtime, parse with a lightweight CSV parser.
+
+**Example:** `PolicyEngine/snap-bbce-repeal`, `PolicyEngine/uk-spring-statement-2026`.
+
 ## Scaffolding a new tool
 
 ```bash
-npm create vite@latest my-tool -- --template react
+bunx create-next-app@14 my-tool --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd my-tool
-npm install @policyengine/design-system
-npm install -D vitest
+bun add @policyengine/design-system recharts
+bun add -D vitest
 ```
 
-**vite.config.js:**
-```js
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+### app/layout.jsx
 
-export default defineConfig({
-  plugins: [react()],
-  base: "/",
-});
+```jsx
+import "./globals.css";
+
+export const metadata = {
+  title: "TOOL_TITLE | PolicyEngine",
+  description: "DESCRIPTION",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/@policyengine/design-system/dist/tokens.css"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
 ```
 
-**index.html — add Inter font and tokens.css:**
-```html
-<head>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/@policyengine/design-system/dist/tokens.css">
-</head>
-```
+**Important:** Load `tokens.css` via CDN `<link>` in `<head>`. The `@import` from `node_modules` does not work with the Next.js CSS pipeline.
 
-Or import locally:
+### app/globals.css — map PE tokens into Tailwind `@theme`
+
 ```css
-/* styles.css */
-@import '@policyengine/design-system/tokens.css';
-```
+@import "tailwindcss";
 
-**Use the CSS variables:**
-```css
+@theme {
+  --color-pe-primary-50: var(--pe-color-primary-50);
+  --color-pe-primary-500: var(--pe-color-primary-500);
+  --color-pe-primary-600: var(--pe-color-primary-600);
+  --color-pe-primary-700: var(--pe-color-primary-700);
+
+  --color-pe-gray-50: var(--pe-color-gray-50);
+  --color-pe-gray-100: var(--pe-color-gray-100);
+  --color-pe-gray-200: var(--pe-color-gray-200);
+
+  --color-pe-error: var(--pe-color-error);
+
+  --color-pe-bg-primary: var(--pe-color-bg-primary);
+  --color-pe-text-primary: var(--pe-color-text-primary);
+  --color-pe-text-secondary: var(--pe-color-text-secondary);
+  --color-pe-text-tertiary: var(--pe-color-text-tertiary);
+
+  --color-pe-border-light: var(--pe-color-border-light);
+}
+
 body {
   font-family: var(--pe-font-family-primary);
   color: var(--pe-color-text-primary);
   background: var(--pe-color-bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+```
 
-.button-primary {
-  background: var(--pe-color-primary-500);
-  color: white;
-  border-radius: var(--pe-radius-md);
-  padding: var(--pe-space-sm) var(--pe-space-lg);
-}
+### Using PE tokens in components
+
+Use `style=` with `var()` for dynamic PE token values:
+
+```jsx
+<div style={{
+  backgroundColor: "var(--pe-color-gray-50)",
+  border: "1px solid var(--pe-color-border-light)",
+  borderRadius: "var(--pe-radius-md)",
+  padding: "var(--pe-space-lg)",
+}}>
+```
+
+Or use Tailwind classes that reference the `@theme` mappings:
+
+```jsx
+<div className="bg-pe-gray-50 border border-pe-border-light rounded-md p-4">
 ```
 
 ## Embedding in policyengine.org
@@ -271,7 +332,7 @@ Add entry to `policyengine-app-v2/app/src/data/apps/apps.json`:
 }
 ```
 
-**App types:** `iframe` (standard), `streamlit` (adds `?embedded=true`), `obbba-iframe` (special layout), `custom` (React component).
+**App types:** `iframe` (standard), `obbba-iframe` (special layout), `custom` (React component).
 
 **Multi-country:** Same slug, different `countryId`:
 ```json
@@ -344,7 +405,7 @@ Hide when embedded (country comes from the route):
 
 **Recharts is the PE standard** for all charts:
 ```bash
-npm install recharts  # or: bun add recharts
+bun add recharts
 ```
 
 **For simple visualizations:** Use SVG directly. The marriage calculator uses hand-rolled SVG heatmaps.
@@ -390,69 +451,12 @@ const fontFamily = getCssVar("--pe-font-family-primary");
 For tools that show code or formulas, use **Prism React Renderer**:
 
 ```bash
-npm install prism-react-renderer  # or: bun add prism-react-renderer
+bun add prism-react-renderer
 ```
-
-## Next.js + Tailwind 4 setup
-
-For standalone dashboards (not embedded in policyengine.org), Next.js + Tailwind 4 is an alternative to Vite:
-
-**globals.css — map PE tokens into Tailwind `@theme`:**
-```css
-@import "tailwindcss";
-
-@theme {
-  --color-pe-primary-500: var(--pe-color-primary-500);
-  --color-pe-primary-600: var(--pe-color-primary-600);
-  --color-pe-primary-700: var(--pe-color-primary-700);
-  --color-pe-gray-50: var(--pe-color-gray-50);
-  --color-pe-gray-200: var(--pe-color-gray-200);
-  --color-pe-error: var(--pe-color-error);
-  --color-pe-border-light: var(--pe-color-border-light);
-  /* ... add more as needed */
-}
-
-body {
-  font-family: var(--pe-font-family-primary);
-  color: var(--pe-color-text-primary);
-  background: var(--pe-color-bg-primary);
-}
-```
-
-**layout.jsx — load tokens via CDN** (the `@import` from node_modules doesn't work with Next.js CSS pipeline):
-```jsx
-<head>
-  <link rel="stylesheet" href="https://unpkg.com/@policyengine/design-system/dist/tokens.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-</head>
-```
-
-**Use `style=` with `var()` for dynamic PE tokens** — Tailwind classes reference the `@theme` mappings, inline styles use `var()` directly:
-```jsx
-<div style={{
-  backgroundColor: "var(--pe-color-gray-50)",
-  border: "1px solid var(--pe-color-border-light)",
-  borderRadius: "var(--pe-radius-container)",
-}}>
-```
-
-### Pattern D: Precomputed CSV dashboard
-
-For analysis repos (e.g., `snap-bbce-repeal`, `uk-spring-statement-2026`) that precompute data:
-
-```
-┌─────────────────┐    ┌──────────┐    ┌────────────────┐
-│ Python pipeline  │───>│ CSV files│───>│ Next.js app    │
-│ (Microsimulation)│    │ public/  │    │ (static export)│
-└─────────────────┘    └──────────┘    └────────────────┘
-```
-
-**Python side:** Pipeline generates CSVs to `public/data/`.
-**Frontend side:** Fetch CSVs at runtime, parse with a lightweight CSV parser.
-
-Example: `PolicyEngine/snap-bbce-repeal`, `PolicyEngine/uk-spring-statement-2026`.
 
 ## Mobile responsiveness
+
+Use Tailwind responsive prefixes (`sm:`, `md:`, `lg:`) or custom media queries:
 
 ```css
 /* Tablet — sidebar collapses to top */
@@ -462,9 +466,6 @@ Example: `PolicyEngine/snap-bbce-repeal`, `PolicyEngine/uk-spring-statement-2026
 @media (max-width: 480px) {
   .form-row { flex-direction: column; }
 }
-
-/* Small tablet — tighten spacing */
-@media (max-width: 1024px) { ... }
 ```
 
 **Key patterns:**
@@ -476,16 +477,17 @@ Example: `PolicyEngine/snap-bbce-repeal`, `PolicyEngine/uk-spring-statement-2026
 ## Testing
 
 ```bash
-npm install -D vitest
-npx vitest run
+bun add -D vitest
+bunx vitest run
 ```
 
 Test API responses against Python fixtures for numerical accuracy. See `PolicyEngine/marriage/tests/` for examples.
 
 ## Checklist for new tools
 
-### Required (all tools)
-- [ ] `@policyengine/design-system` tokens loaded (CDN or npm)
+- [ ] Next.js 14 + Tailwind 4 scaffold
+- [ ] `@policyengine/design-system` tokens loaded via CDN `<link>` in layout.jsx
+- [ ] PE tokens mapped in `globals.css` `@theme` block
 - [ ] Inter font loaded via Google Fonts CDN
 - [ ] **Zero hardcoded hex colors** — all colors via `var(--pe-color-*)`
 - [ ] **Zero hardcoded font names** — all fonts via `var(--pe-font-family-primary)`
@@ -497,17 +499,12 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 - [ ] Mobile responsive (768px, 480px breakpoints)
 - [ ] Tests passing
 
-### For embeddable tools (Vite + React)
-- [ ] Vite scaffold with `base: "/"`
+### Additional for embeddable tools
 - [ ] Country detection from hash (`#country=uk`)
 - [ ] Hash sync with postMessage to parent
 - [ ] Share URLs point to policyengine.org
 - [ ] Hide country toggle when embedded
 - [ ] Registered in apps.json (with cover image if `displayWithResearch`)
-
-### For standalone dashboards (Next.js + Tailwind)
-- [ ] PE tokens mapped in `globals.css` `@theme` block
-- [ ] Tokens loaded via CDN `<link>` in layout.jsx (not `@import` from node_modules)
 
 ## Related skills
 
