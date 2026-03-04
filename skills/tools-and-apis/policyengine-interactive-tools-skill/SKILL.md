@@ -17,11 +17,24 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 
 ## Stack
 
-- Vite + React (JSX, not TypeScript unless complex)
-- `@policyengine/design-system` for tokens (CSS import or npm)
-- Plain CSS with CSS custom properties (not vanilla-extract — standalone tools are small)
-- Deploy to Vercel under `policy-engine` scope (see `policyengine-vercel-deployment-skill`)
-- Vitest for testing
+**Two supported setups:**
+
+| | Vite + React (default) | Next.js + Tailwind 4 |
+|---|---|---|
+| **When** | Small interactive tools that embed in policyengine.org | Standalone dashboards / analysis sites |
+| **CSS** | Plain CSS with `var(--pe-*)` custom properties | Tailwind 4 with `@theme` mapping PE tokens |
+| **Charts** | Recharts | Recharts |
+| **Code highlighting** | Prism React Renderer | Prism React Renderer |
+| **Testing** | Vitest | Vitest or Jest |
+| **Deploy** | Vercel under `policy-engine` scope | Vercel under `policy-engine` scope |
+
+**Shared requirements (both setups):**
+- `@policyengine/design-system` tokens (CDN link or npm)
+- Inter font via Google Fonts CDN
+- Recharts for charts
+- **NEVER hardcode hex colors or font names** — always use `var(--pe-color-*)` and `var(--pe-font-family-primary)`
+- **PolicyEngine logo** — always use the actual logo image, never styled text. Files at `policyengine-app-v2/app/public/assets/logos/policyengine/` (white.png for dark backgrounds, teal.png for light)
+- Sentence case on all UI text
 
 ## Data and computation patterns
 
@@ -329,19 +342,115 @@ Hide when embedded (country comes from the route):
 
 ## Charts
 
-**For standard charts:** Recharts is the PE standard:
+**Recharts is the PE standard** for all charts:
 ```bash
-npm install recharts
+npm install recharts  # or: bun add recharts
 ```
 
 **For simple visualizations:** Use SVG directly. The marriage calculator uses hand-rolled SVG heatmaps.
 
 **Color conventions:**
-- Positive/bonus: `var(--pe-color-primary-500)` (`#319795`)
+- Positive/bonus: `var(--pe-color-primary-500)`
 - Negative/penalty: `var(--pe-color-gray-600)` or `var(--pe-color-error)`
 - Neutral: `var(--pe-color-gray-200)`
 
 **Inverted metrics (taxes):** When positive delta means bad (more taxes), pass `invertDelta` to your chart component to flip labels and colors.
+
+### Recharts + PE tokens
+
+Recharts renders SVG, which **cannot inherit CSS custom properties** via `style=`. You must resolve token values at render time:
+
+```jsx
+/* Helper to read PE tokens for Recharts SVG props */
+function getCssVar(name) {
+  if (typeof window === "undefined") return "";
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+}
+
+// In your chart component:
+const primaryColor = getCssVar("--pe-color-primary-500");
+const errorColor = getCssVar("--pe-color-error");
+const gridColor = getCssVar("--pe-color-border-light");
+const fontFamily = getCssVar("--pe-font-family-primary");
+
+<BarChart data={data}>
+  <CartesianGrid stroke={gridColor} />
+  <XAxis tick={{ fontSize: 12, fontFamily }} />
+  <YAxis tick={{ fontSize: 12, fontFamily }} />
+  <Bar dataKey="value" fill={primaryColor} />
+</BarChart>
+```
+
+**Never pass hardcoded hex values** like `fill="#319795"` to Recharts — always resolve from CSS variables.
+
+## Code highlighting
+
+For tools that show code or formulas, use **Prism React Renderer**:
+
+```bash
+npm install prism-react-renderer  # or: bun add prism-react-renderer
+```
+
+## Next.js + Tailwind 4 setup
+
+For standalone dashboards (not embedded in policyengine.org), Next.js + Tailwind 4 is an alternative to Vite:
+
+**globals.css — map PE tokens into Tailwind `@theme`:**
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-pe-primary-500: var(--pe-color-primary-500);
+  --color-pe-primary-600: var(--pe-color-primary-600);
+  --color-pe-primary-700: var(--pe-color-primary-700);
+  --color-pe-gray-50: var(--pe-color-gray-50);
+  --color-pe-gray-200: var(--pe-color-gray-200);
+  --color-pe-error: var(--pe-color-error);
+  --color-pe-border-light: var(--pe-color-border-light);
+  /* ... add more as needed */
+}
+
+body {
+  font-family: var(--pe-font-family-primary);
+  color: var(--pe-color-text-primary);
+  background: var(--pe-color-bg-primary);
+}
+```
+
+**layout.jsx — load tokens via CDN** (the `@import` from node_modules doesn't work with Next.js CSS pipeline):
+```jsx
+<head>
+  <link rel="stylesheet" href="https://unpkg.com/@policyengine/design-system/dist/tokens.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+```
+
+**Use `style=` with `var()` for dynamic PE tokens** — Tailwind classes reference the `@theme` mappings, inline styles use `var()` directly:
+```jsx
+<div style={{
+  backgroundColor: "var(--pe-color-gray-50)",
+  border: "1px solid var(--pe-color-border-light)",
+  borderRadius: "var(--pe-radius-container)",
+}}>
+```
+
+### Pattern D: Precomputed CSV dashboard
+
+For analysis repos (e.g., `snap-bbce-repeal`, `uk-spring-statement-2026`) that precompute data:
+
+```
+┌─────────────────┐    ┌──────────┐    ┌────────────────┐
+│ Python pipeline  │───>│ CSV files│───>│ Next.js app    │
+│ (Microsimulation)│    │ public/  │    │ (static export)│
+└─────────────────┘    └──────────┘    └────────────────┘
+```
+
+**Python side:** Pipeline generates CSVs to `public/data/`.
+**Frontend side:** Fetch CSVs at runtime, parse with a lightweight CSV parser.
+
+Example: `PolicyEngine/snap-bbce-repeal`, `PolicyEngine/uk-spring-statement-2026`.
 
 ## Mobile responsiveness
 
@@ -375,19 +484,30 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 
 ## Checklist for new tools
 
-- [ ] Vite + React scaffold with `base: "/"`
-- [ ] `@policyengine/design-system` tokens (CSS import or CDN)
-- [ ] Inter font loaded via Google Fonts
+### Required (all tools)
+- [ ] `@policyengine/design-system` tokens loaded (CDN or npm)
+- [ ] Inter font loaded via Google Fonts CDN
+- [ ] **Zero hardcoded hex colors** — all colors via `var(--pe-color-*)`
+- [ ] **Zero hardcoded font names** — all fonts via `var(--pe-font-family-primary)`
+- [ ] Recharts charts use `getCssVar()` helper for SVG props (font, colors)
+- [ ] PE logo is an actual image, not styled text
 - [ ] Sentence case on all UI text
-- [ ] Data pattern chosen (precomputed / API / Modal)
+- [ ] Data pattern chosen (precomputed JSON / precomputed CSV / API / Modal)
+- [ ] Deployed to Vercel under `policy-engine` scope
+- [ ] Mobile responsive (768px, 480px breakpoints)
+- [ ] Tests passing
+
+### For embeddable tools (Vite + React)
+- [ ] Vite scaffold with `base: "/"`
 - [ ] Country detection from hash (`#country=uk`)
 - [ ] Hash sync with postMessage to parent
 - [ ] Share URLs point to policyengine.org
 - [ ] Hide country toggle when embedded
 - [ ] Registered in apps.json (with cover image if `displayWithResearch`)
-- [ ] Deployed to Vercel under `policy-engine` scope
-- [ ] Mobile responsive (768px, 480px breakpoints)
-- [ ] Tests passing
+
+### For standalone dashboards (Next.js + Tailwind)
+- [ ] PE tokens mapped in `globals.css` `@theme` block
+- [ ] Tokens loaded via CDN `<link>` in layout.jsx (not `@import` from node_modules)
 
 ## Related skills
 
