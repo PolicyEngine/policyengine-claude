@@ -13,7 +13,7 @@ Patterns for creating policy impact analyses, dashboards, and research using Pol
 
 See `MICROSIMULATION_REFORM_GUIDE.md` for UK-specific microsimulation patterns.
 
-## For Users 👥
+## For Users
 
 ### What are Analysis Repositories?
 
@@ -64,12 +64,12 @@ Analysis repositories produce the research you see on PolicyEngine:
 
 **See policyengine-writing-skill for writing conventions.**
 
-## For Analysts 📊
+## For Analysts
 
 ### When to Use This Skill
 
 - Creating policy impact analyses
-- Building interactive dashboards with Streamlit/Plotly
+- Building interactive dashboards with Next.js + Recharts
 - Writing analysis notebooks
 - Calculating distributional impacts
 - Comparing policy proposals
@@ -91,13 +91,10 @@ Standard analysis repository structure:
 ```
 analysis-repo/
 ├── analysis.ipynb           # Main Jupyter notebook
-├── app.py                   # Streamlit app (if applicable)
 ├── requirements.txt         # Python dependencies
 ├── README.md               # Documentation
 ├── data/                   # Data files (if needed)
-├── outputs/                # Generated charts, tables
-└── .streamlit/             # Streamlit config
-    └── config.toml
+└── outputs/                # Generated charts, tables
 ```
 
 ## Common Analysis Patterns
@@ -247,9 +244,9 @@ print(f"Neutral: {neutral.sum() / len(gains) * 100:.1f}%")
 import plotly.graph_objects as go
 
 # PolicyEngine brand colors
-TEAL = "#39C6C0"
-BLUE = "#2C6496"
-DARK_GRAY = "#616161"
+TEAL = "#319795"
+BLUE = "#026AA2"
+DARK_GRAY = "#5A5A5A"
 
 def create_pe_layout(title, xaxis_title, yaxis_title):
     """Create standard PolicyEngine chart layout."""
@@ -328,73 +325,6 @@ fig = go.Figure(go.Waterfall(
 ))
 ```
 
-## Streamlit Dashboard Patterns
-
-### Basic Streamlit Setup
-
-```python
-import streamlit as st
-from policyengine_us import Simulation
-
-st.set_page_config(page_title="Policy Analysis", layout="wide")
-
-st.title("Policy Impact Calculator")
-
-# User inputs
-col1, col2, col3 = st.columns(3)
-with col1:
-    income = st.number_input("Income", value=60000, step=5000)
-with col2:
-    state = st.selectbox("State", ["CA", "NY", "TX", "FL"])
-with col3:
-    num_children = st.number_input("Children", value=0, min_value=0, max_value=10)
-
-# Calculate
-if st.button("Calculate"):
-    situation = create_family(
-        parent_income=income,
-        num_children=num_children,
-        state=state
-    )
-
-    sim_baseline = Simulation(situation=situation)
-    sim_reform = Simulation(situation=situation, reform=reform)
-
-    # Display results
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(
-            "Baseline Tax",
-            f"${sim_baseline.calculate('income_tax', 2026)[0]:,.0f}"
-        )
-    with col2:
-        st.metric(
-            "Reform Tax",
-            f"${sim_reform.calculate('income_tax', 2026)[0]:,.0f}"
-        )
-    with col3:
-        change = (sim_reform.calculate('income_tax', 2026)[0] -
-                 sim_baseline.calculate('income_tax', 2026)[0])
-        st.metric("Change", f"${change:,.0f}", delta=f"${-change:,.0f}")
-```
-
-### Interactive Chart with Streamlit
-
-```python
-# Create chart based on user inputs
-incomes = np.linspace(0, income_max, 1001)
-results = []
-
-for income in incomes:
-    situation = create_situation(income=income, state=selected_state)
-    sim = Simulation(situation=situation, reform=reform)
-    results.append(sim.calculate("household_net_income", 2026)[0])
-
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=incomes, y=results, line=dict(color=TEAL)))
-st.plotly_chart(fig, use_container_width=True)
-```
-
 ## Jupyter Notebook Best Practices
 
 ### Notebook Structure
@@ -449,7 +379,6 @@ pd.DataFrame([summary]).to_csv("outputs/summary.csv", index=False)
 This skill includes example templates in the `examples/` directory:
 
 - `impact_analysis_template.ipynb` - Standard impact analysis
-- `dashboard_template.py` - Streamlit dashboard
 - `state_comparison.py` - State-by-state analysis
 - `case_studies.py` - Household case studies
 - `reform_definitions.py` - Common reform patterns
@@ -555,7 +484,7 @@ Explanation of approach and data sources.
 ## How to Run
 
 \```bash
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 python app.py  # or jupyter notebook analysis.ipynb
 \```
 
@@ -571,5 +500,4 @@ PolicyEngine Team - hello@policyengine.org
 
 - **PolicyEngine API Docs:** https://policyengine.org/us/api
 - **Analysis Examples:** https://github.com/PolicyEngine/analysis-notebooks
-- **Streamlit Docs:** https://docs.streamlit.io
 - **Plotly Docs:** https://plotly.com/python/

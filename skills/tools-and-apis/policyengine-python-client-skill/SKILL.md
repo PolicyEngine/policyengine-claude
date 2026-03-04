@@ -17,10 +17,10 @@ This skill covers programmatic access to PolicyEngine for analysts and researche
 
 ```bash
 # Install the Python client
-pip install policyengine
+uv pip install policyengine
 
 # Or for local development
-pip install policyengine-us  # Just the US model (offline)
+uv pip install policyengine-us  # Just the US model (offline)
 ```
 
 ## Quick Start: Python Client
@@ -111,7 +111,7 @@ from policyengine import Simulation
 
 # Define reform (increase CTC to $5,000)
 reform = {
-    "gov.irs.credits.ctc.amount.base_amount": {
+    "gov.irs.credits.ctc.amount.base[0].amount": {
         "2026-01-01.2100-12-31": 5000
     }
 }
@@ -199,7 +199,7 @@ policy = response.json()
 ```python
 # Get current parameter value
 response = requests.get(
-    "https://api.policyengine.org/us/parameter/gov.irs.credits.ctc.amount.base_amount"
+    "https://api.policyengine.org/us/parameter/gov.irs.credits.ctc.amount.base"
 )
 parameter = response.json()
 ```
@@ -262,8 +262,8 @@ curl -X POST https://api.policyengine.org/us/calculate \
 
 **Install:**
 ```bash
-pip install policyengine-us  # US only
-pip install policyengine-uk  # UK only
+uv pip install policyengine-us  # US only
+uv pip install policyengine-uk  # UK only
 ```
 
 **Example:**

@@ -1,13 +1,15 @@
 ---
 name: microimpute
-description: ML-based variable imputation for survey data - used in policyengine-us-data to fill missing values
+description: |
+  ML-based variable imputation for survey data - used in policyengine-us-data to fill missing values.
+  Triggers: "impute", "imputation", "missing values", "donor", "recipient", "quantile forest", "statistical matching", "PUF", "microimpute", "fill missing"
 ---
 
 # MicroImpute
 
 MicroImpute enables ML-based variable imputation through different statistical methods, with comparison and benchmarking capabilities.
 
-## For Users 👥
+## For Users
 
 ### What is MicroImpute?
 
@@ -30,15 +32,15 @@ When PolicyEngine calculates population impacts, the underlying survey data has 
 - Benefits eligibility uses complete household information
 - State-specific calculations have all needed data
 
-## For Analysts 📊
+## For Analysts
 
 ### Installation
 
 ```bash
-pip install microimpute
+uv pip install microimpute
 
 # With image export (for plots)
-pip install microimpute[images]
+uv pip install microimpute[images]
 ```
 
 ### What MicroImpute Does
@@ -119,7 +121,7 @@ print(results)
 # Compare across methods to choose best
 ```
 
-## For Contributors 💻
+## For Contributors
 
 ### Repository
 

@@ -1,13 +1,15 @@
 ---
 name: microcalibrate
-description: Survey weight calibration to match population targets - used in policyengine-us-data for enhanced microdata
+description: |
+  Survey weight calibration to match population targets - used in policyengine-us-data for enhanced microdata.
+  Triggers: "calibrate", "calibration", "survey weights", "reweighting", "population targets", "benchmarks", "microcalibrate", "weight adjustment", "target matching"
 ---
 
 # MicroCalibrate
 
 MicroCalibrate calibrates survey weights to match population targets, with L0 regularization for sparsity and automatic hyperparameter tuning.
 
-## For Users 👥
+## For Users
 
 ### What is MicroCalibrate?
 
@@ -25,12 +27,12 @@ When you see PolicyEngine population impacts, the underlying data has been "cali
 - MicroCalibrate adjusts weights so survey totals match census totals
 - Result: More accurate PolicyEngine calculations
 
-## For Analysts 📊
+## For Analysts
 
 ### Installation
 
 ```bash
-pip install microcalibrate
+uv pip install microcalibrate
 ```
 
 ### What MicroCalibrate Does
@@ -160,7 +162,7 @@ Features:
 - View results
 - Download calibrated weights
 
-## For Contributors 💻
+## For Contributors
 
 ### Repository
 

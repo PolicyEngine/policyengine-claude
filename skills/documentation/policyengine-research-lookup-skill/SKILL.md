@@ -1,13 +1,15 @@
 ---
 name: policyengine-research-lookup
-description: Find and reference PolicyEngine blog posts, research articles, and published analyses for evidence and proof points
+description: |
+  Find and reference PolicyEngine blog posts, research articles, and published analyses for evidence and proof points.
+  Triggers: "find blog post", "PolicyEngine research", "published analysis", "proof point", "has PolicyEngine written about", "blog post about"
 ---
 
 # PolicyEngine Research Lookup
 
 Use this skill to find existing PolicyEngine research, blog posts, and published analyses that can serve as evidence, proof points, or references.
 
-## For Users 👥
+## For Users
 
 ### What is PolicyEngine Research?
 
@@ -29,7 +31,7 @@ PolicyEngine publishes research through:
 - Full UK tax-benefit system
 - Autumn Budget analyses, manifesto costing
 
-## For Analysts 📊
+## For Analysts
 
 ### Finding Blog Posts
 
@@ -78,7 +80,7 @@ tags:
 ---
 ```
 
-## For Contributors 💻
+## For Contributors
 
 ### When to Use This Skill
 

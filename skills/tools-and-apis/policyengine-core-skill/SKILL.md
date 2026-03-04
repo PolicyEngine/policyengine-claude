@@ -7,7 +7,7 @@ description: PolicyEngine Core simulation engine - the foundation powering all P
 
 PolicyEngine Core is the microsimulation engine that powers all PolicyEngine calculations. It's a fork of OpenFisca-Core adapted for PolicyEngine's needs.
 
-## For Users 👥
+## For Users
 
 ### What is Core?
 
@@ -32,7 +32,7 @@ Core ensures:
 - ✅ **Transparency** - All rules traceable to legislation
 - ✅ **Performance** - Vectorized calculations for speed
 
-## For Analysts 📊
+## For Analysts
 
 ### Understanding Core Concepts
 
@@ -109,7 +109,7 @@ policyengine-api (REST API)
 policyengine-app (web interface)
 ```
 
-## For Contributors 💻
+## For Contributors
 
 ### Repository
 
@@ -287,7 +287,7 @@ pytest tests/core/test_variables.py -v
 ```bash
 # Changes to Core affect all country packages
 cd policyengine-us
-pip install -e ../policyengine-core  # Local development install
+uv pip install -e ../policyengine-core  # Local development install
 make test
 ```
 
@@ -331,7 +331,7 @@ git log --oneline
 5. **Test in country package:**
    ```bash
    cd ../policyengine-us
-   pip install -e ../policyengine-core
+   uv pip install -e ../policyengine-core
    make test
    ```
 

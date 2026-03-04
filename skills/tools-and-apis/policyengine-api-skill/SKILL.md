@@ -7,7 +7,7 @@ description: PolicyEngine API - Flask REST service powering policyengine.org and
 
 The PolicyEngine API is a Flask-based REST service that provides tax and benefit calculations for the web app and programmatic users.
 
-## For Users 👥
+## For Users
 
 ### What is the API?
 
@@ -38,7 +38,7 @@ curl https://api.policyengine.org/us/policy/2
 
 **Interactive docs:** Swagger UI at API docs endpoint
 
-## For Analysts 📊
+## For Analysts
 
 ### Using the API
 
@@ -106,7 +106,7 @@ GET /us/variable/{variable_name}
 - Batch calculations when possible
 - Use webhooks for long-running jobs (population impacts)
 
-## For Contributors 💻
+## For Contributors
 
 ### Repository
 
