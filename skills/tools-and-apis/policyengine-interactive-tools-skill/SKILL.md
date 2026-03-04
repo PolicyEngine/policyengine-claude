@@ -436,13 +436,20 @@ const fontFamily = getCssVar("--pe-font-family-primary");
 
 <BarChart data={data}>
   <CartesianGrid stroke={gridColor} />
-  <XAxis niceTicks tick={{ fontSize: 12, fontFamily }} />
-  <YAxis niceTicks tick={{ fontSize: 12, fontFamily }} />
+  <XAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily }} />
+  <YAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily }} />
   <Bar dataKey="value" fill={primaryColor} />
 </BarChart>
 ```
 
 **Always use `niceTicks`** on `<XAxis>` and `<YAxis>` — this snaps tick values to human-friendly round numbers (e.g., `[0, 5, 10, 15]` instead of `[0, 3.5, 7, 10.5]`). Accepts `true` (boolean) or enum values `'auto'`, `'nice'`, `'equidistant'`, `'none'`. Default to `niceTicks` (boolean) for simplicity.
+
+**Always set `domain={["auto", "auto"]}`** on axes using `niceTicks` — the default recharts domain `[0, 'auto']` clamps the minimum to 0, which breaks tick calculation for data that doesn't start at 0 (e.g., all-negative values). Setting both ends to `"auto"` lets recharts compute the domain from the data.
+
+**Format negative dollar values as `-$100`** not `$-100` — use a custom `tickFormatter` like:
+```jsx
+tickFormatter={(v) => v < 0 ? `-$${Math.abs(v)}` : `$${v}`}
+```
 
 **Never pass hardcoded hex values** like `fill="#319795"` to Recharts — always resolve from CSS variables.
 
@@ -492,7 +499,8 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 - [ ] **Zero hardcoded hex colors** — all colors via `var(--pe-color-*)`
 - [ ] **Zero hardcoded font names** — all fonts via `var(--pe-font-family-primary)`
 - [ ] Recharts charts use `getCssVar()` helper for SVG props (font, colors)
-- [ ] Recharts axes use `niceTicks` for human-friendly tick values
+- [ ] Recharts axes use `niceTicks` with `domain={["auto", "auto"]}` for human-friendly tick values
+- [ ] Negative dollar values formatted as `-$100` not `$-100`
 - [ ] PE logo is an actual image, not styled text
 - [ ] Sentence case on all UI text
 - [ ] Data pattern chosen (precomputed JSON / precomputed CSV / API / Modal)
