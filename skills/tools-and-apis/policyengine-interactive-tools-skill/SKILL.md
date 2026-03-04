@@ -158,13 +158,11 @@ image = modal.Image.debian_slim().pip_install("policyengine-us==1.x.x")
 @modal.web_endpoint(method="POST")
 def calculate(params: dict):
     from policyengine_us import Simulation
-    # Build household and reform from params
-    sim = Simulation(situation=household, reform=reform)
-    result = {
-        "net_income_single": float(sim.calculate("household_net_income", 2025).sum()),
-        "net_income_married": float(sim_married.calculate("household_net_income", 2025).sum()),
+    household = params["household"]
+    sim = Simulation(situation=household)
+    return {
+        "net_income": float(sim.calculate("household_net_income", 2025).sum()),
     }
-    return result
 ```
 
 **Deploy:**
@@ -438,11 +436,13 @@ const fontFamily = getCssVar("--pe-font-family-primary");
 
 <BarChart data={data}>
   <CartesianGrid stroke={gridColor} />
-  <XAxis tick={{ fontSize: 12, fontFamily }} />
-  <YAxis tick={{ fontSize: 12, fontFamily }} />
+  <XAxis niceTicks tick={{ fontSize: 12, fontFamily }} />
+  <YAxis niceTicks tick={{ fontSize: 12, fontFamily }} />
   <Bar dataKey="value" fill={primaryColor} />
 </BarChart>
 ```
+
+**Always use `niceTicks`** on `<XAxis>` and `<YAxis>` — this snaps tick values to human-friendly round numbers (e.g., `[0, 5, 10, 15]` instead of `[0, 3.5, 7, 10.5]`). Accepts `true` (boolean) or enum values `'auto'`, `'nice'`, `'equidistant'`, `'none'`. Default to `niceTicks` (boolean) for simplicity.
 
 **Never pass hardcoded hex values** like `fill="#319795"` to Recharts — always resolve from CSS variables.
 
@@ -492,6 +492,7 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 - [ ] **Zero hardcoded hex colors** — all colors via `var(--pe-color-*)`
 - [ ] **Zero hardcoded font names** — all fonts via `var(--pe-font-family-primary)`
 - [ ] Recharts charts use `getCssVar()` helper for SVG props (font, colors)
+- [ ] Recharts axes use `niceTicks` for human-friendly tick values
 - [ ] PE logo is an actual image, not styled text
 - [ ] Sentence case on all UI text
 - [ ] Data pattern chosen (precomputed JSON / precomputed CSV / API / Modal)
