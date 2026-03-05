@@ -341,13 +341,17 @@ Focus on:
 - DO NOT commit — pr-pusher handles all commits"
 ```
 
-### Step 3D: Integration into Benefits System
+### Step 3D: Integration into Benefits System (DISABLED)
 
+<!-- DISABLED: Re-enable when ready to auto-integrate into household benefits.
 After variables are created, Main Claude adds the main benefit variable to `policyengine_us/parameters/gov/household/household_state_benefits.yaml`:
 - Add to ALL date entries in the file
 - Add with a comment indicating the state
 
 This is a small edit the orchestrator handles directly.
+-->
+
+**Currently disabled.** Integration into `household_state_benefits.yaml` will be done manually or in a future iteration.
 
 ### Step 3E: Requirements Coverage Check
 
@@ -458,7 +462,7 @@ Read ONLY `/tmp/{PREFIX}-checkpoint.md`.
 ### Step 4D: Push to Remote
 
 ```bash
-git add policyengine_us/parameters/gov/states/{ST}/ policyengine_us/variables/gov/states/{ST}/ policyengine_us/tests/policy/baseline/gov/states/{ST}/ policyengine_us/parameters/gov/household/household_state_benefits.yaml
+git add policyengine_us/parameters/gov/states/{ST}/ policyengine_us/variables/gov/states/{ST}/ policyengine_us/tests/policy/baseline/gov/states/{ST}/
 git commit -m "Implement {STATE} {PROGRAM} (ref #{ISSUE_NUMBER})"
 git push
 ```
@@ -808,7 +812,7 @@ Present to user:
 
 **YOU MUST NOT:**
 - Read full implementation files (sources/working_references.md, impl-spec, etc.)
-- Write any code yourself (except the small household_state_benefits.yaml edit)
+- Write any code yourself
 - Fix any issues manually
 - Run tests directly
 - Tell agents HOW to implement — they read specs and reference impls from disk
