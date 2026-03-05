@@ -366,11 +366,58 @@ subagent_type: "general-purpose", team_name: "{st}-{prog}-backdate", name: "cons
 
 ### Regulatory Checkpoint 1
 
-Read ONLY `/tmp/{st}-{prog}-impl-summary.md`. Present to user:
-- Number of files affected, date entries to add
-- Any Tier B/C items (require user confirmation before proceeding)
-- Source gaps or unresolved conflicts
-- **Stop here if `--research-only`**
+Read ONLY `/tmp/{st}-{prog}-impl-summary.md`. Present a brief overview:
+
+```
+## {STATE_FULL} {PROGRAM} — Research Complete
+
+**Parameters**: {N} files, {M} date entries to add
+**Earliest date**: {YYYY-MM-DD} → backdating to {TARGET_YEAR}
+**Source gaps**: {count, if any}
+```
+
+Then walk through decisions one at a time using `AskUserQuestion`:
+
+**Decision 1: Proceed with implementation?**
+
+```
+AskUserQuestion:
+  Question: "Proceed with backdating {N} parameter files?"
+  Options:
+    - "Yes, proceed" (default/recommended)
+    - "Show me more details first"
+    - "Stop here (research only)"
+```
+
+**Decision 2: Tier B/C items** (only if impl-summary lists any)
+
+For each Tier B/C item, ask separately:
+
+```
+AskUserQuestion:
+  Question: "{Description of Tier B/C item}"
+  Description: "{Brief context — e.g., 'New parameter needed for provision X, not in current implementation'}"
+  Options:
+    - "Include — implement this change" (recommended if Tier B)
+    - "Skip — defer to follow-up PR"
+    - "Need more info"
+```
+
+**Decision 3: Source gaps** (only if impl-summary lists any)
+
+```
+AskUserQuestion:
+  Question: "How to handle {N} source gap(s)?"
+  Description: |
+    {List each gap, e.g.:
+    - No PDF found for 2003-2007 period
+    - Two sources disagree on 2010 value}
+  Options:
+    - "Proceed — use best available data" (recommended)
+    - "Pause — let me find the missing sources"
+```
+
+**Stop here if `--research-only`.**
 
 ---
 
@@ -437,10 +484,58 @@ Write SHORT summary (max 15 lines) to /tmp/{st}-{prog}-phase2-summary.md."
 
 ### Regulatory Checkpoint 2
 
-Read ONLY `/tmp/{st}-{prog}-phase2-summary.md`. Present to user:
-- Broken URLs, generic refs, missing subsections count
-- Unused parameters, zero-sentinels, missing provisions count
-- **Formula fixes require user confirmation** before implementation
+Read ONLY `/tmp/{st}-{prog}-phase2-summary.md`. Present a brief overview:
+
+```
+## Audit Results
+
+**References**: {N} broken URLs, {M} generic refs, {P} missing subsections
+**Formulas**: {X} unused params, {Y} zero-sentinels, {Z} missing provisions
+```
+
+Then walk through decisions using `AskUserQuestion`:
+
+**Decision 1: Reference fixes**
+
+```
+AskUserQuestion:
+  Question: "Apply {N} reference fixes? (broken URLs, missing page numbers, generic citations)"
+  Options:
+    - "Yes, fix all" (default/recommended)
+    - "Show me the list first"
+    - "Skip reference fixes"
+```
+
+**Decision 2: Formula fixes** (only if audit found formula issues)
+
+Ask for each formula fix category separately:
+
+```
+AskUserQuestion:
+  Question: "Fix {X} unused parameters? (parameters exist but no formula reads them)"
+  Options:
+    - "Yes, wire them into formulas" (recommended)
+    - "Skip — defer to follow-up"
+    - "Show me which ones"
+```
+
+```
+AskUserQuestion:
+  Question: "Fix {Y} zero-sentinel anti-patterns? (value=0 used instead of explicit in_effect boolean)"
+  Options:
+    - "Yes, refactor to in_effect pattern" (recommended)
+    - "Skip — cosmetic, defer"
+```
+
+```
+AskUserQuestion:
+  Question: "Implement {Z} missing provisions? (regulations found but not yet coded)"
+  Description: "{Brief list of missing provisions}"
+  Options:
+    - "Yes, implement all"
+    - "Let me pick which ones"
+    - "Skip — defer to follow-up PR"
+```
 
 ---
 

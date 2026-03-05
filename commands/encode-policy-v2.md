@@ -171,37 +171,93 @@ After consolidator completes, read ONLY:
 
 ## Phase 2: Scope Review (USER CHECKPOINT)
 
-Present to user:
+This phase walks the user through scope decisions one at a time using `AskUserQuestion` with structured options. Do NOT dump all requirements at once.
+
+### Step 2A: Show Summary
+
+Display a brief overview (from scope-summary.md):
 
 ```
 ## {STATE} {PROGRAM} — Scope Review
 
 **Complexity**: {Simple/Complex} ({N} requirements)
 **Reference impl**: {path}
-
-### Requirements Found ({N} total):
-REQ-001: [ELIGIBILITY] Income <= 261% FPL (entry) — OAR 461-155-0180
-REQ-002: [ELIGIBILITY] Income <= 300% FPL (transitional) — OAR 461-155-0180
-REQ-003: [RESOURCE] Assets <= $1M — OAR 461-160-0015
-REQ-004: [DEMOGRAPHIC] Child under 13 (under 19 if disabled) — OAR 461-120-0510
-REQ-005: [IMMIGRATION] Child must be US citizen or qualified immigrant — 8 USC 1612
-REQ-006: [BENEFIT] Co-payment 0%/2%/5%/7% by FPL tier — OAR 461-155-0150
-REQ-007: [BENEFIT] Co-payment capped at 7% of income (federal) — 45 CFR 98.45
-REQ-008: [EXEMPTION] RI Works families get $0 co-payment — DHS Policy Manual
-REQ-009: [NOT-MODELED] 20 hrs/week work activity requirement — OAR 461-135-0400
-...
-
-Implement all? Or exclude any? (e.g., "Skip REQ-009, REQ-010")
 ```
 
-Wait for user response via AskUserQuestion.
+Then list requirements grouped by tag. Example:
 
-User can say:
-- "All" — implement everything (except NOT-MODELED)
-- "Skip REQ-009, REQ-010" — orchestrator records exclusions
-- Any other guidance
+```
+### Requirements Found ({N} total):
 
-Write the decision to `/tmp/{PREFIX}-scope-decision.md`:
+**Eligibility** ({X})
+  REQ-001: Income <= 261% FPL (entry) — OAR 461-155-0180
+  REQ-002: Income <= 300% FPL (transitional) — OAR 461-155-0180
+
+**Benefit Calculation** ({X})
+  REQ-006: Co-payment 0%/2%/5%/7% by FPL tier — OAR 461-155-0150
+  REQ-007: Co-payment capped at 7% of income — 45 CFR 98.45
+
+**Not Modeled** ({X})
+  REQ-009: 20 hrs/week work activity requirement — OAR 461-135-0400
+```
+
+### Step 2B: Key Decisions (One at a Time)
+
+For each key decision point identified in the scope summary, ask the user ONE question at a time using `AskUserQuestion`.
+
+**Decision 1: Overall scope**
+
+```
+AskUserQuestion:
+  Question: "Implement all {N} simulatable requirements? ({M} NOT-MODELED items will be excluded automatically)"
+  Options:
+    - "Yes, implement all" (default/recommended)
+    - "Let me pick which to skip"
+```
+
+If user picks "Let me pick which to skip", present each questionable requirement group:
+
+```
+AskUserQuestion:
+  Question: "Include {TAG} requirements?"
+  Description: |
+    REQ-XXX: {description}
+    REQ-YYY: {description}
+  Options:
+    - "Yes, include all" (default)
+    - "Skip these"
+    - "Let me pick individually"
+```
+
+**Decision 2+: Program-specific complexity decisions**
+
+If the scope summary identifies key decision points (e.g., provider rates, simplified vs full approach), ask each as a separate question:
+
+```
+AskUserQuestion:
+  Question: "{Decision description}"
+  Description: "{Brief context — e.g., 'Provider rates have ~240 rate cells. Implementing now adds complexity.'}"
+  Options:
+    - "{Option A}" (recommended if applicable)
+    - "{Option B}"
+    - "{Option C if needed}"
+```
+
+Examples of program-specific decisions:
+- "Provider rates have ~240 rate cells — implement now or defer?"
+  - "Defer to follow-up PR" (recommended)
+  - "Implement now"
+- "TANF approach — simplified or full?"
+  - "Simplified (eligibility + benefit amount)" (recommended)
+  - "Full (all components)"
+- "13 income types have no PE equivalent — how to handle?"
+  - "Map to closest existing variables" (recommended)
+  - "Create new variables for each"
+  - "Skip unmappable income types"
+
+### Step 2C: Write Scope Decision
+
+After all questions are answered, write the decision to `/tmp/{PREFIX}-scope-decision.md`:
 
 ```markdown
 ## Scope Decision for {STATE} {PROGRAM}
@@ -213,7 +269,11 @@ REQ-002: [ELIGIBILITY] Income <= 300% FPL (transitional)
 
 ### Excluded
 REQ-009: [NOT-MODELED] 20 hrs/week work activity — Reason: not simulatable
-REQ-010: [BENEFIT] Provider payment rates — Reason: user excluded
+REQ-010: [BENEFIT] Provider payment rates — Reason: user deferred
+
+### Key Decisions
+- Provider rates: deferred to follow-up PR
+- Income variable gaps: map to closest existing variables
 
 ### User Notes
 {any additional guidance from user}
