@@ -1,1 +1,0 @@
-Audit and fix all 41 skills: pip→uv pip (14 skills), npm→bun (4 skills), remove Streamlit references (3 skills), fix deprecated brand colors, fix wrong CTC parameter path, add trigger phrases to 10 skills, remove emoji from headers (12 skills), trim standards skill from 820→363 lines, fix changelog documentation.
