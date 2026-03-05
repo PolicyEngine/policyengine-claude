@@ -65,8 +65,10 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
 ```bash
 # Clean /backdate-program files (use {st}-{prog} prefix after parsing)
 rm -f /tmp/{st}-{prog}-*.md
-# Clean /review-program files (Phase 6 invokes /review-program)
-rm -f /tmp/review-program-*.md /tmp/review-pdf-*.{pdf,txt,png} /tmp/review-600dpi-*.png /tmp/review-ext-*.{pdf,txt,png,md}
+# Derive PREFIX for reading /review-program output files (Phase 6)
+PREFIX=$(git branch --show-current | tr '/' '-')
+PREFIX=${PREFIX:-review-program}
+# Note: /review-program's own Step 0A handles its file cleanup
 ```
 
 ```
@@ -787,7 +789,7 @@ Invoke the `review-program` skill in local-only mode with `--full`. On **round 1
 
 ### Step 6B: Check Results
 
-Read `/tmp/review-program-summary.md` (max 20 lines). Check:
+Read `/tmp/{PREFIX}-review-summary.md` (max 20 lines). Check:
 - **Critical issue count** — the number that matters
 - **Recommended severity** — APPROVE means zero critical issues
 
@@ -823,7 +825,7 @@ subagent_type: "complete:country-models:rules-engineer",
   team_name: "{st}-{prog}-backdate", name: "review-fixer-{ROUND}"
 
 "Fix the critical issues from the /review-program review (round {ROUND}).
-Read the full review report at /tmp/review-program-full-report.md.
+Read the full review report at /tmp/{PREFIX}-review-full-report.md.
 Focus ONLY on items marked CRITICAL — do not change anything else.
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
@@ -917,7 +919,7 @@ subagent_type: "general-purpose",
 
 "Finalize {STATE} {PROGRAM} backdating report.
 1. Read all findings from task list
-2. Read the last /review-program summary at /tmp/review-program-summary.md
+2. Read the last /review-program summary at /tmp/{PREFIX}-review-summary.md
 3. Read the impl spec summary at /tmp/{st}-{prog}-impl-summary.md
 4. Write SHORT final report (max 25 lines) to /tmp/{st}-{prog}-final-report.md:
    - Total parameters verified, date entries added
@@ -996,7 +998,7 @@ subagent_type: "general-purpose",
 READ these files:
 - /tmp/{st}-{prog}-checklist.md (session checklist from review-fix loop, if exists)
 - /tmp/{st}-{prog}-checkpoint.md (validation checkpoint, if exists)
-- /tmp/review-program-summary.md (last review summary, if exists)
+- /tmp/{PREFIX}-review-summary.md (last review summary, if exists)
 
 ALSO READ the persistent lessons file (if it exists):
 - {persistent_lessons_path}
