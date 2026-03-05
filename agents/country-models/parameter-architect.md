@@ -306,6 +306,15 @@ Before finalizing, validate your work against ALL loaded skills:
 
 Run through each skill's Quick Checklist if available.
 
+## Scope Boundary
+
+**You create PARAMETER YAML files ONLY.** Do NOT create:
+- Variable `.py` files — the rules-engineer agent handles these
+- Test `.yaml` files — the test-creator agent handles these
+- Enum classes or any Python code
+
+Even if you know what the variables and tests should look like, stay in your lane. Other agents are specialized for those tasks and will produce higher-quality output. If you create files outside your scope, the orchestrator may skip those specialized agents, degrading overall quality.
+
 ## Quality Standards
 
 Parameters must have:

@@ -759,6 +759,57 @@ class il_tanf_assistance_unit_size(Variable):
     ]
 ```
 
+### Enum Variables with Numeric Ranges Must Have Formulas
+
+**When an enum's labels describe numeric ranges (e.g., "30+ hours/week", "20-29 hours/week"), it MUST be a formula variable, not a bare input.** The numeric breakpoints should be a bracket parameter, and the formula should derive the category from an existing numeric input variable.
+
+**❌ WRONG — bare input enum, user picks manually:**
+```python
+class program_time_category(Variable):
+    value_type = Enum
+    possible_values = TimeCategory  # "30+ hrs", "20-29 hrs", etc.
+    default_value = TimeCategory.FULL_TIME
+    # No formula — user must select
+```
+
+**✅ CORRECT — derived from a numeric input via bracket parameter:**
+```yaml
+# time_category.yaml — single_amount bracket maps numeric input to category index
+brackets:
+  - threshold:
+      2024-01-01: 0
+    amount:
+      2024-01-01: 4  # QUARTER_TIME
+  - threshold:
+      2024-01-01: 10
+    amount:
+      2024-01-01: 3  # HALF_TIME
+  - threshold:
+      2024-01-01: 20
+    amount:
+      2024-01-01: 2  # THREE_QUARTER_TIME
+  - threshold:
+      2024-01-01: 30
+    amount:
+      2024-01-01: 1  # FULL_TIME
+```
+```python
+class program_time_category(Variable):
+    value_type = Enum
+    possible_values = TimeCategory
+    default_value = TimeCategory.FULL_TIME
+
+    def formula(person, period, parameters):
+        hours = person("childcare_hours_per_week", period)
+        p = parameters(period).gov.states.xx.agency.program
+        return p.time_category.calc(hours)
+```
+
+Before creating any enum variable, check:
+1. Do the labels describe numeric ranges or thresholds?
+2. Does an existing input variable provide the numeric value? (Grep the codebase)
+3. If yes to both → use a bracket parameter + formula, not a bare input
+
 #### State Variables to AVOID Creating
 
 For TANF implementations:

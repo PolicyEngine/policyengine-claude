@@ -127,16 +127,32 @@ Find a similar program in the codebase (e.g., CO CCAP for RI CCAP, DC TANF for O
 Search with: Glob 'policyengine_us/variables/gov/states/*/[agency]/{prog}/*.py'
 Read 3-5 variable files and 3-5 parameter files from the reference implementation.
 
-STEP 2: Write THREE files:
+STEP 2: Discover existing reusable variables.
+For each key concept in the program (income, hours, age, household size, childcare, etc.),
+Grep the codebase for related variables:
+  Grep 'class.*{concept}.*Variable' policyengine_us/variables/
+For example, a childcare program should search for 'childcare', 'hours', 'provider', 'care'.
+List all discovered variables in the impl-spec under '## Existing Variables to Reuse' so
+downstream agents know what's already available and don't recreate them as bare inputs.
+
+STEP 3: Verify citations against PDF text.
+You already have the full documentation loaded. Before writing the impl-spec, cross-check
+every section citation (statute number, manual section, definition number) against the
+actual PDF text. Search the extracted text for the exact section/definition heading.
+If a citation doesn't match (e.g., text says 'Definition 18' but you wrote 'Definition 19'),
+correct it NOW — downstream agents will copy these citations verbatim into parameter files.
+
+STEP 4: Write THREE files:
 
 FILE 1: /tmp/{PREFIX}-impl-spec.md (FULL — for implementation agents)
 - Every requirement from documentation, numbered (REQ-001, REQ-002, ...)
 - Each requirement tagged: ELIGIBILITY, INCOME, BENEFIT, EXEMPTION, DEMOGRAPHIC, IMMIGRATION, RESOURCE, etc.
 - Suggested variable and parameter structure (based on reference impl patterns)
+- Existing variables to reuse (from Step 2 discovery — variable name, entity, description)
 - Income sources list (for sources.yaml parameter, NOT inline adds)
 - Reference implementation paths to study
 - For TANF: note simplified vs full approach recommendation
-- For each requirement: cite the source (statute, manual section, page)
+- For each requirement: cite the source (statute, manual section, page) — verified against PDF text in Step 2
 
 FILE 2: /tmp/{PREFIX}-requirements-checklist.md (SHORT — for orchestrator, max 40 lines)
 - One line per requirement:
@@ -321,6 +337,8 @@ RULES:
 ```
 
 ### Step 3B: Create Variables and Tests (Parallel)
+
+**ORCHESTRATOR RULE: Always spawn BOTH agents below, even if the parameter-architect created variable or test files.** Each agent is specialized for its task. If a previous agent went out of scope and created files that aren't its responsibility, the specialized agent will overwrite or improve them. Never skip an agent because "the files already exist."
 
 After parameters are complete, spawn both in parallel — they work on different folders.
 
@@ -641,6 +659,11 @@ Closes #{ISSUE_NUMBER}
 
 ## Not Modeled
 {Excluded requirements with reasons}
+
+## Historical Notes
+If the regulatory reviewer or document-collector noted historical changes to any parameter
+values (e.g., threshold increases, rate changes), document what changed and when, with
+source links. This helps reviewers understand why parameters only start at a recent date.
 
 ## Files Added
 {Tree structure of new files}
