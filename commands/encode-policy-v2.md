@@ -697,16 +697,33 @@ TASK:
    (Only include categories that have new lessons.)"
 ```
 
-### Step 7B: Persist Locally
+### Step 7B: Persist Lessons
 
 Read `/tmp/{PREFIX}-new-lessons.md`.
 
 **If 'NO NEW LESSONS'**: Skip to final summary.
 
-**If new lessons exist**: Append to `lessons/agent-lessons.md`:
+**If new lessons exist**: Persist to BOTH locations (local memory + repo):
 
 ```bash
-cat /tmp/${PREFIX}-new-lessons.md >> lessons/agent-lessons.md
+# 1. Persist to local memory (survives across sessions even without repo)
+LESSONS_FILE="$LESSONS_PATH"
+if [ ! -f "$LESSONS_FILE" ]; then
+    echo "# Agent Lessons Learned (Local)" > "$LESSONS_FILE"
+    echo "" >> "$LESSONS_FILE"
+fi
+cat /tmp/${PREFIX}-new-lessons.md >> "$LESSONS_FILE"
+
+# 2. Persist to repo (shared across all contributors)
+LESSONS_PLUGIN="$(pwd)/lessons/agent-lessons.md"
+if [ ! -f "$LESSONS_PLUGIN" ]; then
+    echo "# Agent Lessons Learned" > "$LESSONS_PLUGIN"
+    echo "" >> "$LESSONS_PLUGIN"
+    echo "Accumulated from /encode-policy-v2 and /backdate-program runs across all contributors." >> "$LESSONS_PLUGIN"
+    echo "Loaded by implementation agents on future runs." >> "$LESSONS_PLUGIN"
+    echo "" >> "$LESSONS_PLUGIN"
+fi
+cat /tmp/${PREFIX}-new-lessons.md >> "$LESSONS_PLUGIN"
 git add lessons/agent-lessons.md
 git commit -m "Add lessons from ${STATE} ${PROGRAM} implementation"
 git push
