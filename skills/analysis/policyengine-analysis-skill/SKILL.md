@@ -243,10 +243,11 @@ print(f"Neutral: {neutral.sum() / len(gains) * 100:.1f}%")
 ```python
 import plotly.graph_objects as go
 
-# PolicyEngine brand colors
-TEAL = "#319795"
-BLUE = "#026AA2"
-DARK_GRAY = "#5A5A5A"
+# PolicyEngine brand colors — see policyengine-design-skill for canonical values.
+# Python charts can't use CSS vars, so reference the design token hex values:
+TEAL = "#319795"       # --pe-color-primary-500
+BLUE = "#026AA2"       # --pe-color-blue-700
+DARK_GRAY = "#5A5A5A"  # --pe-color-text-secondary
 
 def create_pe_layout(title, xaxis_title, yaxis_title):
     """Create standard PolicyEngine chart layout."""

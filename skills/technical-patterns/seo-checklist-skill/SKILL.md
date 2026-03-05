@@ -166,7 +166,7 @@ Every PolicyEngine web app needs these in `index.html`:
 }
 </script>
 
-<!-- Theme color for mobile browsers -->
+<!-- Theme color for mobile browsers — use --pe-color-primary-500 value -->
 <meta name="theme-color" content="#319795">
 ```
 
