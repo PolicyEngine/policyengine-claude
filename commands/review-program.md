@@ -17,7 +17,7 @@ description: Review any PR — code validation + PDF audit in one pass (read-onl
 - ALL data flows through files on disk. Agent prompts reference file paths, never paste content.
 
 **You MUST NOT:**
-- Read the PR diff (`/tmp/review-program-diff.txt`)
+- Read the PR diff (`/tmp/{PREFIX}-review-diff.txt`)
 - Read parameter YAML files or variable .py files
 - Read PDF text files or PDF screenshots
 - Read individual agent finding files (regulatory, references, code, tests, pdf-audit)
@@ -27,7 +27,7 @@ description: Review any PR — code validation + PDF audit in one pass (read-onl
 **You DO:**
 - Parse arguments and resolve PR number
 - Run `gh` commands for small structured JSON (pr view, pr checks)
-- Save diff to disk for agents: `gh pr diff > /tmp/review-program-diff.txt`
+- Save diff to disk for agents: `gh pr diff > /tmp/{PREFIX}-review-diff.txt`
 - Read SHORT summary files only: context (≤25 lines), manifest (≤30 lines), summary (≤20 lines)
 - Spawn agents (in parallel where possible)
 - Post the final report using `gh pr comment --body-file`
@@ -59,11 +59,21 @@ description: Review any PR — code validation + PDF audit in one pass (read-onl
 
 ## Phase 0: Parse Arguments & Ask Posting Mode
 
+### Step 0: Resolve File Prefix
+
+Derive a unique prefix from the current branch to prevent file collisions between concurrent runs:
+```bash
+PREFIX=$(git branch --show-current | tr '/' '-')
+PREFIX=${PREFIX:-review-program}  # fallback if detached HEAD
+```
+
+All `/tmp/` files in this command use `{PREFIX}` in their paths (e.g., `/tmp/{PREFIX}-review-diff.txt`). Main Claude substitutes the resolved value into all bash commands and agent prompts.
+
 ### Step 0A: Parse Arguments & Clean Up
 
 **Clean up leftover files from previous runs** (prevents stale data from confusing agents):
 ```bash
-rm -f /tmp/review-program-*.md /tmp/review-pdf-*.{pdf,txt,png} /tmp/review-600dpi-*.png /tmp/review-ext-*.{pdf,txt,png,md}
+rm -f /tmp/{PREFIX}-review-*.md /tmp/{PREFIX}-review-pdf-*.{pdf,txt,png} /tmp/{PREFIX}-600dpi-*.png /tmp/{PREFIX}-ext-*.{pdf,txt,png,md}
 ```
 
 ```
@@ -121,11 +131,11 @@ gh pr checks $PR_NUMBER
 
 ```bash
 # Standard mode: read from GitHub remote
-gh pr diff $PR_NUMBER > /tmp/review-program-diff.txt
+gh pr diff $PR_NUMBER > /tmp/{PREFIX}-review-diff.txt
 
 # --local-diff mode: read from local commits (no push required)
 BASE_BRANCH=$(gh pr view $PR_NUMBER --json baseRefName --jq '.baseRefName')
-git diff "$BASE_BRANCH"...HEAD > /tmp/review-program-diff.txt
+git diff "$BASE_BRANCH"...HEAD > /tmp/{PREFIX}-review-diff.txt
 ```
 
 **Main Claude does NOT read the diff file.** It only saves it to disk for agents.
@@ -140,11 +150,11 @@ subagent_type: "general-purpose"
 name: "context-analyzer"
 run_in_background: true
 
-"Analyze the PR diff at /tmp/review-program-diff.txt and write a context summary.
+"Analyze the PR diff at /tmp/{PREFIX}-review-diff.txt and write a context summary.
 
 TASK:
-1. Read /tmp/review-program-diff.txt
-2. Write /tmp/review-program-context.md (MAX 25 LINES):
+1. Read /tmp/{PREFIX}-review-diff.txt
+2. Write /tmp/{PREFIX}-review-context.md (MAX 25 LINES):
 
    ## PR Context
    - Scope: {state program / federal parameter / infrastructure / API / frontend / other}
@@ -170,7 +180,7 @@ Keep it CONCISE — paths and classifications only. Max 25 lines."
 
 ### Step 1C: Read context summary
 
-After the context-analyzer completes, read ONLY `/tmp/review-program-context.md` (max 25 lines). This gives you:
+After the context-analyzer completes, read ONLY `/tmp/{PREFIX}-review-context.md` (max 25 lines). This gives you:
 - Scope and PR type — determines which agents to spawn
 - State, program, year for agent prompts (if applicable)
 - File lists for agent assignments
@@ -189,7 +199,7 @@ After the context-analyzer completes, read ONLY `/tmp/review-program-context.md`
 
 **Skip this phase if `--skip-pdf` OR if context summary says `Has source documents: no` and `Scope: infrastructure/API/frontend`.** Write a manifest stub instead:
 ```bash
-echo "## PDF Manifest\n### No PDF (skipped)\n- Reason: {--skip-pdf flag / no source documents for this PR type}; code-only review" > /tmp/review-program-pdf-manifest.md
+echo "## PDF Manifest\n### No PDF (skipped)\n- Reason: {--skip-pdf flag / no source documents for this PR type}; code-only review" > /tmp/{PREFIX}-review-pdf-manifest.md
 ```
 
 **Otherwise, PDF acquisition runs.** This is delegated entirely to the document-collector agent to protect Main Claude's context window.
@@ -214,25 +224,25 @@ USER-PROVIDED PDF URL: {PDF_URL or 'none — auto-discover'}
 TASK:
 1. If a PDF URL was provided, download and validate it
 2. If no URL provided:
-   a. Check PR description and YAML references (read /tmp/review-program-diff.txt)
+   a. Check PR description and YAML references (read /tmp/{PREFIX}-review-diff.txt)
    b. WebSearch for the official source document
    c. Download and validate (correct state, year, document type)
 3. For EACH PDF found (up to 5):
-   a. Download: curl -L -o /tmp/review-pdf-{N}.pdf 'URL'
-   b. Get page count: pdfinfo /tmp/review-pdf-{N}.pdf | grep Pages
-   c. Extract text: pdftotext /tmp/review-pdf-{N}.pdf /tmp/review-pdf-{N}.txt
-   d. Render at {DPI} DPI: pdftoppm -png -r {DPI} /tmp/review-pdf-{N}.pdf /tmp/review-pdf-{N}-page
+   a. Download: curl -L -o /tmp/{PREFIX}-review-pdf-{N}.pdf 'URL'
+   b. Get page count: pdfinfo /tmp/{PREFIX}-review-pdf-{N}.pdf | grep Pages
+   c. Extract text: pdftotext /tmp/{PREFIX}-review-pdf-{N}.pdf /tmp/{PREFIX}-review-pdf-{N}.txt
+   d. Render at {DPI} DPI: pdftoppm -png -r {DPI} /tmp/{PREFIX}-review-pdf-{N}.pdf /tmp/{PREFIX}-review-pdf-{N}-page
    e. Determine page offset (cover/TOC pages before content page 1)
 4. Check for supplementary documents referenced by the main booklet
-5. Write manifest to /tmp/review-program-pdf-manifest.md (MAX 30 LINES):
+5. Write manifest to /tmp/{PREFIX}-review-pdf-manifest.md (MAX 30 LINES):
 
    ## PDF Manifest
    ### PDF 1: [title]
    - URL: [url]
-   - Path: /tmp/review-pdf-1.pdf
+   - Path: /tmp/{PREFIX}-review-pdf-1.pdf
    - Pages: [count], offset: [N] preliminary pages
-   - Text: /tmp/review-pdf-1.txt
-   - Screenshots: /tmp/review-pdf-1-page-{NN}.png
+   - Text: /tmp/{PREFIX}-review-pdf-1.txt
+   - Screenshots: /tmp/{PREFIX}-review-pdf-1-page-{NN}.png
    - Topics covered: [list of topics and page ranges]
    ### PDF 2: [title] (if applicable)
    ...
@@ -244,7 +254,7 @@ If no PDF is found, write that in the manifest and the review will continue with
 
 ### Read Manifest
 
-After the pdf-collector completes, read ONLY `/tmp/review-program-pdf-manifest.md` (max 30 lines). This tells you:
+After the pdf-collector completes, read ONLY `/tmp/{PREFIX}-review-pdf-manifest.md` (max 30 lines). This tells you:
 - Which PDFs were found (if any)
 - **Total page count per PDF** — used in Phase 3 to decide how many audit agents to spawn
 - File paths for agent prompts
@@ -258,9 +268,9 @@ Using the context summary (from Phase 1) and the PDF manifest (from Phase 2), pl
 
 ### Identify repo files to review
 
-**If `--full` flag**: The context-analyzer noted the state/program path. Spawn a quick `general-purpose` agent (needs Write tool) to list all files under that path and write to `/tmp/review-program-full-filelist.md` (max 30 lines). Read only that file.
+**If `--full` flag**: The context-analyzer noted the state/program path. Spawn a quick `general-purpose` agent (needs Write tool) to list all files under that path and write to `/tmp/{PREFIX}-review-full-filelist.md` (max 30 lines). Read only that file.
 
-**If no `--full` flag**: Use the file lists from `/tmp/review-program-context.md`.
+**If no `--full` flag**: Use the file lists from `/tmp/{PREFIX}-review-context.md`.
 
 ### Plan agent topic split
 
@@ -339,7 +349,7 @@ Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns.
   snap_gross_income, etc.). If the PR creates a new variable for a concept that already
   exists in the codebase, flag it as CRITICAL — the PR should reuse the existing variable.
   Grep the codebase to verify before flagging.
-- Write findings to /tmp/review-program-regulatory.md
+- Write findings to /tmp/{PREFIX}-review-regulatory.md
 
 KEY QUESTION: Does this implementation correctly reflect the law?
 
@@ -368,12 +378,12 @@ Load skills: /policyengine-parameter-patterns.
 - Verify #page=XX is the FILE page number, not the printed page number
   (use PDF page offset from manifest to check)
 - Flag session law refs that should cite permanent statutes
-- Write findings to /tmp/review-program-references.md
+- Write findings to /tmp/{PREFIX}-review-references.md
 
 KEY QUESTION: Can every value be traced to an authoritative source?
 
 Files to review: {list from Phase 3}
-PDF manifest: /tmp/review-program-pdf-manifest.md"
+PDF manifest: /tmp/{PREFIX}-review-pdf-manifest.md"
 ```
 
 #### Validator 3: Code Patterns (Critical + Should)
@@ -407,7 +417,7 @@ Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   (e.g., FPG, SMI, gross income, enrollment status), Grep the codebase to check if an
   existing variable already covers it. PolicyEngine-US has hundreds of reusable variables.
   Flag duplicates as CRITICAL — the PR should reuse the existing variable.
-- Write findings to /tmp/review-program-code.md
+- Write findings to /tmp/{PREFIX}-review-code.md
 
 KEY QUESTION: Does the code follow PolicyEngine standards?
 
@@ -430,7 +440,7 @@ Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 - Find untested edge cases
 - Check parameter combinations not tested
 - Verify integration test exists
-- Write findings to /tmp/review-program-tests.md
+- Write findings to /tmp/{PREFIX}-review-tests.md
 
 KEY QUESTION: Are the important scenarios tested?
 
@@ -471,7 +481,7 @@ TASK: Report only — do NOT edit any files.
      and compare against the PDF. If they differ, flag it.
    - Note any 'New for {year}' changes
 
-5. Report to /tmp/review-program-pdf-{topic}.md:
+5. Report to /tmp/{PREFIX}-review-pdf-{topic}.md:
    a. MATCHES: Parameters that are correct (count + brief list)
    b. MISMATCHES: Parameters where repo differs from PDF (cite both values and PDF page)
    c. MISSING FROM REPO: Things in the PDF we don't model
@@ -520,7 +530,7 @@ WHAT TO VERIFY:
 STEPS:
 1. Read the page screenshot at the path above
 2. Find the specific value requested
-3. Report to /tmp/review-program-xref-{N}.md:
+3. Report to /tmp/{PREFIX}-review-xref-{N}.md:
    - The value you see on that page
    - What confirms it (table name, worksheet line, etc.)
    - PDF page number for citation: #page=XX"
@@ -551,11 +561,11 @@ WHAT TO VERIFY:
 
 STEPS:
 1. WebSearch for the document
-2. Download: curl -L -o /tmp/review-ext-{N}.pdf 'URL'
-3. Extract text: pdftotext /tmp/review-ext-{N}.pdf /tmp/review-ext-{N}.txt
-4. Render at {DPI} DPI: pdftoppm -png -r {DPI} /tmp/review-ext-{N}.pdf /tmp/review-ext-{N}-page
+2. Download: curl -L -o /tmp/{PREFIX}-ext-{N}.pdf 'URL'
+3. Extract text: pdftotext /tmp/{PREFIX}-ext-{N}.pdf /tmp/{PREFIX}-ext-{N}.txt
+4. Render at {DPI} DPI: pdftoppm -png -r {DPI} /tmp/{PREFIX}-ext-{N}.pdf /tmp/{PREFIX}-ext-{N}-page
 5. Read text and/or screenshots to find the value
-6. Report to /tmp/review-program-ext-{N}.md:
+6. Report to /tmp/{PREFIX}-review-ext-{N}.md:
    - PDF URL (for reference link with #page=XX)
    - Correct value with exact PDF page number
    - Confirmation details"
@@ -588,11 +598,11 @@ REPORTED MISMATCH:
 - Parameter: {parameter name and file path}
 - Repo value: {value from audit agent report}
 - Agent-reported PDF value: {value from audit agent report}
-- Audit agent's reasoning: {summary from their report file /tmp/review-program-pdf-{topic}.md}
+- Audit agent's reasoning: {summary from their report file /tmp/{PREFIX}-review-pdf-{topic}.md}
 - Target year: {year from Phase 1}
 
 YOUR TASK:
-1. Read the audit agent's report at /tmp/review-program-pdf-{topic}.md to understand
+1. Read the audit agent's report at /tmp/{PREFIX}-review-pdf-{topic}.md to understand
    their full reasoning for this mismatch
 2. Read the parameter file to confirm the repo value
 3. Grep for ALL usages of this parameter across the codebase
@@ -614,7 +624,7 @@ VERDICT must be one of:
   (e.g., gated by in_effect=false, only used in pre-{year} branch, overridden by another param)
 - INCONCLUSIVE: Unable to fully determine — explain what's unclear
 
-Report to /tmp/review-program-codepath-{N}.md:
+Report to /tmp/{PREFIX}-review-codepath-{N}.md:
 - Verdict: {CONFIRMED / REJECTED / INCONCLUSIVE}
 - Parameter: {name}
 - Code path trace: {top-level variable → ... → this parameter}
@@ -629,7 +639,7 @@ Report to /tmp/review-program-codepath-{N}.md:
 - **REJECTED** mismatches → excluded from Step 5D, but noted as "investigated and cleared" in the consolidator input
 - **INCONCLUSIVE** mismatches → proceed to Step 5D (treat as potentially real)
 
-Main Claude reads ONLY the verdict line from each `/tmp/review-program-codepath-{N}.md` (first line). It does NOT read the full reasoning — that's for the consolidator.
+Main Claude reads ONLY the verdict line from each `/tmp/{PREFIX}-review-codepath-{N}.md` (first line). It does NOT read the full reasoning — that's for the consolidator.
 
 ### Step 5D: Visual Verification of Confirmed Mismatches (600 DPI)
 
@@ -654,19 +664,19 @@ MISMATCH TO VERIFY:
 - Agent-reported PDF value: {from audit agent}
 - Code-path verdict: {CONFIRMED or INCONCLUSIVE, from Step 5C}
 - PDF page: {from audit agent}
-- PDF file: /tmp/review-pdf-{N}.pdf
-- Text file: /tmp/review-pdf-{N}.txt
+- PDF file: /tmp/{PREFIX}-review-pdf-{N}.pdf
+- Text file: /tmp/{PREFIX}-review-pdf-{N}.txt
 
 STEPS:
 1. Re-render the disputed page at 600 DPI:
-   pdftoppm -png -r 600 -f {PAGE} -l {PAGE} /tmp/review-pdf-{N}.pdf /tmp/review-600dpi-mismatch-{N}
+   pdftoppm -png -r 600 -f {PAGE} -l {PAGE} /tmp/{PREFIX}-review-pdf-{N}.pdf /tmp/{PREFIX}-600dpi-mismatch-{N}
 2. Read the 600 DPI screenshot carefully
-3. Cross-reference with extracted text: read /tmp/review-pdf-{N}.txt and search for the value
+3. Cross-reference with extracted text: read /tmp/{PREFIX}-review-pdf-{N}.txt and search for the value
 4. Check for false positives — agents commonly misread values in dense tables
 5. If the parameter uses uprating, compute: last_value x (new_index / old_index)
 6. Check for logic gaps — the value may be correct but the formula may not enforce all rules
 
-Report to /tmp/review-program-mismatch-{N}.md:
+Report to /tmp/{PREFIX}-review-mismatch-{N}.md:
 - CONFIRMED MISMATCH: repo={X}, PDF={Y}, page=#page={NN} — or
 - FALSE POSITIVE: agent misread, actual value is {Z}
 - Evidence: what you see on the 600 DPI screenshot and in extracted text
@@ -695,17 +705,17 @@ TASK: Check that every #page=XX reference in the PR points to the correct PDF pa
 Common Pitfall: Authors often use the PRINTED page number instead of the PDF FILE page number.
 These differ by the page offset (preliminary pages before content page 1).
 PDF page offset: {offset from manifest}
-PDF manifest: /tmp/review-program-pdf-manifest.md (contains screenshot path patterns and PDF file paths)
+PDF manifest: /tmp/{PREFIX}-review-pdf-manifest.md (contains screenshot path patterns and PDF file paths)
 
 STEPS:
-1. Read /tmp/review-program-pdf-manifest.md to get screenshot path patterns
-2. Read the PR diff at /tmp/review-program-diff.txt
+1. Read /tmp/{PREFIX}-review-pdf-manifest.md to get screenshot path patterns
+2. Read the PR diff at /tmp/{PREFIX}-review-diff.txt
 3. Extract all #page=XX references from YAML files
 4. For each reference, read the PDF screenshot at that page number
 5. Verify the referenced value actually appears on that page
 6. If wrong, find the correct page by searching nearby pages
 
-Report to /tmp/review-program-pages.md:
+Report to /tmp/{PREFIX}-review-pages.md:
 - CORRECT: {file} #page=XX — confirmed, [value] found on page
 - WRONG: {file} #page=XX — should be #page=YY, [value] is actually on page YY"
 ```
@@ -727,17 +737,17 @@ run_in_background: false
 "Consolidate all findings from a program review into a single report.
 
 READ these files:
-- /tmp/review-program-regulatory.md (regulatory accuracy)
-- /tmp/review-program-references.md (reference quality)
-- /tmp/review-program-code.md (code patterns)
-- /tmp/review-program-tests.md (test coverage)
-- /tmp/review-program-pdf-*.md (PDF audit results — all matching files)
-- /tmp/review-program-xref-*.md (cross-reference verifications, if any)
-- /tmp/review-program-ext-*.md (external PDF verifications, if any)
-- /tmp/review-program-codepath-*.md (code-path verification verdicts, if any)
-- /tmp/review-program-mismatch-*.md (600 DPI visual verifications, if any)
-- /tmp/review-program-pages.md (page number verifications, if exists)
-- /tmp/review-program-context.md (PR context: state, year, CI status)
+- /tmp/{PREFIX}-review-regulatory.md (regulatory accuracy)
+- /tmp/{PREFIX}-review-references.md (reference quality)
+- /tmp/{PREFIX}-review-code.md (code patterns)
+- /tmp/{PREFIX}-review-tests.md (test coverage)
+- /tmp/{PREFIX}-review-pdf-*.md (PDF audit results — all matching files)
+- /tmp/{PREFIX}-review-xref-*.md (cross-reference verifications, if any)
+- /tmp/{PREFIX}-review-ext-*.md (external PDF verifications, if any)
+- /tmp/{PREFIX}-review-codepath-*.md (code-path verification verdicts, if any)
+- /tmp/{PREFIX}-review-mismatch-*.md (600 DPI visual verifications, if any)
+- /tmp/{PREFIX}-review-pages.md (page number verifications, if exists)
+- /tmp/{PREFIX}-review-context.md (PR context: state, year, CI status)
 
 TASK:
 1. Merge all findings, removing duplicates
@@ -751,8 +761,8 @@ TASK:
      period usage errors, formatting issues (params & vars)
    - SUGGESTIONS: documentation improvements, performance optimizations, code style
 
-5. Write FULL report to /tmp/review-program-full-report.md (for archival/posting)
-6. Write SHORT summary to /tmp/review-program-summary.md (MAX 20 LINES):
+5. Write FULL report to /tmp/{PREFIX}-review-full-report.md (for archival/posting)
+6. Write SHORT summary to /tmp/{PREFIX}-review-summary.md (MAX 20 LINES):
    - Critical count + one-line descriptions
    - Should count
    - Suggestion count
@@ -765,7 +775,7 @@ SEVERITY RULES:
 - REQUEST_CHANGES: Has critical issues that must be fixed"
 ```
 
-After the consolidator completes, read ONLY `/tmp/review-program-summary.md` (max 20 lines).
+After the consolidator completes, read ONLY `/tmp/{PREFIX}-review-summary.md` (max 20 lines).
 
 ---
 
@@ -781,7 +791,7 @@ After the consolidator completes, read ONLY `/tmp/review-program-summary.md` (ma
 subagent_type: "general-purpose"
 name: "display-agent"
 
-"Read /tmp/review-program-full-report.md and present it to the user.
+"Read /tmp/{PREFIX}-review-full-report.md and present it to the user.
 Format it clearly with markdown sections. Include all findings."
 ```
 
@@ -791,12 +801,12 @@ Main Claude shows the agent's summary to the user.
 
 ```bash
 # Post the report — Main Claude never reads this file
-gh pr comment $PR_NUMBER --body-file /tmp/review-program-full-report.md
+gh pr comment $PR_NUMBER --body-file /tmp/{PREFIX}-review-full-report.md
 ```
 
 ### Expected Report Format (written by consolidator)
 
-The consolidator writes `/tmp/review-program-full-report.md` in this structure:
+The consolidator writes `/tmp/{PREFIX}-review-full-report.md` in this structure:
 
 ```
 ## Program Review
@@ -853,20 +863,20 @@ The context-analyzer (Phase 1) captures CI status. The consolidator includes CI 
 ## Context Protection Rules
 
 **Main Claude reads ONLY these short files:**
-- `/tmp/review-program-context.md` (max 25 lines) — from context-analyzer
-- `/tmp/review-program-pdf-manifest.md` (max 30 lines) — from pdf-collector
-- `/tmp/review-program-full-filelist.md` (max 30 lines) — from Explore agent, only if `--full`
-- `/tmp/review-program-summary.md` (max 20 lines) — from consolidator
+- `/tmp/{PREFIX}-review-context.md` (max 25 lines) — from context-analyzer
+- `/tmp/{PREFIX}-review-pdf-manifest.md` (max 30 lines) — from pdf-collector
+- `/tmp/{PREFIX}-review-full-filelist.md` (max 30 lines) — from Explore agent, only if `--full`
+- `/tmp/{PREFIX}-review-summary.md` (max 20 lines) — from consolidator
 
 **All other data flows through files on disk.** Agent prompts reference file paths, never paste content.
 
 **Main Claude MUST NOT read:**
-- The PR diff (`/tmp/review-program-diff.txt`)
-- PDF text files (`/tmp/review-pdf-*.txt`)
-- PDF screenshots (`/tmp/review-pdf-*-page-*.png`, `/tmp/review-600dpi-*.png`)
+- The PR diff (`/tmp/{PREFIX}-review-diff.txt`)
+- PDF text files (`/tmp/{PREFIX}-review-pdf-*.txt`)
+- PDF screenshots (`/tmp/{PREFIX}-review-pdf-*-page-*.png`, `/tmp/{PREFIX}-600dpi-*.png`)
 - Parameter YAML files or variable .py files
 - Individual agent finding files (regulatory, references, code, tests, pdf-audit, codepath, mismatch, pages)
-- The full report (`/tmp/review-program-full-report.md`) — posted via `--body-file`
+- The full report (`/tmp/{PREFIX}-review-full-report.md`) — posted via `--body-file`
 
 ---
 
