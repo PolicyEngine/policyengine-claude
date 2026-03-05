@@ -1,6 +1,8 @@
 ---
 name: policyengine-uk-data
-description: UK survey data enhancement - FRS with WAS imputation patterns
+description: |
+  UK survey data enhancement - FRS with WAS imputation patterns and cross-repo variable workflows.
+  Triggers: "FRS", "Family Resources Survey", "WAS", "Wealth and Assets Survey", "UK data", "UK microdata", "wealth imputation", "policyengine-uk-data"
 ---
 
 # PolicyEngine UK Data
@@ -49,12 +51,12 @@ policyengine_uk_data/
 
 **From PyPI:**
 ```bash
-pip install policyengine-uk-data
+uv pip install policyengine-uk-data
 ```
 
 **Development:**
 ```bash
-pip install -e .
+uv pip install -e .
 ```
 
 ## For Contributors

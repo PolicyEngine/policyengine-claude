@@ -75,7 +75,7 @@ PolicyEngine-US is the "calculator" for US taxes and benefits. When you use poli
 ### Installation
 
 ```bash
-pip install policyengine
+uv pip install policyengine
 ```
 
 ### Two Modes of Analysis

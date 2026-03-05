@@ -1,13 +1,15 @@
 ---
 name: l0
-description: L0 regularization for neural network sparsification and intelligent sampling - used in survey calibration
+description: |
+  L0 regularization for neural network sparsification and intelligent sampling - used in survey calibration.
+  Triggers: "L0", "sparsification", "sample selection", "hard concrete", "sparse weights", "household selection", "gate", "survey sparsity", "l0-python"
 ---
 
 # L0 Regularization
 
 L0 is a PyTorch implementation of L0 regularization for neural network sparsification and intelligent sampling, used in PolicyEngine's survey calibration pipeline.
 
-## For Users 👥
+## For Users
 
 ### What is L0?
 
@@ -21,7 +23,7 @@ L0 regularization helps PolicyEngine create more efficient survey datasets by in
 **Behind the scenes:**
 When PolicyEngine shows population-wide impacts, L0 helps select representative households from the full survey, reducing computation time while maintaining accuracy.
 
-## For Analysts 📊
+## For Analysts
 
 ### What L0 Does
 
@@ -38,7 +40,7 @@ L0 provides intelligent sampling gates for:
 ### Installation
 
 ```bash
-pip install l0-python
+uv pip install l0-python
 ```
 
 ### Quick Example: Sample Selection
@@ -70,7 +72,7 @@ gates = HardConcrete(
 # microcalibrate applies gates during weight optimization
 ```
 
-## For Contributors 💻
+## For Contributors
 
 ### Repository
 

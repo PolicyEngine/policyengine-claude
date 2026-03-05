@@ -99,7 +99,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install -e .
+        run: uv pip install -e .
       - name: Run tests
         run: make test
 ```
@@ -331,8 +331,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .
-          pip install pytest pytest-cov
+          uv pip install -e .
+          uv pip install pytest pytest-cov
 
       - name: Run data pipeline tests
         run: |

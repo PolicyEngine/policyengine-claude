@@ -17,7 +17,7 @@ Use this skill when creating or modifying charts in PolicyEngine applications. P
 ## Installation
 
 ```bash
-npm install recharts
+bun install recharts
 ```
 
 Do NOT install `plotly.js` or `react-plotly.js` for new projects.

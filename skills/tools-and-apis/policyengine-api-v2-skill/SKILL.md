@@ -7,7 +7,7 @@ description: PolicyEngine API v2 - Next-generation microservices architecture wi
 
 The next-generation PolicyEngine API is a monorepo containing multiple microservices built with modern Python tooling.
 
-## For Users 👥
+## For Users
 
 ### What is API v2?
 
@@ -22,7 +22,7 @@ API v2 is the next generation of the PolicyEngine API, currently in active devel
 - Auto-generated OpenAPI specs and clients
 - Supabase for database management
 
-## For Analysts 📊
+## For Analysts
 
 ### When to Use v2
 
@@ -30,7 +30,7 @@ Currently, analysts should continue using the v1 API at `https://api.policyengin
 
 API v2 is not yet ready for production use. Check the repository README for the latest status.
 
-## For Contributors 💻
+## For Contributors
 
 ### Repository
 
@@ -185,7 +185,7 @@ cat package.json | grep -A 5 "dependencies"
 **If using npm design tokens:**
 ```bash
 # Design tokens from app-v2
-npm install @policyengine/design-tokens
+bun install @policyengine/design-tokens
 ```
 
 ### OpenAPI Specification

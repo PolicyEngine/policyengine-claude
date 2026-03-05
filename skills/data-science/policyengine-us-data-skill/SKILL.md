@@ -1,6 +1,8 @@
 ---
 name: policyengine-us-data
-description: US survey data enhancement - CPS with PUF imputation patterns and cross-repo variable workflows
+description: |
+  US survey data enhancement - CPS with PUF imputation patterns and cross-repo variable workflows.
+  Triggers: "CPS", "Current Population Survey", "PUF", "Public Use File", "US data", "US microdata", "enhanced CPS", "policyengine-us-data", "cross-repo", "FINANCIAL_SUBSET"
 ---
 
 # PolicyEngine US Data
@@ -48,12 +50,12 @@ policyengine_us_data/
 
 **From PyPI:**
 ```bash
-pip install policyengine-us-data
+uv pip install policyengine-us-data
 ```
 
 **Development:**
 ```bash
-pip install -e .
+uv pip install -e .
 ```
 
 ## CRITICAL: Cross-Repo Variable Workflow
@@ -167,7 +169,7 @@ The CI uses whatever policyengine-us version satisfies the pyproject.toml constr
 ```
 ❌ Run microsim right after merging
    → Still using old cached data → Variable shows $0
-   → Need to wait for CI or `pip install --upgrade policyengine-us-data`
+   → Need to wait for CI or `uv pip install --upgrade policyengine-us-data`
 ```
 
 ### Checklist for New Data-Backed Variables
@@ -178,7 +180,7 @@ The CI uses whatever policyengine-us version satisfies the pyproject.toml constr
 - [ ] Create policyengine-us-data PR with:
   - [ ] Data extraction code in puf.py
   - [ ] Variable name in FINANCIAL_SUBSET (puf.py)
-  - [ ] Variable name in IMPUTED_VARIABLES (extended_cps.py) ⚠️ **Don't forget this!**
+  - [ ] Variable name in IMPUTED_VARIABLES (extended_cps.py) **Don't forget this!**
   - [ ] Bumped minimum policyengine-us version in pyproject.toml
   - [ ] Updated uv.lock via `uv lock`
 - [ ] Merge policyengine-us-data PR

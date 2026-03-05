@@ -1,13 +1,15 @@
 ---
 name: microdf
-description: Weighted pandas DataFrames for survey microdata analysis - inequality, poverty, and distributional calculations
+description: |
+  Weighted pandas DataFrames for survey microdata analysis - inequality, poverty, and distributional calculations.
+  Triggers: "weighted mean", "Gini", "poverty rate", "inequality", "MicroDataFrame", "MicroSeries", "weighted statistics", "decile", "quintile", "income distribution", "microdf"
 ---
 
 # MicroDF
 
 MicroDF provides weighted pandas DataFrames and Series for analyzing survey microdata, with built-in support for inequality and poverty calculations.
 
-## For Users 👥
+## For Users
 
 ### What is MicroDF?
 
@@ -35,12 +37,12 @@ When you see poverty rates, Gini coefficients, or distributional charts in Polic
 - MicroDF calculates weighted percentiles
 - Shows income distribution (10th, 50th, 90th percentile)
 
-## For Analysts 📊
+## For Analysts
 
 ### Installation
 
 ```bash
-pip install microdf-python
+uv pip install microdf-python
 ```
 
 ### Quick Start
@@ -163,7 +165,7 @@ print(f"Gini: {gini:.3f}")
 print(f"Poverty rate: {poverty_rate:.1%}")
 ```
 
-## For Contributors 💻
+## For Contributors
 
 ### Repository
 

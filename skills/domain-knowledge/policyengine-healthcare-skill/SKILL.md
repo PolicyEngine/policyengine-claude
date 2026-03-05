@@ -481,7 +481,7 @@ parameters/gov/aca/
 │   ├── default.yaml                    # Federal 3:1 ratio
 │   ├── al.yaml, dc.yaml, ...          # 7 states with custom curves
 │   └── ny.yaml, vt.yaml               # Family tier states
-├── required_contribution_percentage/   # ⚠️ LIST-VALUED — not scalar!
+├── required_contribution_percentage/   # LIST-VALUED — not scalar!
 │   ├── threshold.yaml                  # FPL bracket boundaries (list)
 │   ├── initial.yaml                    # Initial contribution rates by bracket (list)
 │   └── final.yaml                      # Final contribution rates by bracket (list)

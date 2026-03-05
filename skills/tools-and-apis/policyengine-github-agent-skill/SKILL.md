@@ -5,11 +5,11 @@ description: Guidance for working with the PolicyEngine GitHub agent bot
 
 # PolicyEngine GitHub Agent Skill
 
-## For Users 👥
+## For Users
 
 The PolicyEngine GitHub agent is an automated bot that can be invoked on GitHub issues and pull requests using `@policyengine` mentions. It helps with code reviews, bug fixes, and implementing features across PolicyEngine repositories.
 
-## For Contributors 💻
+## For Contributors
 
 ### Critical: Avoiding Doom Loops
 

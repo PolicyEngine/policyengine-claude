@@ -82,7 +82,7 @@ PolicyEngine-UK is the "calculator" for UK taxes and benefits. When you use poli
 ### Installation
 
 ```bash
-pip install policyengine
+uv pip install policyengine
 ```
 
 ### Two Modes of Analysis

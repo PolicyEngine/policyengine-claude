@@ -1,17 +1,19 @@
 ---
 name: policyengine-design
-description: PolicyEngine design system — tokens, typography, colors, charts, and branding for all project types
+description: |
+  PolicyEngine design system — tokens, typography, colors, charts, and branding for all project types.
+  Triggers: "brand colors", "design tokens", "PolicyEngine colors", "typography", "font", "color palette", "CSS variables", "pe-color", "design system", "branding guidelines"
 ---
 
 # PolicyEngine design system
 
-Single source of truth for PolicyEngine's visual identity. All tokens live in `@policyengine/design-system` (npm). Every project — app-v2, standalone tools, charts, Streamlit — should reference these values rather than hardcoding hex codes.
+Single source of truth for PolicyEngine's visual identity. All tokens live in `@policyengine/design-system` (npm). Every project — app-v2, standalone tools, charts — should reference these values rather than hardcoding hex codes.
 
 ## The design system package
 
 **Install:**
 ```bash
-npm install @policyengine/design-system
+bun install @policyengine/design-system
 ```
 
 **Three export formats:**
@@ -93,9 +95,9 @@ These appear in older projects. Migrate to the values above.
 
 | Old | Hex | Replacement |
 |-----|-----|-------------|
-| `TEAL_ACCENT` | `#39C6C0` | `primary.500` (`#319795`) |
-| `BLUE_PRIMARY` | `#2C6496` | `blue.700` (`#026AA2`) |
-| `DARK_GRAY` | `#616161` | `text.secondary` (`#5A5A5A`) |
+| `TEAL_ACCENT` | `#319795` | `primary.500` (`#319795`) |
+| `BLUE_PRIMARY` | `#026AA2` | `blue.700` (`#026AA2`) |
+| `DARK_GRAY` | `#5A5A5A` | `text.secondary` (`#5A5A5A`) |
 
 ## Typography
 
@@ -235,21 +237,6 @@ All logo files in `policyengine-app-v2/app/public/assets/logos/policyengine/`:
 https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png
 ```
 
-## Streamlit apps
-
-```toml
-# .streamlit/config.toml
-[theme]
-base = "light"
-primaryColor = "#319795"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#E6FFFA"
-textColor = "#000000"
-
-[client]
-toolbarMode = "minimal"
-```
-
 ## Using tokens by project type
 
 | Project type | Token source | Font setup |
@@ -257,7 +244,6 @@ toolbarMode = "minimal"
 | **app-v2** | `import { colors } from '@/designTokens'` | Built-in (Mantine + Inter) |
 | **Standalone tool** | `@import tokens.css` or CDN link | Google Fonts: Inter |
 | **Python chart** | Hardcode or load `tokens.json` | Inter for Plotly |
-| **Streamlit** | `.streamlit/config.toml` | Default sans-serif |
 | **Blog HTML** | Hardcode from token values | Google Fonts: Inter |
 
 ## Accessibility

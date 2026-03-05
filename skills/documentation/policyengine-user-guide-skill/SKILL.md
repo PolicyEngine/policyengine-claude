@@ -1,6 +1,8 @@
 ---
 name: policyengine-user-guide
-description: Using PolicyEngine web apps to analyze tax and benefit policy impacts - for users of policyengine.org
+description: |
+  Using PolicyEngine web apps to analyze tax and benefit policy impacts - for users of policyengine.org.
+  Triggers: "how to use PolicyEngine", "household calculator", "policy reform on website", "policyengine.org walkthrough", "web app guide"
 ---
 
 # PolicyEngine User Guide

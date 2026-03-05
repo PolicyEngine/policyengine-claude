@@ -622,7 +622,7 @@ Should work great once merged!
 Install PolicyEngine-US from PyPI:
 
 ```bash
-pip install policyengine-us
+uv pip install policyengine-us
 ```
 
 This installs version 1.103.0 or later, which includes support for 2025
@@ -636,7 +636,7 @@ tax parameters.
 Simply install PolicyEngine-US:
 
 ```bash
-pip install policyengine-us
+uv pip install policyengine-us
 ```
 
 This will install the latest version with all the newest features!
