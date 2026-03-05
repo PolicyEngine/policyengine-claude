@@ -40,7 +40,12 @@ Derive:
 - `BRANCH` = `{ST}-{PROG}` (e.g., `ri-ccap`)
 - `PREFIX` = `{BRANCH}` (used for all /tmp/ files)
 - `DPI` = 600 if `--600dpi`, else 300
-- `LESSONS_PATH` = path to persistent lessons file (same directory as MEMORY.md)
+
+**Resolve LESSONS_PATH** (used in all implementation agent prompts):
+```bash
+LESSONS_PATH=$(ls -d ~/.claude/projects/*/memory 2>/dev/null | head -1)/agent-lessons.md
+```
+Pass `{LESSONS_PATH}` to all agent prompts that include "LEARN FROM PAST SESSIONS".
 
 ### Step 0B: Clean Up & Create Team
 
@@ -338,7 +343,7 @@ Focus on:
 
 ### Step 3D: Integration into Benefits System
 
-After variables are created, Main Claude adds the main benefit variable to `parameters/gov/household/household_state_benefits.yaml`:
+After variables are created, Main Claude adds the main benefit variable to `policyengine_us/parameters/gov/household/household_state_benefits.yaml`:
 - Add to ALL date entries in the file
 - Add with a comment indicating the state
 
@@ -453,7 +458,7 @@ Read ONLY `/tmp/{PREFIX}-checkpoint.md`.
 ### Step 4D: Push to Remote
 
 ```bash
-git add policyengine_us/parameters/gov/states/{ST}/ policyengine_us/variables/gov/states/{ST}/ policyengine_us/tests/policy/baseline/gov/states/{ST}/ parameters/gov/household/household_state_benefits.yaml
+git add policyengine_us/parameters/gov/states/{ST}/ policyengine_us/variables/gov/states/{ST}/ policyengine_us/tests/policy/baseline/gov/states/{ST}/ policyengine_us/parameters/gov/household/household_state_benefits.yaml
 git commit -m "Implement {STATE} {PROGRAM} (ref #{ISSUE_NUMBER})"
 git push
 ```
