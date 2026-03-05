@@ -100,11 +100,15 @@ Recharts default tooltip separator is ` : ` (with leading space). Always set `se
 
 ## Standard chart template
 
+Recharts renders to SVG, which cannot read CSS custom properties. Resolve design tokens at render time with a helper (see `policyengine-interactive-tools-skill` for the `getCssVar` utility):
+
 ```tsx
+import { useMemo } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Label, ReferenceDot,
 } from "recharts";
+import getCssVar from "@/lib/getCssVar"; // reads CSS custom properties
 
 interface DataPoint { x: number; y: number; }
 
@@ -112,6 +116,14 @@ export default function MyChart({ data, highlightX }: {
   data: DataPoint[];
   highlightX?: number;
 }) {
+  // Resolve design tokens for SVG (never hardcode hex values)
+  const { primaryColor, darkTeal, gridColor, fontFamily } = useMemo(() => ({
+    primaryColor: getCssVar("--pe-color-primary-500"),
+    darkTeal:     getCssVar("--pe-color-primary-900"),
+    gridColor:    getCssVar("--pe-color-gray-200"),
+    fontFamily:   getCssVar("--pe-font-family-primary") || "Inter, sans-serif",
+  }), []);
+
   const fmt = (v: number) => v.toLocaleString("en-US", {
     style: "currency", currency: "USD", maximumFractionDigits: 0,
   });
@@ -129,27 +141,27 @@ export default function MyChart({ data, highlightX }: {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data} margin={{ left: 20, right: 30, top: 10, bottom: 20 }}>
-        <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
+        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
         <XAxis
           dataKey="x" type="number"
           domain={[0, xTicks[xTicks.length - 1]]} ticks={xTicks}
           tickFormatter={fmt}
-          tick={{ fontFamily: "Inter, sans-serif", fontSize: 12 }}
+          tick={{ fontFamily, fontSize: 12 }}
         >
           <Label value="X axis" position="bottom" offset={0} />
         </XAxis>
         <YAxis
           domain={[0, yTicks[yTicks.length - 1]]} ticks={yTicks}
           tickFormatter={fmt}
-          tick={{ fontFamily: "Inter, sans-serif", fontSize: 12 }}
+          tick={{ fontFamily, fontSize: 12 }}
         >
           <Label value="Y axis" angle={-90} position="insideLeft" offset={-5} />
         </YAxis>
         <Tooltip separator=": " formatter={(v: number) => [fmt(v), "Value"]} />
-        <Line type="monotone" dataKey="y" stroke="#319795" strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="y" stroke={primaryColor} strokeWidth={3} dot={false} />
         {highlightPoint && (
           <ReferenceDot x={highlightPoint.x} y={highlightPoint.y} r={6}
-            fill="#1D4044" stroke="#1D4044" />
+            fill={darkTeal} stroke={darkTeal} />
         )}
       </LineChart>
     </ResponsiveContainer>
@@ -170,28 +182,28 @@ export default function MyChart({ data, highlightX }: {
 
 ## PolicyEngine styling
 
-```typescript
-// Colors (from @policyengine/design-system or hardcoded)
-const TEAL_PRIMARY = "#319795";   // Primary series
-const DARK_TEAL = "#1D4044";     // Reference dots
-const GRID_COLOR = "#E2E8F0";    // Grid lines
-const TEAL_LIGHT = "rgba(49, 151, 149, 0.15)";  // Light fill
-const TEAL_MEDIUM = "rgba(49, 151, 149, 0.35)"; // Medium fill
+Never hardcode hex colors in frontend chart code. Resolve from CSS custom properties at render time:
 
-// Font
-const CHART_FONT = {
-  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  fontSize: 12,
-};
+```typescript
+import getCssVar from "@/lib/getCssVar";
+
+// Resolve design tokens once per render (useMemo in components)
+const primaryColor = getCssVar("--pe-color-primary-500");    // Primary series
+const darkTeal     = getCssVar("--pe-color-primary-900");    // Reference dots
+const gridColor    = getCssVar("--pe-color-gray-200");       // Grid lines
+const lightFill    = getCssVar("--pe-color-primary-alpha-40"); // Light fill
+const fontFamily   = getCssVar("--pe-font-family-primary");  // Font
 
 // Tooltip
 const TOOLTIP_STYLE = {
-  background: "#fff",
-  border: "1px solid #E2E8F0",
+  background: "var(--pe-color-bg-primary)",
+  border: "1px solid var(--pe-color-border-light)",
   borderRadius: 6,
   padding: "8px 12px",
 };
 ```
+
+See `policyengine-design-skill` for the full token reference. The `getCssVar` helper is documented in `policyengine-interactive-tools-skill`.
 
 ## Key rules
 
@@ -202,7 +214,7 @@ const TOOLTIP_STYLE = {
 5. **Always wrap in `ResponsiveContainer`** with explicit height
 6. **Use `dot={false}`** on Line components for clean curves with many data points
 7. **Use `ReferenceDot`** to highlight the user's current selection
-8. **Teal (#319795) is the primary chart color** - matches PolicyEngine brand
+8. **Use design tokens for chart colors** — resolve `--pe-color-primary-500` (teal) via `getCssVar`, never hardcode hex values
 9. **Negative currency: sign before symbol** - Always format as `-$31`, never `$-31`
 
 ## Currency formatting

@@ -7,7 +7,19 @@ description: |
 
 # PolicyEngine design system
 
-Single source of truth for PolicyEngine's visual identity. All tokens live in `@policyengine/design-system` (npm). Every project — app-v2, standalone tools, charts — should reference these values rather than hardcoding hex codes.
+Single source of truth for PolicyEngine's visual identity. All tokens live in `@policyengine/design-system`. Every project — app-v2, standalone tools, charts — should reference these tokens, never hardcode hex values.
+
+**When to use which format:**
+
+| Context | Approach | Example |
+|---------|----------|---------|
+| **React/Next.js components** | CSS vars or TS imports | `style={{ color: "var(--pe-color-primary-500)" }}` or `colors.primary[500]` |
+| **Recharts (SVG)** | Resolve CSS vars at render time via `getCssVar()` | `const teal = getCssVar("--pe-color-primary-500")` |
+| **Tailwind** | Use `theme.extend.colors` mapped to CSS vars | `className="text-pe-primary-500"` |
+| **Python charts (Plotly/matplotlib)** | Hex values with CSS var name in comment | `TEAL = "#319795"  # --pe-color-primary-500` |
+| **`<meta>` tags, static HTML** | Hex values with CSS var name in comment | `content="#319795"` |
+
+Python has no CSS runtime, so hex values are acceptable — but always comment with the CSS var name so values stay traceable to the design system.
 
 ## The design system package
 

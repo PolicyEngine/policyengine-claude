@@ -16,7 +16,7 @@ This skill provides templates and patterns for generating consistent, branded Po
 ### Social media images
 
 1200x630 PNG images for LinkedIn, X (Twitter), and Facebook with:
-- PolicyEngine brand colors (teal #319795, dark background #1a2332)
+- PolicyEngine brand colors from design tokens (teal primary, dark background)
 - Inter font family
 - Headline with teal highlight
 - Optional headshot with quote
@@ -73,11 +73,17 @@ logo_path: Path to PolicyEngine logo
 ## Brand guidelines
 
 ### Colors
-- Primary teal: #319795
-- Light teal: #5EEAD4
-- Dark background: #1a2332 / #0F172A
-- Text gray: #94A3B8
-- White: #FFFFFF
+
+Source of truth: `policyengine-design-skill` and `@policyengine/design-system` CSS tokens.
+Social image generation runs in headless Chrome with design tokens loaded, so use CSS vars where possible. Fallback hex values for non-browser contexts:
+
+| Token | CSS var | Hex |
+|-------|---------|-----|
+| Primary teal | `--pe-color-primary-500` | #319795 |
+| Light teal | `--pe-color-primary-200` | #81E6D9 |
+| Dark background | (custom) | #1a2332 |
+| Text gray | `--pe-color-gray-400` | #9CA3AF |
+| White | `--pe-color-bg-primary` | #FFFFFF |
 
 ### Typography
 - Font family: Inter (Google Fonts)
