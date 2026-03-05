@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.5] - 2026-03-05
+
+### Fixed
+
+- Fix /tmp/ file naming collision in review-program and backdate-program commands by using branch-name-based prefixes
+
 ## [3.14.4] - 2026-03-05
 
 ### Changed
@@ -137,6 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.14.5]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.4...3.14.5
 [3.14.4]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.3...3.14.4
 [3.14.3]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.2...3.14.3
 [3.14.2]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.1...3.14.2
