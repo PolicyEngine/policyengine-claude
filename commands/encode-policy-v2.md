@@ -85,6 +85,7 @@ run_in_background: true
 "Research {STATE} {PROGRAM} and gather all official documentation.
 - Discover the state's official program name
 - Download and extract PDFs with curl + pdftotext
+- Render PDF screenshots at {DPI} DPI: pdftoppm -png -r {DPI} /tmp/doc.pdf /tmp/doc-page
 - Save all documentation to sources/working_references.md
 - Write SHORT research summary (max 20 lines) to /tmp/{PREFIX}-research-summary.md:
   - Official program name
@@ -244,6 +245,12 @@ LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
 - {LESSONS_PATH}
 - lessons/agent-lessons.md
 
+REUSE EXISTING VARIABLES AND PARAMETERS:
+PolicyEngine-US has hundreds of existing variables for common concepts (fpg, smi,
+tanf_fpg, is_tanf_enrolled, ssi, tanf_gross_earned_income, snap_gross_income, etc.).
+Before creating ANY non-program-specific parameter or variable, Grep the codebase to
+check if it already exists. Only create new ones for state-program-specific concepts.
+
 RULES:
 - Income source lists go in sources.yaml parameters, NOT inline adds
 - Follow patterns from the reference implementation
@@ -276,6 +283,12 @@ LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
 - {LESSONS_PATH}
 - lessons/agent-lessons.md
 
+REUSE EXISTING VARIABLES AND PARAMETERS:
+PolicyEngine-US has hundreds of existing variables for common concepts (fpg, smi,
+tanf_fpg, is_tanf_enrolled, ssi, tanf_gross_earned_income, snap_gross_income, etc.).
+Before creating ANY non-program-specific variable, Grep the codebase to check if it
+already exists. Only create new ones for state-program-specific concepts.
+
 RULES:
 - Use the parameters created in Step 3A — read them from disk
 - Zero hard-coded values — reference parameters only
@@ -304,6 +317,10 @@ Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
 LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
 - {LESSONS_PATH}
 - lessons/agent-lessons.md
+
+REUSE EXISTING VARIABLES:
+PolicyEngine-US has hundreds of existing variables. Use only real, existing variables
+for test inputs. Grep the codebase to verify variable names before using them in tests.
 
 RULES:
 - Create UNIT tests for each variable that will have a formula
@@ -397,7 +414,35 @@ Write /tmp/{PREFIX}-coverage-report.md (max 40 lines):
 
 Read ONLY `/tmp/{PREFIX}-coverage-report.md` (max 40 lines).
 
-**If missing requirements > 0**: Spawn a fix agent (rules-engineer) to implement the gaps before proceeding. Re-run the requirements-tracker after fixes.
+**If missing requirements > 0**: Spawn a gap-fixer to implement the missing requirements, then re-run the requirements-tracker:
+
+```
+subagent_type: "complete:country-models:rules-engineer"
+team_name: "{PREFIX}-encode"
+name: "gap-fixer"
+
+"Implement MISSING requirements for {STATE} {PROGRAM}.
+Read the coverage report at /tmp/{PREFIX}-coverage-report.md.
+Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
+Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
+Study existing variables and parameters already created for this program.
+Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
+  /policyengine-code-style, /policyengine-code-organization.
+
+TASK: Implement ONLY the requirements listed under 'MISSING' in the coverage report.
+Do not modify existing variables or parameters — only add what's missing.
+
+REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
+codebase first. PolicyEngine-US likely already has it.
+
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- lessons/agent-lessons.md
+
+DO NOT commit — pr-pusher handles all commits."
+```
+
+After gap-fixer completes, re-run the requirements-tracker (same prompt as above) to verify all gaps are filled. If gaps remain after one fix round, report to user and proceed.
 
 ---
 
@@ -410,15 +455,18 @@ subagent_type: "complete:country-models:implementation-validator"
 team_name: "{PREFIX}-encode"
 name: "implementation-validator"
 
-"Validate {STATE} {PROGRAM} implementation for PolicyEngine standards compliance.
+"Validate and fix {STATE} {PROGRAM} implementation for PolicyEngine standards compliance.
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-code-style, /policyengine-period-patterns, /policyengine-vectorization,
   /policyengine-aggregation, /policyengine-review-patterns, /policyengine-code-organization.
 
-Check: naming conventions, folder structure, parameter formatting, variable code style,
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- lessons/agent-lessons.md
+
+Check AND fix: naming conventions, folder structure, parameter formatting, variable code style,
 hard-coded values, adds vs add(), reference format, entity levels, period handling.
-Fix any issues found.
-Write findings to /tmp/{PREFIX}-impl-validation.md."
+Fix all issues directly — do not just report them."
 ```
 
 ### Step 4B: CI Fixer
@@ -584,8 +632,10 @@ Invoke the `review-program` skill in local-only mode with `--full`:
 
 ```
 Skill: review-program
-Arguments: $PR_NUMBER --local --full
+Arguments: $PR_NUMBER --local --full [--600dpi if DPI == 600]
 ```
+
+If the user passed `--600dpi`, include it here so PDF audit uses high resolution.
 
 ### Step 6B: Check Results
 
