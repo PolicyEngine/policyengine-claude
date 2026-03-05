@@ -1158,7 +1158,13 @@ class state_program_eligible(Variable):
 
 ---
 
-## For Agents
+## Reference files
+
+For detailed patterns on specific topics, read these reference files:
+- **references/aggregation.md** — `adds` attribute vs `add()` function, entity aggregation, parameter lists
+- **references/period-patterns.md** — YEAR/MONTH conversion, auto-conversion rules, period.this_year, testing with periods
+
+## For agents
 
 When implementing variables:
 1. **Study reference implementations** (DC, IL, TX TANF)

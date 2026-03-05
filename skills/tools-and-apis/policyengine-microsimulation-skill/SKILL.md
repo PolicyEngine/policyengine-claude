@@ -13,6 +13,7 @@ description: |
   "winners and losers", "winners", "losers",
   "inequality", "Gini", "decile",
   "SALT", "marginal tax rate", "effective tax rate".
+  Also covers advanced simulation mechanics: ensure() caching, output_dataset.data access, and map_to_entity() — see references/simulation-mechanics.md.
   NOT for single-household calculations like "what would my benefit be" — use policyengine-us or policyengine-uk for those.
   Use this skill's code pattern, but explore the codebase to find specific parameter paths if needed.
 ---

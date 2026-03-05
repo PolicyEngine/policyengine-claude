@@ -664,7 +664,52 @@ Example from policyengine-uk optimization:
 
 ---
 
-## For Agents
+## 12. Data pipeline test mode (TESTING env var)
+
+For data generation repositories (`policyengine-us-data`, `policyengine-uk-data`), use a `TESTING` environment variable to reduce expensive operation runtimes in CI.
+
+### Pattern
+
+```python
+import os
+
+TESTING = os.environ.get("TESTING") == "1"
+
+epochs = 32 if TESTING else 512
+batch_size = 256 if TESTING else 1024
+sample_frac = 0.01 if TESTING else 1.0
+```
+
+### CI configuration
+
+```yaml
+# .github/workflows/test.yml
+env:
+  TESTING: 1  # Enable fast test mode
+```
+
+### When to use
+- Neural network training (calibration epochs: 512 → 32)
+- ML imputation (trees: 100 → 10)
+- Large dataset processing (sample: 1% in test mode)
+- CI tests taking >10 minutes
+
+### When NOT to use
+- Data correctness logic (always validate fully)
+- File I/O operations (fast enough already)
+- Tests already run quickly (<5 minutes)
+
+### Typical savings
+
+| Operation | Production | Test mode | Savings |
+|-----------|-----------|-----------|---------|
+| Calibration (512 epochs) | 30 min | 2 min | 93% |
+| Imputation (100 trees) | 10 min | 1 min | 90% |
+| Full pipeline | 45 min | 5 min | 89% |
+
+---
+
+## For agents
 
 When creating tests:
 1. **Check existing variables** before using any in tests
