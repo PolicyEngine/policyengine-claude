@@ -467,6 +467,61 @@ brackets:
 
 **Real-world example:** Hawaii Food/Excise Tax Credit uses AGI brackets. The first threshold must be `-.inf` to correctly handle taxpayers with negative AGI (e.g., business losses).
 
+### Bracket Boundary: "Above X%" Regulations
+
+**CRITICAL: PolicyEngine's `single_amount` bracket uses "at or above threshold" logic.** A value exactly at the threshold gets that bracket's rate, not the previous bracket's. When a regulation says "above X%" (meaning X% itself belongs to the lower bracket), shift the threshold by `0.0001` to match.
+
+**Example — co-payment tiers by FPL:**
+```
+Regulation says:
+  Level 0: Less than or equal to 100% → $0
+  Level 1: Above 100% up to and including 125% → 2%
+  Level 2: Above 125% up to and including 150% → 5%
+  Level 3: Above 150% up to and including 261% → 7%
+```
+
+**❌ WRONG — family at exactly 100% FPL gets 2% instead of 0%:**
+```yaml
+brackets:
+  - threshold:
+      2024-01-01: 0
+    amount:
+      2024-01-01: 0
+  - threshold:
+      2024-01-01: 1.0    # ❌ At 100% FPL → hits this bracket
+    amount:
+      2024-01-01: 0.02
+```
+
+**✅ CORRECT — shift by 0.0001 to encode "above X%":**
+```yaml
+brackets:
+  - threshold:
+      2024-01-01: 0
+    amount:
+      2024-01-01: 0
+  - threshold:
+      2024-01-01: 1.0001  # ✅ "Above 100%" → 100% stays in previous bracket
+    amount:
+      2024-01-01: 0.02
+  - threshold:
+      2024-01-01: 1.2501  # ✅ "Above 125%"
+    amount:
+      2024-01-01: 0.05
+  - threshold:
+      2024-01-01: 1.5001  # ✅ "Above 150%"
+    amount:
+      2024-01-01: 0.07
+```
+
+**When to apply the 0.0001 shift:**
+- Regulation says "above X%" or "more than X%" (exclusive of the boundary)
+- Apply consistently to ALL thresholds in the bracket, not just the first
+
+**When NOT to shift:**
+- Regulation says "at or above X%" or "X% or more" (inclusive — matches PolicyEngine's default)
+- Regulation says "at least X%" (inclusive)
+
 ### Parameter Structure Transitions (Flat → Bracket)
 
 **When a parameter changes structure over time** (e.g., a flat rate becomes a tiered/marginal rate in a later year), you CANNOT put both structures in a single YAML file. Instead, split into separate files with a boolean toggle.

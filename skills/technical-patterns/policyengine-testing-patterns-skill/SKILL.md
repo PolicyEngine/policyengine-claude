@@ -24,9 +24,11 @@ policyengine_us/tests/policy/baseline/gov/states/[state]/[agency]/[program]/
 - ❌ `2024-01-01` - Full dates NOT supported
 
 ### Error Margin
-- Always use `absolute_error_margin: 0.1` after period line
-- Allows for small floating-point differences in calculations
-- **Never use 1** - a margin of 1 makes `true` (1) and `false` (0) indistinguishable
+Choose the margin based on the output type:
+- **Boolean outputs** (`true`/`false`, eligibility, flags): **no error margin at all** — booleans are exact, no rounding. Omit `absolute_error_margin` entirely.
+- **Currency outputs** (benefits, income, amounts): `absolute_error_margin: 0.01`
+- **Rate/percentage outputs**: `absolute_error_margin: 0.001`
+- **Never use 1** — a margin of 1 makes `true` (1) and `false` (0) indistinguishable, rendering the test meaningless
 
 ### Naming Convention
 - Files: `variable_name.yaml` (matches variable exactly)
@@ -674,6 +676,7 @@ When creating tests:
 5. **Follow naming conventions** exactly
 6. **Include edge cases** at thresholds
 7. **Test realistic scenarios** not placeholders
+8. **Don't exhaustively test lookup tables** — when a parameter is a bracket indexed by household size, FPL tier, or similar, test a few representative points (first, middle, last/max) not every entry. If the bracket mechanism works for sizes 1, 4, and 10, it works for size 7 too. The same applies to income brackets, age brackets, and any other parameterized lookup.
 
 When optimizing test suites:
 1. **Identify slow tests** - Profile with `pytest --durations=10`

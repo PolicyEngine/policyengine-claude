@@ -1,0 +1,1 @@
+Improve severity classification, agent scope boundaries, and test quality rules based on RI CCAP implementation lessons

@@ -112,8 +112,17 @@ reference:
 
 **Flag as CRITICAL if:**
 - Clicking link doesn't show the value
-- Section number too vague (missing subsections)
+- Section number is WRONG (title cites a section that doesn't contain the parameter value — e.g., citing `4.3.1(B)` when the value is actually in `4.3.1(A)(4)`). A wrong section citation is worse than a missing one because it points readers to incorrect regulatory text.
 - PDF missing page number
+
+**When proposing a corrected citation**, verify the replacement against the PDF text or
+extracted text file. Search for the exact section/definition heading in the text — do not
+guess the correct number from memory or nearby context. If you cannot confirm the correct
+citation from the source text, flag it as "WRONG — correct section unknown, manual lookup
+required" rather than proposing an unverified replacement.
+
+**Flag as WARNING if:**
+- Section number too vague (missing subsections) but still within the correct provision
 
 ### Phase 3: Check Corroboration
 

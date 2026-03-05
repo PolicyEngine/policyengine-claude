@@ -149,6 +149,9 @@ For time-based rules:
     benefit: 0  # Or reduced amount
 ```
 
+### Bracket Boundary Consistency
+When testing bracket boundaries, you do NOT need to test every threshold — test a few representative ones (first, one in the middle, last). But if you find that a boundary uses "above X%" (exclusive) semantics and needs a 0.0001 shift (see `/policyengine-parameter-patterns` — "Above X%" bracket boundaries), flag ALL thresholds in the same bracket — the boundary semantics applies consistently across the whole bracket, not just the one you tested.
+
 ## Auto-Generation Process
 
 ### Phase 1: Code Analysis

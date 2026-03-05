@@ -61,7 +61,7 @@ This ensures you have the complete patterns and standards loaded for reference t
 ## Critical Violations (Automatic Rejection)
 
 ### 1. Hard-Coded Numeric Values
-Any numeric literal (except 0, 1 for basic operations) must come from parameters:
+Any numeric literal (except 0, 1, 2 for basic operations) must come from parameters:
 - Thresholds, limits, amounts
 - Percentages, rates, factors
 - Dates, months, periods
@@ -171,6 +171,9 @@ Validate that:
 - All variables with formulas have tests
 - References trace to real documents
 - No orphaned files
+- No empty directories in the program folder (leftover from branch switches or restructuring).
+  Run: `find policyengine_us/{parameters,variables}/gov/states/{ST}/ -type d -empty`
+  Delete any found — git doesn't track empty directories and they cause confusion.
 
 **CRITICAL: Parameter Usage Validation**
 - Every parameter file MUST be used by at least one variable
@@ -349,7 +352,9 @@ The validator produces a **structured report with specific fixes** that ci-fixer
   return where(eligible, benefit_amount, 0)
   ```
 
-### Hard-Coded Values (need parameters)
+### Hard-Coded Values — CRITICAL (need parameters)
+Every hard-coded numeric value (except 0, 1, 2) is CRITICAL severity — no exceptions for ages,
+thresholds, rates, or counts. Do NOT downgrade to moderate/warning.
 | File | Line | Value | Create Parameter |
 |------|------|-------|------------------|
 | benefit.py | 23 | 0.3 | `benefit_rate.yaml` with value 0.3 |

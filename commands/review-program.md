@@ -756,9 +756,12 @@ TASK:
    AND visual verification (Step 5D). Note REJECTED mismatches as 'investigated and cleared'.
 4. Classify each finding:
    - CRITICAL (Must Fix): regulatory mismatches, value mismatches (code-path confirmed + 600 DPI verified),
-     hard-coded values, missing/non-corroborating references, CI failures, incorrect formulas
-   - SHOULD ADDRESS: code pattern violations, missing edge case tests, naming conventions,
-     period usage errors, formatting issues (params & vars)
+     hard-coded values, missing/non-corroborating references, incorrect section citations
+     (reference title cites wrong section/subsection), CI failures, incorrect formulas,
+     formula variables with zero test coverage (no unit test at all),
+     non-functional tests (e.g., absolute_error_margin >= 1 on boolean outputs)
+   - SHOULD ADDRESS: code pattern violations, missing edge case tests for already-tested variables,
+     naming conventions, period usage errors, formatting issues (params & vars)
    - SUGGESTIONS: documentation improvements, performance optimizations, code style
 
 5. Write FULL report to /tmp/{PREFIX}-review-full-report.md (for archival/posting)

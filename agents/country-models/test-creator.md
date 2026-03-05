@@ -148,3 +148,4 @@ Tests must:
 - Document calculation steps in comments
 - Cover all eligibility paths
 - Use only existing PolicyEngine variables
+- NOT exhaustively test every entry in a lookup table — for brackets indexed by household size, FPL tier, etc., test a few representative points (first, middle, last) not every value
