@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.15.0] - 2026-03-05
+
+### Added
+
+- Add /encode-policy-v2 command — agent teams workflow with user checkpoint, requirements tracking, review-fix loop, and lessons learned
+
 ## [3.14.5] - 2026-03-05
 
 ### Fixed
@@ -143,6 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.15.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.5...3.15.0
 [3.14.5]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.4...3.14.5
 [3.14.4]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.3...3.14.4
 [3.14.3]: https://github.com/PolicyEngine/policyengine-claude/compare/3.14.2...3.14.3
