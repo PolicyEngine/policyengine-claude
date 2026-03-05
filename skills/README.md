@@ -7,12 +7,9 @@ This directory contains specialized skills for PolicyEngine development. Skills 
 ```
 skills/
 ├── technical-patterns/      # Implementation patterns and best practices
-│   ├── policyengine-aggregation-skill/
-│   ├── policyengine-code-organization-skill/   # Folder structure and naming
-│   ├── policyengine-code-style-skill/
-│   ├── policyengine-data-testing-skill/
+│   ├── policyengine-code-skill/
 │   ├── policyengine-parameter-patterns-skill/
-│   ├── policyengine-period-patterns-skill/
+│   ├── policyengine-reform-patterns-skill/
 │   ├── policyengine-review-patterns-skill/
 │   ├── policyengine-testing-patterns-skill/
 │   ├── policyengine-variable-patterns-skill/
@@ -28,7 +25,7 @@ skills/
 │   ├── policyengine-app-skill/
 │   ├── policyengine-core-skill/
 │   ├── policyengine-python-client-skill/
-│   └── policyengine-simulation-mechanics-skill/
+│   └── policyengine-microsimulation-skill/
 │
 ├── data-science/           # Data manipulation and analysis libraries
 │   ├── l0-skill/
@@ -57,15 +54,12 @@ Implementation patterns, testing standards, and coding best practices that ensur
 
 | Skill | Description | Key Topics |
 |-------|-------------|------------|
-| **policyengine-aggregation-skill** | Variable aggregation patterns | Using `adds` attribute and `add()` function for summing across entities |
-| **policyengine-code-organization-skill** | Folder structure and naming conventions | File organization, variable prefixes, logical grouping |
-| **policyengine-code-style-skill** | Code writing style guide | Formula optimization, eliminating unnecessary variables, direct returns |
-| **policyengine-data-testing-skill** | Data testing patterns | Testing data pipelines and calibration |
+| **policyengine-code-skill** | Code patterns and organization | Naming, folder structure, formula optimization, direct returns |
 | **policyengine-parameter-patterns-skill** | Parameter creation patterns | YAML structure, naming conventions, metadata requirements |
-| **policyengine-period-patterns-skill** | Period handling patterns | Converting between YEAR/MONTH periods, testing with different periods |
+| **policyengine-reform-patterns-skill** | Reform patterns | Factory functions, contrib parameters, in_effect toggles |
 | **policyengine-review-patterns-skill** | Code review patterns | Validation checklist, common issues, review standards |
-| **policyengine-testing-patterns-skill** | Test creation patterns | YAML structure, naming conventions, period restrictions, quality standards |
-| **policyengine-variable-patterns-skill** | Variable implementation patterns | No hard-coding, federal/state separation, metadata standards |
+| **policyengine-testing-patterns-skill** | Test creation patterns | YAML structure, naming, period handling, data pipeline testing |
+| **policyengine-variable-patterns-skill** | Variable implementation patterns | No hard-coding, aggregation, period handling, federal/state separation |
 | **policyengine-vectorization-skill** | Vectorization patterns | NumPy operations, where/select usage, avoiding scalar logic |
 | **seo-checklist-skill** | SEO first principles for web apps | Meta tags, crawlability, dual-mode (standalone + iframe), performance |
 
@@ -88,9 +82,8 @@ Knowledge about PolicyEngine's core tools, APIs, and applications.
 | **policyengine-app-skill** | PolicyEngine React web application | User interface at policyengine.org |
 | **policyengine-core-skill** | PolicyEngine Core simulation engine | The foundation powering all PolicyEngine calculations |
 | **policyengine-github-agent-skill** | GitHub bot agent | Automated bot for issue/PR responses, avoiding doom loops |
-| **policyengine-microsimulation-skill** | Population-level Microsimulation | Weighted survey analysis at national, state, and congressional district level |
+| **policyengine-microsimulation-skill** | Population-level Microsimulation | Weighted survey analysis, simulation mechanics, ensure(), map_to_entity() |
 | **policyengine-python-client-skill** | Python client usage | Programmatic access via Python or REST API |
-| **policyengine-simulation-mechanics-skill** | Advanced simulation patterns | ensure(), output_dataset.data, map_to_entity() |
 
 ### 📊 Data Science (`data-science/`)
 

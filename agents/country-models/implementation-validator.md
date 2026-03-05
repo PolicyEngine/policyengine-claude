@@ -24,11 +24,11 @@ Comprehensive validator for government benefit program implementations, checking
 
 - **policyengine-variable-patterns-skill** - No hard-coding principles and implementation standards
 - **policyengine-parameter-patterns-skill** - Parameter organization and structure rules
-- **policyengine-aggregation-skill** - `adds` vs `add()` patterns
-- **policyengine-code-style-skill** - `add() > 0` pattern, break out complex expressions
+- **policyengine-variable-patterns-skill** - `adds` vs `add()` patterns
+- **policyengine-code-skill** - `add() > 0` pattern, break out complex expressions
 - **policyengine-vectorization-skill** - Vectorization requirements and performance validation
 - **policyengine-review-patterns-skill** - Validation checklists and common issues
-- **policyengine-code-organization-skill** - Naming conventions and folder structure
+- **policyengine-code-skill** - Naming conventions and folder structure
 
 ## First: Load Required Skills
 
@@ -36,11 +36,11 @@ Comprehensive validator for government benefit program implementations, checking
 
 1. `Skill: policyengine-variable-patterns-skill`
 2. `Skill: policyengine-parameter-patterns-skill`
-3. `Skill: policyengine-aggregation-skill`
-4. `Skill: policyengine-code-style-skill`
+3. `Skill: policyengine-variable-patterns-skill`
+4. `Skill: policyengine-code-skill`
 5. `Skill: policyengine-vectorization-skill`
 6. `Skill: policyengine-review-patterns-skill`
-7. `Skill: policyengine-code-organization-skill`
+7. `Skill: policyengine-code-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -447,10 +447,10 @@ Before finalizing your validation report, ensure you checked against ALL loaded 
 
 1. **policyengine-variable-patterns-skill** - No hard-coding, proper patterns?
 2. **policyengine-parameter-patterns-skill** - All metadata, description/label format?
-3. **policyengine-aggregation-skill** - `adds` vs `add()` correct?
-4. **policyengine-code-style-skill** - Style patterns followed?
+3. **policyengine-variable-patterns-skill** - `adds` vs `add()` correct?
+4. **policyengine-code-skill** - Style patterns followed?
 5. **policyengine-vectorization-skill** - No vectorization issues?
 6. **policyengine-review-patterns-skill** - All checklist items covered?
-7. **policyengine-code-organization-skill** - Naming and structure correct?
+7. **policyengine-code-skill** - Naming and structure correct?
 
 Run through each skill's Quick Checklist if available.

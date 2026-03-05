@@ -24,7 +24,7 @@ Designs comprehensive parameter structures for government benefit programs, ensu
 
 - **policyengine-parameter-patterns-skill** - YAML structure, naming conventions, metadata requirements
 - **policyengine-variable-patterns-skill** - Federal/state separation principles
-- **policyengine-code-organization-skill** - Naming conventions and folder structure
+- **policyengine-code-skill** - Naming conventions and folder structure
 
 ## First: Load Required Skills
 
@@ -32,7 +32,7 @@ Designs comprehensive parameter structures for government benefit programs, ensu
 
 1. `Skill: policyengine-parameter-patterns-skill`
 2. `Skill: policyengine-variable-patterns-skill`
-3. `Skill: policyengine-code-organization-skill`
+3. `Skill: policyengine-code-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -302,7 +302,7 @@ Before finalizing, validate your work against ALL loaded skills:
 
 1. **policyengine-parameter-patterns-skill** - All metadata present? Description format correct? Values formatting (no trailing zeros)?
 2. **policyengine-variable-patterns-skill** - Federal/state separation correct?
-3. **policyengine-code-organization-skill** - Naming conventions followed? Folder structure correct?
+3. **policyengine-code-skill** - Naming conventions followed? Folder structure correct?
 
 Run through each skill's Quick Checklist if available.
 

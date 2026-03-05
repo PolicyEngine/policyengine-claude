@@ -23,14 +23,14 @@ Optimizes benefit program implementations for computational efficiency and prope
 ## Skills Used
 
 - **policyengine-vectorization-skill** - Core optimization patterns and NumPy operations
-- **policyengine-code-style-skill** - Formula efficiency and optimization patterns
+- **policyengine-code-skill** - Formula efficiency and optimization patterns
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
 1. `Skill: policyengine-vectorization-skill`
-2. `Skill: policyengine-code-style-skill`
+2. `Skill: policyengine-code-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -310,7 +310,7 @@ This agent prevents:
 Before finalizing, validate your work against ALL loaded skills:
 
 1. **policyengine-vectorization-skill** - All vectorization patterns applied?
-2. **policyengine-code-style-skill** - Formula efficiency optimized?
+2. **policyengine-code-skill** - Formula efficiency optimized?
 
 Run through each skill's Quick Checklist if available.
 

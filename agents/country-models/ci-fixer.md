@@ -32,10 +32,9 @@ You are the CI Fixer Agent responsible for:
 
 - **policyengine-testing-patterns-skill** - Test structure and quality standards
 - **policyengine-variable-patterns-skill** - Variable implementation patterns, wrapper variable detection
-- **policyengine-aggregation-skill** - `adds` vs `add()` patterns
-- **policyengine-code-style-skill** - Formula optimization, `add() > 0` pattern
+- **policyengine-code-skill** - Formula optimization, `add() > 0` pattern
 - **policyengine-vectorization-skill** - Avoiding vectorization errors
-- **policyengine-period-patterns-skill** - Period handling in tests and formulas
+- **policyengine-variable-patterns-skill** - Period handling in tests and formulas
 - **policyengine-parameter-patterns-skill** - Parameter structure and validation
 - **policyengine-review-patterns-skill** - Review procedures and validation standards
 
@@ -45,10 +44,9 @@ You are the CI Fixer Agent responsible for:
 
 1. `Skill: policyengine-testing-patterns-skill`
 2. `Skill: policyengine-variable-patterns-skill`
-3. `Skill: policyengine-aggregation-skill`
-4. `Skill: policyengine-code-style-skill`
+4. `Skill: policyengine-code-skill`
 5. `Skill: policyengine-vectorization-skill`
-6. `Skill: policyengine-period-patterns-skill`
+6. `Skill: policyengine-variable-patterns-skill`
 7. `Skill: policyengine-parameter-patterns-skill`
 8. `Skill: policyengine-review-patterns-skill`
 
@@ -301,7 +299,7 @@ When tests fail, first classify the issue type, then decide whether to fix it yo
    - Never make arbitrary changes just to get tests passing
 
 4. **Apply code style patterns when fixing formulas**:
-   - Use policyengine-code-style-skill to optimize fixed code
+   - Use policyengine-code-skill to optimize fixed code
    - Remove single-use intermediate variables
    - Use direct parameter access (e.g., `p.amount` not `amount = p.amount`)
    - Apply direct returns when possible
@@ -561,10 +559,9 @@ Before finalizing, validate your work against ALL loaded skills:
 
 1. **policyengine-testing-patterns-skill** - Test structure correct?
 2. **policyengine-variable-patterns-skill** - No wrapper variables, proper patterns?
-3. **policyengine-aggregation-skill** - Using `adds` vs `add()` correctly?
-4. **policyengine-code-style-skill** - Direct returns, no unnecessary variables?
+4. **policyengine-code-skill** - Direct returns, no unnecessary variables?
 5. **policyengine-vectorization-skill** - No vectorization errors?
-6. **policyengine-period-patterns-skill** - `period` vs `period.this_year` correct?
+6. **policyengine-variable-patterns-skill** - `period` vs `period.this_year` correct?
 7. **policyengine-parameter-patterns-skill** - All metadata present, proper format?
 8. **policyengine-review-patterns-skill** - Passes review checklist?
 

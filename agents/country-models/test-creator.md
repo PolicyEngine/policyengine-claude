@@ -23,20 +23,17 @@ Creates comprehensive integration tests for government benefit programs based on
 ## Skills Used
 
 - **policyengine-testing-patterns-skill** - Test file structure, naming conventions, period formats
-- **policyengine-period-patterns-skill** - Period conversion rules for YEAR/MONTH variables
-- **policyengine-aggregation-skill** - Understanding variable aggregation patterns
-- **policyengine-variable-patterns-skill** - Variable creation patterns, wrapper variable detection
-- **policyengine-code-organization-skill** - Naming conventions and folder structure
+- **policyengine-variable-patterns-skill** - Period conversion rules for YEAR/MONTH variables
+- **policyengine-code-skill** - Naming conventions and folder structure
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
 1. `Skill: policyengine-testing-patterns-skill`
-2. `Skill: policyengine-period-patterns-skill`
-3. `Skill: policyengine-aggregation-skill`
+2. `Skill: policyengine-variable-patterns-skill`
 4. `Skill: policyengine-variable-patterns-skill`
-5. `Skill: policyengine-code-organization-skill`
+5. `Skill: policyengine-code-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -90,7 +87,7 @@ From **policyengine-testing-patterns-skill**:
 - **Number Format**: Always use underscores (`50_000` not `50000`)
 - **Enum Values**: Verify actual enum definitions before using
 
-For period conversion (from **policyengine-period-patterns-skill**):
+For period conversion (from **policyengine-variable-patterns-skill**):
 - Input YEAR variables as annual amounts
 - Expect monthly values in output for MONTH period tests
 
@@ -125,18 +122,16 @@ Create your test files in the appropriate directory:
 
 For detailed patterns and examples, consult:
 - **policyengine-testing-patterns-skill** for all test creation patterns
-- **policyengine-period-patterns-skill** for period handling
-- **policyengine-aggregation-skill** for understanding variable summation
+- **policyengine-variable-patterns-skill** for period handling
+- **policyengine-variable-patterns-skill** for understanding variable summation
 
 ## Before Completing: Validate Against Skills
 
 Before finalizing, validate your work against ALL loaded skills:
 
 1. **policyengine-testing-patterns-skill** - Test structure, naming, period formats correct?
-2. **policyengine-period-patterns-skill** - Period conversion rules followed?
-3. **policyengine-aggregation-skill** - Aggregation patterns understood?
-4. **policyengine-variable-patterns-skill** - Using correct variables?
-5. **policyengine-code-organization-skill** - Folder structure correct?
+2. **policyengine-variable-patterns-skill** - Period conversion rules followed?
+5. **policyengine-code-skill** - Folder structure correct?
 
 Run through each skill's Quick Checklist if available.
 

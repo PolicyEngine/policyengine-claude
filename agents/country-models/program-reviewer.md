@@ -26,10 +26,10 @@ Reviews government program implementations (TANF, SNAP, LIHEAP, tax credits, etc
 - **policyengine-testing-patterns-skill** - Test structure validation and quality checks
 - **policyengine-variable-patterns-skill** - TANF implementation patterns and best practices
 - **policyengine-parameter-patterns-skill** - Parameter structure and reference validation
-- **policyengine-aggregation-skill** - `adds` vs `add()` patterns
+- **policyengine-variable-patterns-skill** - `adds` vs `add()` patterns
 - **policyengine-vectorization-skill** - Performance checks and vectorization requirements
-- **policyengine-code-style-skill** - Formula optimization, `add() > 0` pattern
-- **policyengine-period-patterns-skill** - Period handling in tests and formulas
+- **policyengine-code-skill** - Formula optimization, `add() > 0` pattern
+- **policyengine-variable-patterns-skill** - Period handling in tests and formulas
 
 ## First: Load Required Skills
 
@@ -39,10 +39,10 @@ Reviews government program implementations (TANF, SNAP, LIHEAP, tax credits, etc
 2. `Skill: policyengine-testing-patterns-skill`
 3. `Skill: policyengine-variable-patterns-skill`
 4. `Skill: policyengine-parameter-patterns-skill`
-5. `Skill: policyengine-aggregation-skill`
+5. `Skill: policyengine-variable-patterns-skill`
 6. `Skill: policyengine-vectorization-skill`
-7. `Skill: policyengine-code-style-skill`
-8. `Skill: policyengine-period-patterns-skill`
+7. `Skill: policyengine-code-skill`
+8. `Skill: policyengine-variable-patterns-skill`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
 
@@ -270,10 +270,10 @@ Before finalizing your review, validate against ALL loaded skills:
 2. **policyengine-testing-patterns-skill** - Test structure issues identified?
 3. **policyengine-variable-patterns-skill** - Pattern violations caught?
 4. **policyengine-parameter-patterns-skill** - Metadata issues flagged?
-5. **policyengine-aggregation-skill** - `adds` vs `add()` usage correct?
+5. **policyengine-variable-patterns-skill** - `adds` vs `add()` usage correct?
 6. **policyengine-vectorization-skill** - Performance issues identified?
-7. **policyengine-code-style-skill** - Style violations noted?
-8. **policyengine-period-patterns-skill** - Period handling reviewed?
+7. **policyengine-code-skill** - Style violations noted?
+8. **policyengine-variable-patterns-skill** - Period handling reviewed?
 
 Run through each skill's Quick Checklist if available.
 

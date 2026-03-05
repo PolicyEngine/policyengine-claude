@@ -199,7 +199,7 @@ Fix pattern violations in these files:
 - [file3]: Use `add() > 0` instead of `spm_unit.any()`
 - [file4]: Reference should use tuple () not list []
 
-Apply fixes following policyengine-code-style-skill patterns.
+Apply fixes following policyengine-code-skill patterns.
 ```
 
 ### Step 3B: Add Missing Tests

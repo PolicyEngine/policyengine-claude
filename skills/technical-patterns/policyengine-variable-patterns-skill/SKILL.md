@@ -165,7 +165,7 @@ def formula(spm_unit, period, parameters):
 - Is it ONLY a sum? → `adds = [...]` (no formula)
 - Sum + other operations? → `add()` function inside formula
 
-**See policyengine-aggregation-skill for detailed patterns.**
+**See references/aggregation.md for detailed patterns.**
 
 ---
 

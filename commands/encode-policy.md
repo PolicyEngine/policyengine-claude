@@ -119,7 +119,7 @@ Before proceeding to development, verify the specification is complete:
 
 **IMPORTANT:** All agents create files only - they do NOT commit. pr-pusher in Phase 6 handles all commits.
 
-**Naming Convention:** All agents load **policyengine-code-organization-skill** and use the variable prefix from `sources/working_references.md`.
+**Naming Convention:** All agents load **policyengine-code-skill** and use the variable prefix from `sources/working_references.md`.
 
 ### Step 3A: Create Parameters
 
@@ -222,7 +222,7 @@ Invoke @complete:country-models:implementation-validator to check and fix organi
 
 **4. Variable Code Style (comprehensive check):**
 
-Check ALL variable code against **policyengine-code-style-skill** and **policyengine-variable-patterns-skill**:
+Check ALL variable code against **policyengine-code-skill** and **policyengine-variable-patterns-skill**:
 - Aggregation patterns (`adds` vs `add()`)
 - Entity levels (Person vs SPMUnit)
 - Reference format (tuple not list)

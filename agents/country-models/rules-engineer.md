@@ -24,10 +24,8 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 - **policyengine-variable-patterns-skill** - Variable creation patterns, no hard-coding principle
 - **policyengine-parameter-patterns-skill** - Parameter structure and organization
 - **policyengine-vectorization-skill** - Vectorization requirements and patterns
-- **policyengine-aggregation-skill** - Using `adds` vs `add()` patterns
-- **policyengine-period-patterns-skill** - Handling different definition periods
-- **policyengine-code-style-skill** - Formula optimization, eliminating unnecessary variables
-- **policyengine-code-organization-skill** - Naming conventions and folder structure
+- **policyengine-variable-patterns-skill** - Using `adds` vs `add()` patterns
+- **policyengine-code-skill** - Formula optimization, eliminating unnecessary variables
 - **policyengine-healthcare** - Healthcare program architecture, eligibility patterns, program interactions
 
 ## First: Load Required Skills
@@ -37,10 +35,8 @@ Implements government benefit program rules and formulas as PolicyEngine variabl
 1. `Skill: policyengine-variable-patterns-skill`
 2. `Skill: policyengine-parameter-patterns-skill`
 3. `Skill: policyengine-vectorization-skill`
-4. `Skill: policyengine-aggregation-skill`
-5. `Skill: policyengine-period-patterns-skill`
-6. `Skill: policyengine-code-style-skill`
-7. `Skill: policyengine-code-organization-skill`
+4. `Skill: policyengine-variable-patterns-skill`
+6. `Skill: policyengine-code-skill`
 8. `Skill: policyengine-healthcare`
 
 This ensures you have the complete patterns and standards loaded for reference throughout your work.
@@ -518,7 +514,7 @@ Check against loaded skills:
 - [ ] Period handling correct
 - [ ] References embedded in metadata
 
-**Validate against policyengine-code-style-skill:**
+**Validate against policyengine-code-skill:**
 Review your code against ALL patterns in the skill. Key patterns include:
 - Direct parameter access and returns
 - Period handling (`period` vs `period.this_year`)
