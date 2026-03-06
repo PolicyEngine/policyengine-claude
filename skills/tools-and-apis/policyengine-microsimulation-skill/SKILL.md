@@ -25,37 +25,51 @@ description: |
 - **Parameter Discovery**: https://policyengine.github.io/policyengine-us/usage/parameter-discovery.html
 - **Reform.from_dict()**: https://policyengine.github.io/policyengine-core/usage/reforms.html
 
-## CRITICAL: Use calc() with MicroSeries - No Manual Weights Ever
+## CRITICAL: Use calc() with MicroSeries — never use np.array() or manual weights
 
-**MicroSeries handles all weighting automatically. Never access .weights or do manual weight math.**
+**MicroSeries handles all weighting automatically. Never convert to numpy or do manual weight math.**
 
-### NEVER strip weights with .values
+### NEVER convert MicroSeries to numpy arrays
 
-`calc()` and `calculate()` return MicroSeries with embedded weights. Calling `.values` strips them and returns a plain numpy array where `.mean()` is **unweighted**.
+`calc()` and `calculate()` return MicroSeries with embedded weights AND entity context. Converting to numpy via `np.array()`, `.values`, or `.to_numpy()` strips both, causing:
+1. **Unweighted results** — `.mean()` on a numpy array is unweighted
+2. **Entity-level mismatches** — mixing arrays from different entities (e.g., 23K tax units vs 15K households) gives silently wrong results. Numpy won't error because boolean masks still index, but the mask from one entity applied to values from another is garbage.
 
 ```python
-# ❌ WRONG - .values strips weights, .mean() is UNWEIGHTED
+# ❌ WRONG - np.array() strips weights AND entity context
+change_arr = np.array(sim.calc("income_tax", period=2026))
+weights = np.array(sim.calc("household_weight", period=2026))
+# These may be DIFFERENT LENGTHS (tax units vs households)!
+# Numpy boolean indexing won't error — it just gives wrong results.
+losers = weights[change_arr < -1].sum()  # SILENTLY WRONG
+
+# ❌ WRONG - .values and .to_numpy() have the same problem
 result = sim.calc("household_net_income", period=2026).values
 wrong_mean = result.mean()  # Unweighted!
 
-# ❌ WRONG - same problem with .to_numpy()
-result = sim.calc("household_net_income", period=2026).to_numpy()
-
 # ✅ CORRECT - keep as MicroSeries, all operations are weighted
-result = sim.calc("household_net_income", period=2026)
-correct_mean = result.mean()  # Weighted automatically!
+income_tax_b = baseline.calc("income_tax", period=2026)
+income_tax_r = reformed.calc("income_tax", period=2026)
+tax_change = income_tax_r - income_tax_b
+loser_count = (tax_change > 1).sum()    # Weighted count of losers
+loser_share = (tax_change > 1).mean()   # Weighted share of losers
+avg_change = tax_change.mean()          # Weighted mean change
+total_change = tax_change.sum()         # Weighted total
 ```
 
-### Correct patterns
+### Entity-level matching
+
+When comparing variables across entities, use `map_to` to align them — never mix raw arrays from different entities:
 
 ```python
-# ✅ CORRECT - MicroSeries handles everything
-change = reformed.calc('household_net_income', period=2026, map_to='person') - \
-         baseline.calc('household_net_income', period=2026, map_to='person')
-loser_share = (change < 0).mean()  # Weighted automatically!
+# ❌ WRONG - income_tax is tax_unit level, household_weight is household level
+tax = np.array(sim.calc("income_tax", period=2026))        # 23K tax units
+wt = np.array(sim.calc("household_weight", period=2026))   # 15K households
+# tax and wt have DIFFERENT lengths — any indexing is wrong
 
-# ❌ WRONG - never access .weights or do manual math
-loser_share = change.weights[change.values < 0].sum() / change.weights.sum()
+# ✅ CORRECT - map income_tax to household level, or just use MicroSeries
+tax = sim.calc("income_tax", period=2026)  # tax_unit level MicroSeries
+losers = (tax > 0).sum()  # Weighted count, correct entity
 ```
 
 ## Quick start
@@ -284,7 +298,7 @@ print(f"Poverty (BHC): {baseline_rate:.1%} → {reform_rate:.1%}")
 
 ### Start with a BOTEC range before running code, and flag if the point estimate diverges
 
-### Use `household_net_income` for total cost
+### Use `household_net_income` for total cost — but understand what it includes
 
 **The budgetary cost of a reform is the change in `household_net_income`, NOT the change in the
 directly-modified program variable.** A reform that changes one program (e.g., CTC) can have
@@ -293,22 +307,27 @@ benefit clawbacks). Summing only the program-specific variable will undercount t
 
 This matches the pattern used in the PolicyEngine API (`policyengine-api/endpoints/economy/compare.py`).
 
-```python
-# Total budgetary cost = change in household_net_income
-baseline_hni = baseline.calc('household_net_income', period=YEAR).sum()
-reformed_hni = reformed.calc('household_net_income', period=YEAR).sum()
-total_cost = (reformed_hni - baseline_hni) / 1e9
-print(f"Total budgetary cost: ${total_cost:,.1f}B")
+**IMPORTANT: `household_net_income` includes state tax effects.** Many states inherit federal
+`taxable_income`, so a federal reform that changes `taxable_income` will indirectly change
+state taxes too. For **federal-only** revenue estimates, use `income_tax` directly:
 
-# Break out by federal taxes, state/local taxes, and benefits
-federal_tax_cost = (baseline.calc('income_tax', period=YEAR).sum() -
-                    reformed.calc('income_tax', period=YEAR).sum()) / 1e9
+```python
+# Total cost including state tax interactions
+total_cost = (reformed.calc('household_net_income', period=YEAR).sum() -
+              baseline.calc('household_net_income', period=YEAR).sum()) / 1e9
+
+# Federal-only revenue impact (use this when scoring a federal bill)
+federal_rev = (reformed.calc('income_tax', period=YEAR).sum() -
+               baseline.calc('income_tax', period=YEAR).sum()) / 1e9
+
+# Break out all components
 state_tax_cost = (baseline.calc('state_income_tax', period=YEAR).sum() -
                   reformed.calc('state_income_tax', period=YEAR).sum()) / 1e9
 benefit_cost = (reformed.calc('household_benefits', period=YEAR).sum() -
                 baseline.calc('household_benefits', period=YEAR).sum()) / 1e9
 
-print(f"Federal income tax revenue loss: ${federal_tax_cost:,.1f}B")
+print(f"Total budgetary cost: ${total_cost:,.1f}B")
+print(f"Federal income tax revenue change: ${federal_rev:,.1f}B")
 print(f"State/local tax revenue loss: ${state_tax_cost:,.1f}B")
 print(f"Benefit spending increase: ${benefit_cost:,.1f}B")
 ```
