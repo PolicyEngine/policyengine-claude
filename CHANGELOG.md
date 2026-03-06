@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.15.4] - 2026-03-06
+
+### Changed
+
+- Replace review-fix loop with 3 mandatory named rounds; broaden consolidator reference search by concept keywords instead of acronyms; remove hardcoded TANF references from parameter-architect
+
 ## [3.15.3] - 2026-03-06
 
 ### Changed
@@ -167,6 +173,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.15.4]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.3...3.15.4
 [3.15.3]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.2...3.15.3
 [3.15.2]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.1...3.15.2
 [3.15.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.0...3.15.1
