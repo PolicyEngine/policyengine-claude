@@ -46,9 +46,8 @@ Specifically:
 - Section 2.3: "Description Validation Checklist" - Run this on every description
 
 **ALWAYS study existing implementations FIRST:**
-- DC TANF: `/policyengine_us/parameters/gov/states/dc/dhs/tanf/`
-- IL TANF: `/policyengine_us/parameters/gov/states/il/dhs/tanf/`
-- TX TANF: `/policyengine_us/parameters/gov/states/tx/hhs/tanf/`
+The impl-spec lists reference implementations discovered by the consolidator. Read 3+
+parameter files from the best-matching reference implementation listed there.
 
 Learn from them:
 1. Folder structure and organization patterns
@@ -58,7 +57,7 @@ Learn from them:
 5. How they organize income/, eligibility/, resources/ folders
 
 **MANDATORY: Before writing ANY parameter:**
-- Open and READ 3+ similar parameter files from TX/IL/DC
+- Open and READ 3+ similar parameter files from the reference implementation
 - COPY their exact description pattern from the skill templates
 - Replace ONLY state name (keep everything else identical)
 - **ALWAYS spell out full program names** (e.g., "Temporary Assistance for Needy Families program", not "TANF")
