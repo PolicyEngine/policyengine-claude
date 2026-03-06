@@ -55,10 +55,10 @@ If nothing similar exists in app-v2:
 **Tech stack (mandatory):**
 - React 19 with `forwardRef`
 - TypeScript with strict types
-- Tailwind CSS v4 with `tw:` prefix on all utility classes
+- Tailwind CSS v4 with standard class names (no prefix)
 - CVA (`class-variance-authority`) for variant management
 - `cn()` utility from `@/utils/cn` for class merging
-- Design tokens from the ui-kit's Tailwind theme (colors, spacing, typography, radius)
+- Design tokens from ui-kit's `theme.css` (colors, spacing, typography, radius)
 
 **File structure for each component:**
 ```
@@ -72,17 +72,17 @@ import { forwardRef, type HTMLAttributes } from 'react';
 import { cn } from '../utils/cn';
 
 const componentVariants = cva(
-  'tw:base-classes-here',
+  'base-classes-here',
   {
     variants: {
       variant: {
-        default: 'tw:variant-classes',
+        default: 'variant-classes',
         // ... more variants
       },
       size: {
-        sm: 'tw:size-classes',
-        md: 'tw:size-classes',
-        lg: 'tw:size-classes',
+        sm: 'size-classes',
+        md: 'size-classes',
+        lg: 'size-classes',
       },
     },
     defaultVariants: { variant: 'default', size: 'md' },
@@ -110,8 +110,8 @@ ComponentName.displayName = 'ComponentName';
 ```
 
 **Rules:**
-- ALL Tailwind classes must use the `tw:` prefix
 - ALL colors, spacing, font sizes, and radii must reference design tokens — no hardcoded hex values, no arbitrary pixel values
+- Use semantic classes (`bg-primary`, `text-foreground`) or brand palette classes (`bg-teal-500`, `text-gray-600`)
 - Export the component and its props interface from the category barrel (`src/<category>/index.ts`)
 - Export from the main barrel (`src/index.ts`)
 - Build ALL components the user requested — do not skip any
@@ -134,8 +134,8 @@ Create or update `demo/Demo.tsx` to include a new section showcasing ALL new com
 ```tsx
 // Add a new section for each component
 <section>
-  <h2 className="tw:text-2xl tw:font-bold tw:mb-lg">ComponentName</h2>
-  <div className="tw:flex tw:flex-wrap tw:gap-md">
+  <h2 className="text-2xl font-bold mb-4">ComponentName</h2>
+  <div className="flex flex-wrap gap-3">
     {/* Render every variant, size, and state */}
     <ComponentName variant="default">Example</ComponentName>
     <ComponentName variant="primary" size="lg">Large primary</ComponentName>
@@ -235,7 +235,7 @@ gh pr create --repo PolicyEngine/policyengine-ui-kit \
 
 ## Design token compliance
 - All colors reference design tokens (no hardcoded hex)
-- All spacing uses token-based Tailwind classes
+- All spacing uses standard Tailwind classes
 - All typography uses token scale
 - Validated by design-token-validator agent
 

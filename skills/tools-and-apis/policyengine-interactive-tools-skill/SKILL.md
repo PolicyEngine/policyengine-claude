@@ -23,7 +23,7 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 | Component | Choice |
 |-----------|--------|
 | Framework | Next.js 14 (App Router) |
-| CSS | Tailwind 4 with `@theme` mapping PE tokens |
+| CSS | Tailwind 4 with `@policyengine/ui-kit` theme |
 | Charts | Recharts |
 | Code highlighting | Prism React Renderer |
 | Testing | Vitest |
@@ -31,10 +31,10 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 | Package manager | `bun` (not npm) |
 
 **Requirements:**
-- `@policyengine/design-system` tokens (CDN link in `layout.jsx`)
+- `@policyengine/ui-kit` theme (installed via `bun add @policyengine/ui-kit`)
 - Inter font via Google Fonts CDN
 - Recharts for charts
-- **NEVER hardcode hex colors or font names** — always use `var(--pe-color-*)` and `var(--pe-font-family-primary)`
+- **NEVER hardcode hex colors or font names** — always use CSS variables from the ui-kit theme (e.g., `var(--primary)`, `var(--chart-1)`, `var(--font-sans)`)
 - **PolicyEngine logo** — always use the actual logo image, never styled text. Files at `policyengine-app-v2/app/public/assets/logos/policyengine/` (white.png for dark backgrounds, teal.png for light)
 - Sentence case on all UI text
 
@@ -240,7 +240,7 @@ For analysis repos that precompute data with Python microsimulation pipelines:
 ```bash
 bunx create-next-app@14 my-tool --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd my-tool
-bun add @policyengine/design-system recharts
+bun add @policyengine/ui-kit recharts
 bun add -D vitest
 ```
 
@@ -259,10 +259,6 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         <link
-          rel="stylesheet"
-          href="https://unpkg.com/@policyengine/design-system/dist/tokens.css"
-        />
-        <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
@@ -273,59 +269,40 @@ export default function RootLayout({ children }) {
 }
 ```
 
-**Important:** Load `tokens.css` via CDN `<link>` in `<head>`. The `@import` from `node_modules` does not work with the Next.js CSS pipeline.
-
-### app/globals.css — map PE tokens into Tailwind `@theme`
+### app/globals.css — import ui-kit theme
 
 ```css
 @import "tailwindcss";
-
-@theme {
-  --color-pe-primary-50: var(--pe-color-primary-50);
-  --color-pe-primary-500: var(--pe-color-primary-500);
-  --color-pe-primary-600: var(--pe-color-primary-600);
-  --color-pe-primary-700: var(--pe-color-primary-700);
-
-  --color-pe-gray-50: var(--pe-color-gray-50);
-  --color-pe-gray-100: var(--pe-color-gray-100);
-  --color-pe-gray-200: var(--pe-color-gray-200);
-
-  --color-pe-error: var(--pe-color-error);
-
-  --color-pe-bg-primary: var(--pe-color-bg-primary);
-  --color-pe-text-primary: var(--pe-color-text-primary);
-  --color-pe-text-secondary: var(--pe-color-text-secondary);
-  --color-pe-text-tertiary: var(--pe-color-text-tertiary);
-
-  --color-pe-border-light: var(--pe-color-border-light);
-}
+@import "@policyengine/ui-kit/theme.css";
 
 body {
-  font-family: var(--pe-font-family-primary);
-  color: var(--pe-color-text-primary);
-  background: var(--pe-color-bg-primary);
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 ```
 
-### Using PE tokens in components
+The single `@import "@policyengine/ui-kit/theme.css"` replaces the entire manual `@theme` block. It provides all color, spacing, and typography tokens as CSS variables that Tailwind 4 picks up automatically.
 
-Use `style=` with `var()` for dynamic PE token values:
+### Using tokens in components
+
+Use Tailwind classes from the ui-kit theme:
+
+```jsx
+<div className="bg-muted border border-border rounded-lg p-4">
+```
+
+Or use `style=` with `var()` for inline styles:
 
 ```jsx
 <div style={{
-  backgroundColor: "var(--pe-color-gray-50)",
-  border: "1px solid var(--pe-color-border-light)",
-  borderRadius: "var(--pe-radius-md)",
-  padding: "var(--pe-space-lg)",
+  backgroundColor: "var(--muted)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  padding: "1rem",
 }}>
-```
-
-Or use Tailwind classes that reference the `@theme` mappings:
-
-```jsx
-<div className="bg-pe-gray-50 border border-pe-border-light rounded-md p-4">
 ```
 
 ## Embedding in policyengine.org
@@ -429,36 +406,22 @@ bun add recharts
 **For simple visualizations:** Use SVG directly. The marriage calculator uses hand-rolled SVG heatmaps.
 
 **Color conventions:**
-- Positive/bonus: `var(--pe-color-primary-500)`
-- Negative/penalty: `var(--pe-color-gray-600)` or `var(--pe-color-error)`
-- Neutral: `var(--pe-color-gray-200)`
+- Positive/bonus: `var(--chart-1)`
+- Negative/penalty: `var(--chart-3)` or `var(--destructive)`
+- Neutral: `var(--border)`
 
 **Inverted metrics (taxes):** When positive delta means bad (more taxes), pass `invertDelta` to your chart component to flip labels and colors.
 
-### Recharts + PE tokens
+### Recharts + ui-kit tokens
 
-Recharts renders SVG, which **cannot inherit CSS custom properties** via `style=`. You must resolve token values at render time:
+Recharts accepts CSS variables directly via `fill` and `stroke` props:
 
 ```jsx
-/* Helper to read PE tokens for Recharts SVG props */
-function getCssVar(name) {
-  if (typeof window === "undefined") return "";
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-}
-
-// In your chart component:
-const primaryColor = getCssVar("--pe-color-primary-500");
-const errorColor = getCssVar("--pe-color-error");
-const gridColor = getCssVar("--pe-color-border-light");
-const fontFamily = getCssVar("--pe-font-family-primary");
-
 <BarChart data={data}>
-  <CartesianGrid stroke={gridColor} />
-  <XAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily }} />
-  <YAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily }} />
-  <Bar dataKey="value" fill={primaryColor} />
+  <CartesianGrid stroke="var(--border)" />
+  <XAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
+  <YAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
+  <Bar dataKey="value" fill="var(--chart-1)" />
 </BarChart>
 ```
 
@@ -471,7 +434,7 @@ const fontFamily = getCssVar("--pe-font-family-primary");
 tickFormatter={(v) => v < 0 ? `-$${Math.abs(v)}` : `$${v}`}
 ```
 
-**Never pass hardcoded hex values** like `fill="#319795"` to Recharts — always resolve from CSS variables.
+**Never pass hardcoded hex values** like `fill="#319795"` to Recharts — always use CSS variables (e.g., `fill="var(--chart-1)"`).
 
 ## Code highlighting
 
@@ -513,12 +476,12 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 ## Checklist for new tools
 
 - [ ] Next.js 14 + Tailwind 4 scaffold
-- [ ] `@policyengine/design-system` tokens loaded via CDN `<link>` in layout.jsx
-- [ ] PE tokens mapped in `globals.css` `@theme` block
+- [ ] `@policyengine/ui-kit` installed (`bun add @policyengine/ui-kit`)
+- [ ] `@import "@policyengine/ui-kit/theme.css"` in `globals.css`
 - [ ] Inter font loaded via Google Fonts CDN
-- [ ] **Zero hardcoded hex colors** — all colors via `var(--pe-color-*)`
-- [ ] **Zero hardcoded font names** — all fonts via `var(--pe-font-family-primary)`
-- [ ] Recharts charts use `getCssVar()` helper for SVG props (font, colors)
+- [ ] **Use Tailwind classes from ui-kit theme** — no hardcoded hex colors
+- [ ] **Zero hardcoded font names** — all fonts via `var(--font-sans)`
+- [ ] Recharts charts use `fill="var(--chart-1)"` pattern for SVG props (font, colors)
 - [ ] Recharts axes use `niceTicks` with `domain={["auto", "auto"]}` for human-friendly tick values
 - [ ] Negative dollar values formatted as `-$100` not `$-100`
 - [ ] PE logo is an actual image, not styled text

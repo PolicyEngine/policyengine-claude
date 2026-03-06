@@ -1,6 +1,6 @@
 ---
 name: policyengine-frontend-builder-spec
-description: Mandatory frontend technology requirements for PolicyEngine dashboards and interactive tools — Tailwind CSS v4, Next.js (App Router), @policyengine/ui-kit, @policyengine/design-system token integration, Vercel deployment
+description: Mandatory frontend technology requirements for PolicyEngine dashboards and interactive tools — Tailwind CSS v4, Next.js (App Router), @policyengine/ui-kit theme, Vercel deployment
 ---
 
 # Frontend builder spec
@@ -17,17 +17,7 @@ The application MUST use **Tailwind CSS v4** for all styling. Tailwind utility c
 - MUST have a `globals.css` containing:
   ```css
   @import "tailwindcss";
-
-  @theme {
-    /* Bridge PE design tokens into Tailwind */
-    --color-pe-primary-50: var(--pe-color-primary-50);
-    --color-pe-primary-400: var(--pe-color-primary-400);
-    --color-pe-primary-500: var(--pe-color-primary-500);
-    --color-pe-primary-600: var(--pe-color-primary-600);
-    --color-pe-primary-700: var(--pe-color-primary-700);
-    --color-pe-primary-800: var(--pe-color-primary-800);
-    /* ... all color, spacing, font-size, radius bridges */
-  }
+  @import "@policyengine/ui-kit/theme.css";
   ```
 - MUST NOT have a `tailwind.config.ts` or `tailwind.config.js` — Tailwind v4 uses `@theme` in CSS instead
 - MUST NOT have a `postcss.config.js` or `postcss.config.mjs` — Tailwind v4 does not require PostCSS
@@ -35,14 +25,14 @@ The application MUST use **Tailwind CSS v4** for all styling. Tailwind utility c
 - MUST NOT use plain CSS files or CSS modules (`*.module.css`) for layout or styling
 - MUST NOT use other CSS-in-JS libraries (styled-components, emotion, vanilla-extract)
 - MUST NOT use other component frameworks for styling (Mantine, Chakra UI, Material UI)
-- The only CSS files allowed are `globals.css` and `@policyengine/ui-kit/styles.css`
+- The only CSS files allowed are `globals.css` (which imports ui-kit theme)
 
-### 2. @policyengine/ui-kit (component library)
+### 2. @policyengine/ui-kit (component library + theme)
 
-The application MUST install `@policyengine/ui-kit` and use it as the primary component library. **MUST use ui-kit components when an equivalent exists** — do NOT rebuild components that ui-kit already provides.
+The application MUST install `@policyengine/ui-kit` and use it as the primary component library and design token source. **MUST use ui-kit components when an equivalent exists** — do NOT rebuild components that ui-kit already provides.
 
 - MUST install: `bun add @policyengine/ui-kit`
-- MUST import styles in `app/layout.tsx`: `import '@policyengine/ui-kit/styles.css'`
+- MUST import theme in `globals.css`: `@import "@policyengine/ui-kit/theme.css";`
 - MUST use ui-kit components for all standard UI patterns (see availability table below)
 - MAY build custom components only when no ui-kit equivalent exists
 
@@ -69,32 +59,32 @@ The application MUST install `@policyengine/ui-kit` and use it as the primary co
 | Data tables | `DataTable` |
 | Charts | `ChartContainer`, `PEBarChart`, `PELineChart`, `PEAreaChart`, `PEWaterfallChart` |
 | Branding | `PolicyEngineWatermark`, `logos.*` |
-| Utilities | `formatCurrency`, `formatPercent`, `formatNumber`, `getCssVar` |
+| Utilities | `formatCurrency`, `formatPercent`, `formatNumber` |
 
 **Component precedence rule:** When building UI:
 1. **First**: Use `@policyengine/ui-kit` if it has the component
-2. **Second**: Use [shadcn/ui](https://ui.shadcn.com) primitives (Dialog, Popover, Tooltip, Select, DropdownMenu, etc.) styled with Tailwind + `pe-*` tokens
-3. **Third**: Build custom from scratch with Tailwind + `pe-*` tokens
+2. **Second**: Use [shadcn/ui](https://ui.shadcn.com) primitives (Dialog, Popover, Tooltip, Select, DropdownMenu, etc.) styled with Tailwind semantic classes
+3. **Third**: Build custom from scratch with Tailwind utility classes
 
-### 3. @policyengine/design-system tokens
+### 3. Design tokens via ui-kit theme
 
-The application MUST load `@policyengine/design-system` tokens. Design tokens MUST be used **wherever a matching token exists**.
+The application MUST load design tokens from `@policyengine/ui-kit/theme.css`. This single CSS import provides all colors, spacing, typography, and chart tokens.
 
-- MUST load tokens via CDN `<link>` in `app/layout.tsx`'s `<head>`:
-  ```html
-  <link rel="stylesheet" href="https://unpkg.com/@policyengine/design-system/dist/tokens.css" />
-  ```
-- MUST bridge PE tokens into Tailwind via the `@theme` block in `globals.css` (see integration pattern below)
-- MUST NOT hardcode hex color values when a PE color token exists
-- MUST NOT hardcode pixel spacing values when a PE spacing token exists
-- MUST NOT hardcode font-family values — use the PE font token
-- MAY use custom values when no PE token covers the need (e.g., chart-specific dimensions, animation durations)
+- MUST import theme in `globals.css`: `@import "@policyengine/ui-kit/theme.css";`
+- MUST NOT load tokens via CDN `<link>` — the theme is bundled with ui-kit
+- MUST NOT hardcode hex color values when a design token exists
+- MUST NOT hardcode pixel spacing values when a Tailwind spacing class exists
+- MUST NOT hardcode font-family values — use `var(--font-sans)`
+- MAY use custom values when no token covers the need (e.g., chart-specific dimensions, animation durations)
 
-**`getCssVar()` helper:** For Recharts and other SVG libraries that need resolved color strings (not CSS `var()` references), use the `getCssVar` utility from ui-kit:
-```tsx
-import { getCssVar } from '@policyengine/ui-kit';
-const primaryColor = getCssVar('--pe-color-primary-500'); // '#319795'
-```
+**Token usage patterns:**
+
+| Context | Approach | Example |
+|---------|----------|---------|
+| React components | Tailwind semantic classes | `className="bg-primary text-foreground"` |
+| Brand palette | Tailwind direct classes | `className="bg-teal-500 text-gray-600"` |
+| Recharts (SVG) | CSS vars directly in fill/stroke | `fill="var(--chart-1)"` |
+| Inline styles | CSS vars | `style={{ color: "var(--primary)" }}` |
 
 ### 4. Framework: Next.js (App Router)
 
@@ -136,115 +126,34 @@ When building custom components not available in `@policyengine/ui-kit`, the app
 
 - SHOULD initialize shadcn/ui: `bunx shadcn@latest init`
 - SHOULD use shadcn/ui for: Dialog, Popover, Tooltip, Select, DropdownMenu, Accordion, Sheet, and other interaction primitives
-- MUST style shadcn/ui components with Tailwind + `pe-*` tokens (the ui-kit already defines shadcn/ui semantic tokens like `background`, `foreground`, `primary`, `muted` in its `@theme` block)
+- MUST style shadcn/ui components with Tailwind semantic classes (the ui-kit theme already defines shadcn/ui semantic tokens like `background`, `foreground`, `primary`, `muted`)
 - MUST NOT use shadcn/ui when an equivalent `@policyengine/ui-kit` component exists
 
-## Tailwind v4 + design token integration pattern
+## Tailwind v4 + ui-kit theme integration pattern
 
 ### globals.css
 
 ```css
 @import "tailwindcss";
+@import "@policyengine/ui-kit/theme.css";
 
-@theme {
-  /* Primary brand colors — teal */
-  --color-pe-primary-50: var(--pe-color-primary-50);
-  --color-pe-primary-100: var(--pe-color-primary-100);
-  --color-pe-primary-200: var(--pe-color-primary-200);
-  --color-pe-primary-300: var(--pe-color-primary-300);
-  --color-pe-primary-400: var(--pe-color-primary-400);
-  --color-pe-primary-500: var(--pe-color-primary-500);
-  --color-pe-primary-600: var(--pe-color-primary-600);
-  --color-pe-primary-700: var(--pe-color-primary-700);
-  --color-pe-primary-800: var(--pe-color-primary-800);
-  --color-pe-primary-900: var(--pe-color-primary-900);
-
-  /* Gray scale */
-  --color-pe-gray-50: var(--pe-color-gray-50);
-  --color-pe-gray-100: var(--pe-color-gray-100);
-  --color-pe-gray-200: var(--pe-color-gray-200);
-  --color-pe-gray-300: var(--pe-color-gray-300);
-  --color-pe-gray-400: var(--pe-color-gray-400);
-  --color-pe-gray-500: var(--pe-color-gray-500);
-  --color-pe-gray-600: var(--pe-color-gray-600);
-  --color-pe-gray-700: var(--pe-color-gray-700);
-  --color-pe-gray-800: var(--pe-color-gray-800);
-  --color-pe-gray-900: var(--pe-color-gray-900);
-
-  /* Blue accent */
-  --color-pe-blue-500: var(--pe-color-blue-500);
-  --color-pe-blue-700: var(--pe-color-blue-700);
-
-  /* Semantic text colors */
-  --color-pe-text-primary: var(--pe-color-text-primary);
-  --color-pe-text-secondary: var(--pe-color-text-secondary);
-  --color-pe-text-tertiary: var(--pe-color-text-tertiary);
-  --color-pe-text-inverse: var(--pe-color-text-inverse);
-
-  /* Semantic background colors */
-  --color-pe-bg-primary: var(--pe-color-bg-primary);
-  --color-pe-bg-secondary: var(--pe-color-bg-secondary);
-  --color-pe-bg-tertiary: var(--pe-color-bg-tertiary);
-
-  /* Semantic border colors */
-  --color-pe-border-light: var(--pe-color-border-light);
-  --color-pe-border-medium: var(--pe-color-border-medium);
-  --color-pe-border-dark: var(--pe-color-border-dark);
-
-  /* Status colors */
-  --color-pe-success: var(--pe-color-success);
-  --color-pe-error: var(--pe-color-error);
-  --color-pe-warning: var(--pe-color-warning);
-  --color-pe-info: var(--pe-color-info);
-
-  /* Spacing */
-  --spacing-pe-xs: var(--pe-space-xs);
-  --spacing-pe-sm: var(--pe-space-sm);
-  --spacing-pe-md: var(--pe-space-md);
-  --spacing-pe-lg: var(--pe-space-lg);
-  --spacing-pe-xl: var(--pe-space-xl);
-  --spacing-pe-2xl: var(--pe-space-2xl);
-  --spacing-pe-3xl: var(--pe-space-3xl);
-  --spacing-pe-4xl: var(--pe-space-4xl);
-
-  /* Typography — font families */
-  --font-pe: var(--pe-font-family-primary), 'Inter', sans-serif;
-  --font-pe-mono: var(--pe-font-family-mono), 'JetBrains Mono', monospace;
-
-  /* Typography — font sizes: override Tailwind defaults with PE values.
-   * Tailwind v4 uses --text-* namespace to generate text-* utilities.
-   * Use standard classes (text-xs, text-sm, text-base, etc.) in components. */
-  --text-*: initial;
-  --text-xs: var(--pe-font-size-xs);
-  --text-sm: var(--pe-font-size-sm);
-  --text-base: var(--pe-font-size-base);
-  --text-lg: var(--pe-font-size-lg);
-  --text-xl: var(--pe-font-size-xl);
-  --text-2xl: var(--pe-font-size-2xl);
-  --text-3xl: var(--pe-font-size-3xl);
-  --text-4xl: var(--pe-font-size-4xl);
-
-  /* Border radius */
-  --radius-pe-sm: var(--pe-radius-element);
-  --radius-pe-md: 6px;
-  --radius-pe-lg: var(--pe-radius-container);
-
-  /* shadcn/ui semantic tokens — bridge to PE equivalents */
-  --color-background: var(--pe-color-bg-primary);
-  --color-foreground: var(--pe-color-gray-900);
-  --color-primary: var(--pe-color-primary-600);
-  --color-primary-foreground: var(--pe-color-text-inverse);
-  --color-muted: var(--pe-color-gray-100);
-  --color-muted-foreground: var(--pe-color-text-secondary);
-  --color-border: var(--pe-color-border-light);
-  --color-ring: var(--pe-color-primary-500);
+body {
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 ```
+
+The single `@import "@policyengine/ui-kit/theme.css"` provides:
+1. **`:root` variables** — shadcn/ui semantic tokens (`--primary`, `--background`, `--chart-1`, etc.)
+2. **`@theme inline`** — Bridges `:root` vars to Tailwind utilities (`bg-primary`, `text-foreground`)
+3. **`@theme`** — Brand palette (`bg-teal-500`, `text-gray-600`), font sizes, spacing, breakpoints
 
 ### Next.js: app/layout.tsx
 
 ```tsx
-import '@policyengine/ui-kit/styles.css'
 import './globals.css'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
@@ -259,12 +168,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/@policyengine/design-system/dist/tokens.css"
-        />
-      </head>
       <body className={inter.className}>{children}</body>
     </html>
   )
@@ -278,18 +181,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 import { MetricCard, Button, Card, CardContent } from '@policyengine/ui-kit';
 import { formatCurrency } from '@policyengine/ui-kit';
 
-// Use Tailwind classes with pe-* tokens for custom layouts:
-<div className="bg-pe-bg-primary border border-pe-border-light rounded-pe-md p-pe-lg flex flex-col gap-pe-xs">
-  <span className="text-sm text-pe-text-secondary font-medium">Metric title</span>
-  <span className="text-2xl font-bold text-pe-text-primary">{formatCurrency(1234)}</span>
+// Use Tailwind classes with semantic and brand tokens for custom layouts:
+<div className="bg-background border border-border rounded-lg p-4 flex flex-col gap-1">
+  <span className="text-sm text-muted-foreground font-medium">Metric title</span>
+  <span className="text-2xl font-bold text-foreground">{formatCurrency(1234)}</span>
 </div>
 
+// Brand colors when needed:
+<div className="bg-teal-500 text-white hover:bg-teal-600">Primary teal</div>
+
 // Responsive design uses Tailwind breakpoint prefixes:
-<main className="max-w-[1200px] mx-auto px-pe-xl py-pe-lg font-pe text-pe-text-primary">
-  <div className="flex gap-pe-xl md:flex-col">
+<main className="max-w-content mx-auto px-6 py-4 font-sans text-foreground">
+  <div className="flex gap-6 md:flex-col">
     {/* sidebar collapses at md breakpoint */}
   </div>
 </main>
+
+// Recharts uses CSS vars directly:
+<Line stroke="var(--chart-1)" />
+<Bar fill="var(--chart-2)" />
+<CartesianGrid stroke="var(--border)" />
 ```
 
 ## Project structure
@@ -297,9 +208,9 @@ import { formatCurrency } from '@policyengine/ui-kit';
 ```
 DASHBOARD_NAME/
 ├── app/
-│   ├── layout.tsx              # Root layout — CDN tokens + ui-kit styles + globals.css
+│   ├── layout.tsx              # Root layout — Inter font + globals.css
 │   ├── page.tsx                # Main dashboard page
-│   ├── globals.css             # @import "tailwindcss" + @theme block
+│   ├── globals.css             # @import "tailwindcss" + @import ui-kit theme
 │   └── providers.tsx           # React Query provider (client component)
 ├── components/
 │   └── (from plan.yaml)        # Custom dashboard components (only if not in ui-kit)
@@ -371,12 +282,13 @@ Note: `@vitejs/plugin-react` is only used by Vitest for JSX transform during tes
 - MUST NOT use plain CSS files or CSS modules for layout/styling
 - MUST NOT use styled-components, emotion, or vanilla-extract
 - MUST NOT use Mantine, Chakra UI, Material UI, or other component frameworks for styling
-- MUST NOT hardcode hex color values when a PE color token exists
-- MUST NOT hardcode pixel spacing values when a PE spacing token exists
-- MUST NOT hardcode font-family values — use the PE font token via Tailwind
+- MUST NOT hardcode hex color values when a design token exists
+- MUST NOT hardcode pixel spacing values when a Tailwind spacing class exists
+- MUST NOT hardcode font-family values — use `var(--font-sans)` via Tailwind
 - MUST NOT deploy to platforms other than Vercel
 - MUST NOT use npm, yarn, or pnpm — use bun
 - MUST NOT rebuild components that exist in `@policyengine/ui-kit`
+- MUST NOT use `getCssVar()` — it no longer exists. SVG accepts `var()` directly.
 
 ## Related skills
 

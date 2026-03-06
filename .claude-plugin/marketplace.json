@@ -166,7 +166,9 @@
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill",
         "./skills/technical-patterns/seo-checklist-skill",
-        "./skills/technical-patterns/policyengine-test-writing-skill"
+        "./skills/technical-patterns/policyengine-test-writing-skill",
+        "./skills/technical-patterns/policyengine-recharts-skill",
+        "./skills/frontend/policyengine-tailwind-shadcn-skill"
       ]
     },
     {
@@ -245,8 +247,10 @@
         "./agents/dashboard/backend-builder.md",
         "./agents/dashboard/frontend-builder.md",
         "./agents/dashboard/dashboard-integrator.md",
-        "./agents/dashboard/dashboard-validator.md",
-        "./agents/dashboard/dashboard-design-token-validator.md",
+        "./agents/dashboard/dashboard-build-validator.md",
+        "./agents/dashboard/dashboard-design-validator.md",
+        "./agents/dashboard/dashboard-architecture-validator.md",
+        "./agents/dashboard/dashboard-plan-validator.md",
         "./agents/dashboard/dashboard-overview-updater.md"
       ],
       "commands": [
@@ -267,7 +271,9 @@
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-standards-skill",
-        "./skills/documentation/policyengine-writing-skill"
+        "./skills/documentation/policyengine-writing-skill",
+        "./skills/technical-patterns/policyengine-recharts-skill",
+        "./skills/frontend/policyengine-tailwind-shadcn-skill"
       ]
     },
     {
@@ -338,8 +344,10 @@
         "./agents/dashboard/backend-builder.md",
         "./agents/dashboard/frontend-builder.md",
         "./agents/dashboard/dashboard-integrator.md",
-        "./agents/dashboard/dashboard-validator.md",
-        "./agents/dashboard/dashboard-design-token-validator.md",
+        "./agents/dashboard/dashboard-build-validator.md",
+        "./agents/dashboard/dashboard-design-validator.md",
+        "./agents/dashboard/dashboard-architecture-validator.md",
+        "./agents/dashboard/dashboard-plan-validator.md",
         "./agents/dashboard/dashboard-overview-updater.md",
         "./agents/legislation-statute-analyzer.md",
         "./agents/reference-validator.md",
@@ -412,7 +420,9 @@
         "./skills/technical-patterns/policyengine-test-writing-skill",
         "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
         "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
-        "./skills/tools-and-apis/policyengine-modal-deployment-skill"
+        "./skills/tools-and-apis/policyengine-modal-deployment-skill",
+        "./skills/technical-patterns/policyengine-recharts-skill",
+        "./skills/frontend/policyengine-tailwind-shadcn-skill"
       ]
     }
   ]

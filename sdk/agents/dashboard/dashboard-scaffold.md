@@ -77,9 +77,9 @@ DASHBOARD_NAME/
 ├── .claude/
 │   └── settings.json
 ├── app/
-│   ├── layout.tsx                  # Root layout — CDN tokens + ui-kit styles + globals.css
+│   ├── layout.tsx                  # Root layout — Inter font + globals.css
 │   ├── page.tsx                    # Main dashboard page
-│   ├── globals.css                 # @import "tailwindcss" + @theme block
+│   ├── globals.css                 # @import "tailwindcss" + @import ui-kit theme
 │   └── providers.tsx               # React Query provider (client component)
 ├── components/
 │   └── (from plan.yaml components — only custom ones not in ui-kit)
@@ -131,7 +131,7 @@ Generate a CLAUDE.md following the pattern from existing applets (givecalc, ctc-
 
 ## Architecture
 
-- Next.js App Router with Tailwind CSS v4 and @policyengine/design-system tokens
+- Next.js App Router with Tailwind CSS v4 and @policyengine/ui-kit theme
 - @policyengine/ui-kit for standard UI components
 - [Backend description based on data pattern]
 
@@ -155,12 +155,13 @@ bun run build
 ```
 
 ## Design standards
-- Uses Tailwind CSS v4 with @policyengine/design-system tokens bridged via @theme block
+- Uses Tailwind CSS v4 with @policyengine/ui-kit/theme.css (single import for all tokens)
 - @policyengine/ui-kit for all standard UI components
-- Primary teal: `bg-pe-primary-500` / `text-pe-primary-500`
+- Primary teal: `bg-teal-500` / `text-teal-500`
+- Semantic colors: `bg-primary`, `text-foreground`, `text-muted-foreground`
 - Font: Inter (via next/font/google)
 - Sentence case for all headings
-- Charts follow policyengine-app-v2 patterns
+- Charts use `fill="var(--chart-1)"` for series colors
 ```
 
 #### package.json
@@ -189,91 +190,28 @@ export default nextConfig
 
 #### app/globals.css
 
-Generate the Tailwind v4 configuration with `@theme` block bridging PE tokens:
+Generate the Tailwind v4 configuration with the ui-kit theme import:
 
 ```css
 @import "tailwindcss";
+@import "@policyengine/ui-kit/theme.css";
 
-@theme {
-  /* Primary brand colors — teal */
-  --color-pe-primary-50: var(--pe-color-primary-50);
-  --color-pe-primary-500: var(--pe-color-primary-500);
-  --color-pe-primary-600: var(--pe-color-primary-600);
-  --color-pe-primary-700: var(--pe-color-primary-700);
-  /* ... complete color bridges */
-
-  /* Gray scale */
-  --color-pe-gray-50: var(--pe-color-gray-50);
-  --color-pe-gray-100: var(--pe-color-gray-100);
-  --color-pe-gray-200: var(--pe-color-gray-200);
-  --color-pe-gray-500: var(--pe-color-gray-500);
-  --color-pe-gray-600: var(--pe-color-gray-600);
-  --color-pe-gray-700: var(--pe-color-gray-700);
-  /* ... */
-
-  /* Semantic colors */
-  --color-pe-text-primary: var(--pe-color-text-primary);
-  --color-pe-text-secondary: var(--pe-color-text-secondary);
-  --color-pe-bg-primary: var(--pe-color-bg-primary);
-  --color-pe-bg-secondary: var(--pe-color-bg-secondary);
-  --color-pe-border-light: var(--pe-color-border-light);
-  --color-pe-success: var(--pe-color-success);
-  --color-pe-error: var(--pe-color-error);
-  --color-pe-warning: var(--pe-color-warning);
-  --color-pe-info: var(--pe-color-info);
-
-  /* Spacing */
-  --spacing-pe-xs: var(--pe-space-xs);
-  --spacing-pe-sm: var(--pe-space-sm);
-  --spacing-pe-md: var(--pe-space-md);
-  --spacing-pe-lg: var(--pe-space-lg);
-  --spacing-pe-xl: var(--pe-space-xl);
-  --spacing-pe-2xl: var(--pe-space-2xl);
-  --spacing-pe-3xl: var(--pe-space-3xl);
-  --spacing-pe-4xl: var(--pe-space-4xl);
-
-  /* Typography — font families */
-  --font-pe: var(--pe-font-family-primary), 'Inter', sans-serif;
-  --font-pe-mono: var(--pe-font-family-mono), 'JetBrains Mono', monospace;
-
-  /* Typography — font sizes: override Tailwind defaults with PE values.
-   * Tailwind v4 uses --text-* namespace to generate text-* utilities.
-   * Use standard classes (text-xs, text-sm, text-base, etc.) in components. */
-  --text-*: initial;
-  --text-xs: var(--pe-font-size-xs);
-  --text-sm: var(--pe-font-size-sm);
-  --text-base: var(--pe-font-size-base);
-  --text-lg: var(--pe-font-size-lg);
-  --text-xl: var(--pe-font-size-xl);
-  --text-2xl: var(--pe-font-size-2xl);
-  --text-3xl: var(--pe-font-size-3xl);
-  --text-4xl: var(--pe-font-size-4xl);
-
-  /* Border radius */
-  --radius-pe-sm: var(--pe-radius-element);
-  --radius-pe-md: 6px;
-  --radius-pe-lg: var(--pe-radius-container);
-
-  /* shadcn/ui semantic tokens — bridge to PE equivalents */
-  --color-background: var(--pe-color-bg-primary);
-  --color-foreground: var(--pe-color-gray-900);
-  --color-primary: var(--pe-color-primary-600);
-  --color-primary-foreground: var(--pe-color-text-inverse);
-  --color-muted: var(--pe-color-gray-100);
-  --color-muted-foreground: var(--pe-color-text-secondary);
-  --color-border: var(--pe-color-border-light);
-  --color-ring: var(--pe-color-primary-500);
+body {
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 ```
 
-Follow the complete `@theme` block from the `policyengine-frontend-builder-spec-skill` for the full set of bridges.
+The single `@import "@policyengine/ui-kit/theme.css"` replaces the entire manual `@theme` block. It provides all color, spacing, typography, and chart tokens as CSS variables that Tailwind 4 picks up automatically.
 
 #### app/layout.tsx
 
-The root layout loads design tokens via CDN, imports ui-kit styles, and sets up Inter font:
+The root layout imports globals.css and sets up Inter font:
 
 ```tsx
-import '@policyengine/ui-kit/styles.css'
 import './globals.css'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
@@ -288,12 +226,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/@policyengine/design-system/dist/tokens.css"
-        />
-      </head>
       <body className={inter.className}>{children}</body>
     </html>
   )
@@ -433,7 +365,7 @@ Generate `__tests__/page.test.tsx` with a basic render test.
 For each component in `plan.yaml`, first check if `@policyengine/ui-kit` already provides it. Only create skeleton files for components NOT available in ui-kit.
 
 Each custom skeleton should:
-- Use `pe-*` Tailwind token classes for styling
+- Use Tailwind utility classes with semantic and brand tokens for styling
 - Have the correct TypeScript props interface
 - Include a `// TODO: Implement` comment where real logic goes
 - Export the component
@@ -464,11 +396,10 @@ If either fails, fix before proceeding.
 - [ ] `plan.yaml` is included in the repo
 - [ ] `CLAUDE.md` follows existing applet patterns
 - [ ] `package.json` has all required dependencies (Next.js, Tailwind v4, ui-kit)
-- [ ] `globals.css` has `@import "tailwindcss"` + `@theme` block bridging PE tokens
+- [ ] `globals.css` has `@import "tailwindcss"` + `@import "@policyengine/ui-kit/theme.css"`
 - [ ] No `tailwind.config.ts` or `postcss.config.js` (Tailwind v4)
-- [ ] `@policyengine/ui-kit/styles.css` imported in layout.tsx
-- [ ] Design-system tokens loaded via CDN `<link>` in layout.tsx
-- [ ] Inter font is loaded
+- [ ] No CDN `<link>` for design-system tokens (ui-kit theme provides everything)
+- [ ] Inter font is loaded via `next/font/google`
 - [ ] Embedding boilerplate is in place
 - [ ] API client stubs match the plan's endpoint signatures
 - [ ] CI workflow is configured
@@ -486,3 +417,5 @@ If either fails, fix before proceeding.
 - Skip the feature branch
 - Create `tailwind.config.ts` or `postcss.config.js` (Tailwind v4 uses `@theme` in CSS)
 - Rebuild components that exist in `@policyengine/ui-kit`
+- Load tokens via CDN `<link>` (use `@import "@policyengine/ui-kit/theme.css"` instead)
+- Use `getCssVar()` — it no longer exists. SVG accepts `var()` directly.
