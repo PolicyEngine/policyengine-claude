@@ -3,8 +3,8 @@ import { join } from "path";
 import { createHash } from "crypto";
 import { loadSkillContent } from "./skill-resolver";
 
-const SDK_ROOT = join(import.meta.dir, "..");
-const AGENTS_DIR = join(SDK_ROOT, "agents", "dashboard");
+const REPO_ROOT = join(import.meta.dir, "../..");
+const AGENTS_DIR = join(REPO_ROOT, "agents", "dashboard");
 
 export interface AgentMeta {
   name: string;

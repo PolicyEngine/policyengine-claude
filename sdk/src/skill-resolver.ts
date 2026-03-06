@@ -2,8 +2,8 @@ import { readdir } from "fs/promises";
 import { join } from "path";
 import { readFile } from "fs/promises";
 
-const SDK_ROOT = join(import.meta.dir, "..");
-const SKILLS_DIR = join(SDK_ROOT, "skills");
+const REPO_ROOT = join(import.meta.dir, "../..");
+const SKILLS_DIR = join(REPO_ROOT, "skills");
 
 let skillMap: Map<string, string> | null = null;
 

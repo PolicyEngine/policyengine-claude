@@ -5,14 +5,16 @@ export interface PhaseConfig {
   order: number;
   qualityGates?: string[];
   hasHumanGate?: boolean;
-  /** Name of another phase to run in parallel with */
-  parallel?: string;
+  /** If true, this phase is a validator run in parallel with other validators */
+  isValidator?: boolean;
   /** If true, this phase is the review/commit phase (no agent invocation) */
   isReviewPhase?: boolean;
   /** If true, runs silently without user-facing output */
   silent?: boolean;
   /** Max turns for the agent SDK query */
   maxTurns?: number;
+  /** Max retries when quality gates fail (re-runs agent with error context) */
+  maxGateRetries?: number;
 }
 
 export interface PhaseResult {
@@ -34,15 +36,17 @@ export const PHASE_BUDGETS: Record<string, number> = {
   backend: 3.0,
   frontend: 5.0,
   integrate: 3.0,
-  validate: 2.0,
-  validate_spec: 1.5,
+  validate_build: 2.0,
+  validate_design: 2.0,
+  validate_architecture: 2.0,
+  validate_plan: 3.0,
   review: 0.5,
-  overview: 0.5,
+  overview: 1.0,
 };
 
-export const TOTAL_BUDGET_USD = 25.0;
+export const TOTAL_BUDGET_USD = 35.0;
 
-/** The full phase sequence matching create-dashboard.md */
+/** The full phase sequence for the dashboard builder pipeline. */
 export const PHASE_SEQUENCE: PhaseConfig[] = [
   {
     name: "plan",
@@ -58,6 +62,7 @@ export const PHASE_SEQUENCE: PhaseConfig[] = [
     model: "claude-opus-4-6",
     order: 2,
     qualityGates: ["build", "test"],
+    maxGateRetries: 2,
     maxTurns: 50,
   },
   {
@@ -65,7 +70,6 @@ export const PHASE_SEQUENCE: PhaseConfig[] = [
     agent: "backend-builder",
     model: "claude-opus-4-6",
     order: 3,
-    qualityGates: ["type_check", "test"],
     maxTurns: 50,
   },
   {
@@ -73,31 +77,45 @@ export const PHASE_SEQUENCE: PhaseConfig[] = [
     agent: "frontend-builder",
     model: "claude-opus-4-6",
     order: 4,
-    qualityGates: ["build", "test"],
     maxTurns: 50,
   },
   {
     name: "integrate",
     agent: "dashboard-integrator",
-    model: "claude-sonnet-4-5-20250929",
+    model: "claude-opus-4-6",
     order: 5,
-    qualityGates: ["build", "test"],
     maxTurns: 50,
   },
   {
-    name: "validate",
-    agent: "dashboard-validator",
+    name: "validate_build",
+    agent: "dashboard-build-validator",
     model: "claude-opus-4-6",
     order: 6,
-    parallel: "validate_spec",
-    maxTurns: 50,
+    isValidator: true,
+    maxTurns: 30,
   },
   {
-    name: "validate_spec",
-    agent: "dashboard-design-token-validator",
+    name: "validate_design",
+    agent: "dashboard-design-validator",
     model: "claude-opus-4-6",
     order: 6,
-    parallel: "validate",
+    isValidator: true,
+    maxTurns: 30,
+  },
+  {
+    name: "validate_architecture",
+    agent: "dashboard-architecture-validator",
+    model: "claude-opus-4-6",
+    order: 6,
+    isValidator: true,
+    maxTurns: 30,
+  },
+  {
+    name: "validate_plan",
+    agent: "dashboard-plan-validator",
+    model: "claude-opus-4-6",
+    order: 6,
+    isValidator: true,
     maxTurns: 50,
   },
   {
@@ -110,7 +128,7 @@ export const PHASE_SEQUENCE: PhaseConfig[] = [
   {
     name: "overview",
     agent: "dashboard-overview-updater",
-    model: "claude-sonnet-4-5-20250929",
+    model: "claude-opus-4-6",
     order: 8,
     silent: true,
     maxTurns: 20,
