@@ -80,25 +80,18 @@ Based on the description, identify:
 
 ### Step 4: Determine Data Pattern
 
-Choose one of two patterns:
+Choose from the data patterns defined in the `policyengine-interactive-tools-skill` (loaded in the First step). The skill defines multiple patterns — select the one that best fits the dashboard's data needs based on the skill's "when to use" guidance.
 
-**API v2 Alpha (default):**
-- Use when the dashboard needs standard household calculations, economy-wide impacts, decile breakdowns, budget impacts, or winners/losers analysis
-- Map needs to v2 alpha endpoints from the DESIGN.md hierarchy:
-  - `/simulate/household` for household calculations
-  - `/simulate/economy` for population simulations
-  - `/analysis/decile-impact/economy` for decile breakdowns
-  - `/analysis/budget-impact/economy` for revenue impacts
-  - `/analysis/winners-losers/economy` for distributional analysis
-  - `/analysis/compare/economy` for multi-scenario comparison
-  - `/analysis/compare/household` for household scenario comparison
-- During Phase 3, the backend-builder will create typed stubs matching these interfaces
+Write the chosen pattern into `data_pattern` in plan.yaml using these identifiers:
 
-**Custom Backend (escape hatch):**
-- Use ONLY when the dashboard needs something the v2 alpha cannot provide
-- Examples: custom reform parameters not in the API, non-standard entity structures, combining PolicyEngine with external models
-- **Must document WHY v2 alpha is insufficient** in the plan
-- Will use FastAPI on Modal with policyengine-us/uk packages
+| Skill pattern | `data_pattern` value |
+|---------------|----------------------|
+| Pattern A: Precomputed JSON | `precomputed` |
+| Pattern B: PolicyEngine API | `policyengine-api` |
+| Pattern C: Custom API on Modal | `custom-modal` |
+| Pattern D: Precomputed CSV | `precomputed-csv` |
+
+If the chosen pattern is `custom-modal`, the plan **must document why** the simpler patterns are insufficient.
 
 ### Step 5: Design Components
 
@@ -136,30 +129,22 @@ dashboard:
   country: us  # us, uk, or both
   audience: public  # public, researchers, legislators, internal
 
-data_pattern: api-v2-alpha  # or custom-backend
+data_pattern: policyengine-api  # precomputed | policyengine-api | custom-modal | precomputed-csv
 
-# Only if data_pattern is api-v2-alpha
-api_v2_integration:
-  endpoints_needed:
-    - endpoint: /simulate/household
-      purpose: "Calculate household tax/benefit amounts"
-      variables_requested:
-        - income_tax
-        - household_net_income
-        - snap
-    - endpoint: /analysis/decile-impact/economy
-      purpose: "Show distributional impact of reform"
-  stub_fixtures:
-    - name: "single_filer_50k"
-      description: "Single filer with $50k income"
-      expected_outputs:
-        income_tax: 4500
-        household_net_income: 45500
+# Pattern-specific configuration (include whichever section matches data_pattern)
 
-# Only if data_pattern is custom-backend
-custom_backend:
+api_integration:  # for policyengine-api pattern
+  variables_requested:
+    - income_tax
+    - household_net_income
+    - snap
+
+precomputed:  # for precomputed / precomputed-csv patterns
+  source_script: "scripts/precompute.py"
+  output_files: ["public/data/results.json"]
+
+custom_modal:  # for custom-modal pattern
   reason: "Needs microsimulation with custom CTC phase-out parameter"
-  framework: fastapi-modal
   policyengine_package: policyengine-us
   endpoints:
     - name: calculate
@@ -179,7 +164,7 @@ custom_backend:
 tech_stack:
   # Fixed - not configurable
   framework: react-nextjs
-  ui: "@policyengine/design-system"
+  ui: "@policyengine/ui-kit"
   styling: tailwind-with-design-tokens
   font: inter
   testing: vitest

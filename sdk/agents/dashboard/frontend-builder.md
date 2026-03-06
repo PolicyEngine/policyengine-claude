@@ -52,30 +52,30 @@ Implements React components for a PolicyEngine dashboard following the app-v2 de
 - Component tests
 
 ## Design System Rules (NON-NEGOTIABLE)
-> These rules complement the frontend-builder-spec. Use Tailwind utility classes with `pe-*` tokens — not plain CSS or CSS modules.
+> These rules complement the frontend-builder-spec. Use standard Tailwind utility classes — not plain CSS or CSS modules.
 
 ### Colors
-- **NEVER hardcode hex colors**. Always use Tailwind classes with PE design tokens:
-  - `text-pe-primary-500` or `bg-pe-primary-500` for primary teal
-  - `hover:bg-pe-primary-600` for hover states
-  - `text-pe-text-primary` for body text
-  - `text-pe-text-secondary` for muted text
-  - `bg-pe-bg-primary` for backgrounds
-  - `border-pe-border-light` for borders
-- Chart colors: use `getCssVar('--pe-color-primary-500')` from ui-kit for Recharts config objects that need resolved color strings
+- **NEVER hardcode hex colors**. Always use Tailwind classes with design tokens:
+  - `text-teal-500` or `bg-teal-500` for primary teal
+  - `hover:bg-teal-600` or `hover:bg-primary` for hover states
+  - `text-foreground` for body text
+  - `text-muted-foreground` for muted text
+  - `bg-background` for backgrounds
+  - `border-border` for borders
+- Chart colors: use CSS vars directly — `fill="var(--chart-1)"` for Recharts
 
 ### Typography
 - Font: Inter (loaded via `next/font/google` in `app/layout.tsx`)
-- Use Tailwind `text-pe-*` classes for sizes (mapped from PE font size tokens)
+- Use standard Tailwind text classes: `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`
 - Use Tailwind `font-medium`, `font-semibold`, `font-bold` for weights
 - **Sentence case** on all headings and labels
 
 ### Spacing
-- Use Tailwind `p-pe-*`, `m-pe-*`, `gap-pe-*` classes (mapped from PE spacing tokens)
+- Use standard Tailwind spacing: `p-4`, `m-6`, `gap-2`, `gap-3`, `gap-4`, etc.
 - Never hardcode pixel values for spacing
 
 ### Border Radius
-- Use Tailwind `rounded-pe-sm`, `rounded-pe-md`, `rounded-pe-lg` classes
+- Use Tailwind `rounded-sm`, `rounded-md`, `rounded-lg` classes
 
 ## Workflow
 
@@ -84,7 +84,7 @@ Implements React components for a PolicyEngine dashboard following the app-v2 de
 **Before building ANY component**, check the ui-kit component availability table from the spec. For each component in the plan:
 
 1. If ui-kit provides it → **import and use it directly** (e.g., `MetricCard`, `Button`, `DataTable`, `PEBarChart`)
-2. If ui-kit doesn't have it but shadcn/ui does → use the shadcn/ui primitive styled with `pe-*` tokens
+2. If ui-kit doesn't have it but shadcn/ui does → use the shadcn/ui primitive styled with semantic classes
 3. Only build from scratch if neither covers it
 
 ```tsx
@@ -92,10 +92,10 @@ Implements React components for a PolicyEngine dashboard following the app-v2 de
 import { MetricCard, Button, Card, CardContent, DashboardShell, SidebarLayout, InputPanel, ResultsPanel } from '@policyengine/ui-kit';
 import { CurrencyInput, NumberInput, SelectInput, SliderInput, InputGroup } from '@policyengine/ui-kit';
 import { PEBarChart, PELineChart, ChartContainer } from '@policyengine/ui-kit';
-import { formatCurrency, formatPercent, getCssVar } from '@policyengine/ui-kit';
+import { formatCurrency, formatPercent } from '@policyengine/ui-kit';
 
 // WRONG — don't rebuild what ui-kit already has:
-// function MetricCard({ title, value }) { ... }  // ❌ ui-kit has this
+// function MetricCard({ title, value }) { ... }  // ui-kit has this
 ```
 
 ### Step 1: Study App-v2 Patterns
@@ -104,7 +104,7 @@ Before building custom components, study the referenced app-v2 patterns. For eac
 
 ```bash
 # Fetch the referenced app-v2 component to understand its pattern
-gh api 'repos/PolicyEngine/policyengine-app-v2/contents/app/src/components/ChartContainer.tsx?ref=move-to-api-v2' --jq '.content' | base64 -d
+gh api 'repos/PolicyEngine/policyengine-app-v2/contents/app/src/components/ChartContainer.tsx?ref=main' --jq '.content' | base64 -d
 ```
 
 Extract:
@@ -173,31 +173,20 @@ For each `type: chart` component in the plan, **prefer ui-kit chart components**
 import { PEBarChart, PELineChart, PEAreaChart, ChartContainer } from '@policyengine/ui-kit';
 
 // Simple bar chart — use ui-kit directly:
-<PEBarChart data={chartData} xKey="category" yKeys={['value']} />
+<PEBarChart data={chartData} xKey="category" yKey="value" />
 
 // Wrapped with title/subtitle:
 <ChartContainer title="Tax impact by income">
-  <PELineChart data={lineData} xKey="income" yKeys={['baseline', 'reform']} />
+  <PELineChart data={lineData} xKey="income" series={[{ dataKey: 'baseline' }, { dataKey: 'reform' }]} />
 </ChartContainer>
 ```
 
-For custom Recharts charts not covered by ui-kit, use `getCssVar()` for resolved colors:
+For custom Recharts charts not covered by ui-kit, use CSS vars directly:
 
 ```tsx
-import { getCssVar } from '@policyengine/ui-kit';
-
-// Recharts needs literal color strings, not CSS var() references:
-<Line stroke={getCssVar('--pe-color-primary-500')} />
-```
-
-**Choropleth Maps:**
-```tsx
-import Plot from 'react-plotly.js';
-
-// Follow app-v2 map patterns:
-// - US states or UK regions topology
-// - Diverging color scale for change metrics
-// - Hover info with formatted values
+// SVG fill/stroke accept var() natively:
+<Line stroke="var(--chart-1)" />
+<Bar fill="var(--chart-2)" />
 ```
 
 ### Step 4: Implement Metric Cards and Display
@@ -270,7 +259,7 @@ export default function DashboardPage() {
 Use Tailwind responsive prefixes instead of writing CSS media queries:
 
 - `md:flex-col` — stack layout at tablet (768px)
-- `sm:px-pe-lg sm:py-pe-md` — tighter padding on mobile
+- `sm:px-4 sm:py-3` — tighter padding on mobile
 - `sm:text-xl` — smaller headings on mobile
 
 ### Step 7: Write Component Tests
@@ -297,14 +286,7 @@ describe('HouseholdInputs', () => {
 });
 ```
 
-### Step 8: Verify Build
-
-```bash
-bun run build    # Next.js build, must compile without errors
-bunx vitest run  # All tests must pass
-```
-
-### Step 9: Promote Custom Components to ui-kit
+### Step 8: Promote Custom Components to ui-kit
 
 After all custom components are built and tested, check if any would be useful additions to `@policyengine/ui-kit`. Use `AskUserQuestion` to ask:
 
@@ -315,9 +297,9 @@ If yes, invoke the `/create-new-component` command targeting the selected compon
 ## Quality Checklist
 
 - [ ] Used ui-kit for all standard patterns (MetricCard, Button, Card, inputs, charts, layout)
-- [ ] No hardcoded hex colors anywhere in TSX (except inside Recharts config objects using getCssVar)
-- [ ] All spacing uses Tailwind classes with PE tokens (`p-pe-*`, `gap-pe-*`, etc.)
-- [ ] No plain CSS files other than `globals.css` (Tailwind `@theme` block)
+- [ ] No hardcoded hex colors anywhere in TSX — use Tailwind classes or `var(--chart-N)` for Recharts
+- [ ] All spacing uses standard Tailwind classes (`p-4`, `gap-3`, etc.)
+- [ ] No plain CSS files other than `globals.css` (which imports ui-kit theme)
 - [ ] Inter font loaded via `next/font/google`
 - [ ] All headings and labels use sentence case
 - [ ] Charts follow app-v2 patterns (ResponsiveContainer, consistent formatting)
@@ -334,9 +316,9 @@ If yes, invoke the `/create-new-component` command targeting the selected compon
 
 ## DO NOT
 
-- Use any styling framework OTHER than Tailwind (no Mantine, Chakra, etc.) — use Tailwind with PE design tokens as specified in the frontend-builder-spec skill
+- Use any styling framework OTHER than Tailwind (no Mantine, Chakra, etc.)
 - Use plain CSS files or CSS modules for layout/styling — use Tailwind utility classes instead
-- Hardcode any colors, spacing, or font values when a PE token exists
+- Hardcode any colors, spacing, or font values when a design token exists
 - Copy app-v2 components directly — follow their patterns
 - Skip responsive styles
 - Leave `console.log` statements in production code
@@ -344,3 +326,4 @@ If yes, invoke the `/create-new-component` command targeting the selected compon
 - Use Vite — use Next.js as specified in the frontend-builder-spec skill
 - Create `tailwind.config.ts` or `postcss.config.js` — Tailwind v4 uses `@theme` in CSS
 - Rebuild components that exist in `@policyengine/ui-kit`
+- Use `getCssVar()` — it no longer exists. SVG accepts `var()` directly.

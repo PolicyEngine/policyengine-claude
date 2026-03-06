@@ -1,5 +1,5 @@
 ---
-description: Scaffold a new PolicyEngine interactive tool (Next.js 14 + Tailwind 4 + design system + embedding boilerplate)
+description: Scaffold a new PolicyEngine interactive tool (Next.js 14 + Tailwind 4 + ui-kit theme + embedding boilerplate)
 ---
 
 # New interactive tool scaffold
@@ -25,7 +25,7 @@ bunx create-next-app@14 TOOL_NAME --js --app --tailwind --eslint --no-src-dir --
 cd TOOL_NAME
 
 # Install dependencies
-bun add @policyengine/design-system recharts
+bun add @policyengine/ui-kit recharts
 bun add -D vitest
 ```
 
@@ -53,10 +53,6 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         <link
-          rel="stylesheet"
-          href="https://unpkg.com/@policyengine/design-system/dist/tokens.css"
-        />
-        <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
@@ -67,41 +63,22 @@ export default function RootLayout({ children }) {
 }
 ```
 
-**Important:** Load `tokens.css` via CDN `<link>` in `<head>`. The `@import` from `node_modules` does not work with the Next.js CSS pipeline.
-
 ### app/globals.css
 
 ```css
 @import "tailwindcss";
-
-@theme {
-  --color-pe-primary-50: var(--pe-color-primary-50);
-  --color-pe-primary-500: var(--pe-color-primary-500);
-  --color-pe-primary-600: var(--pe-color-primary-600);
-  --color-pe-primary-700: var(--pe-color-primary-700);
-
-  --color-pe-gray-50: var(--pe-color-gray-50);
-  --color-pe-gray-100: var(--pe-color-gray-100);
-  --color-pe-gray-200: var(--pe-color-gray-200);
-
-  --color-pe-error: var(--pe-color-error);
-
-  --color-pe-bg-primary: var(--pe-color-bg-primary);
-  --color-pe-text-primary: var(--pe-color-text-primary);
-  --color-pe-text-secondary: var(--pe-color-text-secondary);
-  --color-pe-text-tertiary: var(--pe-color-text-tertiary);
-
-  --color-pe-border-light: var(--pe-color-border-light);
-}
+@import "@policyengine/ui-kit/theme.css";
 
 body {
-  font-family: var(--pe-font-family-primary);
-  color: var(--pe-color-text-primary);
-  background: var(--pe-color-bg-primary);
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 ```
+
+The single `@import "@policyengine/ui-kit/theme.css"` provides all design tokens (colors, spacing, typography, chart colors) as CSS variables that Tailwind 4 picks up automatically. No manual `@theme` block needed.
 
 ### app/page.jsx
 
@@ -145,13 +122,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <header
-        style={{
-          backgroundColor: "var(--pe-color-primary-700)",
-          color: "white",
-          padding: "var(--pe-space-lg) var(--pe-space-xl)",
-        }}
-      >
+      <header className="bg-teal-700 text-white px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={PE_LOGO_URL} alt="PolicyEngine" className="h-7" />
@@ -174,78 +145,6 @@ export default function Home() {
   "framework": "nextjs"
 }
 ```
-
-### Alternative: Tailwind v4 + ui-kit stack
-
-For tools with complex UI needs (multiple inputs, tables, charts), use `@policyengine/ui-kit` with Tailwind CSS v4 instead of plain CSS:
-
-**Additional dependencies:**
-```bash
-npm install @policyengine/ui-kit tailwindcss @tailwindcss/vite
-```
-
-**Update `vite.config.js`:**
-```js
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  base: '/',
-});
-```
-
-**Replace `src/styles.css` with `src/globals.css`:**
-```css
-@import 'tailwindcss';
-@import '@policyengine/ui-kit/styles.css';
-
-@theme {
-  /* Colors — bridge PE tokens into Tailwind */
-  --color-pe-primary-500: var(--pe-color-primary-500);
-  --color-pe-primary-600: var(--pe-color-primary-600);
-  --color-pe-text-primary: var(--pe-color-text-primary);
-  --color-pe-text-secondary: var(--pe-color-text-secondary);
-  --color-pe-bg-primary: var(--pe-color-bg-primary);
-  --color-pe-border-light: var(--pe-color-border-light);
-  /* ... add more as needed from policyengine-frontend-builder-spec-skill */
-
-  /* Font sizes — override Tailwind defaults with PE values.
-   * Tailwind v4 uses --text-* namespace to generate text-* utilities. */
-  --text-*: initial;
-  --text-xs: var(--pe-font-size-xs);
-  --text-sm: var(--pe-font-size-sm);
-  --text-base: var(--pe-font-size-base);
-  --text-lg: var(--pe-font-size-lg);
-  --text-xl: var(--pe-font-size-xl);
-  --text-2xl: var(--pe-font-size-2xl);
-
-  /* Spacing */
-  --spacing-pe-sm: var(--pe-space-sm);
-  --spacing-pe-md: var(--pe-space-md);
-  --spacing-pe-lg: var(--pe-space-lg);
-  --spacing-pe-xl: var(--pe-space-xl);
-
-  /* Font families */
-  --font-pe: var(--pe-font-family-primary), 'Inter', sans-serif;
-}
-```
-
-**Use ui-kit components and Tailwind classes:**
-```jsx
-import { MetricCard, Button, CurrencyInput, InputGroup } from '@policyengine/ui-kit';
-
-// Standard Tailwind classes map to PE values
-<div className="p-pe-lg text-sm text-pe-text-primary">
-  <MetricCard label="Net income change" value={3200} format="currency" />
-  <Button variant="default">Calculate</Button>
-</div>
-```
-
-**When to use Tailwind + ui-kit:** Tools with multiple input types, data tables, charts, or growing complexity.
-
-**When to use plain CSS (default above):** Simple single-input/single-output tools where minimal dependencies are preferred.
 
 ## Step 4: Data pattern boilerplate
 

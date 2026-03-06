@@ -184,7 +184,7 @@ This requires a PR to `PolicyEngine/policyengine-app-v2`.
 gh repo clone PolicyEngine/policyengine-app-v2 /tmp/policyengine-app-v2
 
 cd /tmp/policyengine-app-v2
-git checkout move-to-api-v2
+git checkout main
 git checkout -b add-DASHBOARD_NAME-tool
 ```
 

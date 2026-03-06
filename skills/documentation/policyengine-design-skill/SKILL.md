@@ -2,114 +2,103 @@
 name: policyengine-design
 description: |
   PolicyEngine design system — tokens, typography, colors, charts, and branding for all project types.
-  Triggers: "brand colors", "design tokens", "PolicyEngine colors", "typography", "font", "color palette", "CSS variables", "pe-color", "design system", "branding guidelines"
+  Triggers: "brand colors", "design tokens", "PolicyEngine colors", "typography", "font", "color palette", "CSS variables", "design system", "branding guidelines"
 ---
 
 # PolicyEngine design system
 
-Single source of truth for PolicyEngine's visual identity. All tokens live in `@policyengine/design-system`. Every project — app-v2, standalone tools, charts — should reference these tokens, never hardcode hex values.
+Single source of truth for PolicyEngine's visual identity. Design tokens are defined as CSS custom properties in `@policyengine/ui-kit/theme.css`. Every frontend project imports this single CSS file.
 
 **When to use which format:**
 
 | Context | Approach | Example |
 |---------|----------|---------|
-| **React/Next.js components** | CSS vars or TS imports | `style={{ color: "var(--pe-color-primary-500)" }}` or `colors.primary[500]` |
-| **Recharts (SVG)** | Resolve CSS vars at render time via `getCssVar()` | `const teal = getCssVar("--pe-color-primary-500")` |
-| **Tailwind** | Use `theme.extend.colors` mapped to CSS vars | `className="text-pe-primary-500"` |
-| **Python charts (Plotly/matplotlib)** | Hex values with CSS var name in comment | `TEAL = "#319795"  # --pe-color-primary-500` |
+| **React components** | Tailwind semantic classes | `className="bg-primary text-foreground"` |
+| **Brand palette** | Tailwind direct classes | `className="bg-teal-500 text-gray-600"` |
+| **Recharts (SVG)** | CSS vars directly in fill/stroke | `fill="var(--chart-1)"` |
+| **Inline styles** | CSS vars | `style={{ color: "var(--primary)" }}` |
+| **Python (Plotly)** | Hex with CSS var comment | `TEAL = "#319795"  # --chart-1` |
 | **`<meta>` tags, static HTML** | Hex values with CSS var name in comment | `content="#319795"` |
 
 Python has no CSS runtime, so hex values are acceptable — but always comment with the CSS var name so values stay traceable to the design system.
 
-## The design system package
+## The ui-kit theme
 
 **Install:**
 ```bash
-bun install @policyengine/design-system
+bun install @policyengine/ui-kit
 ```
 
-**Three export formats:**
-
-| Format | Import | Use case |
-|--------|--------|----------|
-| TypeScript | `import { colors } from '@policyengine/design-system/tokens'` | app-v2, any TS/JS project |
-| JSON | `import tokens from '@policyengine/design-system/tokens.json'` | Python scripts, config files |
-| CSS | `import '@policyengine/design-system/tokens.css'` | Standalone tools, plain HTML |
-
-**CDN (no install):**
-```html
-<link rel="stylesheet" href="https://unpkg.com/@policyengine/design-system/dist/tokens.css">
+**Import the theme CSS in your `globals.css`:**
+```css
+@import "@policyengine/ui-kit/theme.css";
 ```
 
-**Source:** `PolicyEngine/policyengine-app-v2/packages/design-system/`
+This single import provides all design tokens, Tailwind v4 `@theme` configuration, and base styles.
+
+**Source:** `PolicyEngine/policyengine-ui-kit/src/theme/tokens.css`
+
+The theme CSS has three layers:
+1. **`:root`** — shadcn/ui semantic variables (`--primary`, `--background`, `--chart-1`, etc.)
+2. **`@theme inline`** — Bridges `:root` vars to Tailwind utilities (`bg-primary`, `text-foreground`)
+3. **`@theme`** — Brand palette (`bg-teal-500`, `text-gray-600`), font sizes, spacing, breakpoints
 
 ## Colors
 
 ### Primary — teal
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `primary.500` | `#319795` | **Main brand color** — buttons, links, active states |
-| `primary.400` | `#38B2AC` | Lighter interactive elements |
-| `primary.600` | `#2C7A7B` | Hover state |
-| `primary.700` | `#285E61` | Active/pressed state |
-| `primary.50` | `#E6FFFA` | Tinted backgrounds |
-| `primary.800` | `#234E52` | Dark text on light teal |
+| Token | Hex | Tailwind class | Usage |
+|-------|-----|---------------|-------|
+| `teal-500` | `#319795` | `bg-teal-500` | **Main brand color** — charts, highlights |
+| `teal-400` | `#38B2AC` | `bg-teal-400` | Lighter interactive elements |
+| `teal-600` | `#2C7A7B` | `bg-teal-600` / `bg-primary` | Hover state, buttons |
+| `teal-700` | `#285E61` | `bg-teal-700` | Active/pressed state |
+| `teal-50` | `#E6FFFA` | `bg-teal-50` | Tinted backgrounds |
+| `teal-800` | `#234E52` | `bg-teal-800` | Dark text on light teal |
 
-CSS: `var(--pe-color-primary-500)` through `var(--pe-color-primary-900)`
+### Semantic (shadcn/ui)
 
-### Gray
+| Role | CSS variable | Tailwind class | Hex |
+|------|-------------|---------------|-----|
+| Primary | `--primary` | `bg-primary` | `#2C7A7B` |
+| Background | `--background` | `bg-background` | `#FFFFFF` |
+| Foreground | `--foreground` | `text-foreground` | `#000000` |
+| Muted | `--muted` | `bg-muted` | `#F2F4F7` |
+| Muted foreground | `--muted-foreground` | `text-muted-foreground` | `#6B7280` |
+| Border | `--border` | `border-border` | `#E2E8F0` |
+| Destructive | `--destructive` | `bg-destructive` | `#EF4444` |
+| Card | `--card` | `bg-card` | `#FFFFFF` |
+| Ring | `--ring` | `ring-ring` | `#319795` |
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `gray.50` | `#F9FAFB` | Subtle backgrounds |
-| `gray.100` | `#F2F4F7` | Card backgrounds |
-| `gray.200` | `#E2E8F0` | Borders, dividers |
-| `gray.500` | `#6B7280` | Secondary text |
-| `gray.600` | `#4B5563` | Chart secondary series |
-| `gray.700` | `#344054` | Dark UI text |
+### Charts
 
-### Blue (accent)
+| CSS variable | Tailwind class | Hex | Usage |
+|-------------|---------------|-----|-------|
+| `--chart-1` | `fill-chart-1` | `#319795` | Primary series (teal) |
+| `--chart-2` | `fill-chart-2` | `#0EA5E9` | Secondary series (blue) |
+| `--chart-3` | `fill-chart-3` | `#285E61` | Tertiary series (dark teal) |
+| `--chart-4` | `fill-chart-4` | `#026AA2` | Quaternary series (dark blue) |
+| `--chart-5` | `fill-chart-5` | `#6B7280` | Quinary series (gray) |
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `blue.500` | `#0EA5E9` | Informational highlights |
-| `blue.700` | `#026AA2` | Chart secondary series |
+### Additional semantic colors
 
-### Semantic
+| Color | Hex | Tailwind class |
+|-------|-----|---------------|
+| Success | `#22C55E` | `text-success` / `bg-success` |
+| Error | `#EF4444` | `text-destructive` / `bg-destructive` |
+| Warning | `#FEC601` | `text-warning` / `bg-warning` |
+| Info | `#1890FF` | `text-info` / `bg-info` |
 
-| Color | Hex | CSS variable | Usage |
-|-------|-----|-------------|-------|
-| Success | `#22C55E` | `--pe-color-success` | Positive changes, gains |
-| Error | `#EF4444` | `--pe-color-error` | Negative changes, losses |
-| Warning | `#FEC601` | `--pe-color-warning` | Cautions, alerts |
-| Info | `#1890FF` | `--pe-color-info` | Informational |
+### Gray scale
 
-### Text
-
-| Token | Hex | CSS variable |
-|-------|-----|-------------|
-| `text.primary` | `#000000` | `--pe-color-text-primary` |
-| `text.secondary` | `#5A5A5A` | `--pe-color-text-secondary` |
-| `text.tertiary` | `#9CA3AF` | `--pe-color-text-tertiary` |
-
-### Background
-
-| Token | Hex | CSS variable |
-|-------|-----|-------------|
-| `background.primary` | `#FFFFFF` | `--pe-color-bg-primary` |
-| `background.secondary` | `#F5F9FF` | `--pe-color-bg-secondary` |
-| `background.tertiary` | `#F1F5F9` | `--pe-color-bg-tertiary` |
-
-### Legacy colors (deprecated)
-
-These appear in older projects. Migrate to the values above.
-
-| Old | Hex | Replacement |
-|-----|-----|-------------|
-| `TEAL_ACCENT` | `#319795` | `primary.500` (`#319795`) |
-| `BLUE_PRIMARY` | `#026AA2` | `blue.700` (`#026AA2`) |
-| `DARK_GRAY` | `#5A5A5A` | `text.secondary` (`#5A5A5A`) |
+| Token | Hex | Tailwind class |
+|-------|-----|---------------|
+| `gray-50` | `#F9FAFB` | `bg-gray-50` |
+| `gray-100` | `#F2F4F7` | `bg-gray-100` |
+| `gray-200` | `#E2E8F0` | `bg-gray-200` |
+| `gray-500` | `#6B7280` | `text-gray-500` |
+| `gray-600` | `#4B5563` | `text-gray-600` |
+| `gray-700` | `#344054` | `text-gray-700` |
 
 ## Typography
 
@@ -117,12 +106,10 @@ These appear in older projects. Migrate to the values above.
 
 **Two font families only: Inter + JetBrains Mono.** No serif fonts, no Roboto, no Public Sans.
 
-| Context | Font | CSS variable |
-|---------|------|-------------|
-| **Everything** (UI, charts, blog, tools) | Inter | `--pe-font-family-primary` |
-| **Code** | JetBrains Mono | `--pe-font-family-mono` |
-
-Legacy aliases (`--pe-font-family-chart`, `--pe-font-family-body`, `--pe-font-family-prose`, `--pe-font-family-secondary`) all resolve to Inter for backward compatibility.
+| Context | Font | CSS variable | Tailwind |
+|---------|------|-------------|----------|
+| **Everything** (UI, charts, blog, tools) | Inter | `--font-sans` | `font-sans` |
+| **Code** | JetBrains Mono | `--font-mono` | `font-mono` |
 
 **Loading Inter:**
 ```html
@@ -131,15 +118,15 @@ Legacy aliases (`--pe-font-family-chart`, `--pe-font-family-body`, `--pe-font-fa
 
 ### Font sizes
 
-| Token | Size | Usage |
-|-------|------|-------|
-| `xs` | 12px | Small labels, captions |
-| `sm` | 14px | Body text, form labels |
-| `base` | 16px | Large body text |
-| `lg` | 18px | Subheadings |
-| `xl` | 20px | Section titles |
-| `2xl` | 24px | Page titles |
-| `3xl` | 28px | Large headings |
+| Tailwind class | Size | Usage |
+|---------------|------|-------|
+| `text-xs` | 12px | Small labels, captions |
+| `text-sm` | 14px | Body text, form labels |
+| `text-base` | 16px | Large body text |
+| `text-lg` | 18px | Subheadings |
+| `text-xl` | 20px | Section titles |
+| `text-2xl` | 24px | Page titles |
+| `text-3xl` | 28px | Large headings |
 
 ### Sentence case
 
@@ -151,34 +138,45 @@ All UI text uses sentence case — capitalize only the first word and proper nou
 
 ## Spacing
 
-| Token | Value | CSS variable |
-|-------|-------|-------------|
-| `xs` | 4px | `--pe-space-xs` |
-| `sm` | 8px | `--pe-space-sm` |
-| `md` | 12px | `--pe-space-md` |
-| `lg` | 16px | `--pe-space-lg` |
-| `xl` | 20px | `--pe-space-xl` |
-| `2xl` | 24px | `--pe-space-2xl` |
-| `3xl` | 32px | `--pe-space-3xl` |
-| `4xl` | 48px | `--pe-space-4xl` |
+Standard Tailwind spacing classes (`p-4`, `gap-2`, `m-6`) use the default Tailwind scale. Named spacing tokens:
+
+| Token | Value | Tailwind class |
+|-------|-------|---------------|
+| Header | 58px | `h-header` |
+| Sidebar | 280px | `w-sidebar` |
+| Content | 976px | `max-w-content` |
 
 ### Border radius
 
-| Token | Value | CSS variable |
-|-------|-------|-------------|
-| `sm` | 4px | `--pe-radius-sm` |
-| `md` | 6px | `--pe-radius-md` |
-| `lg` | 8px | `--pe-radius-lg` |
+| Tailwind class | Value |
+|---------------|-------|
+| `rounded-sm` | 4px |
+| `rounded-md` | 6px |
+| `rounded-lg` | 8px |
 
 ## Chart branding
+
+### Recharts (React tools)
+
+```tsx
+import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+
+<BarChart data={data}>
+  <XAxis dataKey="name" style={{ fontFamily: "var(--font-sans)" }} />
+  <YAxis style={{ fontFamily: "var(--font-sans)" }} />
+  <Tooltip separator=": " />
+  <Bar dataKey="value" fill="var(--chart-1)" />
+</BarChart>
+```
+
+SVG `fill` and `stroke` attributes accept `var()` directly — no helper function needed.
 
 ### Plotly (Python)
 
 ```python
 import plotly.graph_objects as go
 
-# Import from tokens.json or hardcode
-TEAL = "#319795"
+TEAL = "#319795"  # --chart-1
 CHART_FONT = "Inter"
 LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/teal.png"
 
@@ -203,35 +201,22 @@ def format_fig(fig):
     return fig
 ```
 
-### Recharts (React standalone tools)
-
-```jsx
-import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-
-<BarChart data={data}>
-  <XAxis dataKey="name" style={{ fontFamily: "Inter" }} />
-  <YAxis style={{ fontFamily: "Inter" }} />
-  <Tooltip />
-  <Bar dataKey="value" fill="#319795" />
-</BarChart>
-```
-
 ### Chart color conventions
 
-| Meaning | Color | Hex |
-|---------|-------|-----|
-| Positive / bonus / gains | Teal | `#319795` |
-| Negative / penalty / losses | Gray or red | `#4B5563` or `#EF4444` |
-| Neutral / baseline | Light gray | `#E2E8F0` |
-| Multi-series | Series array | `#319795`, `#0EA5E9`, `#285E61`, `#026AA2`, `#6B7280` |
+| Meaning | CSS variable | Hex |
+|---------|-------------|-----|
+| Positive / bonus / gains | `--chart-1` | `#319795` |
+| Negative / penalty / losses | `--chart-5` or `--destructive` | `#6B7280` or `#EF4444` |
+| Neutral / baseline | `--border` | `#E2E8F0` |
+| Multi-series | `--chart-1` through `--chart-5` | See chart table above |
 
 **Inverted metrics (taxes):** When a positive delta means bad (higher taxes), use `invertDelta` logic to show "Penalty" label and swap colors.
 
 ### Chart typography
 
-- **Axis labels and titles:** Inter, 14px
-- **Tick labels:** Inter, 12px
-- **Legend:** Inter, horizontal, above chart
+- **Axis labels and titles:** `var(--font-sans)`, 14px
+- **Tick labels:** `var(--font-sans)`, 12px
+- **Legend:** `var(--font-sans)`, horizontal, above chart
 
 ## Logos
 
@@ -253,16 +238,16 @@ https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/publ
 
 | Project type | Token source | Font setup |
 |-------------|-------------|------------|
+| **Standalone tool** | `@import "@policyengine/ui-kit/theme.css"` | Google Fonts: Inter |
 | **app-v2** | `import { colors } from '@/designTokens'` | Built-in (Mantine + Inter) |
-| **Standalone tool** | `@import tokens.css` or CDN link | Google Fonts: Inter |
-| **Python chart** | Hardcode or load `tokens.json` | Inter for Plotly |
+| **Python chart** | Hardcode or load `tokens.json` from `@policyengine/design-system` | Inter for Plotly |
 | **Blog HTML** | Hardcode from token values | Google Fonts: Inter |
 
 ## Accessibility
 
 - Teal `#319795` on white passes WCAG AA for large text (3.8:1)
-- `text.primary` (`#000000`) on white passes AAA (21:1)
-- `text.secondary` (`#5A5A5A`) on white passes AA (7.4:1)
+- `text-foreground` (`#000000`) on white passes AAA (21:1)
+- `text-muted-foreground` (`#6B7280`) on white passes AA (4.6:1)
 - Never rely on color alone — use labels, patterns, or position to convey meaning
 - Ensure chart data series are distinguishable in grayscale
 

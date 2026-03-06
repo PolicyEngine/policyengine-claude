@@ -17,7 +17,7 @@ Use this skill when creating or modifying charts in PolicyEngine applications. P
 ## Installation
 
 ```bash
-npm install recharts
+bun install recharts
 ```
 
 Do NOT install `plotly.js` or `react-plotly.js` for new projects.
@@ -100,6 +100,8 @@ Recharts default tooltip separator is ` : ` (with leading space). Always set `se
 
 ## Standard chart template
 
+SVG `fill` and `stroke` attributes accept `var()` directly -- no helper function is needed to resolve CSS custom properties. Use the shadcn/ui chart color variables (`--chart-1` through `--chart-5`) for series colors and standard semantic variables for UI elements:
+
 ```tsx
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -129,27 +131,27 @@ export default function MyChart({ data, highlightX }: {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data} margin={{ left: 20, right: 30, top: 10, bottom: 20 }}>
-        <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
+        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
         <XAxis
           dataKey="x" type="number"
           domain={[0, xTicks[xTicks.length - 1]]} ticks={xTicks}
           tickFormatter={fmt}
-          tick={{ fontFamily: "Inter, sans-serif", fontSize: 12 }}
+          tick={{ fontFamily: "var(--font-sans)", fontSize: 12 }}
         >
           <Label value="X axis" position="bottom" offset={0} />
         </XAxis>
         <YAxis
           domain={[0, yTicks[yTicks.length - 1]]} ticks={yTicks}
           tickFormatter={fmt}
-          tick={{ fontFamily: "Inter, sans-serif", fontSize: 12 }}
+          tick={{ fontFamily: "var(--font-sans)", fontSize: 12 }}
         >
           <Label value="Y axis" angle={-90} position="insideLeft" offset={-5} />
         </YAxis>
         <Tooltip separator=": " formatter={(v: number) => [fmt(v), "Value"]} />
-        <Line type="monotone" dataKey="y" stroke="#319795" strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="y" stroke="var(--chart-1)" strokeWidth={3} dot={false} />
         {highlightPoint && (
           <ReferenceDot x={highlightPoint.x} y={highlightPoint.y} r={6}
-            fill="#1D4044" stroke="#1D4044" />
+            fill="var(--chart-3)" stroke="var(--chart-3)" />
         )}
       </LineChart>
     </ResponsiveContainer>
@@ -170,28 +172,40 @@ export default function MyChart({ data, highlightX }: {
 
 ## PolicyEngine styling
 
+Never hardcode hex colors in frontend chart code. Use CSS custom properties directly via `var()` in SVG attributes:
+
 ```typescript
-// Colors (from @policyengine/design-system or hardcoded)
-const TEAL_PRIMARY = "#319795";   // Primary series
-const DARK_TEAL = "#1D4044";     // Reference dots
-const GRID_COLOR = "#E2E8F0";    // Grid lines
-const TEAL_LIGHT = "rgba(49, 151, 149, 0.15)";  // Light fill
-const TEAL_MEDIUM = "rgba(49, 151, 149, 0.35)"; // Medium fill
+// Chart series colors (shadcn/ui chart palette)
+// Use these for data series — lines, areas, bars, dots
+// --chart-1  Primary series (first line/bar)
+// --chart-2  Secondary series
+// --chart-3  Tertiary series / reference dots
+// --chart-4  Fourth series
+// --chart-5  Fifth series
 
-// Font
-const CHART_FONT = {
-  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  fontSize: 12,
-};
+// Semantic UI colors — use for chart chrome (grids, borders, backgrounds)
+// --border       Grid lines, axis lines
+// --background   Tooltip background
+// --foreground   Axis labels, tick text
+// --primary      Interactive UI elements (buttons, links)
+// --font-sans    Font family
 
-// Tooltip
+// Usage in JSX — pass var() directly to SVG attributes:
+<Line stroke="var(--chart-1)" />
+<Area fill="var(--chart-2)" stroke="var(--chart-2)" />
+<ReferenceDot fill="var(--chart-3)" stroke="var(--chart-3)" />
+<CartesianGrid stroke="var(--border)" />
+
+// Tooltip style object
 const TOOLTIP_STYLE = {
-  background: "#fff",
-  border: "1px solid #E2E8F0",
+  background: "var(--background)",
+  border: "1px solid var(--border)",
   borderRadius: 6,
   padding: "8px 12px",
 };
 ```
+
+See `policyengine-design-skill` for the full token reference.
 
 ## Key rules
 
@@ -202,7 +216,7 @@ const TOOLTIP_STYLE = {
 5. **Always wrap in `ResponsiveContainer`** with explicit height
 6. **Use `dot={false}`** on Line components for clean curves with many data points
 7. **Use `ReferenceDot`** to highlight the user's current selection
-8. **Teal (#319795) is the primary chart color** - matches PolicyEngine brand
+8. **Use CSS variables for chart colors** -- pass `var(--chart-1)` through `var(--chart-5)` directly to SVG `fill`/`stroke` attributes; never hardcode hex values
 9. **Negative currency: sign before symbol** - Always format as `-$31`, never `$-31`
 
 ## Currency formatting
@@ -219,4 +233,4 @@ const fmt = (v: number) => v.toLocaleString("en-US", {
 });
 ```
 
-In policyengine-app-v2, use `formatParameterValue()` from `@/utils/chartValueUtils` or `formatCurrency()` from `@/utils/formatters` — both use `Intl.NumberFormat` internally.
+In policyengine-app-v2, use `formatParameterValue()` from `@/utils/chartValueUtils` or `formatCurrency()` from `@/utils/formatters` -- both use `Intl.NumberFormat` internally.

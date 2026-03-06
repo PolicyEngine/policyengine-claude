@@ -24,8 +24,10 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 | `backend-builder` | 3A — Implement | Builds API stubs for v2 alpha integration or custom Modal backends |
 | `frontend-builder` | 3B — Implement | Builds React components with Tailwind + PE design tokens |
 | `dashboard-integrator` | 4 — Integrate | Wires frontend components to backend API client, handles data flow |
-| `dashboard-validator` | 5A — Validate | Validates dashboard against plan requirements (10 categories) |
-| `dashboard-design-token-validator` | 5B — Validate | Validates frontend spec compliance (Tailwind, Next.js, design tokens) |
+| `dashboard-build-validator` | 5 — Validate | Runs build and test suite |
+| `dashboard-design-validator` | 5 — Validate | Checks design tokens, typography, sentence case, responsive |
+| `dashboard-architecture-validator` | 5 — Validate | Checks Tailwind v4, Next.js, ui-kit, package manager |
+| `dashboard-plan-validator` | 5 — Validate | Checks API contract, components, embedding, states vs plan |
 | `dashboard-overview-updater` | Post — Update | Updates this overview if ecosystem components changed |
 
 ## Skills
@@ -53,9 +55,9 @@ Phase 2:  Scaffold (dashboard-scaffold)
 Phase 3A: Backend (backend-builder)
 Phase 3B: Frontend (frontend-builder)
 Phase 4:  Integrate (dashboard-integrator)
-Phase 5A: Validate (dashboard-validator) ─┐
-Phase 5B: Spec validate (dashboard-design-token-validator) │ ← max 3 fix cycles
-          Fix → re-validate ──────────────┘
+Phase 5:  Validate (4 validators in parallel) ─┐
+          build, design, architecture, plan    │ ← max 3 fix cycles
+          Fix → re-validate ───────────────────┘
 Phase 6:  Human review → commit
 Phase 6.5: Update overview (dashboard-overview-updater, silent)
 
@@ -67,7 +69,7 @@ Separately: /deploy-dashboard (after merge to main)
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js (App Router) + TypeScript |
-| Styling | Tailwind CSS + `@policyengine/design-system` tokens |
+| Styling | Tailwind CSS + `@policyengine/ui-kit` tokens |
 | Charts | Recharts (line, bar, area) + Plotly (choropleths) |
 | Data fetching | TanStack React Query |
 | Testing | Vitest + React Testing Library |

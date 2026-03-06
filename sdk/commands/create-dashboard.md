@@ -84,8 +84,6 @@ Invoke @complete:dashboard:backend-builder agent to:
 - Create React Query hooks
 - Write API tests
 
-**Quality Gate**: API client compiles. Stub tests pass (or Python tests for custom backend).
-
 ### Step 3B: Frontend
 
 Invoke @complete:dashboard:frontend-builder agent to:
@@ -97,8 +95,6 @@ Invoke @complete:dashboard:frontend-builder agent to:
 - Implement responsive design using Tailwind utility classes
 - Write component tests
 
-**Quality Gate**: All components render. Component tests pass. Build compiles.
-
 ## Phase 4: Integrate
 
 Invoke @complete:dashboard:dashboard-integrator agent to:
@@ -109,51 +105,34 @@ Invoke @complete:dashboard:dashboard-integrator agent to:
 - Configure caching
 - Verify end-to-end data flow
 
-**Quality Gate**: Build compiles. All tests pass. Data flows from input to output.
-
 ## Phase 5: Validate
 
-Invoke @complete:dashboard:dashboard-validator agent to run the full validation suite:
+Invoke all four validator agents **in parallel** using the Task tool:
 
-1. Build verification
-2. Test suite
-3. Design token compliance (no hardcoded colors/spacing)
-4. Typography (Inter font, sentence case)
-5. Responsive design (768px, 480px breakpoints)
-6. Embedding compliance (country detection, hash sync, share URLs)
-7. API contract compliance
-8. Component completeness (all plan components implemented)
-9. Loading/error state coverage
+| Agent | Domain | Model |
+|-------|--------|-------|
+| @complete:dashboard:dashboard-build-validator | Build + tests | sonnet |
+| @complete:dashboard:dashboard-design-validator | Design tokens, typography, responsive | sonnet |
+| @complete:dashboard:dashboard-architecture-validator | Tailwind v4, Next.js, ui-kit, package manager | sonnet |
+| @complete:dashboard:dashboard-plan-validator | API contract, components, embedding, states | opus |
 
-**The validator returns a structured report with PASS/FAIL per category.**
+Each returns a structured report with PASS/FAIL per check. Merge the four reports into a single validation summary.
 
-### Phase 5B: Frontend Spec Validation
-
-Invoke @complete:dashboard:dashboard-design-token-validator agent to validate frontend spec compliance:
-
-1. Tailwind CSS is used for styling (no plain CSS modules)
-2. Next.js App Router is the framework (no Vite)
-3. `@policyengine/design-system` tokens are integrated via Tailwind config
-4. No hardcoded colors, spacing, or fonts where tokens exist
-
-**The validator loads the `policyengine-frontend-builder-spec-skill` dynamically** to determine its validation criteria. It does NOT maintain its own copy of requirements.
-
-**Quality Gate**: The agent returns a compliance report with PASS/FAIL per requirement.
+**Quality Gate**: All four reports show all checks passing.
 
 ### Iteration Loop
 
-If the validator reports failures:
+If any validator reports failures:
 
-1. **Determine which agent should fix each failure:**
-   - Design token / Tailwind / Next.js issues → frontend-builder (loads frontend-builder-spec skill)
-   - API type mismatches → backend-builder or integrator
-   - Missing data flow → integrator
-   - Missing components → frontend-builder
-   - Test failures → whichever agent owns the failing code
+1. **Route each failure to the appropriate builder agent:**
+   - Build failures → whichever agent owns the failing code
+   - Design compliance failures → frontend-builder
+   - Architecture failures → dashboard-scaffold (or frontend-builder for class usage)
+   - Plan compliance failures → frontend-builder, backend-builder, or integrator depending on the gap
 
 2. **Re-invoke the appropriate agent** with the specific failures to fix.
 
-3. **Re-run both validators** (dashboard-validator and design-token-validator) after fixes.
+3. **Re-run all four validators in parallel** after fixes.
 
 4. **Maximum 3 iteration cycles.** If still failing after 3 cycles, present the remaining failures and use `AskUserQuestion`:
 
@@ -263,11 +242,10 @@ This phase is silent — it does not require user interaction.
 
 1. **Phase 1**: Plan → present to user → WAIT for approval
 2. **Phase 2**: Scaffold → verify build → report
-3. **Phase 3A**: Backend → verify → report
-4. **Phase 3B**: Frontend → verify → report
-5. **Phase 4**: Integrate → verify → report
-6. **Phase 5A**: Validate → report
-7. **Phase 5B**: Spec validate → report
-8. **Phase 5 loop**: Iterate fixes if needed (max 3 cycles)
-9. **Phase 6**: Commit → present to user → DONE
-10. **Phase 6.5**: Update overview (silent)
+3. **Phase 3A**: Backend → report
+4. **Phase 3B**: Frontend → report
+5. **Phase 4**: Integrate → smoke check → report
+6. **Phase 5**: Run 4 validators in parallel → merge reports
+7. **Phase 5 loop**: Route failures → re-validate (max 3 cycles)
+8. **Phase 6**: Commit → present to user → DONE
+9. **Phase 6.5**: Update overview (silent)

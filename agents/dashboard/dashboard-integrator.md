@@ -210,24 +210,10 @@ export function useIncomeVariation(baseValues: FormValues, countryId: string) {
 }
 ```
 
-### Step 7: Verify End-to-End
+### Step 7: Smoke Check
 
 ```bash
-cd frontend
-bun run dev  # Start dev server
-```
-
-Manually verify (or instruct the user to verify):
-1. Default state renders without errors
-2. Changing inputs triggers new calculation
-3. Charts update with new data
-4. Loading spinner shows during calculation
-5. URL hash updates when inputs change
-6. Refreshing the page restores state from hash
-
-Then run tests:
-```bash
-bunx vitest run
+bun run dev  # Start dev server — verify no runtime crashes
 ```
 
 ## Quality Checklist
@@ -238,5 +224,5 @@ bunx vitest run
 - [ ] No type mismatches between API client and component props
 - [ ] Cache keys prevent unnecessary re-fetches
 - [ ] Variation queries (if any) batch efficiently
-- [ ] All tests pass
-- [ ] Build compiles without errors
+
+Do NOT run build or tests — that is the validator's job in Phase 5.

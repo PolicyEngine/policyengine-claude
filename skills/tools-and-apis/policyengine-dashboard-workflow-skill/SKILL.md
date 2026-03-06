@@ -27,10 +27,12 @@ The dashboard workflow is a multi-agent pipeline that takes a few paragraphs des
 | `dashboard-planner` | 1 | Produces structured plan YAML from description |
 | `dashboard-scaffold` | 2 | Generates Next.js + Tailwind project structure into the current repo |
 | `backend-builder` | 3 | Builds API stubs or custom Modal backend |
-| `frontend-builder` | 3 | Builds React components with Tailwind + PE design tokens |
+| `frontend-builder` | 3 | Builds React components with Tailwind + ui-kit design tokens |
 | `dashboard-integrator` | 4 | Wires frontend to backend, handles data flow |
-| `dashboard-validator` | 5A | Validates against plan, runs tests, checks design |
-| `dashboard-design-token-validator` | 5B | Validates frontend spec compliance (Tailwind, Next.js, tokens) |
+| `dashboard-build-validator` | 5 | Runs build and test suite |
+| `dashboard-design-validator` | 5 | Checks design tokens, typography, sentence case, responsive |
+| `dashboard-architecture-validator` | 5 | Checks Tailwind v4, Next.js, ui-kit, package manager |
+| `dashboard-plan-validator` | 5 | Checks API contract, components, embedding, states vs plan |
 | `dashboard-overview-updater` | Post | Updates dashboard-overview command if ecosystem changed |
 
 ## Workflow Phases
@@ -40,7 +42,7 @@ Pre-req: /init-dashboard (creates repo + clones locally)
 Phase 1: Plan ──→ [HUMAN APPROVAL] ──→ Phase 2: Scaffold
   ──→ Phase 3: Implement (backend + frontend)
   ──→ Phase 4: Integrate
-  ──→ Phase 5A: Validate ──→ Phase 5B: Spec validate ──→ [fix loop, max 3 cycles]
+  ──→ Phase 5: Validate (4 validators in parallel) ──→ [fix loop, max 3 cycles]
   ──→ Phase 6: [HUMAN REVIEW] ──→ DONE
   ──→ Phase 6.5: Update overview (silent)
 
@@ -89,8 +91,8 @@ Use only when the dashboard needs something v2 alpha cannot provide:
 | Layer | Technology | Source |
 |-------|-----------|--------|
 | Framework | Next.js (App Router) + React 19 + TypeScript | Fixed |
-| UI tokens | `@policyengine/design-system` | From app-v2 |
-| Styling | Tailwind CSS with design token integration | Fixed |
+| UI tokens | `@policyengine/ui-kit/theme.css` | Single CSS import |
+| Styling | Tailwind CSS v4 with ui-kit theme | Fixed |
 | Font | Inter (via `next/font/google`) | Fixed |
 | Charts | Recharts | Following app-v2 patterns |
 | Maps | react-plotly.js | Following app-v2 patterns |
@@ -102,32 +104,32 @@ See `policyengine-frontend-builder-spec-skill` for the full mandatory technology
 
 ### Design Token Usage
 
-All visual values must come from `@policyengine/design-system` tokens, accessed via Tailwind utility classes bridged in the `@theme` block of `globals.css`:
+All visual values come from `@policyengine/ui-kit/theme.css`, accessed via Tailwind utility classes:
 
 ```tsx
-// Colors — use Tailwind classes mapped to PE tokens
-<div className="bg-pe-primary-500 text-white">        {/* Primary teal */}
-<div className="hover:bg-pe-primary-600">              {/* Hover state */}
-<span className="text-pe-text-primary">               {/* Body text */}
-<span className="text-pe-text-secondary">             {/* Muted text */}
-<div className="bg-pe-bg-primary">                    {/* Backgrounds */}
-<div className="border border-pe-gray-200">           {/* Borders */}
+// Colors — use Tailwind semantic classes from ui-kit theme
+<div className="bg-teal-500 text-white">             {/* Primary teal */}
+<div className="hover:bg-teal-600">                   {/* Hover state */}
+<span className="text-foreground">                    {/* Body text */}
+<span className="text-muted-foreground">              {/* Muted text */}
+<div className="bg-background">                       {/* Backgrounds */}
+<div className="border border-border">                {/* Borders */}
 
-// Spacing
-<div className="p-pe-lg gap-pe-md m-pe-xl">
+// Spacing — standard Tailwind classes
+<div className="p-4 gap-3 m-6">
 
-// Typography (font sizes override Tailwind defaults — use standard text-xs, text-sm, etc.)
-<span className="font-pe text-sm font-medium">
+// Typography (font sizes from ui-kit theme — use standard text-xs, text-sm, etc.)
+<span className="font-sans text-sm font-medium">
 
 // Border radius
-<div className="rounded-pe-md">
+<div className="rounded-lg">
 ```
 
-**Never hardcode hex colors, pixel spacing, or font values.** Both the dashboard-validator and dashboard-design-token-validator check for violations.
+**Never hardcode hex colors, pixel spacing, or font values.** The Phase 5 validators check for violations.
 
 ### Chart Patterns
 
-Charts must follow the patterns from `policyengine-app-v2`:
+Charts use CSS variables directly from the ui-kit theme:
 
 ```tsx
 // Standard Recharts pattern
@@ -135,16 +137,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 <ResponsiveContainer width="100%" height={400}>
   <LineChart data={data}>
-    <CartesianGrid strokeDasharray="3 3" stroke="var(--pe-color-gray-100)" />
+    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
     <XAxis dataKey="x" tickFormatter={formatCurrency} />
     <YAxis tickFormatter={formatCurrency} />
-    <Tooltip contentStyle={{ background: 'white', border: '1px solid var(--pe-color-gray-200)' }} />
-    <Line type="monotone" dataKey="income_tax" stroke="var(--pe-color-primary-500)" />
+    <Tooltip contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)' }} />
+    <Line type="monotone" dataKey="income_tax" stroke="var(--chart-1)" />
   </LineChart>
 </ResponsiveContainer>
 ```
-
-**Future:** When `@policyengine/chart-library` is built, charts will import from that package instead of directly using Recharts.
 
 ## Plan YAML Schema
 
@@ -172,8 +172,8 @@ custom_backend:       # Only if custom-backend
 
 tech_stack:           # Fixed values, included for documentation
   framework: react-nextjs
-  ui: "@policyengine/design-system"
-  styling: tailwind-with-design-tokens
+  ui: "@policyengine/ui-kit"
+  styling: tailwind-with-ui-kit-theme
   charts: recharts
   testing: vitest
 
@@ -208,24 +208,15 @@ See `policyengine-interactive-tools-skill` for full embedding documentation.
 
 ## Validation Checklist
 
-The dashboard-validator checks 10 categories:
+Phase 5 runs four validators in parallel:
 
-1. Build compiles without errors
-2. All tests pass
-3. No hardcoded colors or spacing (design tokens only)
-4. Inter font loaded, sentence case headings
-5. Responsive at 768px and 480px
-6. Embedding features (country detection, hash sync, share URLs)
-7. API contract matches plan
-8. All plan components implemented
-9. Loading and error states handled
-10. Chart ResponsiveContainer wrappers
+**Build validator:** Build compiles, all tests pass.
 
-The dashboard-design-token-validator additionally validates:
-- Tailwind CSS is used (no plain CSS modules)
-- Next.js App Router is the framework (no Vite)
-- `@policyengine/design-system` tokens are integrated via Tailwind config
-- No hardcoded values where tokens exist
+**Design validator:** No hardcoded colors/spacing/fonts, no `pe-*` classes, no `getCssVar`, Inter font loaded, sentence case headings, responsive at 768px and 480px, chart `ResponsiveContainer` wrappers.
+
+**Architecture validator:** Tailwind CSS v4 (`@import "tailwindcss"`, no config files), Next.js App Router (no Vite, no Pages Router), `@policyengine/ui-kit` installed and imported, bun as package manager.
+
+**Plan validator:** API contract matches plan, all plan components implemented, embedding features (country detection, hash sync, share URLs), loading and error states handled.
 
 ## Deployment
 
