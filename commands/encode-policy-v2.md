@@ -122,10 +122,20 @@ name: "consolidator"
 
 "Read sources/working_references.md and produce structured implementation specs for {STATE} {PROGRAM}.
 
-STEP 1: Study reference implementation.
-Find a similar program in the codebase (e.g., CO CCAP for RI CCAP, DC TANF for OR TANF).
-Search with: Glob 'policyengine_us/variables/gov/states/*/[agency]/{prog}/*.py'
-Read 3-5 variable files and 3-5 parameter files from the reference implementation.
+STEP 1: Study reference implementations (search BROADLY).
+States use different names for the same program type — do NOT search only by the target
+program's acronym. Instead, derive 2-3 concept keywords from what the program does
+(e.g., a child care subsidy program → search 'child', 'care', 'provider').
+
+Search with MULTIPLE globs using concept keywords:
+  Glob 'policyengine_us/variables/gov/states/*/*/*{keyword1}*/*.py'
+  Glob 'policyengine_us/variables/gov/states/*/*/*{keyword2}*/*.py'
+
+Identify ALL matching state implementations. Read 3-5 variable files and 3-5 parameter
+files from the BEST reference implementation — pick the one with the most similar structure
+to the target program (e.g., if target has multi-dimensional rates, pick a reference that
+has enum-keyed rate lookups, not a simpler eligibility-only impl).
+List ALL discovered implementations in the impl-spec so downstream agents can study them.
 
 STEP 2: Discover existing reusable variables.
 For each key concept in the program (income, hours, age, household size, childcare, etc.),
@@ -685,65 +695,118 @@ Read ONLY `/tmp/{PREFIX}-final-report.md`.
 
 ---
 
-## Phase 6: Review-Fix Loop
+## Phase 6: Review-Fix (3 Mandatory Rounds)
 
 **Skip if `--skip-review`.**
 
-This phase runs `/review-program` and fixes critical issues in a loop until zero critical issues remain (or max iterations reached).
+This phase runs 3 independent review rounds. Each review is done by a fresh `/review-program` invocation. After any fix, the next review is a **mandatory step** — the orchestrator has NO discretion to skip it. Only an actual review confirming critical == 0 can end the phase early.
 
-### Loop Structure
+---
 
-```
-ROUND = 1
-MAX_ROUNDS = 3
+### Round 1: Initial Review
 
-while ROUND <= MAX_ROUNDS:
-    1. Run /review-program $PR_NUMBER --local --full
-    2. Read /tmp/review-program-summary.md → count critical issues
-    3. If critical == 0 → EXIT LOOP (success)
-    4. If ROUND == MAX_ROUNDS → EXIT LOOP (escalate to user)
-    5. If ROUND == 2 → ask user before attempting round 3
-    6. Fix critical issues
-    7. Run make format + tests
-    8. Commit + push fixes
-    9. ROUND += 1
-```
-
-### Step 6A: Run /review-program (Round N)
-
-Invoke the `review-program` skill in local-only mode with `--full`:
+#### Step 6.1A: Run /review-program
 
 ```
 Skill: review-program
 Arguments: $PR_NUMBER --local --full [--600dpi if DPI == 600]
 ```
 
-If the user passed `--600dpi`, include it here so PDF audit uses high resolution.
-
-### Step 6B: Check Results
+#### Step 6.1B: Check Results
 
 Read `/tmp/review-program-summary.md` (max 20 lines).
 
-**If critical == 0**: Report to user and exit loop.
+**If critical == 0**: Report to user. **Phase 6 complete — skip remaining rounds.**
 
-**If critical > 0 and ROUND < MAX_ROUNDS**: Proceed to Step 6C.
+**If critical > 0**: Proceed to Step 6.1C.
 
-**If critical > 0 and ROUND == 2**: Ask user before round 3:
-```
-"Review found {N} critical issues after 2 fix rounds. Attempt a 3rd round?"
-Options: "Yes, try one more round" / "No, stop and show remaining issues"
-```
-
-**If critical > 0 and ROUND == MAX_ROUNDS (3)**: Exit loop, report remaining issues.
-
-### Step 6C: Fix Critical Issues
+#### Step 6.1C: Fix Critical Issues
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
 team_name: "{PREFIX}-encode"
-name: "review-fixer-{ROUND}"
+name: "review-fixer-1"
 
-"Fix the critical issues from the /review-program review (round {ROUND}).
+"Fix the critical issues from the /review-program review (round 1).
+Read the full review report at /tmp/review-program-full-report.md.
+Focus ONLY on items marked CRITICAL — do not change anything else.
+Load skills: /policyengine-variable-patterns, /policyengine-code-style,
+  /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
+Apply fixes. Run make format.
+
+REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
+codebase first. PolicyEngine-US likely already has it (fpg, smi, tanf_fpg, ssi, etc.).
+
+LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
+- {LESSONS_PATH}
+- lessons/agent-lessons.md
+
+AFTER fixing, write your fixes to /tmp/{PREFIX}-checklist.md:
+Format each line as:
+- [ROUND 1] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}
+
+Categories: HARD-CODED, WRONG-PERIOD, MISSING-REF, BAD-REF, DEDUCTION-ORDER,
+UNUSED-PARAM, WRONG-ENTITY, NAMING, FORMULA-LOGIC, TEST-GAP, OTHER"
+```
+
+#### Step 6.1D: Run Tests & Commit
+
+```
+subagent_type: "complete:country-models:ci-fixer"
+team_name: "{PREFIX}-encode"
+name: "ci-fixer-1"
+
+"Run tests for {STATE} {PROGRAM} after review-fix round 1.
+Fix any test failures introduced by the fixes. Run make format."
+```
+
+```bash
+git add policyengine_us/parameters/gov/states/{ST}/ policyengine_us/variables/gov/states/{ST}/ policyengine_us/tests/policy/baseline/gov/states/{ST}/
+git commit -m "Review-fix round 1: address critical issues from /review-program"
+git push
+```
+
+**Proceed to Round 2. This is mandatory — do NOT skip.**
+
+---
+
+### Round 2: Verification Review
+
+#### Step 6.2A: Run /review-program
+
+```
+Skill: review-program
+Arguments: $PR_NUMBER --local --full [--600dpi if DPI == 600]
+```
+
+#### Step 6.2B: Check Results
+
+Read `/tmp/review-program-summary.md` (max 20 lines).
+
+**If critical == 0**: Report to user. **Phase 6 complete — skip Round 3.**
+
+**If critical > 0**: Ask user before proceeding:
+
+```
+AskUserQuestion:
+  Question: "Round 2 review found {N} critical issues after round 1 fixes. Attempt a 3rd round?"
+  Options:
+    - "Yes, try one more round"
+    - "No, stop and show remaining issues"
+```
+
+If user says no → report remaining issues, **Phase 6 complete.**
+
+If user says yes → proceed to Step 6.2C.
+
+#### Step 6.2C: Fix Critical Issues
+
+```
+subagent_type: "complete:country-models:rules-engineer"
+team_name: "{PREFIX}-encode"
+name: "review-fixer-2"
+
+"Fix the critical issues from the /review-program review (round 2).
 Read the full review report at /tmp/review-program-full-report.md.
 Focus ONLY on items marked CRITICAL — do not change anything else.
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
@@ -758,37 +821,54 @@ LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
 - lessons/agent-lessons.md
 
 LEARN FROM PREVIOUS ROUNDS:
-If /tmp/{PREFIX}-checklist.md exists, read it FIRST. It contains issues
-found and fixed in previous rounds. Do NOT reintroduce any of those patterns.
+Read /tmp/{PREFIX}-checklist.md FIRST. It contains issues found and fixed in round 1.
+Do NOT reintroduce any of those patterns.
 
 AFTER fixing, APPEND your fixes to /tmp/{PREFIX}-checklist.md:
 Format each line as:
-- [ROUND {ROUND}] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}
+- [ROUND 2] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}
 
 Categories: HARD-CODED, WRONG-PERIOD, MISSING-REF, BAD-REF, DEDUCTION-ORDER,
 UNUSED-PARAM, WRONG-ENTITY, NAMING, FORMULA-LOGIC, TEST-GAP, OTHER"
 ```
 
-### Step 6D: Verify Fix & Commit
-
-Run ci-fixer, then commit and push:
+#### Step 6.2D: Run Tests & Commit
 
 ```
 subagent_type: "complete:country-models:ci-fixer"
 team_name: "{PREFIX}-encode"
-name: "ci-fixer-{ROUND}"
+name: "ci-fixer-2"
 
-"Run tests for {STATE} {PROGRAM} after review-fix round {ROUND}.
+"Run tests for {STATE} {PROGRAM} after review-fix round 2.
 Fix any test failures introduced by the fixes. Run make format."
 ```
 
 ```bash
 git add policyengine_us/parameters/gov/states/{ST}/ policyengine_us/variables/gov/states/{ST}/ policyengine_us/tests/policy/baseline/gov/states/{ST}/
-git commit -m "Review-fix round {ROUND}: address critical issues from /review-program"
+git commit -m "Review-fix round 2: address critical issues from /review-program"
 git push
 ```
 
-Increment ROUND and go back to Step 6A.
+**Proceed to Round 3. This is mandatory — do NOT skip.**
+
+---
+
+### Round 3: Final Review
+
+#### Step 6.3A: Run /review-program
+
+```
+Skill: review-program
+Arguments: $PR_NUMBER --local --full [--600dpi if DPI == 600]
+```
+
+#### Step 6.3B: Check Results
+
+Read `/tmp/review-program-summary.md` (max 20 lines).
+
+**If critical == 0**: Report to user. **Phase 6 complete.**
+
+**If critical > 0**: Report remaining issues to user. No more fix rounds — escalate for manual resolution. **Phase 6 complete.**
 
 ---
 
