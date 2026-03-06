@@ -248,8 +248,6 @@
         "./agents/dashboard/dashboard-overview-updater.md"
       ],
       "commands": [
-        "./commands/init-dashboard.md",
-        "./commands/create-dashboard.md",
         "./commands/deploy-dashboard.md",
         "./commands/dashboard-overview.md"
       ],
@@ -366,8 +364,6 @@
         "./commands/fix-pr.md",
         "./commands/new-tool.md",
         "./commands/setup-verbs.md",
-        "./commands/init-dashboard.md",
-        "./commands/create-dashboard.md",
         "./commands/deploy-dashboard.md",
         "./commands/dashboard-overview.md"
       ],

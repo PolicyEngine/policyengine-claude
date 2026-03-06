@@ -1,11 +1,12 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import type { SDKResultSuccess, SDKResultError, SDKMessage } from "@anthropic-ai/claude-agent-sdk";
+import type { SDKResultSuccess, SDKResultError } from "@anthropic-ai/claude-agent-sdk";
 import { join, dirname } from "path";
 import { loadPhasePrompt } from "./prompt-loader";
 import { runAllGates } from "./quality-gates";
 import {
   requestPlanApproval,
   requestValidationDecision,
+  requestReviewApproval,
   askForClonePath,
 } from "./human-gates";
 import {
@@ -34,6 +35,32 @@ interface RunTotals {
   outputTokens: number;
 }
 
+/** Maps validator names to the builder agent that should fix each failure type. */
+const FAILURE_ROUTING: Record<string, Record<string, string>> = {
+  validate_build: {
+    default: "dashboard-scaffold",
+  },
+  validate_design: {
+    default: "frontend-builder",
+  },
+  validate_architecture: {
+    "tailwind css": "dashboard-scaffold",
+    "next.js": "dashboard-scaffold",
+    "package manager": "dashboard-scaffold",
+    "ui-kit": "frontend-builder",
+    default: "frontend-builder",
+  },
+  validate_plan: {
+    "api contract": "backend-builder",
+    "component completeness": "frontend-builder",
+    embedding: "dashboard-integrator",
+    "loading": "dashboard-integrator",
+    "error states": "dashboard-integrator",
+    "chart quality": "frontend-builder",
+    default: "frontend-builder",
+  },
+};
+
 async function runCommand(
   command: string,
   cwd?: string,
@@ -53,7 +80,7 @@ async function runCommand(
 
 /**
  * Initialize a GitHub repo for the dashboard and clone it locally.
- * Based on commands/init-dashboard.md.
+ * Creates GitHub repo, clones locally, makes initial commit.
  * Returns the absolute path to the cloned repository.
  */
 export async function initRepository(
@@ -155,49 +182,48 @@ export async function runDashboard(
   ui.log(`User: ${config.createdBy}`);
 
   try {
+    let validatorsRun = false;
+
     for (const phase of PHASE_SEQUENCE) {
-      // Skip phases handled as parallel partners
-      if (phase.parallel && phase.name === "validate_spec") continue;
-
-      if (phase.isReviewPhase) {
-        await runReviewPhase(cwd);
-        continue;
-      }
-
-      // Check if this phase runs in parallel with another
-      const parallelPhase = PHASE_SEQUENCE.find(
-        (p) => p.name === phase.parallel && p.name !== phase.name,
-      );
-
-      if (parallelPhase) {
-        await runValidationPhases(
-          phase,
-          parallelPhase,
-          runId,
-          cwd,
-          description,
-          totals,
-          config.maxValidationIterations,
-        );
-      } else {
-        const result = await runSinglePhase(
-          phase,
-          runId,
-          cwd,
-          description,
-          totals,
-        );
-
-        if (phase.hasHumanGate && result) {
-          await handlePlanApproval(
-            phase,
+      // Validators are collected and run in parallel when we first encounter one
+      if (phase.isValidator) {
+        if (!validatorsRun) {
+          const validators = PHASE_SEQUENCE.filter((p) => p.isValidator);
+          await runValidators(
+            validators,
             runId,
             cwd,
             description,
             totals,
-            result,
+            config.maxValidationIterations,
           );
+          validatorsRun = true;
         }
+        continue;
+      }
+
+      if (phase.isReviewPhase) {
+        await runReviewPhase(cwd, totals, runStart);
+        continue;
+      }
+
+      const result = await runSinglePhase(
+        phase,
+        runId,
+        cwd,
+        description,
+        totals,
+      );
+
+      if (phase.hasHumanGate && result) {
+        await handlePlanApproval(
+          phase,
+          runId,
+          cwd,
+          description,
+          totals,
+          result,
+        );
       }
 
       // Check total budget
@@ -238,6 +264,8 @@ export async function runDashboard(
 
 /**
  * Run a single phase: load prompt, invoke SDK, record telemetry, run quality gates.
+ * Supports gate retries: if quality gates fail and the phase has maxGateRetries,
+ * re-run the agent with the error output as context.
  */
 async function runSinglePhase(
   phase: PhaseConfig,
@@ -247,11 +275,13 @@ async function runSinglePhase(
   totals: RunTotals,
   extraContext?: string,
   iteration: number = 1,
+  gateRetry: number = 0,
 ): Promise<PhaseResult | null> {
   if (!phase.agent || !phase.model) return null;
 
   if (!phase.silent) {
-    ui.phaseStart(phase.name, phase.agent);
+    const retryLabel = gateRetry > 0 ? ` (gate retry ${gateRetry})` : "";
+    ui.phaseStart(phase.name + retryLabel, phase.agent);
   }
 
   const composed = await loadPhasePrompt(
@@ -353,6 +383,34 @@ async function runSinglePhase(
 
       if (!allPassed) {
         const failed = gateResults.find((r) => !r.passed)!;
+        const maxRetries = phase.maxGateRetries ?? 0;
+
+        // Retry: re-run the agent with error context
+        if (gateRetry < maxRetries) {
+          ui.log(
+            `  Gate "${failed.gateName}" failed. Re-running ${phase.agent} with error context (retry ${gateRetry + 1}/${maxRetries})...`,
+          );
+
+          const errorContext =
+            `Quality gate "${failed.gateName}" failed:\n\n` +
+            `Command: ${failed.details.command}\n` +
+            `Exit code: ${failed.details.exitCode}\n` +
+            `stderr:\n${failed.details.stderr}\n` +
+            `stdout:\n${failed.details.stdout}\n\n` +
+            `Fix the issues and ensure build and tests pass.`;
+
+          return runSinglePhase(
+            phase,
+            runId,
+            cwd,
+            description,
+            totals,
+            errorContext,
+            iteration,
+            gateRetry + 1,
+          );
+        }
+
         throw new PhaseFailureError(
           phase.name,
           failed.gateName,
@@ -423,64 +481,165 @@ async function handlePlanApproval(
 }
 
 /**
- * Run Phase 5: both validators in parallel, then handle iteration loop.
+ * Parse structured validator reports for FAIL entries.
+ * Handles two formats:
+ * 1. Table format: | N | Check Name | FAIL | details |
+ * 2. Status format: - Status: FAIL (under a ### heading)
  */
-async function runValidationPhases(
-  validatorPhase: PhaseConfig,
-  specPhase: PhaseConfig,
+function parseValidatorFailures(resultText: string): string[] {
+  const failures: string[] = [];
+
+  // Match table FAIL lines: | N | Check Name | FAIL | ... |
+  for (const match of resultText.matchAll(
+    /\|\s*\d+\s*\|\s*(.+?)\s*\|\s*FAIL\s*\|/gi,
+  )) {
+    failures.push(match[1].trim());
+  }
+
+  // Match "- Status: FAIL" lines (build validator format)
+  for (const match of resultText.matchAll(/^-\s*Status:\s*FAIL/gm)) {
+    const beforeMatch = resultText.slice(0, match.index);
+    const headingMatch = beforeMatch.match(/###\s+(.+)\s*$/m);
+    if (headingMatch) {
+      failures.push(headingMatch[1].trim());
+    }
+  }
+
+  return failures;
+}
+
+/**
+ * Route validation failures to the appropriate builder agents for fixing.
+ * Groups failures by target agent and re-invokes each with the failure context.
+ */
+async function routeFailuresToBuilders(
+  failed: { phase: PhaseConfig; result: PhaseResult | null; failures: string[] }[],
+  runId: string,
+  cwd: string,
+  description: string,
+  totals: RunTotals,
+  iteration: number,
+): Promise<void> {
+  // Group failures by target builder agent
+  const builderTasks = new Map<string, string[]>();
+
+  for (const { phase, failures } of failed) {
+    const routing = FAILURE_ROUTING[phase.name] ?? {};
+    for (const failure of failures) {
+      const matchedKey = Object.keys(routing).find(
+        (k) => k !== "default" && failure.toLowerCase().includes(k),
+      );
+      const targetAgent = matchedKey
+        ? routing[matchedKey]
+        : (routing["default"] ?? "frontend-builder");
+
+      if (!builderTasks.has(targetAgent)) builderTasks.set(targetAgent, []);
+      builderTasks.get(targetAgent)!.push(`[${phase.name}] ${failure}`);
+    }
+  }
+
+  // Re-invoke each builder agent with failure context
+  for (const [agentName, failureList] of builderTasks) {
+    const builderPhase = PHASE_SEQUENCE.find((p) => p.agent === agentName);
+    if (!builderPhase) continue;
+
+    const fixContext =
+      `Fix the following validation failures:\n\n` +
+      failureList.map((f) => `- ${f}`).join("\n") +
+      `\n\nFix each issue, ensuring build and tests still pass.`;
+
+    ui.log(`  Routing ${failureList.length} failure(s) to ${agentName}...`);
+    await runSinglePhase(
+      builderPhase,
+      runId,
+      cwd,
+      description,
+      totals,
+      fixContext,
+      iteration,
+    );
+  }
+}
+
+/**
+ * Run validators in parallel with smart iteration:
+ * - Parse structured PASS/FAIL reports from each validator
+ * - Only re-run validators that reported failures
+ * - Route failures to appropriate builder agents before re-validating
+ * - After maxIterations, present human gate
+ */
+async function runValidators(
+  validators: PhaseConfig[],
   runId: string,
   cwd: string,
   description: string,
   totals: RunTotals,
   maxIterations: number,
 ): Promise<void> {
+  let pendingValidators = [...validators];
+
   for (let iteration = 1; iteration <= maxIterations + 1; iteration++) {
     ui.log(`\nValidation round ${iteration}...`);
 
-    const [validatorResult, specResult] = await Promise.all([
-      runSinglePhase(
-        validatorPhase,
-        runId,
-        cwd,
-        description,
-        totals,
-        undefined,
-        iteration,
+    const results = await Promise.all(
+      pendingValidators.map((v) =>
+        runSinglePhase(v, runId, cwd, description, totals, undefined, iteration),
       ),
-      runSinglePhase(
-        specPhase,
-        runId,
-        cwd,
-        description,
-        totals,
-        undefined,
-        iteration,
-      ),
-    ]);
+    );
 
-    // For now, treat validation as passed if the agents complete successfully.
-    // A future enhancement would parse the result text for PASS/FAIL categories.
-    const validatorPassed = validatorResult !== null;
-    const specPassed = specResult !== null;
+    // Parse results and categorize
+    const newlyFailed: {
+      phase: PhaseConfig;
+      result: PhaseResult | null;
+      failures: string[];
+    }[] = [];
 
-    if (validatorPassed && specPassed) {
-      ui.log("  Validation passed!");
+    for (let i = 0; i < pendingValidators.length; i++) {
+      const phase = pendingValidators[i];
+      const result = results[i];
+
+      if (result) {
+        const failures = parseValidatorFailures(result.resultText);
+        if (failures.length === 0) {
+          ui.log(`  ${phase.name}: PASS`);
+        } else {
+          newlyFailed.push({ phase, result, failures });
+          ui.log(`  ${phase.name}: FAIL (${failures.length} issue${failures.length === 1 ? "" : "s"})`);
+        }
+      } else {
+        newlyFailed.push({
+          phase,
+          result: null,
+          failures: ["Agent did not complete"],
+        });
+        ui.log(`  ${phase.name}: DID NOT COMPLETE`);
+      }
+    }
+
+    if (newlyFailed.length === 0) {
+      ui.log(`  All ${validators.length} validators passed!`);
       return;
     }
 
+    // After max iterations, present human gate
     if (iteration > maxIterations) {
-      const failures = [
-        !validatorPassed ? "Dashboard validator did not complete" : "",
-        !specPassed ? "Design token validator did not complete" : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
+      const failureText = newlyFailed
+        .map(
+          ({ phase, failures }) =>
+            `${phase.name}:\n${failures.map((f) => `  - ${f}`).join("\n")}`,
+        )
+        .join("\n\n");
 
-      const decision = await requestValidationDecision(failures, iteration - 1);
+      const decision = await requestValidationDecision(
+        failureText,
+        iteration - 1,
+      );
 
-      if (validatorResult) {
+      // Record the decision
+      const firstResult = newlyFailed.find((f) => f.result !== null);
+      if (firstResult?.result) {
         await recordQualityGate(
-          validatorResult.phaseRunId,
+          firstResult.result.phaseRunId,
           runId,
           "human_approval",
           "validation_acceptance",
@@ -494,19 +653,53 @@ async function runValidationPhases(
       if (decision.decision === "stop") {
         throw new AbortError("User stopped after validation failures");
       }
-      // keep_fixing falls through to next iteration
+      // keep_fixing: fall through to route + re-run
     }
+
+    // Route failures to builder agents for fixes
+    await routeFailuresToBuilders(
+      newlyFailed,
+      runId,
+      cwd,
+      description,
+      totals,
+      iteration,
+    );
+
+    // Next iteration only re-runs the failed validators
+    pendingValidators = newlyFailed.map((f) => f.phase);
   }
 }
 
 /**
- * Phase 6: Review — commit and push.
+ * Review phase: show summary, ask for approval, then commit and push.
  */
-async function runReviewPhase(cwd: string): Promise<void> {
+async function runReviewPhase(
+  cwd: string,
+  totals: RunTotals,
+  runStart: number,
+): Promise<void> {
   ui.log("\n" + "-".repeat(50));
   ui.log("Phase: review");
   ui.log("-".repeat(50));
 
+  const summary = [
+    `## Build Summary`,
+    ``,
+    `Duration: ${ui.formatDuration(Date.now() - runStart)}`,
+    `Cost: $${totals.costUsd.toFixed(4)}`,
+    `Tokens: ${totals.inputTokens.toLocaleString()} in / ${totals.outputTokens.toLocaleString()} out`,
+    ``,
+    `Ready to commit and push to the remote repository.`,
+  ].join("\n");
+
+  const approval = await requestReviewApproval(summary);
+
+  if (approval.decision === "stop") {
+    throw new AbortError("User stopped at review gate (code is NOT committed)");
+  }
+
+  // Commit and push
   const commitProc = Bun.spawn(
     [
       "sh",

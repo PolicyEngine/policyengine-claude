@@ -91,6 +91,32 @@ export async function requestValidationDecision(
   }
 }
 
+export async function requestReviewApproval(
+  summary: string,
+): Promise<ApprovalResult> {
+  const start = Date.now();
+
+  console.log("\n" + "=".repeat(60));
+  console.log("REVIEW — READY TO COMMIT");
+  console.log("=".repeat(60));
+  console.log(summary);
+  console.log("=".repeat(60));
+  console.log("\nOptions:");
+  console.log("  [A] Approve - Commit and push");
+  console.log("  [S] Stop    - Don't commit, end workflow here");
+
+  const answer = await askQuestion("\nYour choice (A/S): ");
+
+  switch (answer.toUpperCase()) {
+    case "A":
+      return { decision: "approve", durationMs: Date.now() - start };
+    case "S":
+      return { decision: "stop", durationMs: Date.now() - start };
+    default:
+      return { decision: "approve", durationMs: Date.now() - start };
+  }
+}
+
 export async function askForDescription(): Promise<string> {
   console.log("\nDescribe the dashboard you want to build:");
   console.log("(Include: purpose, policy reforms, charts/visualizations, country)\n");

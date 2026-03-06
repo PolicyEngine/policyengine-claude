@@ -84,14 +84,51 @@ grep -rn 'md:|sm:|lg:' app/ components/ --include='*.tsx' | grep -v node_modules
 
 Verify at least one breakpoint near 768px (tablet) and one near 480px (phone). Check that Recharts charts use `ResponsiveContainer` wrapper.
 
+### 9. ui-kit Component Usage
+
+Verify the dashboard uses `@policyengine/ui-kit` components rather than hand-rolling equivalents.
+
+**Required imports — at least one from each applicable category:**
+
+**Layout** (at least one required):
+```
+grep -rn "from '@policyengine/ui-kit'" app/ components/ --include='*.tsx' | grep -E 'DashboardShell|SidebarLayout|SingleColumnLayout'
+```
+
+**Display** (at least one required):
+```
+grep -rn "from '@policyengine/ui-kit'" app/ components/ --include='*.tsx' | grep -E 'MetricCard|DataTable|SummaryText'
+```
+
+**Inputs** (at least one, if the dashboard has user inputs):
+```
+grep -rn "from '@policyengine/ui-kit'" app/ components/ --include='*.tsx' | grep -E 'CurrencyInput|NumberInput|SelectInput|CheckboxInput|SliderInput|InputGroup'
+```
+
+**Charts** (at least one, if the dashboard has charts):
+```
+grep -rn "from '@policyengine/ui-kit'" app/ components/ --include='*.tsx' | grep -E 'ChartContainer|PEBarChart|PELineChart|PEAreaChart|PEWaterfallChart'
+```
+
+**Prohibited — hand-rolled equivalents when ui-kit components exist:**
+```
+# Custom card components (should use ui-kit Card)
+grep -rn 'className.*rounded.*shadow' components/ --include='*.tsx' | grep -v node_modules | grep -v '@policyengine/ui-kit'
+
+# Custom button components (should use ui-kit Button)
+grep -rn 'className.*bg-.*text-.*rounded.*px-' components/ --include='*.tsx' | grep -v node_modules | grep -v '@policyengine/ui-kit'
+```
+
+FAIL if no layout component is imported from ui-kit, or if hand-rolled equivalents are found for components available in ui-kit.
+
 ## Report Format
 
 ```
 ## Design Compliance Report
 
 ### Summary
-- PASS: X/8 checks
-- FAIL: Y/8 checks
+- PASS: X/9 checks
+- FAIL: Y/9 checks
 
 ### Results
 

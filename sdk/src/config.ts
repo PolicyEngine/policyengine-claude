@@ -1,8 +1,9 @@
 import { execSync } from "child_process";
 
 export interface Config {
-  supabaseUrl: string;
-  supabasePublishableKey: string;
+  supabaseUrl: string | null;
+  supabasePublishableKey: string | null;
+  telemetryEnabled: boolean;
   defaultModel: string;
   totalBudgetUsd: number;
   maxValidationIterations: number;
@@ -36,11 +37,16 @@ function resolveGitHubUser(): string {
 export function getConfig(): Config {
   if (cachedConfig) return cachedConfig;
 
+  const telemetryEnabled = process.env.PE_NO_TELEMETRY !== "true";
+
   cachedConfig = {
-    supabaseUrl: requireEnv("SUPABASE_URL"),
-    supabasePublishableKey: requireEnv("SUPABASE_PUBLISHABLE_KEY"),
+    telemetryEnabled,
+    supabaseUrl: telemetryEnabled ? requireEnv("SUPABASE_URL") : null,
+    supabasePublishableKey: telemetryEnabled
+      ? requireEnv("SUPABASE_PUBLISHABLE_KEY")
+      : null,
     defaultModel: process.env.PE_DEFAULT_MODEL ?? "claude-opus-4-6",
-    totalBudgetUsd: parseFloat(process.env.PE_TOTAL_BUDGET_USD ?? "25.00"),
+    totalBudgetUsd: parseFloat(process.env.PE_TOTAL_BUDGET_USD ?? "35.00"),
     maxValidationIterations: parseInt(
       process.env.PE_MAX_VALIDATION_ITERATIONS ?? "3",
       10,

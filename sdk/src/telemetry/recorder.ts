@@ -1,4 +1,5 @@
 import { getSupabase } from "./client";
+import { getConfig } from "../config";
 import type { PhaseResult } from "../phases/types";
 
 export async function createDashboardRun(
@@ -7,6 +8,8 @@ export async function createDashboardRun(
   cwd: string,
   createdBy: string,
 ): Promise<string> {
+  if (!getConfig().telemetryEnabled) return "no-telemetry";
+
   const { data, error } = await getSupabase()
     .from("dashboard_runs")
     .insert({
@@ -32,6 +35,8 @@ export async function recordPhaseStart(
   promptHash: string,
   iteration: number = 1,
 ): Promise<string> {
+  if (!getConfig().telemetryEnabled) return "no-telemetry";
+
   const { data, error } = await getSupabase()
     .from("phase_runs")
     .insert({
@@ -57,6 +62,8 @@ export async function recordPhaseEnd(
   status: "completed" | "failed",
   errorMessage?: string,
 ): Promise<void> {
+  if (!getConfig().telemetryEnabled) return;
+
   const update: Record<string, unknown> = {
     status,
     completed_at: new Date().toISOString(),
@@ -91,6 +98,8 @@ export async function recordQualityGate(
   durationMs: number,
   details: Record<string, unknown> = {},
 ): Promise<void> {
+  if (!getConfig().telemetryEnabled) return;
+
   const { error } = await getSupabase()
     .from("quality_gates")
     .insert({
@@ -119,6 +128,8 @@ export async function completeDashboardRun(
     gitCommitSha?: string;
   },
 ): Promise<void> {
+  if (!getConfig().telemetryEnabled) return;
+
   const { error } = await getSupabase()
     .from("dashboard_runs")
     .update({
@@ -142,6 +153,8 @@ export async function failDashboardRun(
   runId: string,
   totalDurationMs: number,
 ): Promise<void> {
+  if (!getConfig().telemetryEnabled) return;
+
   const { error } = await getSupabase()
     .from("dashboard_runs")
     .update({

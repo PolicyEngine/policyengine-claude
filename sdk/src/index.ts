@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { runDashboard, initRepository } from "./orchestrator";
 import { getConfig } from "./config";
 import { askForDescription, askForDashboardName } from "./human-gates";
@@ -9,17 +10,24 @@ async function main() {
   if (args.includes("--help") || args.includes("-h")) {
     console.log("PolicyEngine Dashboard Builder SDK\n");
     console.log("Usage:");
-    console.log('  bun run sdk/src/index.ts                    # Interactive mode');
-    console.log('  bun run sdk/src/index.ts "description..."   # With description\n');
+    console.log('  pe-dashboard                         # Interactive mode');
+    console.log('  pe-dashboard "description..."        # With description');
+    console.log('  pe-dashboard --skip-init "desc..."   # Use current directory\n');
     console.log("Options:");
-    console.log("  --skip-init   Skip repo creation (use current directory)\n");
+    console.log("  --skip-init      Skip repo creation (use current directory)");
+    console.log("  --no-telemetry   Run without Supabase telemetry\n");
     console.log("Environment variables (see .env.example):");
-    console.log("  SUPABASE_URL          (required) Supabase project URL");
-    console.log("  SUPABASE_PUBLISHABLE_KEY (required) Supabase publishable key");
-    console.log("  PE_DEFAULT_MODEL      (optional) Default model, default: claude-opus-4-6");
-    console.log("  PE_TOTAL_BUDGET_USD   (optional) Max spend, default: $25.00");
-    console.log("  PE_VERBOSE            (optional) Enable verbose logging");
+    console.log("  SUPABASE_URL             Supabase project URL (required unless --no-telemetry)");
+    console.log("  SUPABASE_PUBLISHABLE_KEY Supabase publishable key (required unless --no-telemetry)");
+    console.log("  PE_DEFAULT_MODEL         Default model, default: claude-opus-4-6");
+    console.log("  PE_TOTAL_BUDGET_USD      Max spend, default: $35.00");
+    console.log("  PE_VERBOSE               Enable verbose logging");
     process.exit(0);
+  }
+
+  // Set telemetry flag before config loads
+  if (args.includes("--no-telemetry")) {
+    process.env.PE_NO_TELEMETRY = "true";
   }
 
   // Validate config early
@@ -70,6 +78,7 @@ async function main() {
   console.log(`Directory:   ${cwd}`);
   console.log(`User:        ${config.createdBy}`);
   console.log(`Budget:      $${config.totalBudgetUsd.toFixed(2)}`);
+  console.log(`Telemetry:   ${config.telemetryEnabled ? "enabled" : "disabled"}`);
   console.log(`Description: ${description.slice(0, 80)}${description.length > 80 ? "..." : ""}`);
   console.log("=".repeat(40));
 
