@@ -243,16 +243,16 @@ policyengine-core test policyengine_us/tests/policy/baseline/gov/states/ar/dhs/t
 
 #### Linting/Formatting
 ```bash
-# CRITICAL: Use uv run to ensure correct black version from uv.lock
+# CRITICAL: Use uv run to ensure correct ruff version from uv.lock
 # This matches CI exactly
 uv sync --extra dev
-uv run black . -l 79
+uv run ruff format
 
-# DO NOT use bare 'black' command - may use wrong version!
+# DO NOT use bare 'ruff' command - may use wrong version!
 
 # Commit formatting fixes
 git add -A
-git commit -m "Fix: Apply black formatting"
+git commit -m "Fix: Apply ruff formatting"
 git push
 ```
 
@@ -513,7 +513,7 @@ gh pr edit --add-reviewer @reviewer-username
 
 ## Common CI Issues and Fixes
 
-### 1. Black Formatting
+### 1. Ruff Formatting
 **Error**: `would reformat file.py`
 **Fix**: Run `make format` and commit
 
