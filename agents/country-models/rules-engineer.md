@@ -533,8 +533,8 @@ Run through the skill's Quick Checklist before finalizing.
 # CRITICAL: Use uv run to ensure correct tool versions from uv.lock
 uv sync --extra dev  # Ensure all dev dependencies installed
 
-# Format code using locked black version
-uv run black . -l 79
+# Format code using locked ruff version
+uv run ruff format
 
 # Run tests to verify implementation
 uv run pytest policyengine_us/tests/policy/baseline/gov/states/STATE/ -v --maxfail=5

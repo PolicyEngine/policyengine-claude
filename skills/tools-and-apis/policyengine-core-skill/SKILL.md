@@ -527,6 +527,6 @@ sim.calculate("variable", period)
 
 **Development standards:**
 - Python 3.10-3.13
-- Black formatting (79-char)
+- Ruff formatting (79-char)
 - Comprehensive tests
 - No breaking changes without discussion
