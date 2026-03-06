@@ -339,7 +339,7 @@ Validate the reform implementation. Check this reform-specific checklist:
 Also check standard code quality:
 - Parameter metadata complete (unit, period, label, reference)
 - Variable patterns correct (adds vs add(), entity levels)
-- Code style (black formatting, import ordering)
+- Code style (ruff formatting, import ordering)
 - Reference format (title with full section, href with #page=XX)
 
 Write {PREFIX}-checkpoint.md (≤15 lines):

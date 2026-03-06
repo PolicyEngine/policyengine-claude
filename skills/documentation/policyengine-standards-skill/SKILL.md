@@ -2,7 +2,7 @@
 name: policyengine-standards
 description: |
   PolicyEngine coding standards, formatters, CI requirements, and development best practices.
-  Triggers: "CI failing", "linting", "formatting", "before committing", "PR standards", "code style", "black formatter", "prettier", "pre-commit"
+  Triggers: "CI failing", "linting", "formatting", "before committing", "PR standards", "code style", "ruff formatter", "prettier", "pre-commit"
 ---
 
 # PolicyEngine Standards Skill
@@ -152,16 +152,16 @@ bun test -- --watch          # Watch mode
 ## Python Standards
 
 ### Formatting
-- **Formatter**: Black with 79-character line length
-- **Command**: `make format` or `black . -l 79`
-- **Check without changes**: `black . -l 79 --check`
+- **Formatter**: Ruff
+- **Command**: `make format` or `ruff format .`
+- **Check without changes**: `ruff format --check .`
 
 ```bash
 # Format all Python files
 make format
 
 # Check if formatting is needed (CI-style)
-black . -l 79 --check
+ruff format --check .
 ```
 
 ### Code Style
@@ -350,7 +350,7 @@ If the renamed repo is embedded in another site (e.g., via iframe or GitHub Page
 ## Resources
 
 - **Main CLAUDE.md**: `/PolicyEngine/CLAUDE.md`
-- **Python Style**: PEP 8, Black documentation
+- **Python Style**: PEP 8, Ruff documentation
 - **React Style**: Airbnb React/JSX Style Guide
 - **Testing**: pytest documentation, Jest/RTL documentation
 - **Writing Style**: See policyengine-writing-skill for blog posts, PR descriptions, and documentation
