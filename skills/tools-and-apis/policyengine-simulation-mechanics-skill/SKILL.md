@@ -73,73 +73,37 @@ from policyengine.utils.plotting import COLORS, format_fig
 
 ## UK Datasets
 
-### Where datasets live
-
-The raw FRS/EFRS `.h5` files ship with `policyengine-uk-data`:
-```
-~/10ds/policyengine-uk-data/policyengine_uk_data/storage/frs_2023_24.h5
-~/10ds/policyengine-uk-data/policyengine_uk_data/storage/enhanced_frs_2023_24.h5
-```
-
-The `policyengine.py` workflow converts these to year-specific datasets in `./data/`:
-```
-./data/enhanced_frs_2023_24_year_2026.h5
-./data/frs_2023_24_year_2026.h5
-```
-
 ### Loading UK datasets
 
-`datasets` is exported as a module from `policyengine.tax_benefit_models.uk`. Call `ensure_datasets()` on it — it returns a `dict[str, PolicyEngineUKDataset]`. Keys are `"{stem}_{year}"`.
+Import `datasets` — it's a `dict[str, PolicyEngineUKDataset]` that is built automatically on first import and cached to `./data/`. You never need to call `ensure_datasets` directly.
 
 ```python
 from policyengine.tax_benefit_models.uk import datasets
 
-# Returns dict[str, PolicyEngineUKDataset]
-# Keys: "frs_2023_24_2026", "enhanced_frs_2023_24_2026", etc.
-uk_datasets = datasets.ensure_datasets(
-    datasets=[
-        "hf://policyengine/policyengine-uk-data/frs_2023_24.h5",
-        "hf://policyengine/policyengine-uk-data/enhanced_frs_2023_24.h5",
-    ],
-    years=[2026],
-    data_folder="./data",
-)
-
-efrs = uk_datasets["enhanced_frs_2023_24_2026"]
-frs  = uk_datasets["frs_2023_24_2026"]
+efrs = datasets["enhanced_frs_2023_24_2026"]
+frs  = datasets["frs_2023_24_2026"]
 ```
 
-**Dict key format:** `f"{Path(hf_path).stem}_{year}"`
+**Dict key format:** `"{stem}_{year}"`
 - `"frs_2023_24_2026"` → FRS, 2026
 - `"enhanced_frs_2023_24_2026"` → EFRS (Enhanced FRS), 2026
+- Keys exist for years 2026–2030 by default
 
-**`ensure_datasets` behaviour:**
-- If `./data/enhanced_frs_2023_24_year_2026.h5` exists → loads from disk (fast)
-- Otherwise → downloads from HuggingFace and runs policyengine-uk microsim (slow, first time only)
+**How it works:** on first import, datasets are downloaded from HuggingFace and cached to `./data/`. Subsequent imports load from disk instantly.
 
-You can also import the functions directly:
-```python
-from policyengine.tax_benefit_models.uk import ensure_datasets, load_datasets, create_datasets
-```
+**To force regeneration:** delete `./data/` and re-import — the datasets will be rebuilt automatically.
 
 ### Loading US datasets
 
-Identical pattern — `datasets` is also a module export from `policyengine.tax_benefit_models.us`:
+Identical pattern:
 
 ```python
 from policyengine.tax_benefit_models.us import datasets
 
-us_datasets = datasets.ensure_datasets(
-    datasets=["hf://policyengine/policyengine-us-data/enhanced_cps_2024.h5"],
-    years=[2026],
-    data_folder="./data",
-)
-
-ecps = us_datasets["enhanced_cps_2024_2026"]
+ecps = datasets["enhanced_cps_2024_2026"]
 ```
 
-**Default US source:** `enhanced_cps_2024.h5` (Enhanced CPS)
-**Dict key format:** same — `f"{Path(hf_path).stem}_{year}"` e.g. `"enhanced_cps_2024_2026"`
+**Default US dataset:** `enhanced_cps_2024.h5` (Enhanced CPS), years 2024–2028.
 
 ### UK household-level variables (confirmed in EFRS)
 
