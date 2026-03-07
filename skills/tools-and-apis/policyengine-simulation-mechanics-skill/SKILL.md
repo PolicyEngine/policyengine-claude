@@ -114,20 +114,43 @@ ecps = datasets["enhanced_cps_2024_2026"]
 
 **Default US dataset:** `enhanced_cps_2024.h5` (Enhanced CPS), years 2024–2028.
 
-### UK household-level variables (confirmed in EFRS)
+### Inspecting available variables
 
-```
-household:
-  - household_id, household_weight
-  - tenure_type  → values: 'OWNED_OUTRIGHT', 'OWNED_WITH_MORTGAGE',
-                             'RENT_FROM_COUNCIL', 'RENT_PRIVATELY', 'RENT_FROM_HA'
-  - domestic_energy_consumption  (annual, £)
-  - has_fuel_consumption  (bool)
-  - region, council_tax, rent
-  - [income variables are computed by simulation, not in raw data]
+Always inspect the dataset to find available variable names — never guess:
+
+```python
+from policyengine.tax_benefit_models.uk import ensure_datasets
+
+uk = ensure_datasets(years=[2026], data_folder="./data")
+d = uk["enhanced_frs_2023_24_2026"]
+
+# Input variables (present in raw data)
+print("household:", list(d.data.household.columns))
+print("person:   ", list(d.data.person.columns))
+print("benunit:  ", list(d.data.benunit.columns))
 ```
 
-Income decile variables (`household_net_income`, `household_market_income`, etc.) are **computed by simulation**, not present in raw data. You must run `simulation.run()` first.
+**Input variables** are what's in the raw survey data — demographics, reported incomes, consumption, wealth, flags.
+
+**Computed variables** (`household_net_income`, `income_tax`, `universal_credit`, etc.) are **not** in the raw dataset — they are calculated by the simulation. To see what's available after running:
+
+```python
+from policyengine.core import Simulation
+from policyengine.tax_benefit_models.uk import uk_latest
+
+sim = Simulation(dataset=d, tax_benefit_model_version=uk_latest)
+sim.run()
+
+print("household (post-sim):", list(sim.output_dataset.data.household.columns))
+print("person (post-sim):   ", list(sim.output_dataset.data.person.columns))
+```
+
+The computed variables available are defined by `uk_latest.entity_variables` — inspect this to see the full list without running a simulation:
+
+```python
+from policyengine.tax_benefit_models.uk import uk_latest
+print(uk_latest.entity_variables)  # dict: entity → [variable names]
+```
 
 ## For Analysts: Core Concepts
 
