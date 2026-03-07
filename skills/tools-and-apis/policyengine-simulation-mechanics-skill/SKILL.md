@@ -1,6 +1,15 @@
 ---
 name: policyengine-simulation-mechanics
-description: Advanced simulation patterns with policyengine.py - ensure(), output_dataset.data, and map_to_entity()
+description: |
+  ALWAYS LOAD THIS SKILL before writing any policyengine.py microsimulation code.
+  Contains correct import paths, environment setup, dataset loading, and analysis patterns.
+  Triggers: "write a script", "policyengine.py", "microsimulation script", "run a simulation",
+  "load the dataset", "FRS", "EFRS", "enhanced FRS", "CPS", "enhanced CPS",
+  "by income decile", "by tenure", "by region", "energy spending", "domestic energy",
+  "household net income", "output_dataset", "ensure_datasets", "uk_datasets", "us_datasets",
+  "import datasets", "from policyengine", "Simulation(dataset=", "uk_latest", "us_latest",
+  "plotly", "analysis script", "decile breakdown", "percentile", "groupby", "weighted",
+  "mean", "median", "p25", "p75", "tenure type", "income band", "policy reform script".
 ---
 
 # PolicyEngine Simulation Mechanics

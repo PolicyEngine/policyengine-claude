@@ -1,17 +1,13 @@
 ---
 name: python
-description: Python environment setup and package management for PolicyEngine projects — always use uv, Python 3.13, and uv pip install
-triggers:
-  - "set up python"
-  - "install python"
-  - "python environment"
-  - "virtual environment"
-  - "venv"
-  - "pip install"
-  - "install packages"
-  - "uv"
-  - "python version"
-  - "create environment"
+description: |
+  ALWAYS LOAD THIS SKILL before setting up any Python environment or installing packages.
+  Defines the standard: uv, Python 3.13, uv pip install, .venv at project root.
+  Triggers: "set up python", "install python", "create a venv", "virtual environment",
+  "pip install", "install packages", "uv pip", "uv venv", "python version",
+  "VIRTUAL_ENV", "venv conflict", "which python", "activate", "deactivate",
+  "run the script", "run with uv", "uv run", "pyproject.toml", "install dependencies",
+  "install requirements", "install the package", "editable install", "pip install -e".
 ---
 
 # Python Environment — PolicyEngine Standard
