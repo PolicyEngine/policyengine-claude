@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.16.0] - 2026-03-07
+
+### Added
+
+- Add python-skill: uv + Python 3.13 environment setup and package management standards
+
+### Changed
+
+- Expand policyengine-simulation-mechanics-skill with correct import paths, venv setup, UK dataset loading patterns, EFRS variable reference, and direct data analysis example; update python-skill with venv conflict resolution
+
 ## [3.15.4] - 2026-03-06
 
 ### Changed
@@ -173,6 +183,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.16.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.4...3.16.0
 [3.15.4]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.3...3.15.4
 [3.15.3]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.2...3.15.3
 [3.15.2]: https://github.com/PolicyEngine/policyengine-claude/compare/3.15.1...3.15.2
