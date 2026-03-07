@@ -122,6 +122,25 @@ You can also import the functions directly:
 from policyengine.tax_benefit_models.uk import ensure_datasets, load_datasets, create_datasets
 ```
 
+### Loading US datasets
+
+Identical pattern — `datasets` is also a module export from `policyengine.tax_benefit_models.us`:
+
+```python
+from policyengine.tax_benefit_models.us import datasets
+
+us_datasets = datasets.ensure_datasets(
+    datasets=["hf://policyengine/policyengine-us-data/enhanced_cps_2024.h5"],
+    years=[2026],
+    data_folder="./data",
+)
+
+ecps = us_datasets["enhanced_cps_2024_2026"]
+```
+
+**Default US source:** `enhanced_cps_2024.h5` (Enhanced CPS)
+**Dict key format:** same — `f"{Path(hf_path).stem}_{year}"` e.g. `"enhanced_cps_2024_2026"`
+
 ### UK household-level variables (confirmed in EFRS)
 
 ```
