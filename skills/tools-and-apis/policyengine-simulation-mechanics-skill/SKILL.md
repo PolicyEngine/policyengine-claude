@@ -84,32 +84,42 @@ from policyengine.utils.plotting import COLORS, format_fig
 
 ### Loading UK datasets
 
-Import `datasets` — it's a `dict[str, PolicyEngineUKDataset]` that is built automatically on first import and cached to `./data/`. You never need to call `ensure_datasets` directly.
+Use `ensure_datasets()` — it returns a `dict[str, PolicyEngineUKDataset]`, building files in `./data/` on first run and loading from disk on subsequent runs.
+
+**WARNING:** `from policyengine.tax_benefit_models.uk import datasets` gives you the Python **submodule**, not a dict. Never index it like a dict.
 
 ```python
-from policyengine.tax_benefit_models.uk import datasets
+from policyengine.tax_benefit_models.uk import ensure_datasets
 
-efrs = datasets["enhanced_frs_2023_24_2026"]
-frs  = datasets["frs_2023_24_2026"]
+uk = ensure_datasets(
+    datasets=[
+        "hf://policyengine/policyengine-uk-data/frs_2023_24.h5",
+        "hf://policyengine/policyengine-uk-data/enhanced_frs_2023_24.h5",
+    ],
+    years=[2026],
+    data_folder="./data",
+)
+
+efrs = uk["enhanced_frs_2023_24_2026"]
+frs  = uk["frs_2023_24_2026"]
 ```
 
-**Dict key format:** `"{stem}_{year}"`
-- `"frs_2023_24_2026"` → FRS, 2026
-- `"enhanced_frs_2023_24_2026"` → EFRS (Enhanced FRS), 2026
-- Keys exist for years 2026–2030 by default
+**Dict key format:** `"{stem}_{year}"` e.g. `"enhanced_frs_2023_24_2026"`
 
-**How it works:** on first import, datasets are downloaded from HuggingFace and cached to `./data/`. Subsequent imports load from disk instantly.
-
-**To force regeneration:** delete `./data/` and re-import — the datasets will be rebuilt automatically.
+**To force regeneration:** delete `./data/` and call `ensure_datasets()` again.
 
 ### Loading US datasets
 
-Identical pattern:
-
 ```python
-from policyengine.tax_benefit_models.us import datasets
+from policyengine.tax_benefit_models.us import ensure_datasets
 
-ecps = datasets["enhanced_cps_2024_2026"]
+us = ensure_datasets(
+    datasets=["hf://policyengine/policyengine-us-data/enhanced_cps_2024.h5"],
+    years=[2026],
+    data_folder="./data",
+)
+
+ecps = us["enhanced_cps_2024_2026"]
 ```
 
 **Default US dataset:** `enhanced_cps_2024.h5` (Enhanced CPS), years 2024–2028.
