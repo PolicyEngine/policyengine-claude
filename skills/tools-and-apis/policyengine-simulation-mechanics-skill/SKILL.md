@@ -89,26 +89,43 @@ The `policyengine.py` workflow converts these to year-specific datasets in `./da
 
 ### Loading UK datasets
 
-```python
-from pathlib import Path
-from policyengine.tax_benefit_models.uk import PolicyEngineUKDataset, ensure_datasets
+`ensure_datasets` returns a `dict[str, PolicyEngineUKDataset]` — always use this. Keys are `"{stem}_{year}"`.
 
-# Option 1: Use ensure_datasets (recommended — creates if missing, loads if present)
+```python
+from policyengine.tax_benefit_models.uk import ensure_datasets
+
+# Returns dict[str, PolicyEngineUKDataset]
+# Keys: "frs_2023_24_2026", "enhanced_frs_2023_24_2026", etc.
+datasets = ensure_datasets(
+    datasets=[
+        "hf://policyengine/policyengine-uk-data/frs_2023_24.h5",
+        "hf://policyengine/policyengine-uk-data/enhanced_frs_2023_24.h5",
+    ],
+    years=[2026],
+    data_folder="./data",
+)
+
+# Index by key — stem of filename + "_" + year
+frs_dataset = datasets["frs_2023_24_2026"]
+efrs_dataset = datasets["enhanced_frs_2023_24_2026"]
+```
+
+**Dict key format:** `f"{Path(hf_path).stem}_{year}"`
+- `"frs_2023_24_2026"` → FRS, 2026
+- `"enhanced_frs_2023_24_2026"` → EFRS (Enhanced FRS), 2026
+
+**`ensure_datasets` behaviour:**
+- If `./data/enhanced_frs_2023_24_year_2026.h5` exists → calls `load_datasets` (fast)
+- Otherwise → calls `create_datasets` (downloads from HuggingFace and runs policyengine-uk microsim, slow)
+
+**To get just one dataset** (EFRS 2026 only):
+```python
 datasets = ensure_datasets(
     datasets=["hf://policyengine/policyengine-uk-data/enhanced_frs_2023_24.h5"],
     years=[2026],
     data_folder="./data",
 )
 dataset = datasets["enhanced_frs_2023_24_2026"]
-
-# Option 2: Load directly from disk (if already created)
-dataset = PolicyEngineUKDataset(
-    name="Enhanced FRS 2026",
-    description="Enhanced FRS for 2026",
-    filepath="./data/enhanced_frs_2023_24_year_2026.h5",
-    year=2026,
-)
-dataset.load()
 ```
 
 ### UK household-level variables (confirmed in EFRS)
