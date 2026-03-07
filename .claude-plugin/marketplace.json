@@ -88,6 +88,7 @@
         "./skills/technical-patterns/policyengine-code-style-skill",
         "./skills/technical-patterns/policyengine-code-organization-skill",
         "./skills/technical-patterns/policyengine-reform-patterns-skill",
+        "./skills/technical-patterns/python-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill"
       ]
@@ -183,6 +184,7 @@
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/domain-knowledge/policyengine-healthcare-skill",
         "./skills/analysis/policyengine-analysis-skill",
+        "./skills/technical-patterns/python-skill",
         "./skills/analysis/policyengine-district-analysis-skill",
         "./skills/data-science/microdf-skill",
         "./skills/documentation/policyengine-design-skill",
@@ -213,6 +215,7 @@
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/domain-knowledge/policyengine-healthcare-skill",
+        "./skills/technical-patterns/python-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill"
@@ -329,6 +332,7 @@
         "./skills/technical-patterns/policyengine-code-style-skill",
         "./skills/technical-patterns/policyengine-code-organization-skill",
         "./skills/technical-patterns/policyengine-reform-patterns-skill",
+        "./skills/technical-patterns/python-skill",
         "./skills/data-science/microdf-skill",
         "./skills/data-science/microimpute-skill",
         "./skills/data-science/microcalibrate-skill",

@@ -7,6 +7,125 @@ description: Advanced simulation patterns with policyengine.py - ensure(), outpu
 
 This skill covers advanced patterns for working with policyengine.py simulations, including caching, result access, and entity mapping.
 
+## CRITICAL: Environment Setup
+
+**Before writing any code, check the environment.** The policyengine.py package must be installed in the project's `.venv`.
+
+```bash
+# Always run from the policyengine.py repo root:
+cd /path/to/policyengine.py
+uv run python script.py
+
+# Or activate first:
+source .venv/bin/activate
+python script.py
+
+# NEVER use bare `pip install` — always:
+uv pip install -e ".[uk]"   # for UK work
+uv pip install -e ".[us]"   # for US work
+```
+
+**If `from policyengine.core import Simulation` fails:**
+```bash
+cd /path/to/policyengine.py
+uv pip install -e ".[uk]"
+# Then re-run with: uv run python script.py
+```
+
+## CRITICAL: Correct Import Paths
+
+**Only these imports exist — do not guess others:**
+
+```python
+# Core simulation
+from policyengine.core import Simulation
+
+# UK model
+from policyengine.tax_benefit_models.uk import (
+    uk_latest,          # The model version (pass as tax_benefit_model_version=)
+    uk_model,           # The model itself
+    PolicyEngineUKDataset,
+    UKYearData,
+    create_datasets,    # Create & cache datasets from HF source
+    load_datasets,      # Load cached datasets from disk
+    ensure_datasets,    # Create if missing, load if present (recommended)
+)
+
+# US model
+from policyengine.tax_benefit_models.us import (
+    us_latest,
+    PolicyEngineUSDataset,
+    ensure_datasets,
+)
+
+# Outputs
+from policyengine.outputs.aggregate import Aggregate, AggregateType
+from policyengine.outputs.change_aggregate import ChangeAggregate, ChangeAggregateType
+
+# Plotting
+from policyengine.utils.plotting import COLORS, format_fig
+```
+
+**There is NO:**
+- `policyengine.core.dataset_registry`
+- `policyengine.datasets`
+- `policyengine.core.dataset_version.DatasetVersion.list()`
+
+## UK Datasets
+
+### Where datasets live
+
+The raw FRS/EFRS `.h5` files ship with `policyengine-uk-data`:
+```
+~/10ds/policyengine-uk-data/policyengine_uk_data/storage/frs_2023_24.h5
+~/10ds/policyengine-uk-data/policyengine_uk_data/storage/enhanced_frs_2023_24.h5
+```
+
+The `policyengine.py` workflow converts these to year-specific datasets in `./data/`:
+```
+./data/enhanced_frs_2023_24_year_2026.h5
+./data/frs_2023_24_year_2026.h5
+```
+
+### Loading UK datasets
+
+```python
+from pathlib import Path
+from policyengine.tax_benefit_models.uk import PolicyEngineUKDataset, ensure_datasets
+
+# Option 1: Use ensure_datasets (recommended — creates if missing, loads if present)
+datasets = ensure_datasets(
+    datasets=["hf://policyengine/policyengine-uk-data/enhanced_frs_2023_24.h5"],
+    years=[2026],
+    data_folder="./data",
+)
+dataset = datasets["enhanced_frs_2023_24_2026"]
+
+# Option 2: Load directly from disk (if already created)
+dataset = PolicyEngineUKDataset(
+    name="Enhanced FRS 2026",
+    description="Enhanced FRS for 2026",
+    filepath="./data/enhanced_frs_2023_24_year_2026.h5",
+    year=2026,
+)
+dataset.load()
+```
+
+### UK household-level variables (confirmed in EFRS)
+
+```
+household:
+  - household_id, household_weight
+  - tenure_type  → values: 'OWNED_OUTRIGHT', 'OWNED_WITH_MORTGAGE',
+                             'RENT_FROM_COUNCIL', 'RENT_PRIVATELY', 'RENT_FROM_HA'
+  - domestic_energy_consumption  (annual, £)
+  - has_fuel_consumption  (bool)
+  - region, council_tax, rent
+  - [income variables are computed by simulation, not in raw data]
+```
+
+Income decile variables (`household_net_income`, `household_market_income`, etc.) are **computed by simulation**, not present in raw data. You must run `simulation.run()` first.
+
 ## For Analysts: Core Concepts
 
 When running simulations with policyengine.py (the microsimulation package, not the API client), you work with three key components:
@@ -433,6 +552,62 @@ for reform in reforms:
 
     results[reform.name] = revenue.result
 ```
+
+## Direct Data Analysis (without Aggregate)
+
+For custom analyses (decile breakdowns, percentiles, groupby), work directly with `output_dataset.data` after running the simulation. This is often simpler than using `Aggregate`.
+
+### Full working example: energy spending by income decile and tenure type
+
+```python
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+from policyengine.core import Simulation
+from policyengine.tax_benefit_models.uk import PolicyEngineUKDataset, uk_latest
+
+# Load dataset
+dataset = PolicyEngineUKDataset(
+    name="Enhanced FRS 2026",
+    description="EFRS 2026",
+    filepath="./data/enhanced_frs_2023_24_year_2026.h5",
+    year=2026,
+)
+dataset.load()
+
+# Run simulation to compute income variables
+simulation = Simulation(dataset=dataset, tax_benefit_model_version=uk_latest)
+simulation.ensure()  # caches to disk after first run
+
+# Access results as DataFrames
+hh = simulation.output_dataset.data.household
+
+# Assign income decile (weighted quantile)
+hh["income_decile"] = pd.qcut(
+    hh["household_net_income"],
+    q=10,
+    labels=[f"D{i}" for i in range(1, 11)],
+)
+
+# Group and calculate stats
+stats = (
+    hh.groupby(["income_decile", "tenure_type"])["domestic_energy_consumption"]
+    .agg(
+        mean="mean",
+        p25=lambda x: np.percentile(x, 25),
+        p75=lambda x: np.percentile(x, 75),
+    )
+    .reset_index()
+)
+```
+
+**Key points:**
+- `simulation.output_dataset.data.household` is a `MicroDataFrame` with weights
+- `domestic_energy_consumption` is household-level (annual £)
+- `tenure_type` values: `OWNED_OUTRIGHT`, `OWNED_WITH_MORTGAGE`, `RENT_FROM_COUNCIL`, `RENT_PRIVATELY`, `RENT_FROM_HA`
+- Income deciles must be computed from simulation output (not raw data)
 
 ## Performance Tips
 

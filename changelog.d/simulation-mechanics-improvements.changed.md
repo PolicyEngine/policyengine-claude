@@ -1,0 +1,1 @@
+Expand policyengine-simulation-mechanics-skill with correct import paths, venv setup, UK dataset loading patterns, EFRS variable reference, and direct data analysis example; update python-skill with venv conflict resolution
