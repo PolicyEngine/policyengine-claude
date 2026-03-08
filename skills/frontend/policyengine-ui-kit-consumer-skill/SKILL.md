@@ -152,11 +152,15 @@ If working on the ui-kit itself, never add `@import "tailwindcss"` to `tokens.cs
 
 ### "Tokens load but no utility classes" — colors work but no flex/grid/padding
 
-This means `@theme` tokens are being processed but Tailwind's utility generation isn't scanning the consumer's files.
+This means `@theme` tokens are being processed but Tailwind's utility generation isn't scanning files correctly.
 
+**If missing classes are from the consumer's own components** (`app/`, `components/`):
 1. Verify `@import "tailwindcss"` comes BEFORE the ui-kit import (order matters)
 2. Check that `process.cwd()` is the project root when the build runs
 3. If in a monorepo, add `source()` to the import: `@import "tailwindcss" source("./src")`
+
+**If missing classes are from ui-kit components** (`DashboardShell`, `Header`, `InputPanel`, etc.):
+The ui-kit's `@source` directive in `tokens.css` may not match the actual directory structure. This is a ui-kit-side fix — the `@source` glob must cover all directories containing `.tsx` files with `className=` attributes. See the `tailwind-design-system-authoring` skill for the verification procedure.
 
 ### "Double styling / Tailwind defaults override tokens"
 
