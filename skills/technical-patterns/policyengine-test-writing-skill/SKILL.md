@@ -1,9 +1,11 @@
 ---
 name: policyengine-test-writing
 description: |
-  This skill should be used when writing unit tests, integration tests, or test fixtures for any
-  PolicyEngine codebase. Covers the Given-When-Then naming convention, fixture extraction, edge case
-  coverage, and the rule that only modified test files should be run.
+  This skill should be used when writing unit tests, integration tests, or test fixtures for
+  PolicyEngine frontend apps, APIs, SDKs, and standalone tools. NOT for country model packages
+  (policyengine-us, policyengine-uk, etc.) — those use YAML-based tests with their own conventions.
+  Covers the Given-When-Then naming convention, fixture extraction, edge case coverage, and the
+  rule that only modified test files should be run.
   Triggers: "write tests", "add tests", "unit test", "test file", "test coverage", "write a test for",
   "test this function", "test this component", "given when then", "test fixtures", "mock setup",
   "edge cases", "test naming", "test convention"
@@ -11,8 +13,21 @@ description: |
 
 # PolicyEngine Test Writing
 
-Standard conventions for writing tests across all PolicyEngine projects. These rules apply to
-every language and framework (Vitest, pytest, etc.) unless a project-specific override exists.
+Standard conventions for writing tests in PolicyEngine frontend apps, APIs, SDKs, and standalone tools.
+These rules apply to every language and framework (Vitest, pytest, etc.) unless a project-specific
+override exists.
+
+## Country model packages — use different conventions
+
+**Do NOT apply this skill to country model packages** (`policyengine-us`, `policyengine-uk`,
+`policyengine-canada`, etc.). Those repos use YAML-based tests with entirely different structure,
+naming, and tooling. For country packages, use these instead:
+
+- **`policyengine-testing-patterns-skill`** (`skills/technical-patterns/policyengine-testing-patterns-skill/SKILL.md`) — YAML test structure, naming conventions (`variable_name.yaml`, `integration.yaml`), period handling, error margins, and quality standards
+- **`test-creator` agent** (`agents/country-models/test-creator.md`) — Automated agent that creates comprehensive YAML integration tests for government benefit program implementations
+
+Country model tests are `.yaml` files that live alongside the variables they test, not `.test.ts` or
+`.test.py` files in a separate `tests/` directory.
 
 ## Core Principles
 
@@ -61,7 +76,7 @@ Each source file gets exactly one corresponding test file named `test_FILENAME`:
 | `utils/formatCurrency.ts` | `tests/unit/utils/test_formatCurrency.test.ts` |
 | `components/MetricCard.tsx` | `tests/unit/components/test_MetricCard.test.tsx` |
 | `lib/api/client.ts` | `tests/unit/lib/api/test_client.test.ts` |
-| `policyengine_us/variables/income.py` | `tests/unit/variables/test_income.py` |
+| `services/simulation.py` | `tests/unit/services/test_simulation.py` |
 
 The test file mirrors the source directory structure under a `tests/` root.
 

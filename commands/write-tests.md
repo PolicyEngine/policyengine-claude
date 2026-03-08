@@ -7,6 +7,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 
 Write well-structured unit tests following PolicyEngine conventions. Load the `policyengine-test-writing` skill first for full details on naming, fixtures, and edge cases.
 
+**Important:** This command is for frontend apps, APIs, SDKs, and standalone tools. It is NOT for country model packages (`policyengine-us`, `policyengine-uk`, etc.), which use YAML-based tests. For country packages, use the `policyengine-testing-patterns-skill` and the `test-creator` agent instead.
+
 ## Step 1: Identify target files
 
 Ask the user which file(s) to test. If none specified, ask:
