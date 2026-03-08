@@ -69,7 +69,8 @@
         "./commands/review-pr.md",
         "./commands/review-program.md",
         "./commands/fix-pr.md",
-        "./commands/create-pr.md"
+        "./commands/create-pr.md",
+        "./commands/write-tests.md"
       ],
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
@@ -89,7 +90,8 @@
         "./skills/technical-patterns/policyengine-code-organization-skill",
         "./skills/technical-patterns/policyengine-reform-patterns-skill",
         "./skills/documentation/policyengine-standards-skill",
-        "./skills/documentation/policyengine-writing-skill"
+        "./skills/documentation/policyengine-writing-skill",
+        "./skills/technical-patterns/policyengine-test-writing-skill"
       ]
     },
     {
@@ -147,7 +149,8 @@
         "./commands/review-pr.md",
         "./commands/fix-pr.md",
         "./commands/new-tool.md",
-        "./commands/audit-seo.md"
+        "./commands/audit-seo.md",
+        "./commands/write-tests.md"
       ],
       "skills": [
         "./skills/tools-and-apis/policyengine-app-skill",
@@ -159,7 +162,8 @@
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill",
-        "./skills/technical-patterns/seo-checklist-skill"
+        "./skills/technical-patterns/seo-checklist-skill",
+        "./skills/technical-patterns/policyengine-test-writing-skill"
       ]
     },
     {
@@ -300,7 +304,8 @@
         "./commands/review-program.md",
         "./commands/fix-pr.md",
         "./commands/new-tool.md",
-        "./commands/setup-verbs.md"
+        "./commands/setup-verbs.md",
+        "./commands/write-tests.md"
       ],
       "skills": [
         "./skills/domain-knowledge/policyengine-us-skill",
@@ -340,7 +345,8 @@
         "./skills/documentation/policyengine-research-lookup-skill",
         "./skills/documentation/policyengine-plugin-maintenance-skill",
         "./skills/content/content-generation-skill",
-        "./skills/technical-patterns/seo-checklist-skill"
+        "./skills/technical-patterns/seo-checklist-skill",
+        "./skills/technical-patterns/policyengine-test-writing-skill"
       ]
     }
   ]
