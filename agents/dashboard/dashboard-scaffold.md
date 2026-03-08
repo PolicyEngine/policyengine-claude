@@ -101,6 +101,7 @@ DASHBOARD_NAME/
 ├── plan.yaml                       # The approved plan
 ├── CLAUDE.md
 ├── README.md
+├── Makefile
 ├── vercel.json
 └── .gitignore
 ```
@@ -109,7 +110,7 @@ DASHBOARD_NAME/
 
 ```
 DASHBOARD_NAME/
-├── ... (same structure as above)
+├── ... (same structure as above, including Makefile)
 ├── backend/
 │   ├── modal_app.py
 │   ├── requirements.txt
@@ -139,19 +140,20 @@ Generate a CLAUDE.md following the pattern from existing applets (givecalc, ctc-
 
 ```bash
 bun install
-bun run dev
+make dev            # Full dev stack (Modal + frontend, random port)
+make dev-frontend   # Frontend only
 ```
 
 ## Testing
 
 ```bash
-bunx vitest run
+make test
 ```
 
 ## Build
 
 ```bash
-bun run build
+make build
 ```
 
 ## Design standards
@@ -322,6 +324,98 @@ jobs:
       - run: bun run build
 ```
 
+#### Makefile
+
+Generate a `Makefile` that provides standard development targets. The Makefile content depends on the `data_pattern` from `plan.yaml`.
+
+**IMPORTANT:** Makefile recipes must use literal tab characters for indentation, not spaces.
+
+**For all patterns:** The `dev` and `dev-frontend` targets must use a random available port, never hardcode port 3000. Use this Python one-liner to find a free port:
+
+```
+python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'
+```
+
+**For `precomputed`, `policyengine-api`, or `precomputed-csv` patterns:**
+
+```makefile
+.PHONY: dev dev-frontend
+.PHONY: build test lint clean
+
+# Start development server on a random available port
+dev: dev-frontend
+
+# Frontend only (no backend for this data pattern)
+dev-frontend:
+    @PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
+    echo "Starting dev server on http://localhost:$$PORT"; \
+    PORT=$$PORT bun run dev
+
+build:
+    bun run build
+
+test:
+    bunx vitest run
+
+lint:
+    bun run lint
+
+clean:
+    rm -rf .next node_modules
+```
+
+**For `custom-modal` pattern:**
+
+Replace `DASHBOARD_NAME` below with the actual `dashboard.name` value from `plan.yaml`.
+
+```makefile
+.PHONY: dev dev-frontend dev-backend
+.PHONY: build test test-backend lint clean
+
+# Start Modal backend + Next.js frontend together
+dev:
+    @echo "Starting Modal backend (ephemeral)..."
+    @modal serve backend/modal_app.py & MODAL_PID=$$!; \
+    sleep 5; \
+    MODAL_URL=$$(modal app list --json 2>/dev/null | \
+      python3 -c "import sys,json; apps=json.load(sys.stdin); \
+      print(next((a['url'] for a in apps \
+      if 'DASHBOARD_NAME' in a.get('name','')), ''))"); \
+    if [ -z "$$MODAL_URL" ]; then \
+      MODAL_URL="https://policyengine--DASHBOARD_NAME-fastapi-app-dev.modal.run"; \
+    fi; \
+    PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
+    echo "Modal backend: $$MODAL_URL"; \
+    echo "Frontend: http://localhost:$$PORT"; \
+    NEXT_PUBLIC_API_URL=$$MODAL_URL PORT=$$PORT bun run dev; \
+    kill $$MODAL_PID 2>/dev/null
+
+# Frontend only (uses production API or NEXT_PUBLIC_API_URL if set)
+dev-frontend:
+    @PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
+    echo "Starting dev server on http://localhost:$$PORT"; \
+    PORT=$$PORT bun run dev
+
+# Backend only
+dev-backend:
+    modal serve backend/modal_app.py
+
+build:
+    bun run build
+
+test:
+    bunx vitest run
+
+test-backend:
+    cd backend && uv run pytest
+
+lint:
+    bun run lint
+
+clean:
+    rm -rf .next node_modules
+```
+
 #### Embedding Boilerplate
 
 Generate country detection, hash sync, and share URL helpers in `lib/embedding.ts`:
@@ -406,6 +500,9 @@ If either fails, fix before proceeding.
 - [ ] `.claude/settings.json` auto-installs the dashboard-builder plugin
 - [ ] `vercel.json` is configured for frontend deployment
 - [ ] Feature branch is created and pushed
+- [ ] `Makefile` has correct targets for the data pattern
+- [ ] `make dev` uses a random port (does not hardcode 3000)
+- [ ] If custom-modal: `make dev` starts both Modal and Next.js together
 - [ ] Build passes on the scaffold
 - [ ] Initial test passes
 

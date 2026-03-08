@@ -329,7 +329,13 @@ async function runSinglePhase(
     });
 
     for await (const message of sdkQuery) {
+      if (message.type !== "result") {
+        ui.logSDKMessage(message);
+        continue;
+      }
       if (message.type === "result") {
+        // Clear any lingering \r heartbeat line
+        process.stdout.write("\r" + " ".repeat(80) + "\r");
         const r = message as SDKResultSuccess | SDKResultError;
         result = {
           phaseRunId,
@@ -689,6 +695,13 @@ async function runReviewPhase(
     `Duration: ${ui.formatDuration(Date.now() - runStart)}`,
     `Cost: $${totals.costUsd.toFixed(4)}`,
     `Tokens: ${totals.inputTokens.toLocaleString()} in / ${totals.outputTokens.toLocaleString()} out`,
+    ``,
+    `## How to run locally`,
+    ``,
+    `  make dev            # Start full dev stack (random port, no conflicts)`,
+    `  make dev-frontend   # Frontend only (uses production API)`,
+    `  make test           # Run tests`,
+    `  make build          # Production build`,
     ``,
     `Ready to commit and push to the remote repository.`,
   ].join("\n");

@@ -20,6 +20,15 @@ bun run build
 
 Record whether the build succeeded or failed. If it failed, capture the full error output.
 
+### Step 1b: Verify Makefile
+
+```bash
+test -f Makefile && echo "PASS: Makefile exists" || echo "FAIL: Makefile missing"
+make -n dev 2>&1 | head -5  # Dry-run to check syntax
+```
+
+Record whether the Makefile exists and whether `make -n dev` succeeds (exit code 0 = valid syntax).
+
 ### Step 2: Run Tests
 
 ```bash
@@ -38,6 +47,10 @@ Return a structured report:
 ### Build
 - Status: PASS / FAIL
 - [If FAIL: full error output]
+
+### Makefile
+- Status: PASS / FAIL
+- [If FAIL: Makefile missing or has syntax errors]
 
 ### Tests
 - Status: PASS / FAIL
