@@ -1,1 +1,0 @@
-Add frontend verification guardrails: require bun run build instead of curl for SPA verification, limit dependency troubleshooting to 2 attempts before asking user, prohibit destructive actions like rm -rf node_modules without approval
