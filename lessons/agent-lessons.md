@@ -31,3 +31,17 @@ Loaded by implementation agents on future runs.
 
 ## REFERENCE
 - PDF text extraction can misidentify state or program names from headers, footers, or watermarks; always verify the actual data content of a PDF rather than flagging it based on extracted metadata strings alone.
+
+# Frontend Development Lessons (2026-03-08)
+
+## VERIFICATION
+- `curl` returning 200 does NOT mean a frontend works. SPAs serve an HTML shell regardless of whether React components render. The only reliable check is `bun run build`.
+- Never claim a dev server is running without checking `lsof -i :<port>`.
+- You cannot visually verify a frontend. After the build passes and dev server starts, tell the user it's ready — don't claim it "looks good."
+
+## DEPENDENCY MANAGEMENT
+- When `bun install` fails, try at most 2 approaches before asking the user. Do not rabbit-hole into manual tar extraction, rm -rf node_modules, or obscure npm flags.
+- Never `rm -rf node_modules` without user approval.
+
+## ESCALATION
+- If you've tried 2 things and they haven't worked, stop and ask. The user would rather hear "I'm stuck, here's what I tried" than watch 15 minutes of increasingly desperate hacks.

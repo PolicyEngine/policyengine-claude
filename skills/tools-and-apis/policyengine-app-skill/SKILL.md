@@ -69,6 +69,39 @@ bun run build                        # Production build
 bun run test                         # Tests
 ```
 
+## CRITICAL: Frontend verification and troubleshooting
+
+### How to verify the frontend works
+
+The ONLY reliable way to verify the frontend compiles correctly is `bun run build`. This catches import errors, TypeScript errors, and missing dependencies.
+
+**`curl` is NOT verification.** Vite serves an HTML shell regardless of whether React components actually render. A 200 from curl means nothing for an SPA. Never use curl output as evidence that the frontend works.
+
+**You cannot visually verify a frontend.** After the build passes and dev server starts, tell the user it's ready for them to check in the browser. Do not claim it "looks good."
+
+Before making any claim about dev server status, check with `lsof -i :5173`. Do not assume it is running.
+
+### Correct verification sequence
+
+```bash
+bun run build                        # Catches all compile-time errors
+# If build passes and dev server needed:
+cd app && VITE_APP_MODE=website ./node_modules/.bin/vite --port 5173 &
+open http://localhost:5173/us         # User checks visually
+```
+
+### Dependency troubleshooting
+
+When `bun install` fails:
+
+1. Read the error. Fix the specific issue.
+2. Try at most **2 approaches** before asking the user for help.
+3. **Hard stops — never do these:**
+   - `rm -rf node_modules` without user approval
+   - Manually `npm pack` + `tar -xzf` packages into node_modules
+   - Editing lockfile internals
+   - Looping through increasingly obscure npm/bun flags
+
 ## Design tokens
 
 Import from `@/designTokens` (convenience layer that re-exports from the design-system package):
