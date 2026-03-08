@@ -31,10 +31,11 @@ bun install @policyengine/ui-kit
 
 **Import the theme CSS in your `globals.css`:**
 ```css
+@import "tailwindcss";
 @import "@policyengine/ui-kit/theme.css";
 ```
 
-This single import provides all design tokens, Tailwind v4 `@theme` configuration, and base styles.
+The first line enables Tailwind v4 utilities. The second provides all PE design tokens, `@theme` configuration, and base styles. Both are required — see `policyengine-ui-kit-consumer-skill` for details.
 
 **Source:** `PolicyEngine/policyengine-ui-kit/src/theme/tokens.css`
 

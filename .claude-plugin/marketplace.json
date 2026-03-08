@@ -168,7 +168,8 @@
         "./skills/technical-patterns/seo-checklist-skill",
         "./skills/technical-patterns/policyengine-test-writing-skill",
         "./skills/technical-patterns/policyengine-recharts-skill",
-        "./skills/frontend/policyengine-tailwind-shadcn-skill"
+        "./skills/frontend/policyengine-tailwind-shadcn-skill",
+        "./skills/frontend/policyengine-ui-kit-consumer-skill"
       ]
     },
     {
@@ -271,7 +272,8 @@
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill",
         "./skills/technical-patterns/policyengine-recharts-skill",
-        "./skills/frontend/policyengine-tailwind-shadcn-skill"
+        "./skills/frontend/policyengine-tailwind-shadcn-skill",
+        "./skills/frontend/policyengine-ui-kit-consumer-skill"
       ]
     },
     {
@@ -418,7 +420,8 @@
         "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
         "./skills/tools-and-apis/policyengine-modal-deployment-skill",
         "./skills/technical-patterns/policyengine-recharts-skill",
-        "./skills/frontend/policyengine-tailwind-shadcn-skill"
+        "./skills/frontend/policyengine-tailwind-shadcn-skill",
+        "./skills/frontend/policyengine-ui-kit-consumer-skill"
       ]
     }
   ]
