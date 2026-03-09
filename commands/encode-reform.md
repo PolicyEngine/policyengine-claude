@@ -8,7 +8,7 @@ Coordinate a multi-agent workflow to implement a contributed policy reform (prop
 
 **GLOBAL RULE — PDF Page Numbers**: Every PDF reference href MUST end with `#page=XX` (the file page number, NOT the printed page number). The ONLY exception is single-page PDFs. This rule applies to ALL agents in ALL phases.
 
-**GLOBAL RULE — Reform Skill**: Every implementation agent (param-architect, rules-engineer, test-creator, validator) MUST load `/policyengine-reform-patterns` in addition to their standard skills. This teaches the factory function pattern, `gov/contrib/` paths, `in_effect` toggle, `reforms:` test key, and registration in `reforms.py`.
+**GLOBAL RULE — Reform Skill**: Every implementation agent (rules-engineer, test-creator, validator) MUST load `/policyengine-reform-patterns` in addition to their standard skills. This teaches the factory function pattern, `gov/contrib/` paths, `in_effect` toggle, `reforms:` test key, and registration in `reforms.py`.
 
 ## Arguments
 
@@ -53,7 +53,7 @@ LESSONS_PATH = ~/.claude/projects/-Users-ziminghua-vscode-policyengine-us/memory
 | `{PREFIX}-bill-analysis.md` | bill-analyzer | consolidator | Full |
 | `{PREFIX}-bill.pdf` | bill-analyzer | prep-bill-pdf | Binary |
 | `sources/working_references.md` | bill-researcher | consolidator | Full |
-| `{PREFIX}-impl-spec.md` | consolidator | param-architect, rules-engineer, test-creator | Full |
+| `{PREFIX}-impl-spec.md` | consolidator | rules-engineer, test-creator | Full |
 | `{PREFIX}-impl-summary.md` | consolidator | Orchestrator | Short ≤20 |
 | `{PREFIX}-checkpoint.md` | validator | Orchestrator | Short ≤15 |
 | `{PREFIX}-test-results.md` | ci-fixer | Orchestrator | Short ≤10 |
@@ -231,7 +231,7 @@ Read `{PREFIX}-impl-summary.md` (SHORT file).
 
 ### Step 2A: Create Parameters
 
-Invoke @complete:country-models:parameter-architect:
+Invoke @complete:country-models:rules-engineer:
 
 ```
 Load skills: /policyengine-reform-patterns, /policyengine-parameter-patterns
@@ -354,7 +354,7 @@ LEARN FROM PAST SESSIONS: {LESSONS_PATH}
 
 Read `{PREFIX}-checkpoint.md` (SHORT file).
 
-If issues found, delegate fixes to the appropriate agent (param-architect for parameter issues, rules-engineer for code issues, test-creator for test issues).
+If issues found, delegate fixes to the appropriate agent (rules-engineer for parameter and code issues, test-creator for test issues).
 
 ---
 

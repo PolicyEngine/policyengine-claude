@@ -546,11 +546,11 @@ Spawn implementation agents in parallel. Each reads specs from disk — NOT from
 ### Tier A: Parameter Backdating (most common)
 
 ```
-subagent_type: "complete:country-models:parameter-architect",
+subagent_type: "complete:country-models:rules-engineer",
   team_name: "{st}-{prog}-backdate", name: "impl-parameters"
 ```
 
-The `parameter-architect` agent designs and modifies parameter structures with proper federal/state separation and zero hard-coding. It has Read, Write, Edit, MultiEdit, Grep, Glob, Skill access.
+The `rules-engineer` agent designs and modifies parameter structures with proper federal/state separation and zero hard-coding. It has Read, Write, Edit, MultiEdit, Grep, Glob, Skill access.
 
 **Instructions:**
 ```
@@ -1274,7 +1274,7 @@ On future `/backdate-program` runs, the `LEARN FROM PAST SESSIONS` block is alre
 | Phase | Agent | Has Lessons Block |
 |-------|-------|-------------------|
 | 2 | ref-auditor (reference-validator) | Yes |
-| 3 | impl-parameters (parameter-architect) | Yes |
+| 3 | impl-parameters (rules-engineer) | Yes |
 | 3 | impl-formulas (rules-engineer) | Yes |
 | 4A | test-creator | Yes |
 | 4B | edge-case-gen | Yes |
@@ -1304,7 +1304,7 @@ Prevention is better than fixing — lessons are loaded by all agents that write
 | 1 | consolidator | `general-purpose` | Custom merge logic across all findings |
 | 2 | ref-auditor | `complete:reference-validator` | Purpose-built for reference validation |
 | 2 | formula-reviewer | `complete:country-models:program-reviewer` | Purpose-built for regulation-vs-code comparison |
-| 3 | impl-parameters | `complete:country-models:parameter-architect` | Purpose-built for parameter YAML design |
+| 3 | impl-parameters | `complete:country-models:rules-engineer` | Purpose-built for parameter YAML design |
 | 3 | impl-formulas | `complete:country-models:rules-engineer` | Purpose-built for formula implementation |
 | 4 | test-creator | `complete:country-models:test-creator` | Purpose-built for integration tests |
 | 4 | edge-case-gen | `complete:country-models:edge-case-generator` | Purpose-built for boundary condition tests |
@@ -1330,7 +1330,7 @@ Prevention is better than fixing — lessons are loaded by all agents that write
 | `sources/working_references.md` | document-collector (Phase 0E) | Consolidator | Full |
 | `/tmp/{st}-{prog}-impl-spec.md` | Consolidator (Phase 1) | Impl agents, test agents | Full |
 | `/tmp/{st}-{prog}-impl-summary.md` | Consolidator (Phase 1) | Main Claude | Short |
-| `/tmp/{st}-{prog}-ref-audit.md` | reference-validator (Phase 2) | parameter-architect | Full |
+| `/tmp/{st}-{prog}-ref-audit.md` | reference-validator (Phase 2) | rules-engineer | Full |
 | `/tmp/{st}-{prog}-formula-audit.md` | program-reviewer (Phase 2) | rules-engineer | Full |
 | `/tmp/{st}-{prog}-phase2-summary.md` | program-reviewer (Phase 2) | Main Claude | Short |
 | `/tmp/{st}-{prog}-checkpoint.md` | quick-auditor (Phase 5) | Main Claude | Short |

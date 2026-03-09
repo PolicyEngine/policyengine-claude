@@ -316,7 +316,7 @@ Create tasks with dependencies. Agents read specs from disk — orchestrator doe
 ### Step 3A: Create Parameters
 
 ```
-subagent_type: "complete:country-models:parameter-architect"
+subagent_type: "complete:country-models:rules-engineer"
 team_name: "{PREFIX}-encode"
 name: "create-parameters"
 
@@ -348,7 +348,7 @@ RULES:
 
 ### Step 3B: Create Variables and Tests (Parallel)
 
-**ORCHESTRATOR RULE: Always spawn BOTH agents below, even if the parameter-architect created variable or test files.** Each agent is specialized for its task. If a previous agent went out of scope and created files that aren't its responsibility, the specialized agent will overwrite or improve them. Never skip an agent because "the files already exist."
+**ORCHESTRATOR RULE: Always spawn BOTH agents below (variables + tests), even if a previous agent created files outside its scope.** Each agent is specialized for its task. If a previous agent went out of scope and created files that aren't its responsibility, the specialized agent will overwrite or improve them. Never skip an agent because "the files already exist."
 
 After parameters are complete, spawn both in parallel — they work on different folders.
 

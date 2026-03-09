@@ -17,7 +17,6 @@ agents/
 │   ├── isolation-enforcement.md # Enforces agent isolation
 │   ├── isolation-setup.md       # Sets up isolation environment
 │   ├── issue-manager.md         # Manages GitHub issues and PRs
-│   ├── parameter-architect.md   # Designs parameter structures
 │   ├── performance-optimizer.md # Optimizes calculations
 │   ├── pr-pusher.md             # Formats and pushes PRs
 │   ├── program-reviewer.md      # Reviews regulatory compliance
@@ -87,7 +86,7 @@ See `country-models/workflow.md` for detailed workflow documentation.
 
 ## Complete Agent Directory
 
-### Country Models Agents (16)
+### Country Models Agents (15)
 
 | Agent | Description | Primary Use Case |
 |-------|-------------|------------------|
@@ -99,7 +98,6 @@ See `country-models/workflow.md` for detailed workflow documentation.
 | **implementation-validator** | Validates implementations for quality | Code quality assurance |
 | **integration-agent** | Advanced merge workflows | Branch management |
 | **issue-manager** | Finds or creates GitHub issues and PRs | Issue tracking and management |
-| **parameter-architect** | Designs comprehensive parameter structures | System design |
 | **performance-optimizer** | Optimizes benefit calculations for performance | Performance tuning |
 | **pr-pusher** | Formats and pushes PRs | PR quality control |
 | **program-reviewer** | Reviews government program implementations | Regulatory compliance |
@@ -150,8 +148,8 @@ See `country-models/workflow.md` for detailed workflow documentation.
 
 ## Total Agent Count
 
-- **Country Models**: 16 agents
+- **Country Models**: 15 agents
 - **Root-Level**: 3 agents
 - **API**: 1 agent
 - **App**: 5 agents
-- **Total**: 25 agents
+- **Total**: 24 agents
