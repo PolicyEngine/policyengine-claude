@@ -1127,6 +1127,7 @@ When you create parameters, you MUST create corresponding variables:
 |---------------|---------------------|
 | resources/limit | `state_program_resources_eligible` |
 | income/limit | `state_program_income_eligible` |
+| min_work_hours or activity_requirements | `state_program_activity_eligible` |
 | payment_standard | `state_program_maximum_benefit` |
 | income/disregard | `state_program_countable_earned_income` |
 | categorical/requirements | `state_program_categorically_eligible` |
@@ -1147,8 +1148,41 @@ class state_program_eligible(Variable):
 
 **Common Implementation Failures:**
 - ❌ Created resource limit parameter but no resource_eligible variable
-- ❌ Main eligible variable only checks income, ignores resources
+- ❌ Created min_work_hours parameter but no activity_eligible variable
+- ❌ Main eligible variable only checks income, ignores resources/work/immigration
 - ❌ Parameters created but never referenced in any formula
+- ❌ Spec lists requirements (work hours, citizenship) but no variables implement them
+
+---
+
+## Childcare Subsidy Benefit Calculation
+
+Childcare subsidy programs (CCAP, CCFA, etc.) share a common pattern: the benefit is capped at actual childcare expenses, not just the provider reimbursement rate.
+
+PolicyEngine has an existing federal variable `pre_subsidy_childcare_expenses` (Person, YEAR) that represents what families actually pay for childcare. **Always use this variable** — don't calculate the benefit from provider rates alone.
+
+```python
+# ❌ BAD — subsidy based only on provider rate (ignores actual expenses)
+class ri_ccap(Variable):
+    def formula(spm_unit, period, parameters):
+        total_weekly_rate = spm_unit.sum(weekly_rate * is_eligible_child)
+        return max_(total_weekly_rate - family_share, 0)
+
+# ✅ GOOD — subsidy capped at actual expenses (matches MA CCFA, CO CCAP pattern)
+class ri_ccap(Variable):
+    def formula(spm_unit, period, parameters):
+        actual_expenses = spm_unit(
+            "spm_unit_pre_subsidy_childcare_expenses", period.this_year
+        )
+        copay = spm_unit("ri_ccap_family_share", period)
+        max_reimbursement = add(spm_unit, period, ["ri_ccap_weekly_provider_rate"])
+        uncapped_benefit = max_(actual_expenses - copay, 0)
+        return min_(uncapped_benefit, max_reimbursement)
+```
+
+The subsidy is the lesser of:
+1. Actual expenses minus co-payment
+2. Maximum reimbursement (provider rate based on type, quality, age, time)
 
 ---
 

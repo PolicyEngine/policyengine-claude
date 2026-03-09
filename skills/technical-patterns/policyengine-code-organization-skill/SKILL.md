@@ -69,6 +69,7 @@ Use these standard suffixes with your variable prefix:
 {prefix}_eligible              # Final eligibility (combines all checks)
 {prefix}_income_eligible       # Income eligibility
 {prefix}_resource_eligible     # Resource/asset eligibility
+{prefix}_activity_eligible     # Work/activity requirement eligibility
 {prefix}_categorical_eligible  # Categorical eligibility
 {prefix}_demographic_eligible  # Age, household composition eligibility
 {prefix}_immigration_eligible  # Immigration status eligibility
@@ -193,6 +194,41 @@ policyengine_us/tests/policy/baseline/gov/states/{state}/{agency}/{program}/
 ├── {prefix}_income_eligible.yaml
 └── integration.yaml          # Always named integration.yaml
 ```
+
+---
+
+## Parameter Folder Organization
+
+Parameter folders follow similar principles to variable folders — group by function.
+
+### Keep folders focused on their purpose
+
+Each subfolder should contain parameters that serve the same function. Don't use a folder as a catch-all.
+
+```
+# ❌ BAD — eligibility/ contains rate dimension boundaries that aren't eligibility criteria
+ccap/
+├── eligibility/
+│   ├── income_limit.yaml           # ✅ Eligibility
+│   ├── child_age_threshold.yaml    # ✅ Eligibility
+│   ├── center_infant_max_months.yaml  # ❌ Rate table age group boundary
+│   ├── preschool_max_years.yaml       # ❌ Rate table age group boundary
+│   └── time_category.yaml            # ❌ Authorization concept
+└── rates/
+
+# ✅ GOOD — each folder contains parameters that match its purpose
+ccap/
+├── age_groups/                     # Age group boundaries for rate lookups
+│   ├── center_infant_max_months.yaml
+│   └── preschool_max_years.yaml
+├── eligibility/                    # Actual eligibility criteria
+│   ├── income_limit.yaml
+│   └── child_age_threshold.yaml
+├── rates/
+└── time_category.yaml              # At root — doesn't fit neatly in a subfolder
+```
+
+**The key question**: "Is this parameter an eligibility rule, a rate-table dimension boundary, a benefit calculation input, or something else?" Put it in the folder that matches its function.
 
 ---
 
