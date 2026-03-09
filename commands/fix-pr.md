@@ -346,7 +346,7 @@ After all decisions are made, write `/tmp/fix-pr-plan.md`:
 ## Fix Plan for PR #{PR_NUMBER}
 
 ### Confirmed Fixes
-- [2A] {file}: Missing reference — parameter-architect
+- [2A] {file}: Missing reference — rules-engineer
 - [2B] {file}: Regulatory mismatch — rules-engineer
 - [2B] {file}: Hard-coded value — rules-engineer (depends on 2A)
 - [2C] {variable}: Missing boundary test — edge-case-generator
@@ -356,7 +356,7 @@ After all decisions are made, write `/tmp/fix-pr-plan.md`:
 - {file}: Hard-coded value — already fixed (POSSIBLY-FIXED confirmed)
 
 ### Fix Order
-1. Parameter fixes: {count} issues → parameter-architect
+1. Parameter fixes: {count} issues → rules-engineer
 2. Variable fixes: {count} issues → rules-engineer (after parameters)
 3. Test fixes: {count} issues → edge-case-generator (after variables)
 4. CI fixes: run after all above → ci-fixer
@@ -375,7 +375,7 @@ After all decisions are made, write `/tmp/fix-pr-plan.md`:
 Skip if no parameter issues in the fix plan.
 
 ```
-subagent_type: "complete:country-models:parameter-architect"
+subagent_type: "complete:country-models:rules-engineer"
 name: "fix-parameters"
 
 "Fix parameter issues for PR #{PR_NUMBER}.
@@ -585,9 +585,9 @@ Present to user:
 
 | Issue Type | Step | Agent (`complete:country-models:` prefix) |
 |------------|------|-------|
-| Missing reference | 3A | `parameter-architect` |
-| Bad reference format | 3A | `parameter-architect` |
-| Hard-coded value (create param) | 3A | `parameter-architect` |
+| Missing reference | 3A | `rules-engineer` |
+| Bad reference format | 3A | `rules-engineer` |
+| Hard-coded value (create param) | 3A | `rules-engineer` |
 | Hard-coded value (use param) | 3B | `rules-engineer` |
 | Regulatory mismatch | 3B | `rules-engineer` |
 | Pattern violation (adds, add()) | 3B | `rules-engineer` |

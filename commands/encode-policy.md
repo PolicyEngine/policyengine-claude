@@ -123,7 +123,7 @@ Before proceeding to development, verify the specification is complete:
 
 ### Step 3A: Create Parameters
 
-**@complete:country-models:parameter-architect** → works in `parameters/` folder:
+**@complete:country-models:rules-engineer** → works in `parameters/` folder:
 - Create complete parameter structure from documentation
 - All thresholds, amounts, rates, income limits
 - Include proper references with PDF page numbers
@@ -193,7 +193,7 @@ After variables are created, add the main benefit variable to `parameters/gov/ho
 - This ensures the benefit flows into `spm_unit_benefits` and household income calculations
 
 **Quality Requirements**:
-- parameter-architect: Complete parameters with references before variables
+- rules-engineer: Complete parameters with references before variables
 - rules-engineer: ZERO hard-coded values, use parameters from Step 3A
 - test-creator: All tests (unit + integration) created together, based purely on documentation
 - edge-case-generator: Edge cases based on actual variable implementations
@@ -244,7 +244,7 @@ Invoke @complete:country-models:reference-validator to:
 - Verify references corroborate parameter values
 - Check jurisdiction match (federal vs state sources)
 
-**If issues found**: ci-fixer delegates to parameter-architect to fix reference issues.
+**If issues found**: ci-fixer delegates to rules-engineer to fix reference issues.
 
 ### Step 5B: Run Tests & Fix
 
@@ -373,7 +373,7 @@ Execute all phases sequentially without stopping. After Phase 2, assess program 
    - **After this phase: assess program complexity** to determine which later phases to skip
 
 3. **Phase 3**: Development
-   - **Step 3A:** Run parameter-architect to create parameters
+   - **Step 3A:** Run rules-engineer to create parameters
    - **Step 3B:** Run test-creator and rules-engineer in parallel (different folders)
    - **Step 3C:** Run edge-case-generator to add edge case tests *(skip for simple programs)*
    - All agents use variable prefix from `sources/working_references.md`

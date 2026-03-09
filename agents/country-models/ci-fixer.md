@@ -407,7 +407,7 @@ grep -A 20 "class tanf_gross_earned_income" policyengine_us/variables/gov/usda/s
 
 **4. Parameter Issues:**
 - **Symptom:** Parameter value is wrong or parameter structure is invalid
-- **Action:** Invoke @parameter-architect with:
+- **Action:** Invoke @rules-engineer with:
   - Parameter file that needs fixing
   - Correct value from documentation
   - Ask to update parameter
@@ -420,7 +420,7 @@ if calculation_error:
 elif test_expectation_wrong:
     invoke_agent("test-creator", f"Update {test_file}: calculation shows {correct_value}")
 elif parameter_wrong:
-    invoke_agent("parameter-architect", f"Fix {param_file}: should be {correct_value}")
+    invoke_agent("rules-engineer", f"Fix {param_file}: should be {correct_value}")
 ```
 
 **YOU MUST:**
