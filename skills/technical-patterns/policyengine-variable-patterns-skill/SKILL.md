@@ -207,6 +207,29 @@ class some_variable(Variable):
     reference = "https://example.gov/rules.pdf#page=10"  # USE THIS
 ```
 
+### Scoping `defined_for` to the Right Level
+
+`defined_for` controls which entities run the formula. Use the most specific scope that fits:
+
+```python
+# ❌ TOO BROAD — calculates rates for all RI residents (adults, ineligible children)
+class ri_ccap_licensed_center_rate(Variable):
+    entity = Person
+    defined_for = StateCode.RI
+
+# ✅ CORRECT — only calculates rates for children eligible for CCAP
+class ri_ccap_licensed_center_rate(Variable):
+    entity = Person
+    defined_for = "ri_ccap_eligible_child"
+```
+
+**Guidelines:**
+- **SPMUnit-level benefit variables** → `defined_for = "state_program_eligible"` (the main eligibility variable)
+- **Person-level variables within a program** (rates, per-child amounts) → `defined_for = "state_program_eligible_child"` or the person-level eligibility variable
+- **Eligibility check variables themselves** → `defined_for = StateCode.XX` (they determine eligibility, so they can't depend on it)
+
+This avoids unnecessary computation and makes the variable's scope clear from its definition.
+
 **Reference format:**
 ```python
 # Single reference:
