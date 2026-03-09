@@ -196,23 +196,6 @@ policyengine_us/tests/policy/baseline/gov/states/{state}/{agency}/{program}/
 
 ---
 
-## Finding Existing Examples
-
-To see naming patterns from similar programs:
-
-```bash
-# Find state programs
-ls policyengine_us/variables/gov/states/{state}/
-
-# Find similar program implementations
-grep -r "class {state}_" policyengine_us/variables/gov/states/{state}/ | head -10
-
-# Check parameter structure
-ls policyengine_us/parameters/gov/states/{state}/{agency}/{program}/
-```
-
----
-
 ## Common Mistakes to Avoid
 
 ### Variable Names
@@ -248,15 +231,3 @@ az_liheap.yaml
 az_liheap_eligible.yaml
 ```
 
----
-
-## Quick Reference
-
-| Element | Pattern | Example |
-|---------|---------|---------|
-| Main benefit | `{prefix}` | `az_liheap` |
-| Eligibility | `{prefix}_eligible` | `az_liheap_eligible` |
-| Income eligibility | `{prefix}_income_eligible` | `az_liheap_income_eligible` |
-| Maximum benefit | `{prefix}_maximum_benefit` | `az_liheap_maximum_benefit` |
-| Integration test | `integration.yaml` | `integration.yaml` |
-| Unit test | `{variable_name}.yaml` | `az_liheap_eligible.yaml` |

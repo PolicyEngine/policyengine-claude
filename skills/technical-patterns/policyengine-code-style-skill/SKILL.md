@@ -97,35 +97,20 @@ def formula(spm_unit, period, parameters):
 
 ## Pattern 4: Period Access - period vs period.this_year
 
-### ❌ Bad - Wrong period access
-
 ```python
-def formula(person, period, parameters):
-    # MONTH formula accessing YEAR variables
-    age = person("age", period)  # ❌ Gives age/12 = 2.5 "monthly age"
-    assets = person("assets", period)  # ❌ Gives assets/12
-    monthly_income = person("employment_income", period.this_year) / MONTHS_IN_YEAR  # ❌ Redundant
+# ❌ Bad
+age = person("age", period)  # Gives age/12
+monthly_income = person("employment_income", period.this_year) / MONTHS_IN_YEAR  # Redundant
 
-    return (age >= 18) & (assets < 10000) & (monthly_income < 2000)
+# ✅ Good
+age = person("age", period.this_year)  # Gets actual age
+monthly_income = person("employment_income", period)  # Auto-converts to monthly
 ```
 
-### ✅ Good - Correct period access
-
-```python
-def formula(person, period, parameters):
-    # MONTH formula accessing YEAR variables
-    age = person("age", period.this_year)  # ✅ Gets actual age (30)
-    assets = person("assets", period.this_year)  # ✅ Gets actual assets ($10,000)
-    monthly_income = person("employment_income", period)  # ✅ Auto-converts to monthly
-
-    p = parameters(period).gov.program.eligibility
-    return (age >= p.age_min) & (age <= p.age_max) &
-           (assets < p.asset_limit) & (monthly_income < p.income_threshold)
-```
-
-**Rule:**
 - Income/flows → Use `period` (want monthly from annual)
 - Age/assets/counts/booleans → Use `period.this_year` (don't divide by 12)
+
+See **policyengine-period-patterns** skill for the full decision tree and more examples.
 
 ---
 
@@ -463,31 +448,4 @@ Before finalizing code:
 - [ ] Combined boolean logic when possible
 - [ ] Minimal comments (code should be self-documenting)
 
----
 
-## Key Takeaways
-
-1. **Less is more** - Eliminate unnecessary variables
-2. **Direct is better** - Access parameters and return directly
-3. **Combine when logical** - Group related boolean conditions
-4. **Keep when needed** - Complex calculations and reused values deserve variables
-5. **Period matters** - Use correct period access to avoid auto-conversion bugs
-
----
-
-## Related Skills
-
-- **policyengine-period-patterns-skill** - Deep dive on period handling
-- **policyengine-implementation-patterns-skill** - Variable structure and patterns
-- **policyengine-vectorization-skill** - NumPy operations and vectorization
-
----
-
-## For Agents
-
-When writing or reviewing formulas:
-1. **Scan for single-use variables** - eliminate them
-2. **Check period access** - ensure correct for variable type
-3. **Look for hardcoded values** - parameterize them
-4. **Identify redundant steps** - streamline them
-5. **Consider readability** - keep complex calculations clear

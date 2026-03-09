@@ -213,19 +213,6 @@ class monthly_tanf_eligible(Variable):
         return age_eligible & asset_eligible & income_eligible
 ```
 
-### Quick Reference for Auto-Conversion
-
-| Variable Type | Use `period` | Use `period.this_year` | Why |
-|--------------|-------------|----------------------|-----|
-| Income (flow) | ✅ | ❌ | Want monthly portion |
-| Age | ❌ | ✅ | Age/12 is meaningless |
-| Assets/Resources (stock) | ❌ | ✅ | Point-in-time value |
-| Household size/counts | ❌ | ✅ | Can't divide people |
-| Boolean/status flags | ❌ | ✅ | True/12 is nonsense |
-| Demographic attributes | ❌ | ✅ | Properties don't divide |
-
-**Rule of thumb:** If dividing by 12 makes the value meaningless → use `period.this_year`
-
 ### Pattern 3: Converting Annual to Monthly
 
 ```python
@@ -401,38 +388,7 @@ output:
 
 ---
 
-## 8. Quick Patterns Cheat Sheet
-
-### Accessing Variables
-| Your Formula | Target Variable | Use |
-|--------------|-----------------|-----|
-| MONTH | YEAR | `period.this_year` |
-| YEAR | MONTH | `period.first_month` |
-| Any | ETERNITY | `period` |
-
-### Common Variables That Need period.this_year
-- `age`
-- `household_size`, `spm_unit_size`
-- `cash_assets`, `vehicles_value`
-- `state_name`, `state_code`
-- Any demographic variable
-
-### Period Conversion
-```python
-# Annual to monthly
-monthly = annual / MONTHS_IN_YEAR
-
-# Monthly to annual
-annual = monthly * MONTHS_IN_YEAR
-
-# Get year/month numbers
-year = period.start.year  # 2024
-month = period.start.month  # 1-12
-```
-
----
-
-## 9. Real-World Example
+## 8. Real-World Example
 
 ```python
 class tanf_income_eligible(Variable):
@@ -457,33 +413,3 @@ class tanf_income_eligible(Variable):
 
         return gross_income <= monthly_limit
 ```
-
----
-
-## 10. Checklist for Period Handling
-
-When writing a formula:
-
-- [ ] Identify your formula's `definition_period`
-- [ ] Check `definition_period` of accessed variables
-- [ ] Use `period.this_year` for YEAR variables from MONTH formulas
-- [ ] Use `period` for parameters (not `period.this_year`)
-- [ ] Convert units when comparing (annual ↔ monthly)
-- [ ] Test with appropriate period values
-
----
-
-## Related Skills
-
-- **policyengine-aggregation-skill**: For summing across entities with period handling
-- **policyengine-core-skill**: For understanding variable and parameter systems
-
----
-
-## For Agents
-
-1. **Always check definition_period** before accessing variables
-2. **Default to period.this_year** for demographic/stock variables from MONTH formulas
-3. **Test thoroughly** - period mismatches cause subtle bugs
-4. **Document period conversions** in comments
-5. **Follow existing patterns** in similar variables
