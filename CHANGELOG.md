@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.1] - 2026-03-09
+
+### Changed
+
+- Add agent teams support to review-program command
+
 ## [3.18.0] - 2026-03-08
 
 ### Added
@@ -207,6 +213,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.18.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.18.0...3.18.1
 [3.18.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.17.1...3.18.0
 [3.17.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.17.0...3.17.1
 [3.17.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.16.1...3.17.0
