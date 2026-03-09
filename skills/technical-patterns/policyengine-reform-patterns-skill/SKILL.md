@@ -222,13 +222,6 @@ def create_xx_reform_reform(parameters, period, bypass: bool = False):
 xx_reform = create_xx_reform_reform(None, None, bypass=True)
 ```
 
-### Why two functions?
-
-| Function | Purpose |
-|----------|---------|
-| `create_xx_reform()` | Defines variables + Reform class. Pure logic, no parameter checks. |
-| `create_xx_reform_reform(parameters, period, bypass)` | Conditional wrapper. Returns `None` if reform isn't active. |
-
 ### The 5-year lookahead
 
 The outer function scans 5 years forward from the simulation period. This ensures reforms set to activate in a future year (e.g., `2027-01-01: true`) are still loaded when simulating 2026.

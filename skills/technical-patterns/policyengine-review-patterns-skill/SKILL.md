@@ -197,57 +197,21 @@ For each parameter file:
 
 ### Vectorization Scan
 
-Search for these patterns:
-```python
-# Red flags that indicate scalar logic:
-"if household"
-"if person"
-"elif"
-"else:"
-"and " (should be &)
-"or " (should be |)
-"not " (should be ~)
-```
+See **policyengine-vectorization** skill for comprehensive vectorization patterns and scan targets.
 
 ### Hard-Coding Scan
 
-Search for numeric literals:
+Search for numeric literals — flag anything like:
 ```python
-# Check for any number except:
-# 0, 1, -1 (basic math)
-# 12 (month conversion)
-# Small indices (2, 3 for known structures)
-
-# Flag anything like:
 "0.5"
 "100"
 "0.33"
-"65" (unless it's a standard age)
+"65"
 ```
 
 ---
 
 ## Review Response Templates
-
-### For Approval
-
-```markdown
-## PolicyEngine Review: APPROVED ✅
-
-### Verification Summary
-- ✅ All parameters trace to primary sources
-- ✅ Code is properly vectorized
-- ✅ Tests document calculations
-- ✅ No hard-coded values
-
-### Strengths
-- Excellent USC/CFR citations
-- Comprehensive test coverage
-- Clear calculation logic
-
-### Minor Suggestions (optional)
-- Consider adding edge case for zero income
-```
 
 ### For Changes Required
 
@@ -400,13 +364,3 @@ When reviewing PRs that rename variables or functions across the codebase:
 
 ---
 
-## For Agents
-
-When reviewing code:
-1. **Check vectorization first** - crashes are worst
-2. **Verify parameter sources** - accuracy critical
-3. **Scan for hard-coding** - maintainability issue
-4. **Validate test quality** - ensures correctness
-5. **Run all tests** - catch integration issues
-6. **Document issues clearly** - help fixes
-7. **Provide fix examples** - speed resolution

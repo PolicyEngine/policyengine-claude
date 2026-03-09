@@ -352,27 +352,7 @@ total = household.sum(eligible_income)
 
 ---
 
-## 7. Performance Implications
-
-### Why Vectorization Matters
-
-- **Scalar logic**: Processes 1 household at a time → SLOW
-- **Vectorized**: Processes 1000s of households simultaneously → FAST
-
-```python
-# Performance comparison
-❌ SLOW (if it worked):
-for household in households:
-    if household.income > 1000:
-        household.benefit = 500
-
-✅ FAST:
-benefits = where(incomes > 1000, 500, 100)  # All at once!
-```
-
----
-
-## 8. Testing for Vectorization Issues
+## 7. Testing for Vectorization Issues
 
 ### Signs Your Code Isn't Vectorized
 
@@ -418,31 +398,9 @@ def test_vectorization():
 
 ### Problem: Non-Zero Tax Despite Zero Taxable Income
 
-When state tax calculations produce small non-zero values (e.g., $277) even though taxable income is zero, check for:
+When state tax calculations produce small non-zero values (e.g., $277) even though taxable income is zero, the root cause is usually phantom intermediate values in calculation chains.
 
-#### Root Cause 1: Implicit Type Conversion in min/max Operations
-
-```python
-# Example from Montana income tax bug
-❌ WRONG - Creates phantom values:
-def formula(tax_unit, period, parameters):
-    regular_tax_before_credits = tax_unit("mt_income_tax_before_credits", period)
-    credits = tax_unit("mt_income_tax_refundable_credits", period)
-
-    # BUG: min() with int 0 converts float array to int, losing precision
-    # When regular_tax_before_credits = 0.0, this can produce non-zero results
-    return max_(regular_tax_before_credits - credits, 0)
-
-✅ CORRECT - Preserves array types:
-def formula(tax_unit, period, parameters):
-    regular_tax_before_credits = tax_unit("mt_income_tax_before_credits", period)
-    credits = tax_unit("mt_income_tax_refundable_credits", period)
-
-    # Use max_() which handles arrays correctly
-    return max_(regular_tax_before_credits - credits, 0)
-```
-
-#### Root Cause 2: Phantom Intermediate Values in Calculation Chains
+#### Phantom Intermediate Values in Calculation Chains
 
 When taxable income is zero but tax is non-zero, trace the calculation chain:
 
@@ -486,23 +444,3 @@ When you see phantom tax values:
    ❌ Avoid: max(value, 0) - Python's max can cause type issues
    ```
 
-#### Common Symptoms
-
-- Tax calculated despite zero taxable income
-- Small non-zero values when expecting exactly zero
-- Tax values that don't match manual calculations
-- Capital gains deductions not properly reducing taxable income
-
----
-
-## For Agents
-
-When implementing formulas:
-1. **Never use if-elif-else** with entity data
-2. **Always use where()** for simple conditions
-3. **Use select()** for multiple conditions
-4. **Use NumPy operators** (&, |, ~) not Python (and, or, not)
-5. **Test with arrays** to ensure vectorization
-6. **Parameter conditions** can use if-else (scalars)
-7. **Entity data** must use vectorized operations
-8. **Debug phantom values** by tracing calculation chains and checking type preservation
