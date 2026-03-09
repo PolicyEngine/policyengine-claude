@@ -76,6 +76,8 @@ All `/tmp/` files in this command use `{PREFIX}` in their paths (e.g., `/tmp/{PR
 rm -f /tmp/{PREFIX}-review-*.md /tmp/{PREFIX}-review-pdf-*.{pdf,txt,png} /tmp/{PREFIX}-600dpi-*.png /tmp/{PREFIX}-ext-*.{pdf,txt,png,md}
 ```
 
+TeamCreate(`{PREFIX}-review`)
+
 ```
 Parse $ARGUMENTS:
 - PR_ARG: first non-flag, non-URL argument (number or search text)
@@ -147,6 +149,7 @@ Must be `general-purpose` (not Explore) because it needs the Write tool to save 
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "context-analyzer"
 run_in_background: true
 
@@ -208,6 +211,7 @@ echo "## PDF Manifest\n### No PDF (skipped)\n- Reason: {--skip-pdf flag / no sou
 
 ```
 subagent_type: "complete:country-models:document-collector"
+team_name: "{PREFIX}-review"
 name: "pdf-collector"
 run_in_background: true
 ```
@@ -332,6 +336,7 @@ Spawn ALL agents in a **single message** for maximum parallelism. Two groups run
 
 ```
 subagent_type: "complete:country-models:program-reviewer"
+team_name: "{PREFIX}-review"
 name: "regulatory-reviewer"
 run_in_background: true
 ```
@@ -363,6 +368,7 @@ PDF text available at: {paths from manifest, for cross-reference only}"
 
 ```
 subagent_type: "complete:reference-validator"
+team_name: "{PREFIX}-review"
 name: "reference-checker"
 run_in_background: true
 ```
@@ -390,6 +396,7 @@ PDF manifest: /tmp/{PREFIX}-review-pdf-manifest.md"
 
 ```
 subagent_type: "complete:country-models:implementation-validator"
+team_name: "{PREFIX}-review"
 name: "code-validator"
 run_in_background: true
 ```
@@ -428,6 +435,7 @@ Files to review: {list from Phase 3}"
 
 ```
 subagent_type: "complete:country-models:edge-case-generator"
+team_name: "{PREFIX}-review"
 name: "edge-case-checker"
 run_in_background: true
 ```
@@ -455,6 +463,7 @@ Spawn 2-5 `general-purpose` agents, one per topic from Phase 3. Each agent gets 
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "pdf-audit-{topic}"
 run_in_background: true
 ```
@@ -511,6 +520,7 @@ For each cross-reference flag from PDF audit agents, spawn a **verification agen
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "verifier-xref-{N}"
 run_in_background: true
 ```
@@ -542,6 +552,7 @@ For each external PDF flag, spawn a **verification agent**:
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "verifier-ext-{N}"
 run_in_background: true
 ```
@@ -583,6 +594,7 @@ STEPS:
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "verifier-codepath-{N}"
 run_in_background: true
 ```
@@ -649,6 +661,7 @@ For each surviving mismatch, spawn a **visual verification agent**:
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "verifier-mismatch-{N}"
 run_in_background: true
 ```
@@ -692,6 +705,7 @@ If the PR adds PDF references (`#page=XX`), delegate page number verification to
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "verifier-pages"
 run_in_background: true
 ```
@@ -728,6 +742,7 @@ Delegate consolidation to a single agent to protect Main Claude's context.
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "consolidator"
 run_in_background: false
 ```
@@ -792,6 +807,7 @@ After the consolidator completes, read ONLY `/tmp/{PREFIX}-review-summary.md` (m
 
 ```
 subagent_type: "general-purpose"
+team_name: "{PREFIX}-review"
 name: "display-agent"
 
 "Read /tmp/{PREFIX}-review-full-report.md and present it to the user.
