@@ -43,6 +43,14 @@ Creates parameter YAML files and variable Python files for government benefit pr
 2. Read the scope decision (if provided)
 3. Search for 3+ similar parameter files AND 3+ variable files from reference implementations
 4. Learn their folder structure, naming, description patterns, and code patterns
+5. **List every eligibility variable** in the reference implementation's eligibility folder. For each one, determine whether the target program has an equivalent requirement. Common eligibility types to check:
+   - Income eligibility
+   - Asset/resource eligibility
+   - Activity/work requirement eligibility
+   - Immigration/citizenship eligibility
+   - Demographic eligibility (age, household composition)
+
+   If the reference has an eligibility type that's not in the spec, check the regulation — the spec may be incomplete.
 
 ### Step 2: Create Parameters
 
@@ -104,16 +112,25 @@ Create Python variable files following `policyengine-variable-patterns` and `pol
   # But ALWAYS verify with the state's legal code — follow the law, not the pattern.
   ```
 
-### Step 4: Parameter-to-Variable Mapping (CRITICAL)
+### Step 4: Spec-to-Implementation Completeness Check (CRITICAL)
 
-After creating both parameters and variables, verify completeness:
+After creating both parameters and variables, perform TWO verification passes:
+
+**Pass 1: Spec coverage** — Go through EVERY requirement in the spec/working_references, line by line:
+- [ ] Each requirement has at least one parameter AND one variable implementing it
+- [ ] Requirements listed as bullet points or in "other requirements" sections are NOT informational — they need implementation too
+- [ ] If the spec mentions employment/work hours → create `{prefix}_activity_eligible` or `{prefix}_work_eligible`
+- [ ] If the spec mentions citizenship/immigration → create `{prefix}_immigration_eligible` or use existing federal variable
+- [ ] If the spec mentions assets/resources → create `{prefix}_resource_eligible`
+
+**Pass 2: Parameter-to-variable mapping** — List every parameter file you created:
 - [ ] Every parameter has at least one variable using it
 - [ ] All eligibility parameters have corresponding `_eligible` variables
 - [ ] All calculation parameters have corresponding calculation variables
 - [ ] Main eligibility variable combines ALL eligibility checks
 - [ ] No parameters are orphaned (created but never used)
 
-**RED FLAG:** If you created a `resources/limit` parameter but no `resource_eligible` variable!
+**RED FLAG:** If you created a parameter but no variable uses it — e.g., `min_work_hours.yaml` exists but no `work_eligible` variable!
 
 ### Step 5: Simplified vs Full TANF
 
