@@ -70,6 +70,37 @@ else:
 )
 ```
 
+### Pattern 2b: Enum Dispatch → List ALL Conditions
+
+When dispatching on an Enum variable, list all values explicitly in `select()`. Set the `default` to match the Enum's `default_value` so unexpected values get consistent behavior.
+
+```python
+# ❌ BAD — hides one option in default, unclear which is the fallback
+provider_type = person("ri_ccap_provider_type", period)
+types = provider_type.possible_values
+return select(
+    [
+        provider_type == types.LICENSED_CENTER,
+        provider_type == types.LICENSED_FAMILY,
+    ],
+    [center_rate, family_rate],
+    default=exempt_rate,  # Why exempt as fallback?
+)
+
+# ✅ GOOD — all options listed, default matches Enum default_value
+provider_type = person("ri_ccap_provider_type", period)
+types = provider_type.possible_values
+return select(
+    [
+        provider_type == types.LICENSED_CENTER,
+        provider_type == types.LICENSED_FAMILY,
+        provider_type == types.LICENSE_EXEMPT,
+    ],
+    [center_rate, family_rate, exempt_rate],
+    default=center_rate,  # Matches default_value = LICENSED_CENTER
+)
+```
+
 ### Pattern 3: Boolean Operations
 
 ```python
