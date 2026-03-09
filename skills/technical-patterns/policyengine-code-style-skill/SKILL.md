@@ -147,6 +147,20 @@ def formula(spm_unit, period, parameters):
     return age_eligible & income_eligible
 ```
 
+### Use Framework Constants, Not Custom Parameters
+
+PolicyEngine provides constants for universal conversion factors. Don't create parameters for these:
+
+```python
+# ❌ BAD — created a weeks_per_month.yaml parameter:
+weekly_subsidy * p.weeks_per_month
+
+# ✅ GOOD — use framework constants:
+weekly_subsidy * (WEEKS_IN_YEAR / MONTHS_IN_YEAR)
+```
+
+Available constants: `MONTHS_IN_YEAR` (12), `WEEKS_IN_YEAR` (52). Derive others from these.
+
 ---
 
 ## Pattern 6: Streamline Variable Access

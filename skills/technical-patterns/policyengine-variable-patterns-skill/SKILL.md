@@ -810,6 +810,51 @@ Before creating any enum variable, check:
 2. Does an existing input variable provide the numeric value? (Grep the codebase)
 3. If yes to both → use a bracket parameter + formula, not a bare input
 
+### Rate Table Dimensions: One Enum Variable Per Dimension
+
+**When a rate table has multiple dimensions (provider type, age group, star rating, authorization level), create a separate Enum variable for each dimension.** This enables simple Enum bracket indexing in the rate lookup variable.
+
+**Pattern:**
+```python
+# Each dimension is its own Enum variable:
+provider_type = person("ri_ccap_provider_type", period)
+time_category = person("ri_ccap_time_category", period)
+star_rating = person("ri_ccap_star_rating", period)
+age_group = person("ri_ccap_center_age_group", period)
+
+# Rate lookup is just Enum indexing:
+rate = p.licensed_center[time_category][star_rating][age_group]
+```
+
+**When dimensions differ by category, use separate Enums:**
+- Licensed centers have 4 age groups (Infant, Toddler, Preschool, School Age)
+- Family child care has 3 age groups (Infant/Toddler, Preschool, School Age)
+- → Create `ri_ccap_center_age_group` and `ri_ccap_family_age_group`
+
+**When quality ratings differ by provider type:**
+- Licensed centers/family use star ratings (1-5)
+- License-exempt uses step ratings (1-4)
+- → Create `ri_ccap_star_rating` and `ri_ccap_step_rating` as separate Enums
+
+**Use Enum (not int) for constrained categories:**
+```python
+# ❌ BAD — star rating as int (what values are valid? unclear)
+class ri_ccap_star_rating(Variable):
+    value_type = int
+
+# ✅ GOOD — star rating as Enum (self-documenting, validated)
+class RICCAPStarRating(Enum):
+    STAR_1 = "1 Star"
+    STAR_2 = "2 Stars"
+    STAR_3 = "3 Stars"
+    STAR_4 = "4 Stars"
+    STAR_5 = "5 Stars"
+```
+
+**If you need helper functions in a rate lookup, your parameter structure is too granular.** Restructure the parameter files to use Enum breakdowns (see parameter-patterns skill) so the variable is just `select()` + indexing.
+
+**Reference implementation:** MA CCFA reimbursement — `ma_ccfa_center_based_early_education_reimbursement.py` is 3 lines: get region, get age category, index into parameter.
+
 #### State Variables to AVOID Creating
 
 For TANF implementations:

@@ -31,10 +31,20 @@ metadata:
 ## 1. File Naming Conventions
 
 ### Study Reference Implementations First
-Before naming, examine:
-- DC TANF: `/parameters/gov/states/dc/dhs/tanf/`
-- IL TANF: `/parameters/gov/states/il/dhs/tanf/`
-- TX TANF: `/parameters/gov/states/tx/hhs/tanf/`
+**Before creating ANY parameter files, read 3-5 files from a similar program in another state.** Match their structure — don't invent your own. This is the single most effective way to produce correct parameter files.
+
+Search broadly by program concept (not just program name):
+```bash
+# For a childcare program, search by concept keywords:
+Glob 'policyengine_us/parameters/gov/states/*/*/*child*care*/'
+Glob 'policyengine_us/parameters/gov/states/*/*/*ccap*/'
+Glob 'policyengine_us/parameters/gov/states/*/*/*ccfa*/'
+```
+
+Good references by program type:
+- **TANF**: DC, IL, TX — `/parameters/gov/states/{st}/{agency}/tanf/`
+- **Childcare**: MA CCFA, CO CCAP — `/parameters/gov/states/{st}/{agency}/ccfa/` or `ccap/`
+- **LIHEAP**: AZ — `/parameters/gov/states/az/{agency}/liheap/`
 
 ### Naming Patterns
 
@@ -99,6 +109,18 @@ description: [State] provides this amount as the payment standard under the Temp
 **For disregards:**
 ```yaml
 description: [State] excludes this share of earnings from countable income under the Temporary Assistance for Needy Families program.
+```
+
+### Keep Descriptions Practical
+
+Descriptions should focus on what matters for simulation, not copy regulatory language verbatim. Omit regulatory details that have no practical impact:
+
+```yaml
+# ❌ Too literal — no one simulates a 1-week-old:
+description: Rhode Island defines the infant/toddler age range as 1 week up to 3 years under the Child Care Assistance Program.
+
+# ✅ Practical:
+description: Rhode Island defines the infant/toddler age range as up to 3 years under the Child Care Assistance Program.
 ```
 
 ### Description Validation Checklist
@@ -192,6 +214,17 @@ label: California SNAP resource limit
 2. Must contain the actual value
 3. **Title: Include FULL section path** (all subsections and sub-subsections)
 4. **PDF links: Add `#page=XX` at end of href ONLY** (never in title)
+5. **Verify page numbers** — open the PDF and confirm the page number is correct before using it
+
+**Reference Source Hierarchy — prefer online over PDF:**
+1. **Online statute/regulation** (best): Cornell LII, state legislature sites, public.law
+   - Example: `https://www.law.cornell.edu/regulations/rhode-island/218-RICR-20-00-4.6`
+2. **Official government HTML page**: `.gov` pages with section anchors
+3. **PDF with verified page number** (last resort): Only when no online HTML version exists
+   - Rate schedules, policy manuals without HTML versions
+   - Always verify the `#page=XX` is correct
+
+Why: Online references are linkable, searchable, and don't require page number verification. PDF page numbers are error-prone (file page vs printed page) and links break when documents are updated.
 
 **Title Format - Include ALL subsection levels (NO page numbers):**
 ```yaml
@@ -514,6 +547,12 @@ brackets:
       2024-01-01: 0.07
 ```
 
+**BOUNDARY CHECK — do this for every bracket parameter:**
+1. Read the regulation's exact wording for each threshold
+2. If it says "above X" or "more than X" → shift by 0.0001
+3. If it says "at or above X" or "X or more" → no shift needed
+4. Apply consistently to ALL thresholds in the bracket
+
 **When to apply the 0.0001 shift:**
 - Regulation says "above X%" or "more than X%" (exclusive of the boundary)
 - Apply consistently to ALL thresholds in the bracket, not just the first
@@ -521,6 +560,80 @@ brackets:
 **When NOT to shift:**
 - Regulation says "at or above X%" or "X% or more" (inclusive — matches PolicyEngine's default)
 - Regulation says "at least X%" (inclusive)
+
+### Multi-Dimensional Rate Tables (Enum Breakdowns)
+
+**When a rate table has multiple dimensions (e.g., age group × star rating × authorization level), use Enum breakdowns in a small number of parameter files — NOT one file per combination.**
+
+**❌ BAD — 45 files (one per age × time level):**
+```
+rates/licensed_center/infant/full_time.yaml      # breakdown: [star_rating]
+rates/licensed_center/infant/half_time.yaml
+rates/licensed_center/toddler/full_time.yaml
+... (16 files for center alone, 45 total)
+```
+
+**✅ GOOD — 3 files (one per provider type) with multi-dimensional Enum breakdowns:**
+```
+rates/licensed_center.yaml     # breakdown: [time_category, star_rating, age_group]
+rates/licensed_family.yaml     # breakdown: [time_category, star_rating, age_group]
+rates/license_exempt.yaml      # breakdown: [time_category, step_rating, age_group]
+```
+
+**Example rate file with 3D Enum breakdown:**
+```yaml
+# rates/licensed_center.yaml
+description: Rhode Island provides these weekly reimbursement rates for licensed child care centers under the Child Care Assistance Program.
+metadata:
+  period: week
+  unit: currency-USD
+  label: Rhode Island CCAP licensed center weekly rates
+  breakdown:
+    - ri_ccap_time_category
+    - ri_ccap_star_rating
+    - ri_ccap_center_age_group
+  reference:
+    - title: 218-RICR-20-00-4.12
+      href: https://www.law.cornell.edu/regulations/rhode-island/218-RICR-20-00-4.12
+
+FULL_TIME:
+  STAR_1:
+    INFANT:
+      2025-07-01: 334
+    TODDLER:
+      2025-07-01: 278
+    PRESCHOOL:
+      2025-07-01: 236
+    SCHOOL_AGE:
+      2025-07-01: 210
+  STAR_2:
+    INFANT:
+      2025-07-01: 341
+    ...
+```
+
+**The variable lookup becomes simple Enum indexing:**
+```python
+p.licensed_center[time_category][star_rating][center_age]
+```
+
+**When dimensions differ by category** (e.g., licensed centers have 4 age groups, family care has 3):
+- Use separate Enum variables per category (`ri_ccap_center_age_group`, `ri_ccap_family_age_group`)
+- Each rate file references the appropriate Enum in its breakdown
+- The variable uses `select()` on the top-level category (provider type) — each branch uses its own Enums
+
+**When quality ratings differ** (e.g., star ratings 1-5 for licensed, step ratings 1-4 for exempt):
+- Use separate Enum variables (`ri_ccap_star_rating`, `ri_ccap_step_rating`)
+- Each rate file references the appropriate Enum
+
+**Rule of thumb:** If you need helper functions in the variable to do the rate lookup, your parameter structure is too granular. Restructure the parameters.
+
+### Don't Create Unnecessary Parameters
+
+**Don't create parameters for:**
+- **Universal conversion factors** — Use framework constants instead. `WEEKS_IN_YEAR / MONTHS_IN_YEAR` gives weeks-per-month. `MONTHS_IN_YEAR` gives 12. Don't create a `weeks_per_month.yaml` parameter.
+- **Thresholds with no practical simulation impact** — A minimum age of "1 week" for childcare has no simulation value. No one models newborns. Skip it.
+- **Values derivable from existing parameters** — If FPL tables already exist, don't recreate them as program-specific parameters.
 
 ### Parameter Structure Transitions (Flat → Bracket)
 
