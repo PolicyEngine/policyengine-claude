@@ -41,7 +41,7 @@ The application MUST install `@policyengine/ui-kit` and use it as the primary co
 | Dashboard need | ui-kit component |
 |---|---|
 | Page shell | `DashboardShell` |
-| Header with logo | `Header` (light/dark variants) |
+| Header with logo + nav | `Header` (light/dark variants, `navLinks` prop) |
 | Two-column layout | `SidebarLayout` + `InputPanel` + `ResultsPanel` |
 | Single-column narrative | `SingleColumnLayout` |
 | Buttons | `Button` (4 variants, 3 sizes) |
@@ -163,6 +163,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'DASHBOARD_TITLE - PolicyEngine',
   description: 'DASHBOARD_DESCRIPTION',
+  icons: { icon: '/favicon.svg' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -201,6 +202,19 @@ import { formatCurrency } from '@policyengine/ui-kit';
 <Line stroke="var(--chart-1)" />
 <Bar fill="var(--chart-2)" />
 <CartesianGrid stroke="var(--border)" />
+
+// Header with logo and structured nav links:
+import { Header, logos } from '@policyengine/ui-kit';
+
+<Header
+  variant="dark"
+  logo={<img src={logos.whiteWordmark} alt="PolicyEngine" className="h-5" />}
+  navLinks={[
+    { slug: 'research', text: 'Research', href: 'https://policyengine.org/research' },
+  ]}
+>
+  <span className="ml-2">Dashboard Title</span>
+</Header>
 ```
 
 ## Project structure

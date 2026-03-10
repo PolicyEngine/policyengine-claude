@@ -219,6 +219,21 @@ def format_fig(fig):
 - **Tick labels:** `var(--font-sans)`, 12px
 - **Legend:** `var(--font-sans)`, horizontal, above chart
 
+## Favicon
+
+Every PolicyEngine dashboard must include a favicon. The ui-kit exports the logo as a favicon-ready SVG:
+
+1. Copy: `cp node_modules/@policyengine/ui-kit/src/assets/logos/policyengine/teal-square.svg public/favicon.svg`
+2. Add to `layout.tsx` metadata:
+   ```tsx
+   export const metadata: Metadata = {
+     // ...
+     icons: { icon: '/favicon.svg' },
+   };
+   ```
+
+The ui-kit also exports `logos.favicon` (SVG) and `logos.faviconPng` (PNG fallback) for programmatic use.
+
 ## Logos
 
 All logo files in `policyengine-app-v2/app/public/assets/logos/policyengine/`:
