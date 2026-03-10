@@ -63,6 +63,14 @@ Extract key values:
 - `tech_stack` - confirms fixed stack choices
 - `components` - informs which dependencies to install
 
+**Verify data pattern choice:** If the plan specifies `custom-modal`, confirm it includes a `reason` explaining why simpler patterns are insufficient. The preferred order is:
+
+1. `precomputed` / `precomputed-csv` — if parameter space is finite
+2. `policyengine-api` — if household-level calculations suffice (prefer this for standard household tools)
+3. `custom-modal` — only if microsimulation or custom reforms are needed
+
+If the plan uses `custom-modal` without a clear justification, flag this to the user before proceeding.
+
 ### Step 2: Create Project Structure
 
 The repository already exists (created by `/init-dashboard`) and the current working directory is the repo root. Generate files directly here.
@@ -92,6 +100,7 @@ DASHBOARD_NAME/
 │   └── hooks/
 │       └── useCalculation.ts
 ├── public/
+│   └── favicon.svg                 # PE logo favicon (from ui-kit)
 ├── __tests__/
 │   └── page.test.tsx
 ├── next.config.ts
@@ -110,12 +119,12 @@ DASHBOARD_NAME/
 
 ```
 DASHBOARD_NAME/
-├── ... (same structure as above, including Makefile)
+├── ... (same structure as above, including Makefile and public/favicon.svg)
 ├── backend/
-│   ├── modal_app.py
-│   ├── requirements.txt
+│   ├── modal_app.py            # Lightweight gateway (FastAPI, no PE deps)
+│   ├── worker.py               # Heavy computation (policyengine-us/uk)
 │   └── tests/
-│       └── test_calculate.py
+│       └── test_worker.py
 └── ...
 ```
 
@@ -223,6 +232,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'TITLE - PolicyEngine',
   description: 'DESCRIPTION from plan',
+  icons: { icon: '/favicon.svg' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -254,38 +264,89 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-#### API Client Stubs (for api-v2-alpha pattern)
+#### API Client Stubs
 
 Generate `lib/api/types.ts` with TypeScript interfaces matching the plan's endpoint inputs/outputs.
 
 Generate `lib/api/fixtures.ts` with mock data from `plan.yaml`'s `stub_fixtures`.
 
-Generate `lib/api/client.ts` with:
-- Functions matching each endpoint in the plan
-- Currently returns fixture data
-- Clearly marked with `// TODO: Replace with real API v2 alpha calls` comments
-- Types that match the v2 alpha async pattern (job creation → polling → result)
+**For `policyengine-api` or API v2 alpha patterns**, generate `lib/api/client.ts` with synchronous fetch stubs that return fixture data.
+
+**For `custom-modal` pattern**, generate `lib/api/client.ts` with the gateway polling pattern:
 
 ```typescript
-// client.ts - API v2 Alpha stub
-// TODO: Replace stubs with real API v2 alpha calls when available
+// client.ts - Gateway + Polling client
+const API_URL = process.env.NEXT_PUBLIC_API_URL
+  || 'https://policyengine--DASHBOARD_NAME-fastapi-app.modal.run';
 
-import { fixtures } from './fixtures';
-import type { HouseholdRequest, HouseholdResponse } from './types';
+interface JobResponse { job_id: string }
 
-const API_V2_BASE_URL = process.env.NEXT_PUBLIC_API_V2_URL || '';
+export interface StatusResponse {
+  status: 'computing' | 'ok' | 'error';
+  result?: unknown;
+  message?: string;
+}
 
-/**
- * Stub: Calculate household impacts
- * Will call POST /simulate/household when v2 alpha is integrated
- */
-export async function calculateHousehold(
-  request: HouseholdRequest
-): Promise<HouseholdResponse> {
-  // TODO: Replace with real v2 alpha call:
-  // const job = await fetch(`${API_V2_BASE_URL}/simulate/household`, { ... });
-  // return pollForResult(job.job_id);
-  return fixtures.defaultHouseholdResponse;
+export async function submitJob(endpoint: string, params: unknown): Promise<string> {
+  const res = await fetch(`${API_URL}/submit/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+  const data: JobResponse = await res.json();
+  return data.job_id;
+}
+
+export async function pollStatus(jobId: string): Promise<StatusResponse> {
+  const res = await fetch(`${API_URL}/status/${jobId}`);
+  if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
+  return res.json();
+}
+```
+
+Generate `lib/hooks/useCalculation.ts` with the async polling hook:
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { submitJob, pollStatus } from '../api/client';
+import type { StatusResponse } from '../api/client';
+
+export function useAsyncCalculation<T>(
+  queryKey: unknown[],
+  endpoint: string,
+  params: unknown,
+  options?: { enabled?: boolean },
+) {
+  const [jobId, setJobId] = useState<string | null>(null);
+  useEffect(() => { setJobId(null); }, [JSON.stringify(params)]);
+
+  const submit = useQuery({
+    queryKey: [...queryKey, 'submit'],
+    queryFn: async () => {
+      const id = await submitJob(endpoint, params);
+      setJobId(id);
+      return id;
+    },
+    enabled: options?.enabled ?? true,
+  });
+
+  const poll = useQuery<StatusResponse>({
+    queryKey: [...queryKey, 'poll', jobId],
+    queryFn: () => pollStatus(jobId!),
+    enabled: !!jobId,
+    refetchInterval: (query) =>
+      query.state.data?.status === 'computing' ? 2000 : false,
+  });
+
+  return {
+    isLoading: submit.isLoading || (!!jobId && poll.isLoading),
+    isComputing: poll.data?.status === 'computing',
+    isError: submit.isError || poll.data?.status === 'error',
+    data: poll.data?.status === 'ok' ? (poll.data.result as T) : undefined,
+    error: poll.data?.message || submit.error?.message,
+  };
 }
 ```
 
@@ -368,24 +429,22 @@ clean:
 
 Replace `DASHBOARD_NAME` below with the actual `dashboard.name` value from `plan.yaml`.
 
+The custom-modal pattern uses a **gateway + worker architecture** with frontend polling. The worker must be deployed first (it contains the heavy policyengine code), then the gateway is started in dev mode.
+
 ```makefile
-.PHONY: dev dev-frontend dev-backend
+.PHONY: dev dev-frontend dev-backend deploy-worker
 .PHONY: build test test-backend lint clean
 
-# Start Modal backend + Next.js frontend together
+# Deploy worker functions, then start gateway + frontend
 dev:
-    @echo "Starting Modal backend (ephemeral)..."
+    @echo "Deploying worker functions..."
+    @unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/worker.py
+    @echo "Starting gateway (ephemeral)..."
     @modal serve backend/modal_app.py & MODAL_PID=$$!; \
     sleep 5; \
-    MODAL_URL=$$(modal app list --json 2>/dev/null | \
-      python3 -c "import sys,json; apps=json.load(sys.stdin); \
-      print(next((a['url'] for a in apps \
-      if 'DASHBOARD_NAME' in a.get('name','')), ''))"); \
-    if [ -z "$$MODAL_URL" ]; then \
-      MODAL_URL="https://policyengine--DASHBOARD_NAME-fastapi-app-dev.modal.run"; \
-    fi; \
+    MODAL_URL="https://policyengine--DASHBOARD_NAME-fastapi-app-dev.modal.run"; \
     PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
-    echo "Modal backend: $$MODAL_URL"; \
+    echo "Gateway: $$MODAL_URL"; \
     echo "Frontend: http://localhost:$$PORT"; \
     NEXT_PUBLIC_API_URL=$$MODAL_URL PORT=$$PORT bun run dev; \
     kill $$MODAL_PID 2>/dev/null
@@ -396,9 +455,13 @@ dev-frontend:
     echo "Starting dev server on http://localhost:$$PORT"; \
     PORT=$$PORT bun run dev
 
-# Backend only
+# Backend only (gateway in dev mode — worker must already be deployed)
 dev-backend:
     modal serve backend/modal_app.py
+
+# Deploy worker functions to Modal (required before gateway can spawn jobs)
+deploy-worker:
+    unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/worker.py
 
 build:
     bun run build
@@ -415,6 +478,17 @@ lint:
 clean:
     rm -rf .next node_modules
 ```
+
+#### Favicon
+
+Copy the PolicyEngine logo favicon from ui-kit into `public/`:
+
+```bash
+mkdir -p public
+cp node_modules/@policyengine/ui-kit/src/assets/logos/policyengine/teal-square.svg public/favicon.svg
+```
+
+The `layout.tsx` metadata already includes `icons: { icon: '/favicon.svg' }` (see template above).
 
 #### Embedding Boilerplate
 
@@ -500,9 +574,16 @@ If either fails, fix before proceeding.
 - [ ] `.claude/settings.json` auto-installs the dashboard-builder plugin
 - [ ] `vercel.json` is configured for frontend deployment
 - [ ] Feature branch is created and pushed
+- [ ] `public/favicon.svg` exists (PE logo)
+- [ ] `layout.tsx` metadata includes `icons: { icon: '/favicon.svg' }`
+- [ ] Header uses `logos.whiteWordmark` or `logos.tealWordmark` (not text-only)
 - [ ] `Makefile` has correct targets for the data pattern
 - [ ] `make dev` uses a random port (does not hardcode 3000)
-- [ ] If custom-modal: `make dev` starts both Modal and Next.js together
+- [ ] If custom-modal: `make dev` deploys worker, then starts gateway + frontend
+- [ ] If custom-modal: gateway is lightweight (no policyengine in its Modal image)
+- [ ] If custom-modal: workers have `timeout >= 3600` and `memory >= 8192`
+- [ ] If custom-modal: frontend uses polling (`refetchInterval`), not synchronous await
+- [ ] If custom-modal: `/status` endpoint returns `{status, result, message}`
 - [ ] Build passes on the scaffold
 - [ ] Initial test passes
 

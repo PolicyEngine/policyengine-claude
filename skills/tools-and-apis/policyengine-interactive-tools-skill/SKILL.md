@@ -152,72 +152,200 @@ export async function calculateHousehold(countryId, household) {
 
 **Pros:** Always up-to-date with latest policy rules, handles arbitrary inputs. **Cons:** Network latency (1-5s per call), rate limits, limited to variables the API supports.
 
-### Pattern C: Custom API on Modal
+### Pattern C: Custom API on Modal (gateway + polling)
 
 Best when you need variables or calculations not in the main PolicyEngine API — custom reform parameters, non-standard entity structures, or computations that combine PolicyEngine with other models.
 
+> **Decision rule:** Before choosing Pattern C, verify that the PolicyEngine API
+> (`api.policyengine.org`) cannot handle the computation. Pattern C is only needed when:
+> - You need microsimulation (society-wide) results
+> - You need custom reform parameters not exposed by the API
+> - You need variables or entity structures not supported by the API
+>
+> If the tool only needs household-level calculations, Pattern B (PolicyEngine API) is
+> always preferred — it's faster, always up-to-date, and requires no backend maintenance.
+
 **When to use:** Tools that vary parameters not exposed by the main API (e.g., varying UBI amounts, custom phase-outs), or tools that need microsimulation (society-wide) results for arbitrary reforms.
 
+**Architecture:** Two-layer gateway + worker with frontend polling. This mirrors the pattern used by PolicyEngine API v1 and API v2.
+
 ```
-┌───────────┐    ┌──────────────────┐    ┌──────────────┐
-│ Next.js   │───>│ Modal serverless │───>│ policyengine │
-│ (browser) │<───│ Python function  │<───│ -us (local)  │
-└───────────┘    └──────────────────┘    └──────────────┘
+┌───────────┐  POST /submit  ┌──────────────────┐  spawn()  ┌──────────────┐
+│ Next.js   │──────────────>│ Gateway (FastAPI) │─────────>│ Worker        │
+│ (browser) │               │ (lightweight)     │          │ (policyengine)│
+│           │  GET /status   │                  │  poll    │               │
+│           │<──────────────│                  │<─────────│               │
+└───────────┘  {status,data} └──────────────────┘          └──────────────┘
 ```
 
-**Example:** GiveCalc lets users specify custom giving amounts and calculates the tax benefit using policyengine-us with custom reform parameters.
+**Why not synchronous HTTP?** Modal's dev gateway (`modal serve`) and production gateway have a ~150s timeout. Long-running requests (like US statewide microsimulations, which take 2-5+ minutes) get an HTTP 303 redirect that browser `fetch()` cannot follow for POST requests. The gateway + polling architecture avoids this entirely.
+
+#### Worker (`backend/worker.py`)
+
+The worker has the heavy policyengine dependency and generous timeout/memory:
 
 ```python
-# modal_app.py
 import modal
 
 app = modal.App("my-tool")
-image = modal.Image.debian_slim().pip_install("policyengine-us==1.x.x")
+image = modal.Image.debian_slim(python_version="3.11").pip_install(
+    "policyengine-us==1.x.x",  # Pin to latest — look up from PyPI
+)
 
-@app.function(image=image, timeout=300)
-@modal.web_endpoint(method="POST")
-def calculate(params: dict):
+@app.function(image=image, timeout=3600, memory=8192)
+def compute_household(params: dict) -> dict:
     from policyengine_us import Simulation
-    household = params["household"]
-    sim = Simulation(situation=household)
+    sim = Simulation(situation=params["household"])
     return {
         "net_income": float(sim.calculate("household_net_income", 2025).sum()),
     }
+
+@app.function(image=image, timeout=3600, memory=8192)
+def compute_statewide(params: dict) -> dict:
+    from policyengine_us import Microsimulation
+    baseline = Microsimulation()
+    reform = Microsimulation(reform=params["reform"])
+    # ... compute impacts
+    return {"revenue_change": ..., "winners": ..., "losers": ...}
 ```
 
-**Deploy:**
-```bash
-# MUST unset env vars — keychain tokens override modal profile
-unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
-modal deploy modal_app.py
+#### Gateway (`backend/modal_app.py`)
+
+The gateway is lightweight — no policyengine dependency. It spawns worker jobs and polls for results:
+
+```python
+import modal
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = modal.App("my-tool")
+web_app = FastAPI()
+web_app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+FUNCTION_MAP = {
+    "household-impact": "compute_household",
+    "statewide-impact": "compute_statewide",
+}
+
+@web_app.post("/submit/{endpoint}")
+def submit(endpoint: str, params: dict):
+    fn = modal.Function.from_name("my-tool", FUNCTION_MAP[endpoint])
+    call = fn.spawn(params)
+    return {"job_id": call.object_id}
+
+@web_app.get("/status/{job_id}")
+def status(job_id: str):
+    from modal.functions import FunctionCall
+    call = FunctionCall.from_id(job_id)
+    try:
+        result = call.get(timeout=0)
+        return {"status": "ok", "result": result}
+    except TimeoutError:
+        return {"status": "computing"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.function()
+@modal.asgi_app()
+def fastapi_app():
+    return web_app
 ```
 
-**URL pattern:** `https://policyengine--my-tool-calculate.modal.run`
+#### Frontend polling client
 
-**Frontend:**
-```js
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://policyengine--my-tool-calculate.modal.run";
+```typescript
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://policyengine--my-tool-fastapi-app.modal.run";
 
-async function calculate(params) {
-  const res = await fetch(API_URL, {
+export async function submitJob(endpoint: string, params: unknown): Promise<string> {
+  const res = await fetch(`${API_URL}/submit/${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
-  return res.json();
+  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+  const data = await res.json();
+  return data.job_id;
+}
+
+export async function pollStatus(jobId: string) {
+  const res = await fetch(`${API_URL}/status/${jobId}`);
+  if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
+  return res.json();  // { status: "computing" | "ok" | "error", result?, message? }
 }
 ```
+
+#### React Query polling hook
+
+```typescript
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { submitJob, pollStatus } from "../api/client";
+
+export function useAsyncCalculation(queryKey: unknown[], endpoint: string, params: unknown, enabled = true) {
+  const [jobId, setJobId] = useState<string | null>(null);
+
+  // Step 1: Submit job when params change
+  const submit = useQuery({
+    queryKey: [...queryKey, "submit"],
+    queryFn: async () => {
+      const id = await submitJob(endpoint, params);
+      setJobId(id);
+      return id;
+    },
+    enabled,
+  });
+
+  // Step 2: Poll for results
+  const poll = useQuery({
+    queryKey: [...queryKey, "poll", jobId],
+    queryFn: () => pollStatus(jobId!),
+    enabled: !!jobId,
+    refetchInterval: (query) =>
+      query.state.data?.status === "computing" ? 2000 : false,
+  });
+
+  return {
+    isLoading: submit.isLoading || (!!jobId && poll.isLoading),
+    isComputing: poll.data?.status === "computing",
+    isError: submit.isError || poll.data?.status === "error",
+    data: poll.data?.status === "ok" ? poll.data.result : undefined,
+    error: poll.data?.message || submit.error?.message,
+  };
+}
+```
+
+**Deploy:**
+```bash
+# Deploy the worker functions first
+unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
+modal deploy backend/worker.py
+
+# Deploy the gateway
+modal deploy backend/modal_app.py
+```
+
+**URL pattern:** `https://policyengine--my-tool-fastapi-app.modal.run`
 
 **Set Vercel env var:**
 ```bash
 vercel env add NEXT_PUBLIC_API_URL production
-# Enter: https://policyengine--my-tool-calculate.modal.run
+# Enter: https://policyengine--my-tool-fastapi-app.modal.run
 vercel --prod --force --yes --scope policy-engine
 ```
 
-**Pros:** Full control over calculations, can use any policyengine variables/reforms, can do microsimulation. **Cons:** Cold starts (5-15s first call), Modal costs, must pin policyengine version, must redeploy when policy rules update.
+**Pros:** Full control over calculations, can use any policyengine variables/reforms, can do microsimulation, no timeout issues. **Cons:** Cold starts (5-15s first call), Modal costs, must pin policyengine version, must redeploy when policy rules update, more complex architecture (two files).
 
 **Failure mode:** Modal apps can silently disappear. If frontend gets network errors, `curl` the Modal URL — if 404, redeploy.
+
+#### Modal timeout reference
+
+| Context | Default timeout | Max timeout | Notes |
+|---------|----------------|-------------|-------|
+| `@app.function(timeout=...)` | 300s | 86,400s (24h) | Set per-function |
+| `modal serve` dev gateway | ~150s | Not configurable | Returns HTTP 303 on timeout |
+| `modal deploy` prod gateway | ~150s | Not configurable | Returns HTTP 303 on timeout |
+
+**US statewide microsimulations take 2-5+ minutes.** This exceeds the gateway timeout, which is why synchronous HTTP calls fail for microsimulation endpoints. The gateway + polling architecture avoids this by using non-blocking job submission. Household-level simulations typically complete in 10-40s, within the gateway timeout, but polling is still recommended for consistency.
 
 ### Pattern D: Precomputed CSV dashboard
 

@@ -82,16 +82,22 @@ Based on the description, identify:
 
 Choose from the data patterns defined in the `policyengine-interactive-tools-skill` (loaded in the First step). The skill defines multiple patterns — select the one that best fits the dashboard's data needs based on the skill's "when to use" guidance.
 
+**Decision hierarchy (most preferred first):**
+
+1. `precomputed` / `precomputed-csv` — if parameter space is finite
+2. `policyengine-api` — if household-level calculations suffice (always prefer this for standard household tools)
+3. `custom-modal` — ONLY if microsimulation or custom reforms are needed
+
 Write the chosen pattern into `data_pattern` in plan.yaml using these identifiers:
 
 | Skill pattern | `data_pattern` value |
 |---------------|----------------------|
 | Pattern A: Precomputed JSON | `precomputed` |
 | Pattern B: PolicyEngine API | `policyengine-api` |
-| Pattern C: Custom API on Modal | `custom-modal` |
+| Pattern C: Custom API on Modal (gateway + polling) | `custom-modal` |
 | Pattern D: Precomputed CSV | `precomputed-csv` |
 
-If the chosen pattern is `custom-modal`, the plan **must document why** the simpler patterns are insufficient.
+If the chosen pattern is `custom-modal`, the plan **must document why** the simpler patterns are insufficient. The plan must also specify which endpoints need long-running computation (microsimulation) vs. fast computation (household), as this determines worker timeout and memory allocation.
 
 ### Step 5: Design Components
 
@@ -146,9 +152,13 @@ precomputed:  # for precomputed / precomputed-csv patterns
 custom_modal:  # for custom-modal pattern
   reason: "Needs microsimulation with custom CTC phase-out parameter"
   policyengine_package: policyengine-us
+  architecture: gateway-polling  # Always use this — mirrors API v1/v2 pattern
   endpoints:
-    - name: calculate
+    - name: household-impact
       method: POST
+      long_running: false  # < 60s — household-level simulation
+      worker_timeout: 600
+      worker_memory: 4096
       inputs:
         - name: income
           type: number
@@ -160,6 +170,22 @@ custom_modal:  # for custom-modal pattern
       policyengine_variables:
         - income_tax
         - child_tax_credit
+    - name: statewide-impact
+      method: POST
+      long_running: true   # 2-5+ minutes — MUST use polling
+      worker_timeout: 3600
+      worker_memory: 8192
+      inputs:
+        - name: reform
+          type: object
+      outputs:
+        - name: revenue_change
+          type: number
+        - name: winners
+          type: number
+      policyengine_variables:
+        - household_net_income
+        - state_income_tax
 
 tech_stack:
   # Fixed - not configurable
@@ -295,8 +321,10 @@ Before presenting the plan:
 
 - [ ] Every chart has a `component_ref` pointing to an app-v2 pattern
 - [ ] All colors reference design tokens, not hex values
-- [ ] Data pattern choice is justified
-- [ ] If custom-backend, the `reason` explains why v2 alpha is insufficient
+- [ ] Data pattern choice is justified (simpler patterns preferred)
+- [ ] If custom-modal, the `reason` explains why `policyengine-api` is insufficient
+- [ ] If custom-modal, `architecture: gateway-polling` is set
+- [ ] If custom-modal, each endpoint has `long_running`, `worker_timeout`, and `worker_memory`
 - [ ] Test criteria are specific and measurable
 - [ ] Embedding configuration is complete
 - [ ] Component IDs are unique kebab-case

@@ -23,6 +23,16 @@ Builds the data layer for a dashboard based on the approved `plan.yaml`.
 - **policyengine-us-skill** or **policyengine-uk-skill** - PolicyEngine variables
 - **policyengine-simulation-mechanics-skill** - How simulations work (custom-backend only)
 
+## Backend Selection Priority
+
+**Always prefer simpler patterns.** Before building a custom backend:
+
+1. **Can `api.policyengine.org/calculate` handle it?** → Use Pattern B (`policyengine-api`)
+2. **Does it need microsimulation or custom reforms?** → Use Pattern C (`custom-modal`) with gateway + polling
+3. **Is the parameter space finite?** → Use Pattern A/D (`precomputed` / `precomputed-csv`)
+
+Pattern C is the most complex and should be the last resort. If the plan specifies `custom-modal`, the plan MUST include a `reason` explaining why Pattern B is insufficient.
+
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
@@ -180,70 +190,204 @@ Create `lib/api/__tests__/client.test.ts`:
 - Test that the client handles error responses
 - Test type conformance of expected response shapes
 
-## Pattern C: Custom API on Modal (`custom-modal`)
+## Pattern C: Custom API on Modal (`custom-modal`) — Gateway + Polling
 
-When `data_pattern: custom-modal`, build a Python serverless function on Modal that wraps `policyengine-us` or `policyengine-uk` directly. Use this when the main API doesn't support the needed variables, reforms, or aggregations.
+When `data_pattern: custom-modal`, build a two-layer architecture on Modal: a lightweight **gateway** that manages job submission/polling, and **worker** functions that run the heavy policyengine computations. This mirrors the pattern used by PolicyEngine API v1 and v2.
 
-### Step 1: Create Modal App
+**Why not synchronous HTTP?** Modal's dev gateway (`modal serve`) and production gateway have a ~150s timeout. US statewide microsimulations take 2-5+ minutes, causing HTTP 303 redirects that browser `fetch()` cannot follow for POST requests. The gateway + polling architecture avoids this entirely.
 
-Generate `api/modal_app.py`:
+### Step 1: Look Up the Latest Country Package Version
+
+**Before writing any code**, look up the latest version from PyPI. Do NOT guess or use a version from memory — these packages release frequently and stale versions will have bugs.
+
+```bash
+# For US dashboards:
+pip index versions policyengine-us 2>/dev/null | head -1
+# For UK dashboards:
+pip index versions policyengine-uk 2>/dev/null | head -1
+```
+
+Use the version number returned (e.g., `1.592.4`) in the `pip_install()` call below.
+
+### Step 2: Create Worker Functions
+
+Generate `backend/worker.py`. Workers have the heavy policyengine dependency, generous timeouts, and high memory:
 
 ```python
 import modal
 
 app = modal.App("DASHBOARD_NAME")
-image = modal.Image.debian_slim().pip_install(
-    "policyengine-us==X.Y.Z",  # Pin to current version
+image = modal.Image.debian_slim(python_version="3.11").pip_install(
+    "policyengine-us==LATEST_VERSION",  # Pinned — looked up from PyPI in Step 1
 )
 
-@app.function(image=image, timeout=300)
-@modal.web_endpoint(method="POST")
-def calculate(params: dict):
+@app.function(image=image, timeout=3600, memory=8192)
+def compute_household(params: dict) -> dict:
     from policyengine_us import Simulation
     # Build household from params (per plan.yaml endpoints)
-    sim = Simulation(situation=household)
+    sim = Simulation(situation=params["household"])
     # Run simulation and return results matching plan's output schema
-    return {"result": float(sim.calculate("variable_name", 2025).sum())}
+    return {"net_income": float(sim.calculate("household_net_income", 2025).sum())}
+
+@app.function(image=image, timeout=3600, memory=8192)
+def compute_statewide(params: dict) -> dict:
+    from policyengine_us import Microsimulation
+    # Run baseline and reform microsimulations
+    baseline = Microsimulation()
+    reform_sim = Microsimulation(reform=params["reform"])
+    # ... compute and return impacts
+    return {"revenue_change": ..., "winners": ..., "losers": ...}
 ```
 
-### Step 2: Create Frontend Client
+Create one `@app.function` per endpoint in the plan. Set `timeout` and `memory` based on the plan's `worker_timeout` and `worker_memory` values. Microsimulation endpoints need at least `timeout=3600` and `memory=8192`.
+
+### Step 3: Create Gateway
+
+Generate `backend/modal_app.py`. The gateway is **lightweight** — no policyengine in its image. It spawns worker jobs and polls for results:
+
+```python
+import modal
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+app = modal.App("DASHBOARD_NAME")
+web_app = FastAPI()
+web_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Map endpoint names to worker function names
+FUNCTION_MAP = {
+    "household-impact": "compute_household",
+    "statewide-impact": "compute_statewide",
+}
+
+class SubmitResponse(BaseModel):
+    job_id: str
+
+class StatusResponse(BaseModel):
+    status: str  # "computing" | "ok" | "error"
+    result: dict | None = None
+    message: str | None = None
+
+@web_app.post("/submit/{endpoint}")
+def submit(endpoint: str, params: dict):
+    if endpoint not in FUNCTION_MAP:
+        raise HTTPException(status_code=404, detail=f"Unknown endpoint: {endpoint}")
+    fn = modal.Function.from_name("DASHBOARD_NAME", FUNCTION_MAP[endpoint])
+    call = fn.spawn(params)
+    return SubmitResponse(job_id=call.object_id)
+
+@web_app.get("/status/{job_id}")
+def status(job_id: str):
+    from modal.functions import FunctionCall
+    call = FunctionCall.from_id(job_id)
+    try:
+        result = call.get(timeout=0)
+        return StatusResponse(status="ok", result=result)
+    except TimeoutError:
+        return StatusResponse(status="computing")
+    except Exception as e:
+        return StatusResponse(status="error", message=str(e))
+
+@app.function()
+@modal.asgi_app()
+def fastapi_app():
+    return web_app
+```
+
+### Step 4: Create Frontend Polling Client
 
 Generate `lib/api/client.ts`:
 
 ```typescript
 const API_URL = process.env.NEXT_PUBLIC_API_URL
-  || 'https://policyengine--DASHBOARD_NAME-calculate.modal.run';
+  || 'https://policyengine--DASHBOARD_NAME-fastapi-app.modal.run';
 
-export async function calculate(params: CalculateRequest): Promise<CalculateResponse> {
-  const res = await fetch(API_URL, {
+interface JobResponse { job_id: string }
+
+export interface StatusResponse {
+  status: 'computing' | 'ok' | 'error';
+  result?: unknown;
+  message?: string;
+}
+
+export async function submitJob(endpoint: string, params: unknown): Promise<string> {
+  const res = await fetch(`${API_URL}/submit/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+  const data: JobResponse = await res.json();
+  return data.job_id;
+}
+
+export async function pollStatus(jobId: string): Promise<StatusResponse> {
+  const res = await fetch(`${API_URL}/status/${jobId}`);
+  if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
   return res.json();
 }
 ```
 
-### Step 3: Build React Query Hooks
+### Step 5: Build Polling React Query Hooks
 
 Create `lib/hooks/useCalculation.ts`:
 
 ```typescript
-import { useMutation } from '@tanstack/react-query';
-import { calculate } from '../api/client';
-import type { CalculateRequest } from '../api/types';
+import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { submitJob, pollStatus } from '../api/client';
+import type { StatusResponse } from '../api/client';
 
-export function useCalculation() {
-  return useMutation({
-    mutationFn: (params: CalculateRequest) => calculate(params),
+export function useAsyncCalculation<T>(
+  queryKey: unknown[],
+  endpoint: string,
+  params: unknown,
+  options?: { enabled?: boolean },
+) {
+  const [jobId, setJobId] = useState<string | null>(null);
+
+  // Reset jobId when params change
+  useEffect(() => { setJobId(null); }, [JSON.stringify(params)]);
+
+  // Step 1: Submit job
+  const submit = useQuery({
+    queryKey: [...queryKey, 'submit'],
+    queryFn: async () => {
+      const id = await submitJob(endpoint, params);
+      setJobId(id);
+      return id;
+    },
+    enabled: options?.enabled ?? true,
   });
+
+  // Step 2: Poll for results
+  const poll = useQuery<StatusResponse>({
+    queryKey: [...queryKey, 'poll', jobId],
+    queryFn: () => pollStatus(jobId!),
+    enabled: !!jobId,
+    refetchInterval: (query) =>
+      query.state.data?.status === 'computing' ? 2000 : false,
+  });
+
+  return {
+    isLoading: submit.isLoading || (!!jobId && poll.isLoading),
+    isComputing: poll.data?.status === 'computing',
+    isError: submit.isError || poll.data?.status === 'error',
+    data: poll.data?.status === 'ok' ? (poll.data.result as T) : undefined,
+    error: poll.data?.message || submit.error?.message,
+  };
 }
 ```
 
-### Step 4: Write Python Tests
+### Step 6: Write Python Tests
 
-Generate `api/tests/test_calculate.py` from the plan's `tests.api_tests`:
+Generate `backend/tests/test_worker.py` from the plan's `tests.api_tests`:
 
 ```python
 def test_basic_calculation():
@@ -256,18 +400,28 @@ def test_zero_income():
     pass
 ```
 
-### Step 5: Initialize Python Project with uv
+### Step 7: Initialize Python Project with uv
 
 Use `uv` for Python dependency management. **Do NOT use `requirements.txt` or `pip install`.**
 
 ```bash
-cd api
+cd backend
 uv init --no-workspace
 uv add policyengine-us  # or policyengine-uk
 uv add --dev pytest
 ```
 
 This creates a `pyproject.toml` with pinned dependencies and a `uv.lock` lockfile. Commit both files.
+
+### Modal Timeout Reference
+
+| Context | Default timeout | Max timeout | Notes |
+|---------|----------------|-------------|-------|
+| `@app.function(timeout=...)` | 300s | 86,400s (24h) | Set per-function |
+| `modal serve` dev gateway | ~150s | Not configurable | Returns HTTP 303 on timeout |
+| `modal deploy` prod gateway | ~150s | Not configurable | Returns HTTP 303 on timeout |
+
+**US statewide microsimulations take 2-5+ minutes.** This exceeds the gateway timeout, which is why synchronous HTTP calls fail for microsimulation endpoints. The gateway + polling architecture avoids this by using non-blocking job submission. Household-level simulations typically complete in 10-40s.
 
 ## Pattern D: Precomputed CSV (`precomputed-csv`)
 

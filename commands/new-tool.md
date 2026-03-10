@@ -29,6 +29,12 @@ bun add @policyengine/ui-kit recharts
 bun add -D vitest
 ```
 
+Copy the favicon:
+```bash
+mkdir -p public
+cp node_modules/@policyengine/ui-kit/src/assets/logos/policyengine/teal-square.svg public/favicon.svg
+```
+
 If using code highlighting:
 ```bash
 bun add prism-react-renderer
@@ -46,6 +52,7 @@ import "./globals.css";
 export const metadata = {
   title: "TOOL_TITLE | PolicyEngine",
   description: "DESCRIPTION",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }) {
@@ -86,9 +93,7 @@ The single `@import "@policyengine/ui-kit/theme.css"` provides all design tokens
 "use client";
 
 import { useState } from "react";
-
-const PE_LOGO_URL =
-  "https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/public/assets/logos/policyengine/white.png";
+import { DashboardShell, Header, logos } from "@policyengine/ui-kit";
 
 function getCountryFromHash() {
   if (typeof window === "undefined") return "us";
@@ -121,19 +126,17 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-teal-700 text-white px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={PE_LOGO_URL} alt="PolicyEngine" className="h-7" />
-            <h1 className="text-xl font-semibold">TOOL_TITLE</h1>
-          </div>
-        </div>
-      </header>
+    <DashboardShell>
+      <Header
+        variant="dark"
+        logo={<img src={logos.whiteWordmark} alt="PolicyEngine" className="h-5" />}
+      >
+        <span className="ml-2 font-bold text-white">TOOL_TITLE</span>
+      </Header>
       <main className="max-w-6xl mx-auto p-6">
         {/* Your tool UI goes here */}
       </main>
-    </div>
+    </DashboardShell>
   );
 }
 ```
@@ -147,6 +150,10 @@ export default function Home() {
 ```
 
 ## Step 4: Data pattern boilerplate
+
+> **Prefer Pattern B** (PolicyEngine API) unless the tool needs microsimulation,
+> custom reforms, or variables not in the API. Pattern C is significantly more complex
+> and should be the last resort.
 
 Based on the user's choice, add the appropriate data fetching code.
 
@@ -166,38 +173,95 @@ export async function calculate(countryId, household) {
 }
 ```
 
-**For Pattern C (Modal API):** Create `modal_app.py`:
+**For Pattern C (Custom Modal API — gateway + polling):**
+
+Pattern C uses a two-layer architecture: a lightweight **gateway** that manages job submission/polling, and **worker** functions that run heavy policyengine computations. This avoids Modal's ~150s gateway timeout, which causes failures for long-running computations like US statewide microsimulations (2-5+ minutes).
+
+First, look up the latest package version from PyPI. Do NOT guess or use a version from memory:
+
+```bash
+pip index versions policyengine-us 2>/dev/null | head -1
+# or for UK: pip index versions policyengine-uk 2>/dev/null | head -1
+```
+
+Create `backend/worker.py` (heavy computation, policyengine dependency):
 
 ```python
 import modal
 
 app = modal.App("TOOL_NAME")
-image = modal.Image.debian_slim().pip_install("policyengine-us==X.Y.Z")
+image = modal.Image.debian_slim(python_version="3.11").pip_install(
+    "policyengine-us==LATEST_VERSION",  # Pinned — looked up from PyPI
+)
 
-@app.function(image=image, timeout=300)
-@modal.web_endpoint(method="POST")
-def calculate(params: dict):
+@app.function(image=image, timeout=3600, memory=8192)
+def compute(params: dict) -> dict:
     from policyengine_us import Simulation
-    # Build household from params
-    sim = Simulation(situation=household)
+    sim = Simulation(situation=params["household"])
     return {"result": float(sim.calculate("variable_name", 2025).sum())}
 ```
 
-And `lib/api.js`:
+Create `backend/modal_app.py` (lightweight gateway, no policyengine):
+
+```python
+import modal
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+app = modal.App("TOOL_NAME")
+web_app = FastAPI()
+web_app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+FUNCTION_MAP = {"calculate": "compute"}
+
+@web_app.post("/submit/{endpoint}")
+def submit(endpoint: str, params: dict):
+    if endpoint not in FUNCTION_MAP:
+        raise HTTPException(status_code=404, detail=f"Unknown endpoint: {endpoint}")
+    fn = modal.Function.from_name("TOOL_NAME", FUNCTION_MAP[endpoint])
+    call = fn.spawn(params)
+    return {"job_id": call.object_id}
+
+@web_app.get("/status/{job_id}")
+def status(job_id: str):
+    from modal.functions import FunctionCall
+    call = FunctionCall.from_id(job_id)
+    try:
+        result = call.get(timeout=0)
+        return {"status": "ok", "result": result}
+    except TimeoutError:
+        return {"status": "computing"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.function()
+@modal.asgi_app()
+def fastapi_app():
+    return web_app
+```
+
+And `lib/api.js` (polling client):
 
 ```js
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://policyengine--TOOL_NAME-calculate.modal.run";
+  "https://policyengine--TOOL_NAME-fastapi-app.modal.run";
 
-export async function calculate(params) {
-  const res = await fetch(API_URL, {
+export async function submitJob(endpoint, params) {
+  const res = await fetch(`${API_URL}/submit/${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+  const data = await res.json();
+  return data.job_id;
+}
+
+export async function pollStatus(jobId) {
+  const res = await fetch(`${API_URL}/status/${jobId}`);
+  if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
+  return res.json(); // { status: "computing" | "ok" | "error", result?, message? }
 }
 ```
 
@@ -218,12 +282,15 @@ vercel link --scope policy-engine
 vercel --prod --yes
 ```
 
-If using Pattern C (Modal):
+If using Pattern C (Modal gateway + worker):
 ```bash
 unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
-modal deploy modal_app.py
+# Deploy worker first (heavy computation functions)
+modal deploy backend/worker.py
+# Deploy gateway (lightweight job submission/polling)
+modal deploy backend/modal_app.py
 vercel env add NEXT_PUBLIC_API_URL production
-# Enter the Modal URL
+# Enter: https://policyengine--TOOL_NAME-fastapi-app.modal.run
 vercel --prod --force --yes --scope policy-engine
 ```
 
