@@ -152,13 +152,19 @@ precomputed:  # for precomputed / precomputed-csv patterns
 custom_modal:  # for custom-modal pattern
   reason: "Needs microsimulation with custom CTC phase-out parameter"
   policyengine_package: policyengine-us
-  architecture: gateway-polling  # Always use this — mirrors API v1/v2 pattern
+  architecture: gateway-polling  # Always use this — mirrors API v2 simulation service
+  backend_files:  # Three-file structure (avoids module-level import crash-loop)
+    image_setup: backend/_image_setup.py    # Standalone snapshot function
+    worker_app: backend/app.py              # Modal decorators (only `modal` at module level)
+    simulation: backend/simulation.py       # Pure logic (policyengine at module level, snapshotted)
+    gateway: backend/modal_app.py           # Lightweight FastAPI (no policyengine)
   endpoints:
     - name: household-impact
       method: POST
       long_running: false  # < 60s — household-level simulation
       worker_timeout: 600
-      worker_memory: 4096
+      worker_memory: 32768
+      worker_cpu: 8.0
       inputs:
         - name: income
           type: number
@@ -174,7 +180,8 @@ custom_modal:  # for custom-modal pattern
       method: POST
       long_running: true   # 2-5+ minutes — MUST use polling
       worker_timeout: 3600
-      worker_memory: 8192
+      worker_memory: 32768
+      worker_cpu: 8.0
       inputs:
         - name: reform
           type: object
@@ -324,7 +331,8 @@ Before presenting the plan:
 - [ ] Data pattern choice is justified (simpler patterns preferred)
 - [ ] If custom-modal, the `reason` explains why `policyengine-api` is insufficient
 - [ ] If custom-modal, `architecture: gateway-polling` is set
-- [ ] If custom-modal, each endpoint has `long_running`, `worker_timeout`, and `worker_memory`
+- [ ] If custom-modal, `backend_files` section lists all 4 files (_image_setup, app, simulation, gateway)
+- [ ] If custom-modal, each endpoint has `long_running`, `worker_timeout`, `worker_memory`, and `worker_cpu`
 - [ ] Test criteria are specific and measurable
 - [ ] Embedding configuration is complete
 - [ ] Component IDs are unique kebab-case

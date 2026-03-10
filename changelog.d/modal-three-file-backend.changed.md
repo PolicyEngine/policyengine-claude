@@ -1,0 +1,1 @@
+Pattern C (custom-modal) backend now uses three-file structure mirroring api-v2: _image_setup.py (snapshot), app.py (Modal decorators), simulation.py (pure logic). Adds .run_function() for fast cold starts, cpu=8.0/memory=32768 resource specs, and architecture validator check #6 for Modal backend structure.

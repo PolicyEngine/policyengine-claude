@@ -180,29 +180,73 @@ Best when you need variables or calculations not in the main PolicyEngine API �
 
 **Why not synchronous HTTP?** Modal's dev gateway (`modal serve`) and production gateway have a ~150s timeout. Long-running requests (like US statewide microsimulations, which take 2-5+ minutes) get an HTTP 303 redirect that browser `fetch()` cannot follow for POST requests. The gateway + polling architecture avoids this entirely.
 
-#### Worker (`backend/worker.py`)
+#### Why three files?
 
-The worker has the heavy policyengine dependency and generous timeout/memory:
+The backend uses a **three-file structure** mirroring policyengine-api-v2's simulation service. This prevents a common crash-loop where module-level imports of pydantic or policyengine fail because those packages are only available inside the Modal function's image, not at module import time.
+
+| File | Purpose | Module-level imports |
+|------|---------|---------------------|
+| `backend/_image_setup.py` | Standalone snapshot function — runs during image build | None (all inside function body) |
+| `backend/app.py` | Modal app + function decorators | Only `modal` |
+| `backend/simulation.py` | Pure business logic | `policyengine_us`/`_uk` (captured in image snapshot) |
+| `backend/modal_app.py` | Lightweight gateway (FastAPI) | `modal`, `fastapi`, `pydantic` |
+
+#### Image setup (`backend/_image_setup.py`)
+
+Standalone function with **no package imports at module level** — executed during image build via `.run_function()`:
+
+```python
+def snapshot_models():
+    """Pre-load models at image build time for fast cold starts."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("Pre-loading tax-benefit system...")
+    from policyengine_us import CountryTaxBenefitSystem  # or policyengine_uk
+    CountryTaxBenefitSystem()
+    logger.info("Models pre-loaded into image snapshot")
+```
+
+#### Worker app (`backend/app.py`)
+
+Only `modal` at module level. Imports business logic **inside each function body**:
 
 ```python
 import modal
+from _image_setup import snapshot_models
 
-app = modal.App("my-tool")
-image = modal.Image.debian_slim(python_version="3.11").pip_install(
-    "policyengine-us==1.x.x",  # Pin to latest — look up from PyPI
+app = modal.App("my-tool-workers")
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .pip_install("policyengine-us==X.Y.Z")  # Pin to latest — look up from PyPI
+    .run_function(snapshot_models)
 )
 
-@app.function(image=image, timeout=3600, memory=8192)
+@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
 def compute_household(params: dict) -> dict:
-    from policyengine_us import Simulation
+    from simulation import run_household
+    return run_household(params)
+
+@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+def compute_statewide(params: dict) -> dict:
+    from simulation import run_statewide
+    return run_statewide(params)
+```
+
+#### Simulation logic (`backend/simulation.py`)
+
+Pure business logic — **policyengine imports at module level** (captured in the image snapshot via `.run_function()`). No Modal imports here.
+
+```python
+from policyengine_us import Simulation, Microsimulation  # Snapshotted at build time
+
+def run_household(params: dict) -> dict:
     sim = Simulation(situation=params["household"])
     return {
         "net_income": float(sim.calculate("household_net_income", 2025).sum()),
     }
 
-@app.function(image=image, timeout=3600, memory=8192)
-def compute_statewide(params: dict) -> dict:
-    from policyengine_us import Microsimulation
+def run_statewide(params: dict) -> dict:
     baseline = Microsimulation()
     reform = Microsimulation(reform=params["reform"])
     # ... compute impacts
@@ -215,23 +259,41 @@ The gateway is lightweight — no policyengine dependency. It spawns worker jobs
 
 ```python
 import modal
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = modal.App("my-tool")
-web_app = FastAPI()
-web_app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+gateway_image = modal.Image.debian_slim(python_version="3.11").pip_install(
+    "fastapi", "pydantic",
+)
+
+WORKER_APP = "my-tool-workers"
 
 FUNCTION_MAP = {
     "household-impact": "compute_household",
     "statewide-impact": "compute_statewide",
 }
 
+web_app = FastAPI()
+web_app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+class SubmitResponse(BaseModel):
+    job_id: str
+
+class StatusResponse(BaseModel):
+    status: str  # "computing" | "ok" | "error"
+    result: dict | None = None
+    message: str | None = None
+
 @web_app.post("/submit/{endpoint}")
 def submit(endpoint: str, params: dict):
-    fn = modal.Function.from_name("my-tool", FUNCTION_MAP[endpoint])
+    if endpoint not in FUNCTION_MAP:
+        raise HTTPException(status_code=404, detail=f"Unknown endpoint: {endpoint}")
+    fn = modal.Function.from_name(WORKER_APP, FUNCTION_MAP[endpoint])
     call = fn.spawn(params)
-    return {"job_id": call.object_id}
+    return SubmitResponse(job_id=call.object_id)
 
 @web_app.get("/status/{job_id}")
 def status(job_id: str):
@@ -239,13 +301,13 @@ def status(job_id: str):
     call = FunctionCall.from_id(job_id)
     try:
         result = call.get(timeout=0)
-        return {"status": "ok", "result": result}
+        return StatusResponse(status="ok", result=result)
     except TimeoutError:
-        return {"status": "computing"}
+        return StatusResponse(status="computing")
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return StatusResponse(status="error", message=str(e))
 
-@app.function()
+@app.function(image=gateway_image)
 @modal.asgi_app()
 def fastapi_app():
     return web_app
@@ -316,9 +378,9 @@ export function useAsyncCalculation(queryKey: unknown[], endpoint: string, param
 
 **Deploy:**
 ```bash
-# Deploy the worker functions first
+# Deploy the worker functions first (includes image snapshot — first build takes ~5 min)
 unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
-modal deploy backend/worker.py
+modal deploy backend/app.py
 
 # Deploy the gateway
 modal deploy backend/modal_app.py
@@ -333,7 +395,7 @@ vercel env add NEXT_PUBLIC_API_URL production
 vercel --prod --force --yes --scope policy-engine
 ```
 
-**Pros:** Full control over calculations, can use any policyengine variables/reforms, can do microsimulation, no timeout issues. **Cons:** Cold starts (5-15s first call), Modal costs, must pin policyengine version, must redeploy when policy rules update, more complex architecture (two files).
+**Pros:** Full control over calculations, can use any policyengine variables/reforms, can do microsimulation, no timeout issues. **Cons:** Fast cold starts (~2s thanks to model pre-loading via `.run_function()`; without snapshot, cold starts take 3-5 minutes), Modal costs, must pin policyengine version, must redeploy when policy rules update, more complex architecture (four files).
 
 **Failure mode:** Modal apps can silently disappear. If frontend gets network errors, `curl` the Modal URL — if 404, redeploy.
 

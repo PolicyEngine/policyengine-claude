@@ -175,7 +175,7 @@ export async function calculate(countryId, household) {
 
 **For Pattern C (Custom Modal API — gateway + polling):**
 
-Pattern C uses a two-layer architecture: a lightweight **gateway** that manages job submission/polling, and **worker** functions that run heavy policyengine computations. This avoids Modal's ~150s gateway timeout, which causes failures for long-running computations like US statewide microsimulations (2-5+ minutes).
+Pattern C uses a **three-file backend structure** mirroring policyengine-api-v2's simulation service: a standalone image setup, a worker app, and pure simulation logic. A lightweight gateway manages job submission/polling. This avoids Modal's ~150s gateway timeout and a common crash-loop where module-level imports fail.
 
 First, look up the latest package version from PyPI. Do NOT guess or use a version from memory:
 
@@ -184,21 +184,47 @@ pip index versions policyengine-us 2>/dev/null | head -1
 # or for UK: pip index versions policyengine-uk 2>/dev/null | head -1
 ```
 
-Create `backend/worker.py` (heavy computation, policyengine dependency):
+Create `backend/_image_setup.py` (standalone snapshot function, no package imports at module level):
+
+```python
+def snapshot_models():
+    """Pre-load models at image build time for fast cold starts."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("Pre-loading tax-benefit system...")
+    from policyengine_us import CountryTaxBenefitSystem  # or policyengine_uk
+    CountryTaxBenefitSystem()
+    logger.info("Models pre-loaded into image snapshot")
+```
+
+Create `backend/simulation.py` (pure logic, policyengine at module level — captured in snapshot):
+
+```python
+from policyengine_us import Simulation  # Snapshotted at build time
+
+def run_compute(params: dict) -> dict:
+    sim = Simulation(situation=params["household"])
+    return {"result": float(sim.calculate("variable_name", 2025).sum())}
+```
+
+Create `backend/app.py` (worker app, only `modal` at module level):
 
 ```python
 import modal
+from _image_setup import snapshot_models
 
-app = modal.App("TOOL_NAME")
-image = modal.Image.debian_slim(python_version="3.11").pip_install(
-    "policyengine-us==LATEST_VERSION",  # Pinned — looked up from PyPI
+app = modal.App("TOOL_NAME-workers")
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .pip_install("policyengine-us==LATEST_VERSION")
+    .run_function(snapshot_models)
 )
 
-@app.function(image=image, timeout=3600, memory=8192)
+@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
 def compute(params: dict) -> dict:
-    from policyengine_us import Simulation
-    sim = Simulation(situation=params["household"])
-    return {"result": float(sim.calculate("variable_name", 2025).sum())}
+    from simulation import run_compute
+    return run_compute(params)
 ```
 
 Create `backend/modal_app.py` (lightweight gateway, no policyengine):
@@ -207,18 +233,21 @@ Create `backend/modal_app.py` (lightweight gateway, no policyengine):
 import modal
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = modal.App("TOOL_NAME")
+gateway_image = modal.Image.debian_slim(python_version="3.11").pip_install("fastapi", "pydantic")
+WORKER_APP = "TOOL_NAME-workers"
+FUNCTION_MAP = {"calculate": "compute"}
+
 web_app = FastAPI()
 web_app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-FUNCTION_MAP = {"calculate": "compute"}
 
 @web_app.post("/submit/{endpoint}")
 def submit(endpoint: str, params: dict):
     if endpoint not in FUNCTION_MAP:
         raise HTTPException(status_code=404, detail=f"Unknown endpoint: {endpoint}")
-    fn = modal.Function.from_name("TOOL_NAME", FUNCTION_MAP[endpoint])
+    fn = modal.Function.from_name(WORKER_APP, FUNCTION_MAP[endpoint])
     call = fn.spawn(params)
     return {"job_id": call.object_id}
 
@@ -234,7 +263,7 @@ def status(job_id: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.function()
+@app.function(image=gateway_image)
 @modal.asgi_app()
 def fastapi_app():
     return web_app
@@ -285,8 +314,8 @@ vercel --prod --yes
 If using Pattern C (Modal gateway + worker):
 ```bash
 unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
-# Deploy worker first (heavy computation functions)
-modal deploy backend/worker.py
+# Deploy worker first (includes image snapshot — first build takes ~5 min)
+modal deploy backend/app.py
 # Deploy gateway (lightweight job submission/polling)
 modal deploy backend/modal_app.py
 vercel env add NEXT_PUBLIC_API_URL production

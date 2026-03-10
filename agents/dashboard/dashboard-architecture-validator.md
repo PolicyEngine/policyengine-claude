@@ -101,14 +101,58 @@ test ! -f package-lock.json
 grep -rn 'className=' components/ app/ --include='*.tsx' | head -20
 ```
 
+### 6. Modal Backend Structure (custom-modal only)
+
+**Only run this check if `plan.yaml` has `data_pattern: custom-modal`.** Skip entirely for other patterns.
+
+This validates the three-file backend structure that mirrors policyengine-api-v2's simulation service and prevents module-level import crash-loops.
+
+**Required files:**
+```bash
+test -f backend/_image_setup.py && echo "PASS" || echo "FAIL: _image_setup.py missing"
+test -f backend/app.py && echo "PASS" || echo "FAIL: app.py missing"
+test -f backend/simulation.py && echo "PASS" || echo "FAIL: simulation.py missing"
+test -f backend/modal_app.py && echo "PASS" || echo "FAIL: modal_app.py missing"
+```
+
+**_image_setup.py must have NO module-level policyengine/pydantic imports:**
+```bash
+grep -n '^from policyengine\|^import policyengine\|^from pydantic\|^import pydantic' backend/_image_setup.py
+# Should find NOTHING — all imports must be inside function bodies
+```
+
+**app.py must have NO module-level policyengine/pydantic imports:**
+```bash
+grep -n '^from policyengine\|^import policyengine\|^from pydantic\|^import pydantic' backend/app.py
+# Should find NOTHING — only `modal` at module level
+```
+
+**app.py must use .run_function for image snapshot:**
+```bash
+grep -n 'run_function' backend/app.py
+# Should find the snapshot call
+```
+
+**simulation.py must have policyengine imports at module level (snapshotted):**
+```bash
+grep -n '^from policyengine\|^import policyengine' backend/simulation.py
+# Should find at least one import
+```
+
+**Gateway must NOT include policyengine:**
+```bash
+grep -n 'policyengine' backend/modal_app.py
+# Should find NOTHING — gateway is lightweight
+```
+
 ## Report Format
 
 ```
 ## Architecture Compliance Report
 
 ### Summary
-- PASS: X/5 checks
-- FAIL: Y/5 checks
+- PASS: X/6 checks (or X/5 if not custom-modal)
+- FAIL: Y checks
 
 ### Results
 
@@ -119,6 +163,7 @@ grep -rn 'className=' components/ app/ --include='*.tsx' | head -20
 | 3 | ui-kit integration | PASS/FAIL | ... |
 | 4 | Package manager | PASS/FAIL | ... |
 | 5 | Tailwind classes used | PASS/FAIL | ... |
+| 6 | Modal backend structure | PASS/FAIL/SKIP | ... |
 
 ### Failures (if any)
 

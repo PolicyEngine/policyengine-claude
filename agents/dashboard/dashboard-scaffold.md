@@ -121,10 +121,12 @@ DASHBOARD_NAME/
 DASHBOARD_NAME/
 ├── ... (same structure as above, including Makefile and public/favicon.svg)
 ├── backend/
+│   ├── _image_setup.py         # Standalone snapshot function (no package imports)
+│   ├── app.py                  # Modal worker app + function decorators (only `modal` at module level)
 │   ├── modal_app.py            # Lightweight gateway (FastAPI, no PE deps)
-│   ├── worker.py               # Heavy computation (policyengine-us/uk)
+│   ├── simulation.py           # Pure business logic (policyengine imports at module level, snapshotted)
 │   └── tests/
-│       └── test_worker.py
+│       └── test_simulation.py
 └── ...
 ```
 
@@ -438,7 +440,7 @@ The custom-modal pattern uses a **gateway + worker architecture** with frontend 
 # Deploy worker functions, then start gateway + frontend
 dev:
     @echo "Deploying worker functions..."
-    @unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/worker.py
+    @unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/app.py
     @echo "Starting gateway (ephemeral)..."
     @modal serve backend/modal_app.py & MODAL_PID=$$!; \
     sleep 5; \
@@ -461,7 +463,7 @@ dev-backend:
 
 # Deploy worker functions to Modal (required before gateway can spawn jobs)
 deploy-worker:
-    unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/worker.py
+    unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/app.py
 
 build:
     bun run build
@@ -580,8 +582,14 @@ If either fails, fix before proceeding.
 - [ ] `Makefile` has correct targets for the data pattern
 - [ ] `make dev` uses a random port (does not hardcode 3000)
 - [ ] If custom-modal: `make dev` deploys worker, then starts gateway + frontend
+- [ ] If custom-modal: backend has 3-file structure (`_image_setup.py`, `app.py`, `simulation.py`)
+- [ ] If custom-modal: `_image_setup.py` has no package imports at module level
+- [ ] If custom-modal: `app.py` only imports `modal` at module level
+- [ ] If custom-modal: `simulation.py` has policyengine imports at module level (snapshotted)
+- [ ] If custom-modal: image uses `.run_function(snapshot_models)` for fast cold starts
 - [ ] If custom-modal: gateway is lightweight (no policyengine in its Modal image)
-- [ ] If custom-modal: workers have `timeout >= 3600` and `memory >= 8192`
+- [ ] If custom-modal: gateway image explicitly includes `pydantic`
+- [ ] If custom-modal: workers have `cpu=8.0`, `memory=32768`, `timeout >= 3600`
 - [ ] If custom-modal: frontend uses polling (`refetchInterval`), not synchronous await
 - [ ] If custom-modal: `/status` endpoint returns `{status, result, message}`
 - [ ] Build passes on the scaffold

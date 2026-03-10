@@ -192,9 +192,18 @@ Create `lib/api/__tests__/client.test.ts`:
 
 ## Pattern C: Custom API on Modal (`custom-modal`) — Gateway + Polling
 
-When `data_pattern: custom-modal`, build a two-layer architecture on Modal: a lightweight **gateway** that manages job submission/polling, and **worker** functions that run the heavy policyengine computations. This mirrors the pattern used by PolicyEngine API v1 and v2.
+When `data_pattern: custom-modal`, build a two-layer architecture on Modal: a lightweight **gateway** that manages job submission/polling, and **worker** functions that run the heavy policyengine computations. This mirrors the pattern used by PolicyEngine API v2's simulation service.
 
 **Why not synchronous HTTP?** Modal's dev gateway (`modal serve`) and production gateway have a ~150s timeout. US statewide microsimulations take 2-5+ minutes, causing HTTP 303 redirects that browser `fetch()` cannot follow for POST requests. The gateway + polling architecture avoids this entirely.
+
+**Backend structure:** The backend uses a **three-file structure** to avoid a common crash-loop where module-level imports of pydantic or policyengine fail because those packages are only available inside the Modal function's image, not at module import time.
+
+| File | Purpose | Module-level imports |
+|------|---------|---------------------|
+| `backend/_image_setup.py` | Standalone snapshot function — runs during image build | None (all inside function body) |
+| `backend/app.py` | Modal app + function decorators | Only `modal` |
+| `backend/simulation.py` | Pure business logic | `policyengine_us`/`_uk` (captured in image snapshot) |
+| `backend/modal_app.py` | Lightweight gateway (FastAPI) | `modal`, `fastapi`, `pydantic` |
 
 ### Step 1: Look Up the Latest Country Package Version
 
@@ -209,39 +218,74 @@ pip index versions policyengine-uk 2>/dev/null | head -1
 
 Use the version number returned (e.g., `1.592.4`) in the `pip_install()` call below.
 
-### Step 2: Create Worker Functions
+### Step 2: Create Image Setup
 
-Generate `backend/worker.py`. Workers have the heavy policyengine dependency, generous timeouts, and high memory:
+Generate `backend/_image_setup.py`. This is a **standalone function with no package imports at module level** — it runs during image build via `.run_function()`:
 
 ```python
-import modal
+def snapshot_models():
+    """Pre-load models at image build time for fast cold starts."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("Pre-loading tax-benefit system...")
+    from policyengine_us import CountryTaxBenefitSystem  # or policyengine_uk
+    CountryTaxBenefitSystem()
+    logger.info("Models pre-loaded into image snapshot")
+```
 
-app = modal.App("DASHBOARD_NAME")
-image = modal.Image.debian_slim(python_version="3.11").pip_install(
-    "policyengine-us==LATEST_VERSION",  # Pinned — looked up from PyPI in Step 1
-)
+### Step 3: Create Simulation Logic
 
-@app.function(image=image, timeout=3600, memory=8192)
-def compute_household(params: dict) -> dict:
-    from policyengine_us import Simulation
+Generate `backend/simulation.py`. This is **pure business logic** — no Modal imports. policyengine imports are at module level because they are captured in the image snapshot.
+
+```python
+from policyengine_us import Simulation, Microsimulation  # Snapshotted at build time
+from pydantic import BaseModel  # Available in image
+
+# Pydantic models, constants, and helper functions live here.
+# Each endpoint in plan.yaml gets a run_*() function.
+
+def run_household(params: dict) -> dict:
     # Build household from params (per plan.yaml endpoints)
     sim = Simulation(situation=params["household"])
-    # Run simulation and return results matching plan's output schema
     return {"net_income": float(sim.calculate("household_net_income", 2025).sum())}
 
-@app.function(image=image, timeout=3600, memory=8192)
-def compute_statewide(params: dict) -> dict:
-    from policyengine_us import Microsimulation
-    # Run baseline and reform microsimulations
+def run_statewide(params: dict) -> dict:
     baseline = Microsimulation()
     reform_sim = Microsimulation(reform=params["reform"])
     # ... compute and return impacts
     return {"revenue_change": ..., "winners": ..., "losers": ...}
 ```
 
-Create one `@app.function` per endpoint in the plan. Set `timeout` and `memory` based on the plan's `worker_timeout` and `worker_memory` values. Microsimulation endpoints need at least `timeout=3600` and `memory=8192`.
+### Step 4: Create Worker App
 
-### Step 3: Create Gateway
+Generate `backend/app.py`. Only `modal` at module level. Imports business logic **inside each function body**:
+
+```python
+import modal
+from _image_setup import snapshot_models
+
+app = modal.App("DASHBOARD_NAME-workers")
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .pip_install("policyengine-us==LATEST_VERSION")  # Pinned — looked up from PyPI in Step 1
+    .run_function(snapshot_models)
+)
+
+@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+def compute_household(params: dict) -> dict:
+    from simulation import run_household
+    return run_household(params)
+
+@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+def compute_statewide(params: dict) -> dict:
+    from simulation import run_statewide
+    return run_statewide(params)
+```
+
+Create one `@app.function` per endpoint in the plan. Set `timeout` based on the plan's `worker_timeout` values. Microsimulation endpoints need at least `timeout=3600`.
+
+### Step 5: Create Gateway
 
 Generate `backend/modal_app.py`. The gateway is **lightweight** — no policyengine in its image. It spawns worker jobs and polls for results:
 
@@ -252,6 +296,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = modal.App("DASHBOARD_NAME")
+
+gateway_image = modal.Image.debian_slim(python_version="3.11").pip_install(
+    "fastapi", "pydantic",
+)
+
+WORKER_APP = "DASHBOARD_NAME-workers"
+
+# Map endpoint names to worker function names
+FUNCTION_MAP = {
+    "household-impact": "compute_household",
+    "statewide-impact": "compute_statewide",
+}
+
 web_app = FastAPI()
 web_app.add_middleware(
     CORSMiddleware,
@@ -259,12 +316,6 @@ web_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Map endpoint names to worker function names
-FUNCTION_MAP = {
-    "household-impact": "compute_household",
-    "statewide-impact": "compute_statewide",
-}
 
 class SubmitResponse(BaseModel):
     job_id: str
@@ -278,7 +329,7 @@ class StatusResponse(BaseModel):
 def submit(endpoint: str, params: dict):
     if endpoint not in FUNCTION_MAP:
         raise HTTPException(status_code=404, detail=f"Unknown endpoint: {endpoint}")
-    fn = modal.Function.from_name("DASHBOARD_NAME", FUNCTION_MAP[endpoint])
+    fn = modal.Function.from_name(WORKER_APP, FUNCTION_MAP[endpoint])
     call = fn.spawn(params)
     return SubmitResponse(job_id=call.object_id)
 
@@ -294,13 +345,13 @@ def status(job_id: str):
     except Exception as e:
         return StatusResponse(status="error", message=str(e))
 
-@app.function()
+@app.function(image=gateway_image)
 @modal.asgi_app()
 def fastapi_app():
     return web_app
 ```
 
-### Step 4: Create Frontend Polling Client
+### Step 6: Create Frontend Polling Client
 
 Generate `lib/api/client.ts`:
 
@@ -334,7 +385,7 @@ export async function pollStatus(jobId: string): Promise<StatusResponse> {
 }
 ```
 
-### Step 5: Build Polling React Query Hooks
+### Step 7: Build Polling React Query Hooks
 
 Create `lib/hooks/useCalculation.ts`:
 
@@ -385,9 +436,9 @@ export function useAsyncCalculation<T>(
 }
 ```
 
-### Step 6: Write Python Tests
+### Step 8: Write Python Tests
 
-Generate `backend/tests/test_worker.py` from the plan's `tests.api_tests`:
+Generate `backend/tests/test_simulation.py` from the plan's `tests.api_tests`:
 
 ```python
 def test_basic_calculation():
@@ -400,7 +451,7 @@ def test_zero_income():
     pass
 ```
 
-### Step 7: Initialize Python Project with uv
+### Step 9: Initialize Python Project with uv
 
 Use `uv` for Python dependency management. **Do NOT use `requirements.txt` or `pip install`.**
 
@@ -422,6 +473,8 @@ This creates a `pyproject.toml` with pinned dependencies and a `uv.lock` lockfil
 | `modal deploy` prod gateway | ~150s | Not configurable | Returns HTTP 303 on timeout |
 
 **US statewide microsimulations take 2-5+ minutes.** This exceeds the gateway timeout, which is why synchronous HTTP calls fail for microsimulation endpoints. The gateway + polling architecture avoids this by using non-blocking job submission. Household-level simulations typically complete in 10-40s.
+
+**Cold starts:** With `.run_function(snapshot_models)`, cold starts are ~2s because the tax-benefit system is pre-loaded into the image. Without the snapshot, cold starts take 3-5 minutes as policyengine must initialize from scratch.
 
 ## Pattern D: Precomputed CSV (`precomputed-csv`)
 
