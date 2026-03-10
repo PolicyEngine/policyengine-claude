@@ -587,6 +587,8 @@ If either fails, fix before proceeding.
 - [ ] If custom-modal: `app.py` only imports `modal` at module level
 - [ ] If custom-modal: `simulation.py` has policyengine imports at module level (snapshotted)
 - [ ] If custom-modal: image uses `.run_function(snapshot_models)` for fast cold starts
+- [ ] If custom-modal: worker image `pip_install` includes `"pydantic"` (simulation.py uses it at module level)
+- [ ] If custom-modal: worker image uses `.add_local_file()` for `simulation.py` (not auto-mounted since it's imported inside function bodies)
 - [ ] If custom-modal: gateway is lightweight (no policyengine in its Modal image)
 - [ ] If custom-modal: gateway image explicitly includes `pydantic`
 - [ ] If custom-modal: workers have `cpu=8.0`, `memory=32768`, `timeout >= 3600`

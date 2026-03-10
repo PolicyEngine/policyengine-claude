@@ -133,6 +133,18 @@ grep -n 'run_function' backend/app.py
 # Should find the snapshot call
 ```
 
+**app.py must include pydantic in pip_install (simulation.py uses it at module level):**
+```bash
+grep -n 'pydantic' backend/app.py
+# Should find "pydantic" in the .pip_install() call
+```
+
+**app.py must include add_local_file for simulation.py (not auto-mounted):**
+```bash
+grep -n 'add_local_file.*simulation' backend/app.py
+# Should find the .add_local_file() call — Modal only auto-mounts module-level imports
+```
+
 **simulation.py must have policyengine imports at module level (snapshotted):**
 ```bash
 grep -n '^from policyengine\|^import policyengine' backend/simulation.py

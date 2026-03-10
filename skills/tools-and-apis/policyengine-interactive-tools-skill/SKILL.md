@@ -213,13 +213,16 @@ Only `modal` at module level. Imports business logic **inside each function body
 
 ```python
 import modal
+from pathlib import Path
 from _image_setup import snapshot_models
 
 app = modal.App("my-tool-workers")
+_BACKEND_DIR = Path(__file__).parent
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("policyengine-us==X.Y.Z")  # Pin to latest — look up from PyPI
+    .pip_install("policyengine-us==X.Y.Z", "pydantic")  # Pin to latest — look up from PyPI
     .run_function(snapshot_models)
+    .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )
 
 @app.function(image=image, cpu=8.0, memory=32768, timeout=3600)

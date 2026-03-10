@@ -212,13 +212,16 @@ Create `backend/app.py` (worker app, only `modal` at module level):
 
 ```python
 import modal
+from pathlib import Path
 from _image_setup import snapshot_models
 
+_BACKEND_DIR = Path(__file__).parent
 app = modal.App("TOOL_NAME-workers")
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("policyengine-us==LATEST_VERSION")
+    .pip_install("policyengine-us==LATEST_VERSION", "pydantic")
     .run_function(snapshot_models)
+    .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )
 
 @app.function(image=image, cpu=8.0, memory=32768, timeout=3600)

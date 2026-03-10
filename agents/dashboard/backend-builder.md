@@ -263,13 +263,16 @@ Generate `backend/app.py`. Only `modal` at module level. Imports business logic 
 
 ```python
 import modal
+from pathlib import Path
 from _image_setup import snapshot_models
 
+_BACKEND_DIR = Path(__file__).parent
 app = modal.App("DASHBOARD_NAME-workers")
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("policyengine-us==LATEST_VERSION")  # Pinned — looked up from PyPI in Step 1
+    .pip_install("policyengine-us==LATEST_VERSION", "pydantic")  # Pinned — looked up from PyPI in Step 1
     .run_function(snapshot_models)
+    .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )
 
 @app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
