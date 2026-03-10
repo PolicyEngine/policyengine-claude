@@ -216,6 +216,18 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 </BarChart>
 ```
 
+### Bar chart axis rules
+
+**ALWAYS start bar chart axes at zero.** This is non-negotiable. A bar chart with a non-zero baseline misrepresents magnitudes and is visually misleading. When all values are negative (e.g., poverty reductions), the domain should run from the minimum value to 0. When all values are positive, from 0 to the maximum. When mixed, from min to max — but 0 must always be included.
+
+```typescript
+// ✅ Correct — domain always includes 0
+<YAxis domain={[Math.min(0, ...values), Math.max(0, ...values)]} />
+
+// ❌ Wrong — auto-scaling may exclude 0
+<YAxis />
+```
+
 ### Chart color conventions
 
 | Meaning | Color | Hex |
