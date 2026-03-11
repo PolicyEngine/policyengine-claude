@@ -151,7 +151,7 @@ Generate a CLAUDE.md following the pattern from existing applets (givecalc, ctc-
 
 ```bash
 bun install
-make dev            # Full dev stack (Modal + frontend, random port)
+make dev            # Full dev stack (Modal + frontend, port 4000-4100)
 make dev-frontend   # Frontend only
 ```
 
@@ -182,6 +182,8 @@ make build
 Generate from the fixed tech stack, including:
 - `next`, `react`, `react-dom` (^19)
 - `tailwindcss` (^4)
+- `@tailwindcss/postcss` (dev)
+- `postcss` (dev)
 - `@policyengine/ui-kit`
 - `recharts` (if custom charts beyond ui-kit)
 - `react-plotly.js` (if maps in plan)
@@ -199,6 +201,18 @@ const nextConfig: NextConfig = {
 }
 
 export default nextConfig
+```
+
+#### postcss.config.mjs
+
+**Required for Tailwind v4.** Without this file, `@import "tailwindcss"` in globals.css is never processed and no utility classes are generated.
+
+```js
+export default {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
 ```
 
 #### app/globals.css
@@ -393,10 +407,21 @@ Generate a `Makefile` that provides standard development targets. The Makefile c
 
 **IMPORTANT:** Makefile recipes must use literal tab characters for indentation, not spaces.
 
-**For all patterns:** The `dev` and `dev-frontend` targets must use a random available port, never hardcode port 3000. Use this Python one-liner to find a free port:
+**For all patterns:** The `dev` and `dev-frontend` targets must try port 4000 first, then increment by 1 up to 4100, erroring out if no port in that range is available. Use this helper script embedded in the Makefile — copy it exactly:
 
-```
-python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'
+```makefile
+# Port selection helper — finds the first available port in 4000-4100
+define find_port
+$$(python3 -c '\
+import socket, sys;\
+for p in range(4000, 4101):\
+    try:\
+        s = socket.socket(); s.bind(("", p)); s.close(); print(p); sys.exit(0)\
+    except OSError:\
+        continue\
+print("ERROR: no free port in 4000-4100", file=sys.stderr); sys.exit(1)\
+')
+endef
 ```
 
 **For `precomputed`, `policyengine-api`, or `precomputed-csv` patterns:**
@@ -405,26 +430,39 @@ python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsocknam
 .PHONY: dev dev-frontend
 .PHONY: build test lint clean
 
-# Start development server on a random available port
+# Port selection helper — finds the first available port in 4000-4100
+define find_port
+$$(python3 -c '\
+import socket, sys;\
+for p in range(4000, 4101):\
+    try:\
+        s = socket.socket(); s.bind(("", p)); s.close(); print(p); sys.exit(0)\
+    except OSError:\
+        continue\
+print("ERROR: no free port in 4000-4100", file=sys.stderr); sys.exit(1)\
+')
+endef
+
+# Start development server
 dev: dev-frontend
 
 # Frontend only (no backend for this data pattern)
 dev-frontend:
-    @PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
-    echo "Starting dev server on http://localhost:$$PORT"; \
-    PORT=$$PORT bun run dev
+	@PORT=$(find_port); \
+	echo "Frontend: http://localhost:$$PORT"; \
+	PORT=$$PORT bun run dev
 
 build:
-    bun run build
+	bun run build
 
 test:
-    bunx vitest run
+	bunx vitest run
 
 lint:
-    bun run lint
+	bun run lint
 
 clean:
-    rm -rf .next node_modules
+	rm -rf .next node_modules
 ```
 
 **For `custom-modal` pattern:**
@@ -437,48 +475,61 @@ The custom-modal pattern uses a **gateway + worker architecture** with frontend 
 .PHONY: dev dev-frontend dev-backend deploy-worker
 .PHONY: build test test-backend lint clean
 
+# Port selection helper — finds the first available port in 4000-4100
+define find_port
+$$(python3 -c '\
+import socket, sys;\
+for p in range(4000, 4101):\
+    try:\
+        s = socket.socket(); s.bind(("", p)); s.close(); print(p); sys.exit(0)\
+    except OSError:\
+        continue\
+print("ERROR: no free port in 4000-4100", file=sys.stderr); sys.exit(1)\
+')
+endef
+
 # Deploy worker functions, then start gateway + frontend
 dev:
-    @echo "Deploying worker functions..."
-    @unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/app.py
-    @echo "Starting gateway (ephemeral)..."
-    @modal serve backend/modal_app.py & MODAL_PID=$$!; \
-    sleep 5; \
-    MODAL_URL="https://policyengine--DASHBOARD_NAME-fastapi-app-dev.modal.run"; \
-    PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
-    echo "Gateway: $$MODAL_URL"; \
-    echo "Frontend: http://localhost:$$PORT"; \
-    NEXT_PUBLIC_API_URL=$$MODAL_URL PORT=$$PORT bun run dev; \
-    kill $$MODAL_PID 2>/dev/null
+	@echo "Deploying worker functions..."
+	@unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/app.py
+	@echo "Starting gateway (ephemeral)..."
+	@modal serve backend/modal_app.py & MODAL_PID=$$!; \
+	sleep 5; \
+	MODAL_URL="https://policyengine--DASHBOARD_NAME-fastapi-app-dev.modal.run"; \
+	PORT=$(find_port); \
+	echo "Gateway: $$MODAL_URL"; \
+	echo "Frontend: http://localhost:$$PORT"; \
+	NEXT_PUBLIC_API_URL=$$MODAL_URL PORT=$$PORT bun run dev; \
+	kill $$MODAL_PID 2>/dev/null
 
 # Frontend only (uses production API or NEXT_PUBLIC_API_URL if set)
 dev-frontend:
-    @PORT=$$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()'); \
-    echo "Starting dev server on http://localhost:$$PORT"; \
-    PORT=$$PORT bun run dev
+	@PORT=$(find_port); \
+	echo "Frontend: http://localhost:$$PORT"; \
+	PORT=$$PORT bun run dev
 
 # Backend only (gateway in dev mode — worker must already be deployed)
 dev-backend:
-    modal serve backend/modal_app.py
+	modal serve backend/modal_app.py
 
 # Deploy worker functions to Modal (required before gateway can spawn jobs)
 deploy-worker:
-    unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/app.py
+	unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy backend/app.py
 
 build:
-    bun run build
+	bun run build
 
 test:
-    bunx vitest run
+	bunx vitest run
 
 test-backend:
-    cd backend && uv run pytest
+	cd backend && uv run pytest
 
 lint:
-    bun run lint
+	bun run lint
 
 clean:
-    rm -rf .next node_modules
+	rm -rf .next node_modules
 ```
 
 #### Favicon
@@ -567,7 +618,8 @@ If either fails, fix before proceeding.
 - [ ] `CLAUDE.md` follows existing applet patterns
 - [ ] `package.json` has all required dependencies (Next.js, Tailwind v4, ui-kit)
 - [ ] `globals.css` has `@import "tailwindcss"` + `@import "@policyengine/ui-kit/theme.css"`
-- [ ] No `tailwind.config.ts` or `postcss.config.js` (Tailwind v4)
+- [ ] `postcss.config.mjs` exists with `@tailwindcss/postcss` plugin
+- [ ] No `tailwind.config.ts` (Tailwind v4)
 - [ ] No CDN `<link>` for design-system tokens (ui-kit theme provides everything)
 - [ ] Inter font is loaded via `next/font/google`
 - [ ] Embedding boilerplate is in place
@@ -580,7 +632,7 @@ If either fails, fix before proceeding.
 - [ ] `layout.tsx` metadata includes `icons: { icon: '/favicon.svg' }`
 - [ ] Header uses `logos.whiteWordmark` or `logos.tealWordmark` (not text-only)
 - [ ] `Makefile` has correct targets for the data pattern
-- [ ] `make dev` uses a random port (does not hardcode 3000)
+- [ ] `make dev` uses port range 4000-4100 (not random, not hardcoded 3000)
 - [ ] If custom-modal: `make dev` deploys worker, then starts gateway + frontend
 - [ ] If custom-modal: backend has 3-file structure (`_image_setup.py`, `app.py`, `simulation.py`)
 - [ ] If custom-modal: `_image_setup.py` has no package imports at module level
@@ -603,7 +655,8 @@ If either fails, fix before proceeding.
 - Deploy to Vercel or Modal (that's `/deploy-dashboard`)
 - Implement real logic (that's Phase 3 agents)
 - Skip the feature branch
-- Create `tailwind.config.ts` or `postcss.config.js` (Tailwind v4 uses `@theme` in CSS)
+- Create `tailwind.config.ts` (Tailwind v4 uses `@theme` in CSS)
+- Omit `postcss.config.mjs` — it IS required for Tailwind v4 (the `@tailwindcss/postcss` plugin processes `@import "tailwindcss"`)
 - Rebuild components that exist in `@policyengine/ui-kit`
 - Load tokens via CDN `<link>` (use `@import "@policyengine/ui-kit/theme.css"` instead)
 - Use `getCssVar()` — it no longer exists. SVG accepts `var()` directly.

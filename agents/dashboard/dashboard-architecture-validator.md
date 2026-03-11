@@ -12,10 +12,12 @@ Checks that the dashboard uses the correct framework, styling infrastructure, an
 ## Skills Used
 
 - **policyengine-frontend-builder-spec-skill** — Authoritative spec to validate against
+- **policyengine-parameter-patterns-skill** — Bracket path syntax for parameter path verification (custom-modal only)
 
 ## First: Load Required Skills
 
 1. `Skill: policyengine-frontend-builder-spec-skill`
+2. `Skill: policyengine-parameter-patterns-skill` (if `data_pattern: custom-modal`)
 
 After loading the skill, extract every MUST / MUST NOT statement and validate each one.
 
@@ -33,6 +35,12 @@ grep -n '@policyengine/ui-kit/theme.css' app/globals.css
 
 # tailwindcss in package.json
 grep '"tailwindcss"' package.json
+
+# postcss.config.mjs exists with @tailwindcss/postcss
+test -f postcss.config.mjs && grep '@tailwindcss/postcss' postcss.config.mjs
+
+# @tailwindcss/postcss in package.json devDependencies
+grep '@tailwindcss/postcss' package.json
 ```
 
 **Prohibited:**
@@ -40,8 +48,8 @@ grep '"tailwindcss"' package.json
 # No tailwind.config.ts/js
 test ! -f tailwind.config.ts && test ! -f tailwind.config.js
 
-# No postcss.config
-test ! -f postcss.config.js && test ! -f postcss.config.mjs
+# No old-style postcss.config.js (must be .mjs with @tailwindcss/postcss)
+test ! -f postcss.config.js
 
 # No @tailwind directives
 grep -rn '@tailwind' app/ --include='*.css'
@@ -157,13 +165,67 @@ grep -n 'policyengine' backend/modal_app.py
 # Should find NOTHING — gateway is lightweight
 ```
 
+### 7. Parameter Path Verification (custom-modal only)
+
+**Only run this check if `plan.yaml` has `data_pattern: custom-modal`.** Skip entirely for other patterns.
+
+This validates that all parameter paths used in `Reform.from_dict()` or reform dictionaries in `backend/simulation.py` resolve to real parameters in the policyengine parameter tree.
+
+**Load required skill first:** `Skill: policyengine-parameter-patterns-skill` — see section 6.5 for bracket path syntax rules.
+
+**Step 1: Extract all parameter paths from simulation.py:**
+```bash
+# Find all string literals that look like parameter paths (gov.xxx.yyy)
+grep -oP '"gov\.[a-z_.]+(\[[A-Z_0-9]+\])*(\.[a-z_]+)*"' backend/simulation.py | sort -u
+# Also check for f-string patterns building paths
+grep -n 'gov\.' backend/simulation.py | grep -v '#'
+```
+
+**Step 2: For each parameter path, find and verify the YAML source:**
+```bash
+# Convert a dotted path like gov.irs.income.bracket.rates to a file search
+# The YAML file is at parameters/gov/irs/income/bracket.yaml with rates as a child node
+```
+
+**Step 3: Check indexing correctness:**
+- If the YAML has explicit integer keys (`1:`, `2:`, `3:`, ...): verify the code uses those exact indices, NOT 0-based
+- If the YAML has a `brackets:` list: verify the code uses 0-based indices WITH `.amount` or `.rate` sub-key
+- If the YAML has filing-status sub-keys: verify the code appends `[SINGLE]`, `[JOINT]`, etc.
+
+**Step 4: Verify programmatically (preferred):**
+```bash
+# If policyengine-us is installed locally (e.g., in backend/):
+cd backend && uv run python3 -c "
+from policyengine_us import CountryTaxBenefitSystem
+p = CountryTaxBenefitSystem().parameters
+# Test each path — will raise ParameterNotFoundError if wrong
+paths_to_check = [
+    # Paste extracted paths here
+]
+for path in paths_to_check:
+    try:
+        node = p
+        # Navigate the path
+        # ... (manual or eval-based traversal)
+        print(f'PASS: {path}')
+    except Exception as e:
+        print(f'FAIL: {path} — {e}')
+"
+```
+
+**Common failures to flag:**
+- `rates[0]` when the YAML uses 1-indexed keys (`1:` through `7:`) → FAIL
+- `eitc.max[0]` without `.amount` suffix on a bracket scale → FAIL
+- `rates[0]` without `.rate` suffix on a bracket scale → FAIL
+- Filing-status paths missing the `[SINGLE]`/`[JOINT]` index → FAIL
+
 ## Report Format
 
 ```
 ## Architecture Compliance Report
 
 ### Summary
-- PASS: X/6 checks (or X/5 if not custom-modal)
+- PASS: X/7 checks (or X/5 if not custom-modal)
 - FAIL: Y checks
 
 ### Results
@@ -176,6 +238,7 @@ grep -n 'policyengine' backend/modal_app.py
 | 4 | Package manager | PASS/FAIL | ... |
 | 5 | Tailwind classes used | PASS/FAIL | ... |
 | 6 | Modal backend structure | PASS/FAIL/SKIP | ... |
+| 7 | Parameter path verification | PASS/FAIL/SKIP | ... |
 
 ### Failures (if any)
 

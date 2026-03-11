@@ -22,6 +22,7 @@ Builds the data layer for a dashboard based on the approved `plan.yaml`.
 - **policyengine-interactive-tools-skill** - Data patterns and API integration
 - **policyengine-us-skill** or **policyengine-uk-skill** - PolicyEngine variables
 - **policyengine-simulation-mechanics-skill** - How simulations work (custom-backend only)
+- **policyengine-parameter-patterns-skill** - Parameter YAML structure, bracket path syntax, and Reform.from_dict() paths (custom-backend only)
 
 ## Backend Selection Priority
 
@@ -41,6 +42,7 @@ Pattern C is the most complex and should be the last resort. If the plan specifi
 2. `Skill: policyengine-us-skill` (if US dashboard)
 3. `Skill: policyengine-uk-skill` (if UK dashboard)
 4. `Skill: policyengine-simulation-mechanics-skill` (if custom-backend pattern)
+5. `Skill: policyengine-parameter-patterns-skill` (if custom-backend pattern — **required** for correct Reform.from_dict() paths)
 
 ## Input
 
@@ -256,6 +258,39 @@ def run_statewide(params: dict) -> dict:
     # ... compute and return impacts
     return {"revenue_change": ..., "winners": ..., "losers": ...}
 ```
+
+### Step 3b: Verify All Parameter Paths
+
+**CRITICAL — every parameter path used in `Reform.from_dict()` or reform dictionaries MUST be verified against the actual YAML files.** Incorrect paths cause silent failures or runtime errors like "Could not find the parameter". Consult the `policyengine-parameter-patterns-skill` section 6.5 for the bracket path syntax rules.
+
+**Common mistakes:**
+- **Off-by-one indexing**: Some parameters use 1-indexed keys (e.g., `gov.irs.income.bracket.rates` has keys `1`-`7`, not `0`-`6`). Always check whether the YAML uses a list (0-indexed) or explicit integer keys (use those exact keys).
+- **Missing sub-keys on bracket scales**: Bracket/scale parameters (YAML `brackets:` list) require `.amount` or `.rate` after the index. E.g., `gov.irs.credits.eitc.max[0].amount`, NOT `gov.irs.credits.eitc.max[0]`.
+- **Filing-status-indexed parameters**: Some parameters have sub-keys by filing status (e.g., `gov.irs.credits.ctc.phase_out.threshold[SINGLE]`).
+
+**Verification procedure for every parameter path:**
+
+1. Find the YAML file in the `policyengine-us` (or `policyengine-uk`) parameters directory:
+   ```bash
+   # Convert dotted path to directory path and search
+   find $(python3 -c "import policyengine_us; import os; print(os.path.dirname(policyengine_us.__file__))") \
+     -path "*/parameters/gov/irs/income/bracket.yaml" 2>/dev/null
+   ```
+
+2. Read the YAML and check whether the parameter uses:
+   - **Explicit integer keys** (e.g., `1:`, `2:`, `3:`) → use those exact indices: `path[1]`, `path[2]`
+   - **A `brackets:` list** → use 0-indexed with sub-key: `path[0].amount`, `path[0].rate`
+   - **Filing-status sub-keys** → append `[SINGLE]`, `[JOINT]`, etc.
+
+3. Verify programmatically (if policyengine is installed locally):
+   ```python
+   from policyengine_us import CountryTaxBenefitSystem
+   p = CountryTaxBenefitSystem().parameters
+   # Navigate and confirm the path resolves:
+   print(p.gov.irs.income.bracket.rates[1]("2026-01-01"))  # Should return 0.10
+   ```
+
+**Do NOT guess parameter paths from memory.** Always verify against the actual YAML files.
 
 ### Step 4: Create Worker App
 
