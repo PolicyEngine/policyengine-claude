@@ -41,9 +41,13 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 | `policyengine-app-skill` | app-v2 component architecture reference |
 | `policyengine-api-v2-skill` | API v2 endpoint catalog and async patterns |
 | `policyengine-vercel-deployment-skill` | Vercel deployment configuration |
+| `policyengine-modal-deployment-skill` | Modal deployment for custom dashboard backends |
 | `policyengine-standards-skill` | Code quality and CI/CD standards |
+| `policyengine-writing-skill` | PolicyEngine writing style for blog posts, documentation, and reports |
 | `policyengine-us-skill` | US tax/benefit variables and programs |
 | `policyengine-uk-skill` | UK tax/benefit variables and programs |
+| `policyengine-tailwind-shadcn-skill` | Tailwind CSS v4 + shadcn/ui integration patterns and conventions |
+| `policyengine-ui-kit-consumer-skill` | @policyengine/ui-kit consumer setup, CSS configuration, and troubleshooting |
 
 ## Workflow phases
 
