@@ -15,8 +15,7 @@ The dashboard workflow is a multi-agent pipeline that takes a few paragraphs des
 
 | Command | Purpose |
 |---------|---------|
-| `/init-dashboard` | Create a new GitHub repo, clone locally, set up dashboard-builder plugin |
-| `/create-dashboard` | Full pipeline: plan → scaffold → implement → validate → review |
+| `/create-dashboard` | Full pipeline: init repo → plan → scaffold → implement → validate → review → commit |
 | `/deploy-dashboard` | Deploy a completed dashboard to Vercel (and optionally Modal) |
 | `/dashboard-overview` | List all dashboard builder ecosystem components |
 
@@ -38,13 +37,13 @@ The dashboard workflow is a multi-agent pipeline that takes a few paragraphs des
 ## Workflow Phases
 
 ```
-Pre-req: /init-dashboard (creates repo + clones locally)
-Phase 1: Plan ──→ [HUMAN APPROVAL] ──→ Phase 2: Scaffold
-  ──→ Phase 3: Implement (backend + frontend)
+Phase 0: Init repo (or use existing with --repo/--skip-init)
+Phase 1: Plan ──→ [HUMAN APPROVAL] ──→ Phase 2: Scaffold + quality gates
+  ──→ Phase 3: Implement (backend + frontend IN PARALLEL)
   ──→ Phase 4: Integrate
   ──→ Phase 5: Validate (4 validators in parallel) ──→ [fix loop, max 3 cycles]
-  ──→ Phase 6: [HUMAN REVIEW] ──→ DONE
-  ──→ Phase 6.5: Update overview (silent)
+  ──→ Phase 6: [HUMAN REVIEW] ──→ commit and push
+  ──→ Phase 7: Update overview (silent)
 
 Separately: /deploy-dashboard (after user merges to main)
 ```

@@ -10,8 +10,7 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 
 | Command | Description |
 |---------|-------------|
-| `/init-dashboard` | Creates a new GitHub repo, clones locally, and sets up the dashboard-builder plugin |
-| `/create-dashboard` | Orchestrates multi-agent workflow to create a PolicyEngine dashboard from a natural-language description |
+| `/create-dashboard` | Orchestrates multi-agent workflow: creates repo, plans, scaffolds, implements, validates, and commits a dashboard |
 | `/deploy-dashboard` | Deploys a completed dashboard to Vercel (and optionally Modal) and registers it in the app |
 | `/dashboard-overview` | This command — lists all dashboard builder ecosystem components |
 
@@ -49,17 +48,16 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 ## Workflow phases
 
 ```
-Pre-req: /init-dashboard (creates repo + clones locally)
+Phase 0:  Init repo (creates GitHub repo + clones locally, or uses existing)
 Phase 1:  Plan (dashboard-planner) → HUMAN APPROVAL
-Phase 2:  Scaffold (dashboard-scaffold)
-Phase 3A: Backend (backend-builder)
-Phase 3B: Frontend (frontend-builder)
+Phase 2:  Scaffold (dashboard-scaffold) → quality gates (build + test)
+Phase 3:  Backend + Frontend (PARALLEL)
 Phase 4:  Integrate (dashboard-integrator)
 Phase 5:  Validate (4 validators in parallel) ─┐
           build, design, architecture, plan    │ ← max 3 fix cycles
           Fix → re-validate ───────────────────┘
-Phase 6:  Human review → commit
-Phase 6.5: Update overview (dashboard-overview-updater, silent)
+Phase 6:  Human review → commit and push
+Phase 7:  Update overview (dashboard-overview-updater, silent)
 
 Separately: /deploy-dashboard (after merge to main)
 ```
