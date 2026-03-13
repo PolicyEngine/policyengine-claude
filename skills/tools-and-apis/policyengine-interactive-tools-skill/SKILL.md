@@ -38,6 +38,26 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 - **PolicyEngine logo** — always use the actual logo image, never styled text. Files at `policyengine-app-v2/app/public/assets/logos/policyengine/` (white.png for dark backgrounds, teal.png for light)
 - Sentence case on all UI text
 
+## CRITICAL: Never hardcode computed data
+
+**NEVER manually copy numbers from ad-hoc calculations (bash, Python REPL, etc.) into source files.** All data displayed in charts or UI must come from a generation script that writes to a data file (JSON, CSV) which the frontend imports.
+
+The correct flow is always:
+```
+Python script (reads reform/config) → data file (JSON/CSV) → frontend imports data file
+```
+
+Never:
+```
+Ad-hoc Python in terminal → copy numbers → paste into .tsx/.jsx file
+```
+
+If a repo has a data generation script (e.g., `scripts/generate_*.py`), update that script and re-run it. If one doesn't exist, create one. The script should:
+1. Read its parameters from the repo's config files (e.g., `reform.json`)
+2. Use vectorized simulation where possible (multiple persons in one `Simulation` call)
+3. Write output to a JSON/CSV file that the frontend imports
+4. Be re-runnable to regenerate data when parameters change
+
 ## Data and computation patterns
 
 Choose based on what the tool needs from PolicyEngine:
