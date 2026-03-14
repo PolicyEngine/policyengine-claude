@@ -160,6 +160,46 @@ After creating both parameters and variables, perform TWO verification passes:
 - [ ] Correct period handling (period.this_year for age/assets/counts)
 - [ ] Proper vectorization (no if-elif-else with arrays)
 - [ ] References with subsections and `#page=XX` for PDFs
+- [ ] **YAML structural integrity** (see below)
+- [ ] **Breakdown metadata correctness** (see below)
+- [ ] **Multi-source cross-referencing** for parameter values (see below)
+
+#### YAML structural integrity checks
+
+After writing any parameter YAML file, verify:
+1. **No values after `metadata:`** — The `metadata:` block must be the LAST section. Any state/region values appearing after `metadata:` are orphaned and silently ignored. This is the #1 cause of missing parameter data.
+2. **All top-level keys are either data keys or `metadata`/`description`** — scan the file to confirm no key is accidentally nested under or after `metadata`.
+3. **Effective dates are under the correct key** — when a state has non-standard effective dates (e.g., Indiana uses May 1 instead of October 1), double-check that values are placed under the right state key and not accidentally under an adjacent state.
+
+```yaml
+# ❌ WRONG — WY value is orphaned after metadata block
+WV:
+  2025-10-01: 330
+metadata:
+  unit: currency-USD
+  2025-10-01: 510  # This is LOST — not under any state key!
+
+# ✅ CORRECT — all values before metadata
+WV:
+  2025-10-01: 330
+WY:
+  2025-10-01: 510
+metadata:
+  unit: currency-USD
+```
+
+#### Breakdown metadata correctness
+
+When a parameter YAML uses `breakdown` in metadata, verify:
+1. **The breakdown variable matches the actual keys in the file.** If the file has sub-region keys like `AK_C`, `NY_NYC`, the breakdown must reference the variable whose enum contains those values (e.g., `snap_utility_region`), NOT a more general variable (e.g., `state_code`).
+2. **All data keys in the file exist in the breakdown enum.** If any key is not in the enum, policyengine-core will raise a ValueError (as of core v2.20+).
+
+#### Multi-source cross-referencing for parameter values
+
+When entering parameter values from spreadsheets or tables:
+1. **Verify values for states with non-standard effective dates** (e.g., Indiana uses May 1, Maryland uses January 1 for some programs). Check whether a new value supersedes or supplements existing values.
+2. **For states with sub-regions** (Alaska has 6 SNAP regions, New York has 3), verify each sub-region value individually against the source.
+3. **Spot-check at least 5 values** against the original source document after entering all data. Pick values from the beginning, middle, and end of the alphabet.
 
 ```bash
 uv sync --extra dev && uv run ruff format

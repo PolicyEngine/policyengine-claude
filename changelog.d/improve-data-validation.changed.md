@@ -1,0 +1,1 @@
+Add YAML structural integrity checks, breakdown metadata validation, multi-source cross-referencing, and sub-region test coverage requirements to rules-engineer, implementation-validator, and test-creator agents.

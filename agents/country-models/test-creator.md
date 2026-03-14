@@ -149,3 +149,4 @@ Tests must:
 - Cover all eligibility paths
 - Use only existing PolicyEngine variables
 - NOT exhaustively test every entry in a lookup table — for brackets indexed by household size, FPL tier, etc., test a few representative points (first, middle, last) not every value
+- **Cover all sub-regions/breakdowns** — If a variable uses regional breakdowns (e.g., Alaska's 6 SNAP regions, New York's 3 sub-regions), create at least one test per region plus a default/fallback test. This catches county-to-region mapping errors and ensures all breakdown keys have correct parameter values.
