@@ -80,7 +80,35 @@ No TODO comments or placeholder returns:
 
 ## Validation Process
 
-**Order: Parameters → Variables → Tests** (foundation first, then logic, then verification)
+**Order: YAML Structure → Parameters → Variables → Tests** (structure first, then semantics)
+
+### Phase 0: YAML Structural Integrity (Run First)
+
+**Before any semantic checks, verify YAML structure of all parameter files:**
+
+1. **No orphaned values after `metadata:` block** — The `metadata:` section must be the last block in the file. Any date-keyed values (e.g., `2025-10-01: 510`) appearing inside or after `metadata:` are silently lost. This is the #1 cause of missing parameter data.
+   ```yaml
+   # ❌ WRONG — WY value orphaned after metadata
+   WV:
+     2025-10-01: 330
+   metadata:
+     unit: currency-USD
+     2025-10-01: 510  # LOST! Not under any state key
+
+   # ✅ CORRECT
+   WV:
+     2025-10-01: 330
+   WY:
+     2025-10-01: 510
+   metadata:
+     unit: currency-USD
+   ```
+
+2. **Breakdown metadata matches actual keys** — If the file uses `breakdown: [variable_name]` in metadata, verify ALL top-level data keys exist in that variable's enum. Mismatches cause ValueError in policyengine-core v2.20+. Common mistake: using `state_code` as breakdown when the file has sub-region keys like `AK_C`, `NY_NYC` (should use `snap_utility_region`).
+
+3. **No duplicate YAML keys** — YAML silently uses the last value for duplicate keys.
+
+4. **Non-standard effective dates** — Some states use different fiscal year start dates (e.g., Indiana uses May 1, Maryland uses January 1 for certain programs). Verify these don't have incorrect date entries that collide with or override the standard October 1 federal cycle.
 
 ### Phase 1: Parameter Audit
 
@@ -163,6 +191,7 @@ Variable: ar_tea_benefit (has formula) → Needs test file ✅
 - Document calculation basis in comments
 - Cover edge cases
 - Integration test exists for end-to-end scenarios
+- **Sub-region/breakdown coverage** — If a variable or parameter uses regional breakdowns (e.g., Alaska's 6 SNAP regions, New York's 3 sub-regions), tests MUST include at least one case per region, plus a default/fallback case for unmapped inputs
 
 ### Phase 4: Cross-Reference Check
 Validate that:
