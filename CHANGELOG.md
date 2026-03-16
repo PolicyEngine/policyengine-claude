@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.20.0] - 2026-03-16
+
+### Added
+
+- Add /create-new-component command with design-token-validator and component-test-writer agents for building ui-kit components.
+
+### Changed
+
+- Update dashboard builder workflow to Tailwind v4, standardize on bun, and integrate @policyengine/ui-kit as the primary component library.
+- Rewrite custom Modal backend pattern (Pattern C) to use gateway + worker + polling architecture, mirroring PolicyEngine API v1/v2. Adds API-first backend selection priority, Modal timeout warnings, and React Query polling hooks across all dashboard builder agents, skills, and commands.
+- Add YAML structural integrity checks, breakdown metadata validation, multi-source cross-referencing, and sub-region test coverage requirements to rules-engineer, implementation-validator, and test-creator agents.
+- Replace SDK-based dashboard builder with native /create-dashboard command for full user interactivity
+- Pattern C (custom-modal) backend now uses three-file structure mirroring api-v2: _image_setup.py (snapshot), app.py (Modal decorators), simulation.py (pure logic). Adds .run_function() for fast cold starts, cpu=8.0/memory=32768 resource specs, explicit pydantic in worker pip_install, .add_local_file() for simulation.py mounting, and architecture validator check #6 for Modal backend structure.
+
 ## [3.19.0] - 2026-03-13
 
 ### Added
@@ -243,6 +257,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.20.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.19.0...3.20.0
 [3.19.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.18.5...3.19.0
 [3.18.5]: https://github.com/PolicyEngine/policyengine-claude/compare/3.18.4...3.18.5
 [3.18.4]: https://github.com/PolicyEngine/policyengine-claude/compare/3.18.3...3.18.4
