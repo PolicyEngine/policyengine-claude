@@ -23,7 +23,7 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 | Component | Choice |
 |-----------|--------|
 | Framework | Next.js 14 (App Router) |
-| CSS | Tailwind 4 with `@theme` mapping PE tokens |
+| CSS | Tailwind 4 with `@policyengine/ui-kit` theme |
 | Charts | Recharts |
 | Code highlighting | Prism React Renderer |
 | Testing | Vitest |
@@ -31,10 +31,10 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 | Package manager | `bun` (not npm) |
 
 **Requirements:**
-- `@policyengine/design-system` tokens (CDN link in `layout.jsx`)
+- `@policyengine/ui-kit` theme (installed via `bun add @policyengine/ui-kit`)
 - Inter font via Google Fonts CDN
 - Recharts for charts
-- **NEVER hardcode hex colors or font names** — always use `var(--pe-color-*)` and `var(--pe-font-family-primary)`
+- **NEVER hardcode hex colors or font names** — always use CSS variables from the ui-kit theme (e.g., `var(--primary)`, `var(--chart-1)`, `var(--font-sans)`)
 - **PolicyEngine logo** — always use the actual logo image, never styled text. Files at `policyengine-app-v2/app/public/assets/logos/policyengine/` (white.png for dark backgrounds, teal.png for light)
 - Sentence case on all UI text
 
@@ -152,72 +152,265 @@ export async function calculateHousehold(countryId, household) {
 
 **Pros:** Always up-to-date with latest policy rules, handles arbitrary inputs. **Cons:** Network latency (1-5s per call), rate limits, limited to variables the API supports.
 
-### Pattern C: Custom API on Modal
+### Pattern C: Custom API on Modal (gateway + polling)
 
 Best when you need variables or calculations not in the main PolicyEngine API — custom reform parameters, non-standard entity structures, or computations that combine PolicyEngine with other models.
 
+> **Decision rule:** Before choosing Pattern C, verify that the PolicyEngine API
+> (`api.policyengine.org`) cannot handle the computation. Pattern C is only needed when:
+> - You need microsimulation (society-wide) results
+> - You need custom reform parameters not exposed by the API
+> - You need variables or entity structures not supported by the API
+>
+> If the tool only needs household-level calculations, Pattern B (PolicyEngine API) is
+> always preferred — it's faster, always up-to-date, and requires no backend maintenance.
+
 **When to use:** Tools that vary parameters not exposed by the main API (e.g., varying UBI amounts, custom phase-outs), or tools that need microsimulation (society-wide) results for arbitrary reforms.
 
+**Architecture:** Two-layer gateway + worker with frontend polling. This mirrors the pattern used by PolicyEngine API v1 and API v2.
+
 ```
-┌───────────┐    ┌──────────────────┐    ┌──────────────┐
-│ Next.js   │───>│ Modal serverless │───>│ policyengine │
-│ (browser) │<───│ Python function  │<───│ -us (local)  │
-└───────────┘    └──────────────────┘    └──────────────┘
+┌───────────┐  POST /submit  ┌──────────────────┐  spawn()  ┌──────────────┐
+│ Next.js   │──────────────>│ Gateway (FastAPI) │─────────>│ Worker        │
+│ (browser) │               │ (lightweight)     │          │ (policyengine)│
+│           │  GET /status   │                  │  poll    │               │
+│           │<──────────────│                  │<─────────│               │
+└───────────┘  {status,data} └──────────────────┘          └──────────────┘
 ```
 
-**Example:** GiveCalc lets users specify custom giving amounts and calculates the tax benefit using policyengine-us with custom reform parameters.
+**Why not synchronous HTTP?** Modal's dev gateway (`modal serve`) and production gateway have a ~150s timeout. Long-running requests (like US statewide microsimulations, which take 2-5+ minutes) get an HTTP 303 redirect that browser `fetch()` cannot follow for POST requests. The gateway + polling architecture avoids this entirely.
+
+#### Why three files?
+
+The backend uses a **three-file structure** mirroring policyengine-api-v2's simulation service. This prevents a common crash-loop where module-level imports of pydantic or policyengine fail because those packages are only available inside the Modal function's image, not at module import time.
+
+| File | Purpose | Module-level imports |
+|------|---------|---------------------|
+| `backend/_image_setup.py` | Standalone snapshot function — runs during image build | None (all inside function body) |
+| `backend/app.py` | Modal app + function decorators | Only `modal` |
+| `backend/simulation.py` | Pure business logic | `policyengine_us`/`_uk` (captured in image snapshot) |
+| `backend/modal_app.py` | Lightweight gateway (FastAPI) | `modal`, `fastapi`, `pydantic` |
+
+#### Image setup (`backend/_image_setup.py`)
+
+Standalone function with **no package imports at module level** — executed during image build via `.run_function()`:
 
 ```python
-# modal_app.py
+def snapshot_models():
+    """Pre-load models at image build time for fast cold starts."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("Pre-loading tax-benefit system...")
+    from policyengine_us import CountryTaxBenefitSystem  # or policyengine_uk
+    CountryTaxBenefitSystem()
+    logger.info("Models pre-loaded into image snapshot")
+```
+
+#### Worker app (`backend/app.py`)
+
+Only `modal` at module level. Imports business logic **inside each function body**:
+
+```python
 import modal
+from pathlib import Path
+from _image_setup import snapshot_models
 
-app = modal.App("my-tool")
-image = modal.Image.debian_slim().pip_install("policyengine-us==1.x.x")
+app = modal.App("my-tool-workers")
+_BACKEND_DIR = Path(__file__).parent
+image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .pip_install("policyengine-us==X.Y.Z", "pydantic")  # Pin to latest — look up from PyPI
+    .run_function(snapshot_models)
+    .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
+)
 
-@app.function(image=image, timeout=300)
-@modal.web_endpoint(method="POST")
-def calculate(params: dict):
-    from policyengine_us import Simulation
-    household = params["household"]
-    sim = Simulation(situation=household)
+@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+def compute_household(params: dict) -> dict:
+    from simulation import run_household
+    return run_household(params)
+
+@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+def compute_statewide(params: dict) -> dict:
+    from simulation import run_statewide
+    return run_statewide(params)
+```
+
+#### Simulation logic (`backend/simulation.py`)
+
+Pure business logic — **policyengine imports at module level** (captured in the image snapshot via `.run_function()`). No Modal imports here.
+
+```python
+from policyengine_us import Simulation, Microsimulation  # Snapshotted at build time
+
+def run_household(params: dict) -> dict:
+    sim = Simulation(situation=params["household"])
     return {
         "net_income": float(sim.calculate("household_net_income", 2025).sum()),
     }
+
+def run_statewide(params: dict) -> dict:
+    baseline = Microsimulation()
+    reform = Microsimulation(reform=params["reform"])
+    # ... compute impacts
+    return {"revenue_change": ..., "winners": ..., "losers": ...}
 ```
 
-**Deploy:**
-```bash
-# MUST unset env vars — keychain tokens override modal profile
-unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
-modal deploy modal_app.py
+#### Gateway (`backend/modal_app.py`)
+
+The gateway is lightweight — no policyengine dependency. It spawns worker jobs and polls for results:
+
+```python
+import modal
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+app = modal.App("my-tool")
+
+gateway_image = modal.Image.debian_slim(python_version="3.11").pip_install(
+    "fastapi", "pydantic",
+)
+
+WORKER_APP = "my-tool-workers"
+
+FUNCTION_MAP = {
+    "household-impact": "compute_household",
+    "statewide-impact": "compute_statewide",
+}
+
+web_app = FastAPI()
+web_app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+class SubmitResponse(BaseModel):
+    job_id: str
+
+class StatusResponse(BaseModel):
+    status: str  # "computing" | "ok" | "error"
+    result: dict | None = None
+    message: str | None = None
+
+@web_app.post("/submit/{endpoint}")
+def submit(endpoint: str, params: dict):
+    if endpoint not in FUNCTION_MAP:
+        raise HTTPException(status_code=404, detail=f"Unknown endpoint: {endpoint}")
+    fn = modal.Function.from_name(WORKER_APP, FUNCTION_MAP[endpoint])
+    call = fn.spawn(params)
+    return SubmitResponse(job_id=call.object_id)
+
+@web_app.get("/status/{job_id}")
+def status(job_id: str):
+    from modal.functions import FunctionCall
+    call = FunctionCall.from_id(job_id)
+    try:
+        result = call.get(timeout=0)
+        return StatusResponse(status="ok", result=result)
+    except TimeoutError:
+        return StatusResponse(status="computing")
+    except Exception as e:
+        return StatusResponse(status="error", message=str(e))
+
+@app.function(image=gateway_image)
+@modal.asgi_app()
+def fastapi_app():
+    return web_app
 ```
 
-**URL pattern:** `https://policyengine--my-tool-calculate.modal.run`
+#### Frontend polling client
 
-**Frontend:**
-```js
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://policyengine--my-tool-calculate.modal.run";
+```typescript
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://policyengine--my-tool-fastapi-app.modal.run";
 
-async function calculate(params) {
-  const res = await fetch(API_URL, {
+export async function submitJob(endpoint: string, params: unknown): Promise<string> {
+  const res = await fetch(`${API_URL}/submit/${endpoint}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
-  return res.json();
+  if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
+  const data = await res.json();
+  return data.job_id;
+}
+
+export async function pollStatus(jobId: string) {
+  const res = await fetch(`${API_URL}/status/${jobId}`);
+  if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
+  return res.json();  // { status: "computing" | "ok" | "error", result?, message? }
 }
 ```
+
+#### React Query polling hook
+
+```typescript
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { submitJob, pollStatus } from "../api/client";
+
+export function useAsyncCalculation(queryKey: unknown[], endpoint: string, params: unknown, enabled = true) {
+  const [jobId, setJobId] = useState<string | null>(null);
+
+  // Step 1: Submit job when params change
+  const submit = useQuery({
+    queryKey: [...queryKey, "submit"],
+    queryFn: async () => {
+      const id = await submitJob(endpoint, params);
+      setJobId(id);
+      return id;
+    },
+    enabled,
+  });
+
+  // Step 2: Poll for results
+  const poll = useQuery({
+    queryKey: [...queryKey, "poll", jobId],
+    queryFn: () => pollStatus(jobId!),
+    enabled: !!jobId,
+    refetchInterval: (query) =>
+      query.state.data?.status === "computing" ? 2000 : false,
+  });
+
+  return {
+    isLoading: submit.isLoading || (!!jobId && poll.isLoading),
+    isComputing: poll.data?.status === "computing",
+    isError: submit.isError || poll.data?.status === "error",
+    data: poll.data?.status === "ok" ? poll.data.result : undefined,
+    error: poll.data?.message || submit.error?.message,
+  };
+}
+```
+
+**Deploy:**
+```bash
+# Deploy the worker functions first (includes image snapshot — first build takes ~5 min)
+unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
+modal deploy backend/app.py
+
+# Deploy the gateway
+modal deploy backend/modal_app.py
+```
+
+**URL pattern:** `https://policyengine--my-tool-fastapi-app.modal.run`
 
 **Set Vercel env var:**
 ```bash
 vercel env add NEXT_PUBLIC_API_URL production
-# Enter: https://policyengine--my-tool-calculate.modal.run
+# Enter: https://policyengine--my-tool-fastapi-app.modal.run
 vercel --prod --force --yes --scope policy-engine
 ```
 
-**Pros:** Full control over calculations, can use any policyengine variables/reforms, can do microsimulation. **Cons:** Cold starts (5-15s first call), Modal costs, must pin policyengine version, must redeploy when policy rules update.
+**Pros:** Full control over calculations, can use any policyengine variables/reforms, can do microsimulation, no timeout issues. **Cons:** Fast cold starts (~2s thanks to model pre-loading via `.run_function()`; without snapshot, cold starts take 3-5 minutes), Modal costs, must pin policyengine version, must redeploy when policy rules update, more complex architecture (four files).
 
 **Failure mode:** Modal apps can silently disappear. If frontend gets network errors, `curl` the Modal URL — if 404, redeploy.
+
+#### Modal timeout reference
+
+| Context | Default timeout | Max timeout | Notes |
+|---------|----------------|-------------|-------|
+| `@app.function(timeout=...)` | 300s | 86,400s (24h) | Set per-function |
+| `modal serve` dev gateway | ~150s | Not configurable | Returns HTTP 303 on timeout |
+| `modal deploy` prod gateway | ~150s | Not configurable | Returns HTTP 303 on timeout |
+
+**US statewide microsimulations take 2-5+ minutes.** This exceeds the gateway timeout, which is why synchronous HTTP calls fail for microsimulation endpoints. The gateway + polling architecture avoids this by using non-blocking job submission. Household-level simulations typically complete in 10-40s, within the gateway timeout, but polling is still recommended for consistency.
 
 ### Pattern D: Precomputed CSV dashboard
 
@@ -240,7 +433,7 @@ For analysis repos that precompute data with Python microsimulation pipelines:
 ```bash
 bunx create-next-app@14 my-tool --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd my-tool
-bun add @policyengine/design-system recharts
+bun add @policyengine/ui-kit recharts
 bun add -D vitest
 ```
 
@@ -259,10 +452,6 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         <link
-          rel="stylesheet"
-          href="https://unpkg.com/@policyengine/design-system/dist/tokens.css"
-        />
-        <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
@@ -273,59 +462,40 @@ export default function RootLayout({ children }) {
 }
 ```
 
-**Important:** Load `tokens.css` via CDN `<link>` in `<head>`. The `@import` from `node_modules` does not work with the Next.js CSS pipeline.
-
-### app/globals.css — map PE tokens into Tailwind `@theme`
+### app/globals.css — import ui-kit theme
 
 ```css
 @import "tailwindcss";
-
-@theme {
-  --color-pe-primary-50: var(--pe-color-primary-50);
-  --color-pe-primary-500: var(--pe-color-primary-500);
-  --color-pe-primary-600: var(--pe-color-primary-600);
-  --color-pe-primary-700: var(--pe-color-primary-700);
-
-  --color-pe-gray-50: var(--pe-color-gray-50);
-  --color-pe-gray-100: var(--pe-color-gray-100);
-  --color-pe-gray-200: var(--pe-color-gray-200);
-
-  --color-pe-error: var(--pe-color-error);
-
-  --color-pe-bg-primary: var(--pe-color-bg-primary);
-  --color-pe-text-primary: var(--pe-color-text-primary);
-  --color-pe-text-secondary: var(--pe-color-text-secondary);
-  --color-pe-text-tertiary: var(--pe-color-text-tertiary);
-
-  --color-pe-border-light: var(--pe-color-border-light);
-}
+@import "@policyengine/ui-kit/theme.css";
 
 body {
-  font-family: var(--pe-font-family-primary);
-  color: var(--pe-color-text-primary);
-  background: var(--pe-color-bg-primary);
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 ```
 
-### Using PE tokens in components
+The single `@import "@policyengine/ui-kit/theme.css"` replaces the entire manual `@theme` block. It provides all color, spacing, and typography tokens as CSS variables that Tailwind 4 picks up automatically.
 
-Use `style=` with `var()` for dynamic PE token values:
+### Using tokens in components
+
+Use Tailwind classes from the ui-kit theme:
+
+```jsx
+<div className="bg-muted border border-border rounded-lg p-4">
+```
+
+Or use `style=` with `var()` for inline styles:
 
 ```jsx
 <div style={{
-  backgroundColor: "var(--pe-color-gray-50)",
-  border: "1px solid var(--pe-color-border-light)",
-  borderRadius: "var(--pe-radius-md)",
-  padding: "var(--pe-space-lg)",
+  backgroundColor: "var(--muted)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  padding: "1rem",
 }}>
-```
-
-Or use Tailwind classes that reference the `@theme` mappings:
-
-```jsx
-<div className="bg-pe-gray-50 border border-pe-border-light rounded-md p-4">
 ```
 
 ## Embedding in policyengine.org
@@ -429,36 +599,22 @@ bun add recharts
 **For simple visualizations:** Use SVG directly. The marriage calculator uses hand-rolled SVG heatmaps.
 
 **Color conventions:**
-- Positive/bonus: `var(--pe-color-primary-500)`
-- Negative/penalty: `var(--pe-color-gray-600)` or `var(--pe-color-error)`
-- Neutral: `var(--pe-color-gray-200)`
+- Positive/bonus: `var(--chart-1)`
+- Negative/penalty: `var(--chart-3)` or `var(--destructive)`
+- Neutral: `var(--border)`
 
 **Inverted metrics (taxes):** When positive delta means bad (more taxes), pass `invertDelta` to your chart component to flip labels and colors.
 
-### Recharts + PE tokens
+### Recharts + ui-kit tokens
 
-Recharts renders SVG, which **cannot inherit CSS custom properties** via `style=`. You must resolve token values at render time:
+Recharts accepts CSS variables directly via `fill` and `stroke` props:
 
 ```jsx
-/* Helper to read PE tokens for Recharts SVG props */
-function getCssVar(name) {
-  if (typeof window === "undefined") return "";
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-}
-
-// In your chart component:
-const primaryColor = getCssVar("--pe-color-primary-500");
-const errorColor = getCssVar("--pe-color-error");
-const gridColor = getCssVar("--pe-color-border-light");
-const fontFamily = getCssVar("--pe-font-family-primary");
-
 <BarChart data={data}>
-  <CartesianGrid stroke={gridColor} />
-  <XAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily }} />
-  <YAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily }} />
-  <Bar dataKey="value" fill={primaryColor} />
+  <CartesianGrid stroke="var(--border)" />
+  <XAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
+  <YAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
+  <Bar dataKey="value" fill="var(--chart-1)" />
 </BarChart>
 ```
 
@@ -471,7 +627,7 @@ const fontFamily = getCssVar("--pe-font-family-primary");
 tickFormatter={(v) => v < 0 ? `-$${Math.abs(v)}` : `$${v}`}
 ```
 
-**Never pass hardcoded hex values** like `fill="#319795"` to Recharts — always resolve from CSS variables.
+**Never pass hardcoded hex values** like `fill="#319795"` to Recharts — always use CSS variables (e.g., `fill="var(--chart-1)"`).
 
 ## Code highlighting
 
@@ -513,12 +669,12 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 ## Checklist for new tools
 
 - [ ] Next.js 14 + Tailwind 4 scaffold
-- [ ] `@policyengine/design-system` tokens loaded via CDN `<link>` in layout.jsx
-- [ ] PE tokens mapped in `globals.css` `@theme` block
+- [ ] `@policyengine/ui-kit` installed (`bun add @policyengine/ui-kit`)
+- [ ] `@import "@policyengine/ui-kit/theme.css"` in `globals.css`
 - [ ] Inter font loaded via Google Fonts CDN
-- [ ] **Zero hardcoded hex colors** — all colors via `var(--pe-color-*)`
-- [ ] **Zero hardcoded font names** — all fonts via `var(--pe-font-family-primary)`
-- [ ] Recharts charts use `getCssVar()` helper for SVG props (font, colors)
+- [ ] **Use Tailwind classes from ui-kit theme** — no hardcoded hex colors
+- [ ] **Zero hardcoded font names** — all fonts via `var(--font-sans)`
+- [ ] Recharts charts use `fill="var(--chart-1)"` pattern for SVG props (font, colors)
 - [ ] Recharts axes use `niceTicks` with `domain={["auto", "auto"]}` for human-friendly tick values
 - [ ] Negative dollar values formatted as `-$100` not `$-100`
 - [ ] PE logo is an actual image, not styled text

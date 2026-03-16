@@ -100,15 +100,13 @@ Recharts default tooltip separator is ` : ` (with leading space). Always set `se
 
 ## Standard chart template
 
-Recharts renders to SVG, which cannot read CSS custom properties. Resolve design tokens at render time with a helper (see `policyengine-interactive-tools-skill` for the `getCssVar` utility):
+SVG `fill` and `stroke` attributes accept `var()` directly -- no helper function is needed to resolve CSS custom properties. Use the shadcn/ui chart color variables (`--chart-1` through `--chart-5`) for series colors and standard semantic variables for UI elements:
 
 ```tsx
-import { useMemo } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Label, ReferenceDot,
 } from "recharts";
-import getCssVar from "@/lib/getCssVar"; // reads CSS custom properties
 
 interface DataPoint { x: number; y: number; }
 
@@ -116,14 +114,6 @@ export default function MyChart({ data, highlightX }: {
   data: DataPoint[];
   highlightX?: number;
 }) {
-  // Resolve design tokens for SVG (never hardcode hex values)
-  const { primaryColor, darkTeal, gridColor, fontFamily } = useMemo(() => ({
-    primaryColor: getCssVar("--pe-color-primary-500"),
-    darkTeal:     getCssVar("--pe-color-primary-900"),
-    gridColor:    getCssVar("--pe-color-gray-200"),
-    fontFamily:   getCssVar("--pe-font-family-primary") || "Inter, sans-serif",
-  }), []);
-
   const fmt = (v: number) => v.toLocaleString("en-US", {
     style: "currency", currency: "USD", maximumFractionDigits: 0,
   });
@@ -141,27 +131,27 @@ export default function MyChart({ data, highlightX }: {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data} margin={{ left: 20, right: 30, top: 10, bottom: 20 }}>
-        <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
+        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
         <XAxis
           dataKey="x" type="number"
           domain={[0, xTicks[xTicks.length - 1]]} ticks={xTicks}
           tickFormatter={fmt}
-          tick={{ fontFamily, fontSize: 12 }}
+          tick={{ fontFamily: "var(--font-sans)", fontSize: 12 }}
         >
           <Label value="X axis" position="bottom" offset={0} />
         </XAxis>
         <YAxis
           domain={[0, yTicks[yTicks.length - 1]]} ticks={yTicks}
           tickFormatter={fmt}
-          tick={{ fontFamily, fontSize: 12 }}
+          tick={{ fontFamily: "var(--font-sans)", fontSize: 12 }}
         >
           <Label value="Y axis" angle={-90} position="insideLeft" offset={-5} />
         </YAxis>
         <Tooltip separator=": " formatter={(v: number) => [fmt(v), "Value"]} />
-        <Line type="monotone" dataKey="y" stroke={primaryColor} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="y" stroke="var(--chart-1)" strokeWidth={3} dot={false} />
         {highlightPoint && (
           <ReferenceDot x={highlightPoint.x} y={highlightPoint.y} r={6}
-            fill={darkTeal} stroke={darkTeal} />
+            fill="var(--chart-3)" stroke="var(--chart-3)" />
         )}
       </LineChart>
     </ResponsiveContainer>
@@ -182,28 +172,40 @@ export default function MyChart({ data, highlightX }: {
 
 ## PolicyEngine styling
 
-Never hardcode hex colors in frontend chart code. Resolve from CSS custom properties at render time:
+Never hardcode hex colors in frontend chart code. Use CSS custom properties directly via `var()` in SVG attributes:
 
 ```typescript
-import getCssVar from "@/lib/getCssVar";
+// Chart series colors (shadcn/ui chart palette)
+// Use these for data series — lines, areas, bars, dots
+// --chart-1  Primary series (first line/bar)
+// --chart-2  Secondary series
+// --chart-3  Tertiary series / reference dots
+// --chart-4  Fourth series
+// --chart-5  Fifth series
 
-// Resolve design tokens once per render (useMemo in components)
-const primaryColor = getCssVar("--pe-color-primary-500");    // Primary series
-const darkTeal     = getCssVar("--pe-color-primary-900");    // Reference dots
-const gridColor    = getCssVar("--pe-color-gray-200");       // Grid lines
-const lightFill    = getCssVar("--pe-color-primary-alpha-40"); // Light fill
-const fontFamily   = getCssVar("--pe-font-family-primary");  // Font
+// Semantic UI colors — use for chart chrome (grids, borders, backgrounds)
+// --border       Grid lines, axis lines
+// --background   Tooltip background
+// --foreground   Axis labels, tick text
+// --primary      Interactive UI elements (buttons, links)
+// --font-sans    Font family
 
-// Tooltip
+// Usage in JSX — pass var() directly to SVG attributes:
+<Line stroke="var(--chart-1)" />
+<Area fill="var(--chart-2)" stroke="var(--chart-2)" />
+<ReferenceDot fill="var(--chart-3)" stroke="var(--chart-3)" />
+<CartesianGrid stroke="var(--border)" />
+
+// Tooltip style object
 const TOOLTIP_STYLE = {
-  background: "var(--pe-color-bg-primary)",
-  border: "1px solid var(--pe-color-border-light)",
+  background: "var(--background)",
+  border: "1px solid var(--border)",
   borderRadius: 6,
   padding: "8px 12px",
 };
 ```
 
-See `policyengine-design-skill` for the full token reference. The `getCssVar` helper is documented in `policyengine-interactive-tools-skill`.
+See `policyengine-design-skill` for the full token reference.
 
 ## Key rules
 
@@ -214,7 +216,7 @@ See `policyengine-design-skill` for the full token reference. The `getCssVar` he
 5. **Always wrap in `ResponsiveContainer`** with explicit height
 6. **Use `dot={false}`** on Line components for clean curves with many data points
 7. **Use `ReferenceDot`** to highlight the user's current selection
-8. **Use design tokens for chart colors** — resolve `--pe-color-primary-500` (teal) via `getCssVar`, never hardcode hex values
+8. **Use CSS variables for chart colors** -- pass `var(--chart-1)` through `var(--chart-5)` directly to SVG `fill`/`stroke` attributes; never hardcode hex values
 9. **Negative currency: sign before symbol** - Always format as `-$31`, never `$-31`
 
 ## Currency formatting
@@ -231,4 +233,4 @@ const fmt = (v: number) => v.toLocaleString("en-US", {
 });
 ```
 
-In policyengine-app-v2, use `formatParameterValue()` from `@/utils/chartValueUtils` or `formatCurrency()` from `@/utils/formatters` — both use `Intl.NumberFormat` internally.
+In policyengine-app-v2, use `formatParameterValue()` from `@/utils/chartValueUtils` or `formatCurrency()` from `@/utils/formatters` -- both use `Intl.NumberFormat` internally.

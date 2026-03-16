@@ -53,14 +53,14 @@ vercel --prod --yes --scope policy-engine
 For apps with API backends (e.g., Modal):
 
 ```bash
-# Set env var
-vercel env add VITE_API_URL production
+# Set env var (Next.js uses NEXT_PUBLIC_* prefix)
+vercel env add NEXT_PUBLIC_API_URL production
 
 # Must force-redeploy after changing env vars
 vercel --prod --force --yes --scope policy-engine
 ```
 
-Vite apps access env vars via `import.meta.env.VITE_API_URL`.
+Next.js apps access env vars via `process.env.NEXT_PUBLIC_API_URL`.
 
 ### Verify deployment
 
@@ -82,13 +82,9 @@ vercel --prod --yes
 
 **Generic project names:** Never use generic names like `app` or `site` — they can steal domains from other projects. Always use descriptive names.
 
-### Vite base path
+### vercel.json
 
-For Vercel, always use `base: "/"` in vite.config.js (unlike GitHub Pages which needs a subpath).
-
-### vercel.json (optional)
-
-Must be at repo root. For SPAs:
+Must be at repo root. For Next.js static exports, configure rewrites as needed:
 ```json
 {
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]

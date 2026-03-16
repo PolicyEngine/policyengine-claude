@@ -1,0 +1,1 @@
+Rewrite custom Modal backend pattern (Pattern C) to use gateway + worker + polling architecture, mirroring PolicyEngine API v1/v2. Adds API-first backend selection priority, Modal timeout warnings, and React Query polling hooks across all dashboard builder agents, skills, and commands.
