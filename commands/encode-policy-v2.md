@@ -94,6 +94,7 @@ run_in_background: true
   - Number of income deductions/exemptions found
   - Benefit calculation type (flat, formula, tiered)
   - Complexity hint (simple/complex)
+  - **Failed fetches**: list any URLs that returned 403, redirected, or timed out (with a brief description of what they likely contain)
 
 RULES:
 - PDF hrefs include #page=XX (file page number, NOT printed page number)
@@ -108,6 +109,36 @@ After both agents complete:
 - Report brief status to user
 
 **Stop here if document-collector failed** — cannot proceed without documentation.
+
+### Step 0E: Unreachable Reference Checkpoint (USER CHECKPOINT)
+
+After document-collector completes, check its research summary for any references that **failed to fetch** (403, redirect, timeout, connection refused). State agency websites (e.g., NH DHHS, many .gov sites) commonly block automated access while working fine in a browser.
+
+**If unreachable references exist**, present them to the user using `AskUserQuestion`:
+
+```
+AskUserQuestion:
+  Question: "The document collector could not access these references automatically. Please check them in your browser — if any contain useful data (rate tables, cost share schedules, policy changes), download them and send the file paths."
+  Header: "References"
+  Options:
+    - "I'll download and send files" — wait for user to provide file paths, then re-run document-collector or have a general-purpose agent extract text/screenshots from the user-provided PDFs into sources/working_references.md
+    - "Skip these, proceed with what we have" — continue to Phase 1 with available documentation only
+    - "Let me check first" — pause and wait for user to investigate
+```
+
+**Common unreachable reference types** (look for these in the collector's failed-fetch list):
+- State agency rate schedules (e.g., BCDHSC Form 2533 for rates, Form 2532 for cost share)
+- Supervisory Release (SR) announcements (policy change documents)
+- Policy manual sections (FAM topics)
+- Provider enrollment/billing pages
+
+**If user provides files**, process them before proceeding:
+1. Copy to `/tmp/{PREFIX}-user-doc-{N}.pdf`
+2. Extract text: `pdftotext /tmp/{PREFIX}-user-doc-{N}.pdf /tmp/{PREFIX}-user-doc-{N}.txt`
+3. Render screenshots: `pdftoppm -png -r {DPI} /tmp/{PREFIX}-user-doc-{N}.pdf /tmp/{PREFIX}-user-doc-{N}-page`
+4. Have a general-purpose agent append the new content to `sources/working_references.md`
+
+**If no unreachable references**, skip this step and proceed to Phase 1.
 
 ---
 
