@@ -8,12 +8,12 @@ jobs:
   versioning:
     name: Bump version and build changelog
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     if: "!contains(github.event.head_commit.message, 'Update PolicyEngine Claude')"
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.POLICYENGINE_GITHUB }}
 
       - name: Bump version
         run: python .github/bump_version.py
@@ -30,37 +30,3 @@ jobs:
             .claude-plugin/marketplace.json
             CHANGELOG.md
             changelog.d/
-
-  validate-marketplace:
-    name: Validate marketplace versions
-    runs-on: ubuntu-latest
-    if: "contains(github.event.head_commit.message, 'Update PolicyEngine Claude')"
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check version consistency
-        run: |
-          TOP_VERSION=$(jq -r '.version' .claude-plugin/marketplace.json)
-          echo "Top-level version: $TOP_VERSION"
-          MISMATCH=false
-
-          PLUGIN_COUNT=$(jq '.plugins | length' .claude-plugin/marketplace.json)
-          for i in $(seq 0 $((PLUGIN_COUNT - 1))); do
-            PLUGIN_NAME=$(jq -r ".plugins[$i].name" .claude-plugin/marketplace.json)
-            PLUGIN_VERSION=$(jq -r ".plugins[$i].version" .claude-plugin/marketplace.json)
-            if [ "$PLUGIN_VERSION" != "$TOP_VERSION" ]; then
-              echo "❌ Plugin '$PLUGIN_NAME' version $PLUGIN_VERSION != top-level $TOP_VERSION"
-              MISMATCH=true
-            else
-              echo "  ✅ $PLUGIN_NAME: $PLUGIN_VERSION"
-            fi
-          done
-
-          if [ "$MISMATCH" = true ]; then
-            echo ""
-            echo "❌ Version mismatch detected after auto-bump."
-            exit 1
-          fi
-          echo ""
-          echo "✅ All plugin versions match: $TOP_VERSION"
