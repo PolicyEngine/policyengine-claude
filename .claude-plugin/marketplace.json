@@ -25,6 +25,7 @@
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/domain-knowledge/policyengine-canada-skill",
         "./skills/documentation/policyengine-writing-skill"
       ]
     },
@@ -191,6 +192,7 @@
         "./skills/tools-and-apis/policyengine-microsimulation-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/domain-knowledge/policyengine-canada-skill",
         "./skills/domain-knowledge/policyengine-healthcare-skill",
         "./skills/analysis/policyengine-analysis-skill",
         "./skills/technical-patterns/python-skill",
@@ -380,6 +382,7 @@
       "skills": [
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/domain-knowledge/policyengine-canada-skill",
         "./skills/domain-knowledge/policyengine-healthcare-skill",
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/tools-and-apis/policyengine-microsimulation-skill",
