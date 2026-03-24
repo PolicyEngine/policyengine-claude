@@ -178,6 +178,17 @@ Best when you need variables or calculations not in the main PolicyEngine API �
 └───────────┘  {status,data} └──────────────────┘          └──────────────┘
 ```
 
+**Resource principle:** The gateway and workers have opposite resource profiles:
+
+| Layer | CPU | Memory | Scaling | Why |
+|-------|-----|--------|---------|-----|
+| **Gateway** | Minimal (default) | Minimal (128–256 MB) | Always-on is fine — it's cheap | Only does HTTP routing, `spawn()`, and `FunctionCall.from_id()` — no heavy computation |
+| **Workers** | High (4–8 CPU) | High (16–32 GB) | **Must wind down to zero instances** | Expensive to keep warm; Modal cold-starts are fast (~2s with image snapshot) |
+
+The gateway MUST be lightweight — no `policyengine-us`/`policyengine-uk` dependency, no large memory allocation. It exists solely to accept requests, dispatch jobs to workers via `spawn()`, and report status. Keep its image small (just `fastapi` and `pydantic`) and its resource footprint minimal.
+
+The worker functions do the heavy lifting (loading the tax-benefit system, running simulations) and should be configured with high CPU/memory. But they MUST be allowed to scale to zero when idle — never set `keep_warm` or `min_containers` on worker functions. Modal's image snapshot (via `.run_function()`) keeps cold starts fast enough that always-warm workers are not worth the cost.
+
 **Why not synchronous HTTP?** Modal's dev gateway (`modal serve`) and production gateway have a ~150s timeout. Long-running requests (like US statewide microsimulations, which take 2-5+ minutes) get an HTTP 303 redirect that browser `fetch()` cannot follow for POST requests. The gateway + polling architecture avoids this entirely.
 
 #### Why three files?
@@ -225,6 +236,8 @@ image = (
     .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )
 
+# Workers: high resources, but wind down to zero when idle.
+# NEVER set keep_warm or min_containers — cold starts are fast thanks to image snapshot.
 @app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
 def compute_household(params: dict) -> dict:
     from simulation import run_household
@@ -310,7 +323,8 @@ def status(job_id: str):
     except Exception as e:
         return StatusResponse(status="error", message=str(e))
 
-@app.function(image=gateway_image)
+# Gateway: minimal resources — just HTTP routing, no heavy computation.
+@app.function(image=gateway_image, memory=256)
 @modal.asgi_app()
 def fastapi_app():
     return web_app
