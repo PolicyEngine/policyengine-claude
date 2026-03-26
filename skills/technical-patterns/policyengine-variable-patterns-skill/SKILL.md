@@ -169,6 +169,53 @@ def formula(spm_unit, period, parameters):
 
 ---
 
+## Variable Gotchas
+
+### `age` is a Float
+PolicyEngine's `age` variable is a float, not an integer. Age boundary parameters must use precise values (e.g., `1.5` for 18 months, not `2`).
+
+### `monthly_age` Returns Years, Not Months
+Despite the name, `monthly_age` returns age in **years**. It reverses PolicyEngine's auto-division by 12 for annual variables accessed in monthly periods. For month-based comparisons, use `person("age", period.this_year) * MONTHS_IN_YEAR`.
+
+### `defined_for` + `entity.sum() / N` Couple Gotcha
+When a formula uses `defined_for` on person-level eligibility combined with `marital_unit.sum(variable) / 2` for couples, the ineligible spouse's variable returns 0 (filtered by `defined_for`). The sum includes that zero, so division by 2 halves the eligible spouse's benefit.
+
+### "Eligible Except for Income" Trap
+When a program covers people who "would be eligible for [upstream program] except for income," using the upstream `is_xxx_eligible` (which includes income tests) as a gate **excludes the target population**. Create a separate eligibility variable without income tests, or document the gap.
+
+### Verify Boundary Operators
+When eligibility depends on income vs a threshold, verify whether the regulation says "less than" (`<`) or "at or below" (`<=`). The wrong operator silently misclassifies people at exactly the threshold.
+
+### Child Status: Use Age, Not Tax Dependency
+For benefit eligibility, use an age-based check (`age < 18`), not `is_tax_unit_dependent`. Tax-unit dependents include elderly parents and exclude non-dependent minors.
+
+### Income Exclusion for Exempt Recipients
+When a program exempts recipients of another program (e.g., SSI), their **income must also be excluded** from countable income. Exemption of a person implies exemption of that person's income.
+
+### Parameterize FPL Reference Year
+When a standard is defined as a percentage of FPL, parameterize the FPL reference year rather than using the current-period FPL. The pinned year may differ from the benefit period.
+
+### Minimum Positive Payment
+Check whether the regulation defines a minimum payment for near-threshold recipients (e.g., $1/month). Omitting this floor zeroes out benefits for a narrow but real population.
+
+### Document Unmodeled Pathways
+When a program has multiple eligibility pathways, document which are modeled and which are excluded in the variable docstring.
+
+### `is_ssi_eligible` Does NOT Include an Income Test
+`is_ssi_eligible` only checks aged/blind/disabled status, resource test, and immigration status. Income is handled separately via `uncapped_ssi` in benefit formulas. To check if someone **actually receives SSI**, use `uncapped_ssi > 0` (positive means income is below the SSI benefit amount). State SSP implementations must check **both** `is_ssi_eligible` AND `uncapped_ssi > 0` — SSP requires being an SSI recipient, not just categorically eligible.
+
+```python
+# ❌ WRONG — includes people with too much income:
+eligible = person("is_ssi_eligible", period)
+
+# ✅ CORRECT — actual SSI recipients only:
+categorically_eligible = person("is_ssi_eligible", period)
+receives_ssi = person("uncapped_ssi", period) > 0
+eligible = categorically_eligible & receives_ssi
+```
+
+---
+
 ## Variable Implementation Standards
 
 ### Variable Metadata Format
@@ -592,6 +639,14 @@ Adding a state program to a federal aggregator can create circular dependencies.
 
 **After adding programs, always run the microsimulation test** — it catches cycles and entity mismatches that unit tests miss.
 
+### Register New Programs in `programs.yaml`
+
+When implementing a new state program, add it to the relevant `programs.yaml` registry as part of the initial implementation. Missing entries block the program from appearing in the metadata API and coverage page.
+
+### Applicant vs Recipient Thresholds
+
+When a program has different thresholds for initial applicants vs enrolled recipients (e.g., activity hours, income limits, FPL tiers), model both paths using a boolean enrollment input variable (e.g., `is_tanf_enrolled`). A single threshold misclassifies one population group.
+
 ---
 
 ## TANF-Specific Patterns
@@ -877,6 +932,43 @@ class RICCAPStarRating(Enum):
 **If you need helper functions in a rate lookup, your parameter structure is too granular.** Restructure the parameter files to use Enum breakdowns (see parameter-patterns skill) so the variable is just `select()` + indexing.
 
 **Reference implementation:** MA CCFA reimbursement — `ma_ccfa_center_based_early_education_reimbursement.py` is 3 lines: get region, get age category, index into parameter.
+
+### Enum Ordering and Design
+
+**Place NONE/default values at the END of the enum list**, not the beginning:
+
+```python
+# ❌ BAD:
+class CareType(Enum):
+    NONE = "None"           # Default first
+    NURSING = "Nursing"
+
+# ✅ GOOD:
+class CareType(Enum):
+    NURSING = "Nursing"
+    NONE = "None"           # Default at end
+```
+
+**Don't split enum values for different eligibility pathways that share the same payment amount.** If the payment table has one row, the enum should have one value — regardless of how many qualification routes exist.
+
+### Explicit Category Matching in `select()`
+
+Match ALL categories explicitly — don't rely on `default` for a specific known category:
+
+```python
+# ❌ BAD — default hides bugs if new categories are added:
+return select(
+    [is_region_a, is_region_b],
+    [rate_a, rate_b],
+    default=rate_c,  # Region C is implicit
+)
+
+# ✅ GOOD — all categories explicit:
+return select(
+    [is_region_a, is_region_b, is_region_c],
+    [rate_a, rate_b, rate_c],
+)
+```
 
 #### State Variables to AVOID Creating
 

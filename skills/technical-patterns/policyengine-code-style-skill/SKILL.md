@@ -161,6 +161,10 @@ weekly_subsidy * (WEEKS_IN_YEAR / MONTHS_IN_YEAR)
 
 Available constants: `MONTHS_IN_YEAR` (12), `WEEKS_IN_YEAR` (52). Derive others from these.
 
+**CRITICAL: `WEEKS_IN_YEAR` is the integer 52, not 52.1429.** Never use `WEEKS_IN_YEAR * 7` for days per year — that gives 364, not 365. Use the literal `365` for days-per-year calculations.
+
+**Regulatory conversion factors take precedence.** When a regulation cites a specific factor (e.g., "multiply by 4.3"), use that exact value even if a framework constant is close (`WEEKS_IN_YEAR / MONTHS_IN_YEAR` ≈ 4.333). The discrepancy may affect benefit amounts at boundary conditions.
+
 ---
 
 ## Pattern 6: Streamline Variable Access
@@ -448,6 +452,24 @@ def formula(spm_unit, period, parameters):
 
 ---
 
+## Pattern 10: Remove Redundant Operations
+
+### Don't cap what's already capped
+
+When a formula algebraically guarantees `result <= upper_bound`, remove the redundant `min_()`:
+
+```python
+# ❌ BAD — redundant (payment_standard - positive_income ≤ payment_standard always):
+benefit = min_(max_(payment_standard - countable_income, 0), payment_standard)
+
+# ✅ GOOD — max_(x, 0) already ensures result ≤ payment_standard:
+benefit = max_(payment_standard - countable_income, 0)
+```
+
+Only use `min_()` when the bound can actually bind (e.g., capping subsidy at actual expenses or provider charges).
+
+---
+
 ## Quick Checklist
 
 Before finalizing code:
@@ -461,5 +483,8 @@ Before finalizing code:
 - [ ] Direct returns when possible
 - [ ] Combined boolean logic when possible
 - [ ] Minimal comments (code should be self-documenting)
+- [ ] No redundant `min_()` / `max_()` when algebraically guaranteed
+- [ ] Framework constants used correctly (`WEEKS_IN_YEAR` = 52, not 52.14)
+- [ ] Regulatory conversion factors used when regulation specifies an exact value
 
 

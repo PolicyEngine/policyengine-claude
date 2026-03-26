@@ -177,6 +177,33 @@ values:
 
 **Date format:** `YYYY-MM-01` (always use 01 for day)
 
+### Effective Date Accuracy
+
+**Use the program's effective date, not filing or publication dates:**
+```yaml
+# Regulation filed June 5, 2003; effective January 1, 2004
+❌ 2003-06-05: 500    # Filing date — WRONG
+✅ 2004-01-01: 500    # Effective date — CORRECT
+```
+
+**Beware backward extrapolation:** A parameter's first entry (e.g., `2006-07-01: 20`) is returned for ALL prior periods. If the program didn't exist before that date, add an explicit zero:
+```yaml
+# ❌ Phantom $20 appears in 2005:
+values:
+  2006-07-01: 20
+
+# ✅ Zero before program start:
+values:
+  2000-01-01: 0
+  2006-07-01: 20
+```
+
+**Don't duplicate unchanged values.** If a value is the same across eras, keep one entry at the earliest applicable date.
+
+**Before removing "duplicate" date entries**, verify ALL sub-categories — what looks identical at the top level may differ in specific combinations (e.g., School Age Part Time rates changed while other age/time categories stayed the same).
+
+**Flag unverified historical values** in the PR description rather than silently including them.
+
 ---
 
 ## 4. Metadata Fields (ALL REQUIRED)
@@ -195,6 +222,8 @@ Common units:
 - `month` - Monthly values
 - `day` - Daily values
 - `eternity` - Never changes
+
+**Match `period` to the parameter's semantic meaning.** A dimensionless rate or ratio should use `period: year`, not the period of the quantity it modifies (e.g., don't use `period: week` for a weekly copay *rate* — the rate itself is time-invariant).
 
 ### label
 Pattern: `[State] [PROGRAM] [description]`
@@ -284,6 +313,22 @@ reference:
   - title: OAR 461-155  # Missing subsections (2)(a)(B)!
     href: https://oregon.gov/manual.pdf  # Missing #page=XX
 ```
+
+### Reference Verification Rules
+
+**Distinguish statute from regulation.** Cite the statute that establishes a rule and the regulation that implements it separately — they are different legal instruments.
+
+**Prefer direct document URLs** over landing-page or index-page URLs. Agency websites frequently reorganize navigation pages while direct document links remain stable.
+
+**Annotate reference coverage windows.** When a source has a known publication cutoff (e.g., last published in 2011), note which values it corroborates — don't cite it for values postdating the cutoff.
+
+**Secondary sources (WorkWorld, SSA reports) are simplified.** They may omit eligibility requirements, payment categories, or add interpretive language. Always treat the Admin Code/state regulation as authoritative; use secondary sources for cross-verification only.
+
+**Verify regulation text is present.** When fetching from legal databases (Cornell LII, Westlaw), verify the content contains actual regulation body text, not just a JavaScript shell — many databases render client-side.
+
+**When a regulation portal migrates domains**, update ALL parameter files referencing the old domain in one pass — broken redirects are systematic.
+
+**For state policy choices, cite the state regulation**, not the federal CFR that merely sets the ceiling.
 
 ---
 
@@ -980,4 +1025,25 @@ reform = Reform.from_dict({
     },
 }, 'policyengine_us')
 ```
+
+---
+
+## 7. Transcription & Verification
+
+### Verify Individual Values
+When transcribing rate tables, verify **each individual value** against the source PDF. Single-digit transpositions (e.g., 305 vs 355) cascade to all derived values.
+
+### Don't Assume Arithmetic Ratios
+Never assume fractional-time rates are simple fractions of full-time (e.g., half-time ≠ FT/2). Always verify against the official published rate schedule — actual ratios may differ significantly.
+
+### Implement All Rows
+Always implement ALL rows from the regulatory payment table, not just those in secondary sources. WorkWorld and SSA reports may omit categories that exist in the Admin Code.
+
+### Resolve Source Conflicts
+- **Body text vs data table:** When a regulation's body text states one value but the table implies a different one, compute from the table — body text may reflect outdated policy.
+- **State plan vs operational document:** When they appear to conflict, investigate whether they answer different questions (e.g., "max for one child" vs "max for any family"); the operational document is the implementation source of truth.
+- **"Maximum" rates:** When a state plan reports a single maximum, verify whether it applies to all household configurations or only a subset.
+
+### Parameter Framework Gotcha
+When the parameter framework caches the root parameter tree during microsim init, parameters with start dates after the test year cause `ParameterNotFoundError`. Use the program's actual policy effective date, not a regulation amendment filing date.
 

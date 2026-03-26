@@ -364,3 +364,10 @@ When reviewing PRs that rename variables or functions across the codebase:
 
 ---
 
+## Review-Fix Loop Discipline
+
+- The review-fix loop must continue until **0 critical issues** are found OR the max round limit is reached. Never stop early when criticals remain, even if other severity levels are clean.
+- When an implementation agent creates a correct pattern (e.g., an `_in_effect` boolean), do not instruct them to remove it in favor of a "simpler" approach that introduces an anti-pattern. Trust domain-specific correctness over superficial simplicity.
+
+---
+
