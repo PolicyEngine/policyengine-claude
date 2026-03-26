@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.22.2] - 2026-03-26
+
+### Changed
+
+- Consolidate agent lessons into skills — parameter-patterns, testing-patterns, variable-patterns, code-style, review-patterns, and interactive-tools
+
 ## [3.22.1] - 2026-03-24
 
 ### Changed
@@ -275,6 +281,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+[3.22.2]: https://github.com/PolicyEngine/policyengine-claude/compare/3.22.1...3.22.2
 [3.22.1]: https://github.com/PolicyEngine/policyengine-claude/compare/3.22.0...3.22.1
 [3.22.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.21.0...3.22.0
 [3.21.0]: https://github.com/PolicyEngine/policyengine-claude/compare/3.20.0...3.21.0
