@@ -60,7 +60,7 @@ gh pr view --json number,state,isDraft 2>/dev/null
 ```bash
 EXISTING_PR=$(gh pr view --json number --jq '.number')
 echo "PR #$EXISTING_PR already exists for this branch"
-echo "Use /review-pr $EXISTING_PR or /fix-pr $EXISTING_PR instead"
+echo "Use /review-program $EXISTING_PR or /fix-pr $EXISTING_PR instead"
 exit 0
 ```
 
@@ -286,7 +286,7 @@ git commit -m "Add feature"
 ```bash
 # If PR exists, command tells you and suggests alternatives
 /create-pr
-# Output: "PR #123 exists. Use /review-pr 123 or /fix-pr 123"
+# Output: "PR #123 exists. Use /review-program 123 or /fix-pr 123"
 ```
 
 ## Integration with Other Commands

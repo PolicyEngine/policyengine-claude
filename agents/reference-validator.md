@@ -305,7 +305,7 @@ Output a structured report for review:
 ## Integration with Other Agents
 
 **Used by:**
-- `/review-pr` command - Phase 2 validation step
+- `/review-program` command - Phase 2 validation step
 - `implementation-validator` - Cross-references with other checks
 
 **Outputs to:**
