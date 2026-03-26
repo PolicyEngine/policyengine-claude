@@ -61,12 +61,9 @@
         "./agents/country-models/workflow.md"
       ],
       "commands": [
-        "./commands/audit-state-tax.md",
         "./commands/backdate-program.md",
-        "./commands/encode-policy.md",
         "./commands/encode-policy-v2.md",
         "./commands/encode-reform.md",
-        "./commands/review-pr.md",
         "./commands/review-program.md",
         "./commands/fix-pr.md",
         "./commands/create-pr.md",
@@ -112,7 +109,6 @@
       ],
       "commands": [
         "./commands/create-pr.md",
-        "./commands/review-pr.md",
         "./commands/fix-pr.md"
       ],
       "skills": [
@@ -150,7 +146,6 @@
       "commands": [
         "./commands/create-new-component.md",
         "./commands/create-pr.md",
-        "./commands/review-pr.md",
         "./commands/fix-pr.md",
         "./commands/new-tool.md",
         "./commands/audit-seo.md",
@@ -361,15 +356,12 @@
       ],
       "commands": [
         "./commands/audit-seo.md",
-        "./commands/audit-state-tax.md",
         "./commands/backdate-program.md",
         "./commands/create-new-component.md",
         "./commands/create-pr.md",
-        "./commands/encode-policy.md",
         "./commands/encode-policy-v2.md",
         "./commands/encode-reform.md",
         "./commands/generate-content.md",
-        "./commands/review-pr.md",
         "./commands/review-program.md",
         "./commands/fix-pr.md",
         "./commands/new-tool.md",

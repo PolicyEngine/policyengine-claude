@@ -492,3 +492,48 @@ Always include a test that verifies benefits are capped at the maximum payment a
 
 ---
 
+## 11. Required Test Scenarios
+
+### Every Benefit Program Must Test
+
+1. **At least one positive (non-zero) benefit case.** Zero-benefit-only tests hide formula errors that cancel out.
+2. **At least one ineligible case** returning zero/false.
+3. **Edge case at exactly the threshold** (income, age, or resource limits).
+4. **Edge case for empty/zero-size units** to verify graceful handling of degenerate inputs.
+
+### Dimension Coverage
+
+When a variable depends on a multi-valued dimension (provider type, care setting, filing status), **every dimension value** needs at least one test case. Zero coverage of an entire dimension hides bugs.
+
+### Household Composition
+
+- **TANF/cash assistance**: Always include at least one child — single adults without children are demographically ineligible.
+- **Couple/marital-unit programs**: Include a test with asymmetric eligibility (one member eligible, one not) to catch half-benefit or incorrect-amount bugs from `defined_for` filtering.
+
+### Mid-Year Parameter Transitions
+
+When values change mid-year (e.g., July 1), test **both sides** of the boundary (e.g., June vs July). January-only tests miss off-by-one errors in effective dates.
+
+### Add-On Components
+
+When a benefit has supplements or adjustments, test that each flows through to the **top-level benefit variable** — not just in isolation.
+
+### Combined Federal + State Benefits
+
+When a source provides combined amounts (e.g., Federal SSI + State SSP), test both components independently with comments showing the combined math matches the source.
+
+---
+
+## 12. Test Maintenance Rules
+
+### Verify Input Variable Names
+Check the formula's actual input variable names before writing tests. Use the variable the formula reads (e.g., `employment_income_before_lsr`), not a similar-sounding upstream variable.
+
+### Test Names Must Match Values
+A case named "$275 weekly" that expects $250 misleads reviewers. Keep names and expected values consistent.
+
+### Bug Fixes Require a Test Sweep
+When fixing a buggy parameter or formula, sweep **ALL** test files referencing the affected variable. Stale expected values silently mask regressions.
+
+---
+

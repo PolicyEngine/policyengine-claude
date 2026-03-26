@@ -680,6 +680,14 @@ bunx vitest run
 
 Test API responses against Python fixtures for numerical accuracy. See `PolicyEngine/marriage/tests/` for examples.
 
+### Frontend Verification Rules
+
+- **`curl` returning 200 does NOT mean a frontend works.** SPAs serve an HTML shell regardless of whether React components render. The only reliable check is `bun run build`.
+- **Never claim a dev server is running** without checking `lsof -i :<port>`.
+- **You cannot visually verify a frontend.** After the build passes and dev server starts, tell the user it's ready — don't claim it "looks good."
+- **When `bun install` fails**, try at most 2 approaches before asking the user. Do not rabbit-hole into manual tar extraction, `rm -rf node_modules`, or obscure npm flags.
+- **If you've tried 2 things and they haven't worked, stop and ask.** The user would rather hear "I'm stuck, here's what I tried" than watch increasingly desperate hacks.
+
 ## Checklist for new tools
 
 - [ ] Next.js 14 + Tailwind 4 scaffold

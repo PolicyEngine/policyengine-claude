@@ -1,10 +1,10 @@
 ---
-description: Apply fixes to a PR based on /review-pr, /review-program findings, or PR review comments
+description: Apply fixes to a PR based on /review-program findings or PR review comments
 ---
 
 # Fixing PR: $ARGUMENTS
 
-Apply fixes to PR issues identified by `/review-pr`, `/review-program`, or GitHub review comments.
+Apply fixes to PR issues identified by `/review-program` or GitHub review comments.
 
 ## Arguments
 
