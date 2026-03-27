@@ -1,0 +1,1 @@
+Add policyengine-us-data-pipeline skill for tracing variables through the US data pipeline: imputation sources, calibration targets, run ID / HuggingFace artifact linkage, and cross-stage investigation patterns.

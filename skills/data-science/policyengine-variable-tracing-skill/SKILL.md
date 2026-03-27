@@ -403,7 +403,7 @@ policyengine-us-data or policyengine-uk-data), the value came from one of these 
    is the key. Calibration fixes the aggregate but cannot correct a systematically
    wrong imputation at the record level.
 
-See `examples/snap-trace.md` for a complete end-to-end walkthrough of this workflow
+See `examples/snap-trace.md` for a walkthrough of this workflow
 applied to the `snap` variable.
 
 ### Important: formula variables are NOT stored
