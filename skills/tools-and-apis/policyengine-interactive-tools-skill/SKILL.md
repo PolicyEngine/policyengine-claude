@@ -626,15 +626,15 @@ Recharts accepts CSS variables directly via `fill` and `stroke` props:
 ```jsx
 <BarChart data={data}>
   <CartesianGrid stroke="var(--border)" />
-  <XAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
-  <YAxis niceTicks domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
+  <XAxis niceTicks="snap125" domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
+  <YAxis niceTicks="snap125" domain={["auto", "auto"]} tick={{ fontSize: 12, fontFamily: "var(--font-sans)" }} />
   <Bar dataKey="value" fill="var(--chart-1)" />
 </BarChart>
 ```
 
-**Always use `niceTicks`** on `<XAxis>` and `<YAxis>` — this snaps tick values to human-friendly round numbers (e.g., `[0, 5, 10, 15]` instead of `[0, 3.5, 7, 10.5]`). Accepts `true` (boolean) or enum values `'auto'`, `'nice'`, `'equidistant'`, `'none'`. Default to `niceTicks` (boolean) for simplicity.
+**Always set `niceTicks="snap125"`** on every `<XAxis>` and `<YAxis>`. This snaps tick step sizes to {1, 2, 2.5, 5} × 10^n, producing human-friendly round labels like `0, 5, 10, 15, 20`. Do NOT use `niceTicks` as a bare boolean or `niceTicks="auto"` — always specify `"snap125"` explicitly. The `snap125` algorithm may leave some blank space at chart edges; this is the correct trade-off for readability.
 
-**Always set `domain={["auto", "auto"]}`** on axes using `niceTicks` — the default recharts domain `[0, 'auto']` clamps the minimum to 0, which breaks tick calculation for data that doesn't start at 0 (e.g., all-negative values). Setting both ends to `"auto"` lets recharts compute the domain from the data.
+**Always pair with `domain={["auto", "auto"]}`** — the default recharts domain `[0, 'auto']` clamps the minimum to 0, which breaks tick calculation for data that doesn't start at 0 (e.g., all-negative values). Setting both ends to `"auto"` lets recharts compute the domain from the data.
 
 **Format negative dollar values as `-$100`** not `$-100` — use a custom `tickFormatter` like:
 ```jsx
@@ -697,7 +697,7 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 - [ ] **Use Tailwind classes from ui-kit theme** — no hardcoded hex colors
 - [ ] **Zero hardcoded font names** — all fonts via `var(--font-sans)`
 - [ ] Recharts charts use `fill="var(--chart-1)"` pattern for SVG props (font, colors)
-- [ ] Recharts axes use `niceTicks` with `domain={["auto", "auto"]}` for human-friendly tick values
+- [ ] Recharts axes use `niceTicks="snap125"` with `domain={["auto", "auto"]}` for human-friendly tick values
 - [ ] Negative dollar values formatted as `-$100` not `$-100`
 - [ ] PE logo is an actual image, not styled text
 - [ ] Sentence case on all UI text
