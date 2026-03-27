@@ -1,0 +1,1 @@
+Added policyengine-variable-tracing-skill for data pipeline developers: find variable definitions in country model packages, read variable types (input/formula/adds), trace dependency chains, map H5 values to their data sources, and verify against legal citations. Works for both policyengine-us and policyengine-uk.
