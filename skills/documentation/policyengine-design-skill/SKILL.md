@@ -163,8 +163,8 @@ Standard Tailwind spacing classes (`p-4`, `gap-2`, `m-6`) use the default Tailwi
 import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 
 <BarChart data={data}>
-  <XAxis dataKey="name" style={{ fontFamily: "var(--font-sans)" }} />
-  <YAxis style={{ fontFamily: "var(--font-sans)" }} />
+  <XAxis dataKey="name" niceTicks="snap125" domain={["auto", "auto"]} style={{ fontFamily: "var(--font-sans)" }} />
+  <YAxis niceTicks="snap125" domain={["auto", "auto"]} style={{ fontFamily: "var(--font-sans)" }} />
   <Tooltip separator=": " />
   <Bar dataKey="value" fill="var(--chart-1)" />
 </BarChart>

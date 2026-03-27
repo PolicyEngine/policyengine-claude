@@ -34,57 +34,42 @@ import {
 
 ## Nice axis ticks (CRITICAL)
 
-Recharts' default tick generation produces ugly non-round numbers (e.g., $6,000, $28,000, $51,000). This is a known long-standing issue (recharts/recharts#2140, #777, #1164).
+Recharts' default tick generation produces ugly non-round numbers. Since **v3.8.0**, Recharts has a built-in `niceTicks` prop that solves this natively.
 
-**Always use explicit ticks with a `niceTicks()` helper:**
-
-```typescript
-/**
- * Compute nice round tick values for a chart axis starting at 0.
- */
-function niceTicks(dataMax: number, targetCount: number = 5): number[] {
-  if (dataMax <= 0) return [0];
-  const rawStep = dataMax / targetCount;
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const normalized = rawStep / magnitude;
-
-  let niceStep: number;
-  if (normalized <= 1) niceStep = 1 * magnitude;
-  else if (normalized <= 2) niceStep = 2 * magnitude;
-  else if (normalized <= 2.5) niceStep = 2.5 * magnitude;
-  else if (normalized <= 5) niceStep = 5 * magnitude;
-  else niceStep = 10 * magnitude;
-
-  const niceMax = Math.ceil(dataMax / niceStep) * niceStep;
-  const ticks: number[] = [];
-  for (let v = 0; v <= niceMax; v += niceStep) {
-    ticks.push(Math.round(v * 1e10) / 1e10);
-  }
-  return ticks;
-}
-```
-
-Apply to axes:
+**Always set `niceTicks="snap125"` on every `<XAxis>` and `<YAxis>`:**
 
 ```tsx
-const xMax = Math.max(...data.map(d => d.x));
-const yMax = Math.max(...data.map(d => d.y));
-const xTicks = niceTicks(xMax);
-const yTicks = niceTicks(yMax);
-
 <XAxis
   dataKey="x"
   type="number"
-  domain={[0, xTicks[xTicks.length - 1]]}
-  ticks={xTicks}
+  niceTicks="snap125"
+  domain={["auto", "auto"]}
   tickFormatter={tickFormatter}
 />
 <YAxis
-  domain={[0, yTicks[yTicks.length - 1]]}
-  ticks={yTicks}
+  niceTicks="snap125"
+  domain={["auto", "auto"]}
   tickFormatter={tickFormatter}
 />
 ```
+
+The `snap125` algorithm snaps tick step sizes to **{1, 2, 2.5, 5} × 10^n**, producing human-friendly round labels like `0, 5, 10, 15, 20` instead of `0, 4, 8, 12, 16`. It may leave some blank space at chart edges — this is the correct trade-off for readability.
+
+**Do NOT:**
+- Use a custom `niceTicks()` helper function — the built-in prop replaces it
+- Use `niceTicks` as a bare boolean or `niceTicks="auto"` — always specify `"snap125"` explicitly
+- Manually compute ticks arrays — let Recharts handle it
+
+**`niceTicks` enum values** (always use `"snap125"`):
+
+| Value | Behavior | Use? |
+|-------|----------|------|
+| `"snap125"` | Snaps to {1,2,2.5,5} multiples — roundest labels | **Always use this** |
+| `"adaptive"` | Space-efficient, less round labels | No |
+| `"auto"` | Context-dependent, mirrors v2 behavior | No |
+| `"none"` | No rounding, raw d3 ticks | No |
+
+**Always pair with `domain={["auto", "auto"]}`** — the default domain `[0, 'auto']` clamps the minimum to 0, which breaks tick calculation for data that doesn't start at 0 (e.g., all-negative values).
 
 ## Tooltip separator
 
@@ -117,11 +102,6 @@ export default function MyChart({ data, highlightX }: {
   const fmt = (v: number) => v.toLocaleString("en-US", {
     style: "currency", currency: "USD", maximumFractionDigits: 0,
   });
-  const xMax = Math.max(...data.map(d => d.x));
-  const yMax = Math.max(...data.map(d => d.y));
-  const xTicks = niceTicks(xMax);
-  const yTicks = niceTicks(yMax);
-
   const highlightPoint = highlightX != null
     ? data.reduce((best, d) =>
         Math.abs(d.x - highlightX) < Math.abs(best.x - highlightX) ? d : best,
@@ -134,14 +114,14 @@ export default function MyChart({ data, highlightX }: {
         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
         <XAxis
           dataKey="x" type="number"
-          domain={[0, xTicks[xTicks.length - 1]]} ticks={xTicks}
+          niceTicks="snap125" domain={["auto", "auto"]}
           tickFormatter={fmt}
           tick={{ fontFamily: "var(--font-sans)", fontSize: 12 }}
         >
           <Label value="X axis" position="bottom" offset={0} />
         </XAxis>
         <YAxis
-          domain={[0, yTicks[yTicks.length - 1]]} ticks={yTicks}
+          niceTicks="snap125" domain={["auto", "auto"]}
           tickFormatter={fmt}
           tick={{ fontFamily: "var(--font-sans)", fontSize: 12 }}
         >
@@ -209,8 +189,8 @@ See `policyengine-design-skill` for the full token reference.
 
 ## Key rules
 
-1. **Always use `niceTicks()`** - never rely on Recharts auto-tick generation
-2. **Always set `domain={[0, max]}`** - axes must start at 0
+1. **Always set `niceTicks="snap125"`** on every `<XAxis>` and `<YAxis>` — never omit it, never use the bare boolean or `"auto"`
+2. **Always set `domain={["auto", "auto"]}`** — required for `niceTicks` to compute correct domains
 3. **Always set `type="number"` on XAxis** when using numeric data keys
 4. **Always set `separator=": "`** on Tooltip
 5. **Always wrap in `ResponsiveContainer`** with explicit height
