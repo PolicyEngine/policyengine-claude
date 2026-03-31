@@ -1,22 +1,25 @@
 ---
 name: policyengine-plugin-maintenance
 description: |
-  Use this skill when updating the policyengine-claude plugin itself — adding skills, fixing skill
-  routing, updating years in code examples, reordering skills, or tuning skill descriptions.
+  Use this skill when updating the PolicyEngine skills source repo or the generated
+  policyengine-claude wrapper — adding skills, fixing skill routing, updating years in code
+  examples, reordering skills, or tuning skill descriptions.
   Triggers: "update plugin", "fix skill", "wrong skill loaded", "update year", "plugin maintenance",
-  "skill routing", "skill description", "policyengine-claude plugin".
+  "skill routing", "skill description", "policyengine-claude plugin", "policyengine-skills".
 ---
 
-# PolicyEngine-Claude plugin maintenance
+# PolicyEngine skills and Claude wrapper maintenance
 
-> **This skill is for maintaining the policyengine-claude plugin itself, not for using PolicyEngine.**
+> **This skill is for maintaining the PolicyEngine skills source repo and Claude wrapper, not for using PolicyEngine.**
 
 ## Plugin architecture
 
-- **Marketplace source**: `~/.claude/plugins/marketplaces/policyengine-claude/`
+- **Canonical source**: `PolicyEngine/policyengine-skills`
+- **Generated wrapper repo**: `PolicyEngine/policyengine-claude`
+- **Marketplace source checkout**: `~/.claude/plugins/marketplaces/policyengine-claude/`
 - **Installed cache**: `~/.claude/plugins/cache/policyengine-claude/complete/<version>/`
 - **Plugin registry**: `~/.claude/plugins/installed_plugins.json`
-- **Manifest**: `.claude-plugin/marketplace.json` (defines sub-plugins, skill lists, agents)
+- **Claude manifest**: `targets/claude/marketplace.template.json` + `bundles/*.json` in source, rendered to `.claude-plugin/marketplace.json` in the generated wrapper
 
 ## How skill matching works
 
@@ -57,9 +60,9 @@ description: |
   Triggers: "keyword1", "keyword2", "phrase one", "phrase two".
 ```
 
-## Skill ordering in marketplace.json
+## Skill ordering in bundle manifests
 
-The `complete` sub-plugin's `skills` array determines system prompt order.
+The `bundles/complete.json` file determines Claude system prompt order for the generated `complete` wrapper.
 
 **Current priority order** (most commonly needed first):
 1. `policyengine-us-skill` / `policyengine-uk-skill` (household calculations)
@@ -114,7 +117,7 @@ find skills/ -name "SKILL.md" -exec sed -i '' 's/"2026"/"2027"/g' {} +
 - Update the "IMPORTANT" callout in each skill: `not 2025 or 2026` → `not 2026 or 2027`
 - Update reform date ranges: `"2026-01-01.2100-12-31"` → `"2027-01-01.2100-12-31"`
 - The UK "Key Parameters and Values" heading with tax year
-- Copy changes to cache AND commit to marketplace source
+- Rebuild the Claude wrapper after changing source files
 
 ## Making changes effective
 
@@ -127,21 +130,24 @@ the cache from the marketplace repo's git state on session start.
 **To test local changes:**
 
 ```bash
-# 1. Make changes in the marketplace repo and commit
-cd ~/.claude/plugins/marketplaces/policyengine-claude
+# 1. Make changes in the source repo and commit
+cd /path/to/policyengine-skills
 # ... edit files, git add, git commit ...
 
-# 2. Clear the plugin cache (this is the key step)
+# 2. Rebuild the generated Claude wrapper locally
+python3 scripts/build_claude_wrapper.py --source-root . --output-root build/policyengine-claude
+
+# 3. Clear the plugin cache (this is the key step)
 rm -rf ~/.claude/plugins/cache/policyengine-claude
 
-# 3. Start a new Claude Code session — it rebuilds from the marketplace repo
+# 4. Start a new Claude Code session — it rebuilds from the synced marketplace repo
 ```
 
 **To publish changes for all users:**
 
-1. Create branch in marketplace repo, make changes, commit, push
+1. Create branch in `policyengine-skills`, make changes, commit, push
 2. Create and merge PR to main
-3. Switch marketplace repo back to main: `git checkout main && git pull`
+3. Let CI sync the generated output to `PolicyEngine/policyengine-claude`
 4. Clear cache: `rm -rf ~/.claude/plugins/cache/policyengine-claude`
 5. Start new session to verify
 

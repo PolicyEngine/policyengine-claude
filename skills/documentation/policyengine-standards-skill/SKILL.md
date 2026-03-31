@@ -208,7 +208,7 @@ bun run lint -- --max-warnings=0
 
 #### New system: towncrier (`changelog.d/` fragments)
 
-Used by: policyengine-claude, and newer repos with a `changelog.d/` directory.
+Used by: policyengine-skills, the generated policyengine-claude wrapper, and newer repos with a `changelog.d/` directory.
 
 ```bash
 echo "Description of change." > changelog.d/branch-name.added.md
@@ -327,7 +327,7 @@ Review every result -- some will be docs/changelogs (safe to update later), othe
 | **CLAUDE.md** | Repo-specific instructions that reference the old name | Paths, URLs, skill references |
 | **Import paths (Python)** | Package name derived from repo name | `from old_name import ...` |
 | **Vercel / deployment configs** | Project names, domain aliases | `vercel.json`, Vercel dashboard settings |
-| **policyengine-claude skills** | Skill files that reference the repo | Links in `SKILL.md` files across this plugin |
+| **policyengine-skills source** | Skill files that reference the repo | Links in `SKILL.md` files across the canonical source repo |
 
 ### 3. Cross-repo coordination
 

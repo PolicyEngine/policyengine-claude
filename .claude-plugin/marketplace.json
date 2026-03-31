@@ -9,177 +9,25 @@
   },
   "plugins": [
     {
-      "name": "essential",
-      "description": "Essential PolicyEngine knowledge for all users - understanding the platform, using the web app, and basic concepts",
-      "source": "./",
-      "category": "getting-started",
-      "version": "3.22.3",
-      "keywords": ["beginner", "users", "guide", "basics"],
-      "author": {
-        "name": "PolicyEngine",
-        "url": "https://github.com/PolicyEngine"
-      },
-      "license": "MIT",
-      "hooks": "./hooks/hooks.json",
-      "skills": [
-        "./skills/documentation/policyengine-user-guide-skill",
-        "./skills/domain-knowledge/policyengine-us-skill",
-        "./skills/domain-knowledge/policyengine-uk-skill",
-        "./skills/domain-knowledge/policyengine-canada-skill",
-        "./skills/documentation/policyengine-writing-skill"
-      ]
-    },
-    {
-      "name": "country-models",
-      "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages",
-      "source": "./",
-      "category": "development",
-      "version": "3.22.3",
-      "keywords": ["tax", "benefits", "microsimulation", "country-models", "rules", "testing"],
-      "author": {
-        "name": "PolicyEngine",
-        "url": "https://github.com/PolicyEngine"
-      },
-      "license": "MIT",
-      "hooks": "./hooks/hooks.json",
-      "agents": [
-        "./agents/country-models/ci-fixer.md",
-        "./agents/country-models/cross-program-validator.md",
-        "./agents/country-models/document-collector.md",
-        "./agents/country-models/documentation-enricher.md",
-        "./agents/country-models/edge-case-generator.md",
-        "./agents/country-models/implementation-validator.md",
-        "./agents/country-models/integration-agent.md",
-        "./agents/country-models/isolation-enforcement.md",
-        "./agents/country-models/isolation-setup.md",
-        "./agents/country-models/issue-manager.md",
-        "./agents/country-models/performance-optimizer.md",
-        "./agents/country-models/pr-pusher.md",
-        "./agents/country-models/program-reviewer.md",
-        "./agents/country-models/rules-engineer.md",
-        "./agents/country-models/test-creator.md",
-        "./agents/country-models/workflow.md"
-      ],
-      "commands": [
-        "./commands/backdate-program.md",
-        "./commands/encode-policy-v2.md",
-        "./commands/encode-reform.md",
-        "./commands/review-program.md",
-        "./commands/fix-pr.md",
-        "./commands/create-pr.md",
-        "./commands/write-tests.md"
-      ],
-      "skills": [
-        "./skills/documentation/policyengine-user-guide-skill",
-        "./skills/domain-knowledge/policyengine-us-skill",
-        "./skills/domain-knowledge/policyengine-uk-skill",
-        "./skills/domain-knowledge/policyengine-healthcare-skill",
-        "./skills/tools-and-apis/policyengine-core-skill",
-        "./skills/data-science/policyengine-us-data-skill",
-        "./skills/technical-patterns/policyengine-aggregation-skill",
-        "./skills/technical-patterns/policyengine-period-patterns-skill",
-        "./skills/technical-patterns/policyengine-testing-patterns-skill",
-        "./skills/technical-patterns/policyengine-variable-patterns-skill",
-        "./skills/technical-patterns/policyengine-parameter-patterns-skill",
-        "./skills/technical-patterns/policyengine-vectorization-skill",
-        "./skills/technical-patterns/policyengine-review-patterns-skill",
-        "./skills/technical-patterns/policyengine-code-style-skill",
-        "./skills/technical-patterns/policyengine-code-organization-skill",
-        "./skills/technical-patterns/policyengine-reform-patterns-skill",
-        "./skills/technical-patterns/python-skill",
-        "./skills/documentation/policyengine-standards-skill",
-        "./skills/documentation/policyengine-writing-skill",
-        "./skills/technical-patterns/policyengine-test-writing-skill"
-      ]
-    },
-    {
-      "name": "api-development",
-      "description": "API development - Flask endpoints, caching, services, and integration patterns",
-      "source": "./",
-      "category": "development",
-      "version": "3.22.3",
-      "keywords": ["api", "flask", "backend", "rest", "endpoints"],
-      "author": {
-        "name": "PolicyEngine",
-        "url": "https://github.com/PolicyEngine"
-      },
-      "license": "MIT",
-      "agents": [
-        "./agents/api/api-reviewer.md"
-      ],
-      "commands": [
-        "./commands/create-pr.md",
-        "./commands/fix-pr.md"
-      ],
-      "skills": [
-        "./skills/tools-and-apis/policyengine-api-skill",
-        "./skills/tools-and-apis/policyengine-api-v2-skill",
-        "./skills/tools-and-apis/policyengine-core-skill",
-        "./skills/domain-knowledge/policyengine-us-skill",
-        "./skills/domain-knowledge/policyengine-uk-skill",
-        "./skills/documentation/policyengine-design-skill",
-        "./skills/documentation/policyengine-standards-skill",
-        "./skills/documentation/policyengine-writing-skill"
-      ]
-    },
-    {
-      "name": "app-development",
-      "description": "React app development - app-v2, standalone tools, Vercel deployment, and PolicyEngine-specific patterns",
-      "source": "./",
-      "category": "development",
-      "version": "3.22.3",
-      "keywords": ["react", "frontend", "app", "ui", "components", "vercel", "interactive-tools"],
-      "author": {
-        "name": "PolicyEngine",
-        "url": "https://github.com/PolicyEngine"
-      },
-      "license": "MIT",
-      "agents": [
-        "./agents/app/app-reviewer.md",
-        "./agents/app/component-test-writer.md",
-        "./agents/app/design-token-validator.md",
-        "./agents/app/seo-meta-checker.md",
-        "./agents/app/seo-crawlability-checker.md",
-        "./agents/app/seo-performance-checker.md",
-        "./agents/app/seo-content-checker.md"
-      ],
-      "commands": [
-        "./commands/create-new-component.md",
-        "./commands/create-pr.md",
-        "./commands/fix-pr.md",
-        "./commands/new-tool.md",
-        "./commands/audit-seo.md",
-        "./commands/write-tests.md"
-      ],
-      "skills": [
-        "./skills/tools-and-apis/policyengine-app-skill",
-        "./skills/tools-and-apis/policyengine-interactive-tools-skill",
-        "./skills/tools-and-apis/policyengine-vercel-deployment-skill",
-        "./skills/tools-and-apis/policyengine-api-skill",
-        "./skills/domain-knowledge/policyengine-us-skill",
-        "./skills/domain-knowledge/policyengine-uk-skill",
-        "./skills/documentation/policyengine-design-skill",
-        "./skills/documentation/policyengine-standards-skill",
-        "./skills/documentation/policyengine-writing-skill",
-        "./skills/technical-patterns/seo-checklist-skill",
-        "./skills/technical-patterns/policyengine-test-writing-skill",
-        "./skills/technical-patterns/policyengine-recharts-skill",
-        "./skills/frontend/policyengine-tailwind-shadcn-skill",
-        "./skills/frontend/policyengine-ui-kit-consumer-skill"
-      ]
-    },
-    {
       "name": "analysis-tools",
       "description": "Policy analysis and research - impact studies, dashboards, notebooks, and visualizations",
-      "source": "./",
       "category": "analysis",
       "version": "3.22.3",
-      "keywords": ["analysis", "research", "policy", "impact", "streamlit", "plotly", "notebooks"],
+      "keywords": [
+        "analysis",
+        "research",
+        "policy",
+        "impact",
+        "streamlit",
+        "plotly",
+        "notebooks"
+      ],
       "author": {
         "name": "PolicyEngine",
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/tools-and-apis/policyengine-python-client-skill",
@@ -196,181 +44,116 @@
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-writing-skill",
         "./skills/documentation/policyengine-research-lookup-skill"
-      ]
+      ],
+      "commands": [],
+      "agents": []
     },
     {
-      "name": "data-science",
-      "description": "Data analysis, survey enhancement, imputation, calibration, and microdata utilities",
-      "source": "./",
-      "category": "data",
+      "name": "api-development",
+      "description": "API development - Flask endpoints, caching, services, and integration patterns",
+      "category": "development",
       "version": "3.22.3",
-      "keywords": ["data", "microdata", "survey", "imputation", "calibration", "inequality", "poverty", "ml"],
+      "keywords": [
+        "api",
+        "flask",
+        "backend",
+        "rest",
+        "endpoints"
+      ],
       "author": {
         "name": "PolicyEngine",
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
-        "./skills/data-science/microdf-skill",
-        "./skills/data-science/microimpute-skill",
-        "./skills/data-science/microcalibrate-skill",
-        "./skills/data-science/l0-skill",
-        "./skills/data-science/policyengine-us-data-skill",
-        "./skills/tools-and-apis/policyengine-simulation-mechanics-skill",
-        "./skills/tools-and-apis/policyengine-microsimulation-skill",
+        "./skills/tools-and-apis/policyengine-api-skill",
+        "./skills/tools-and-apis/policyengine-api-v2-skill",
+        "./skills/tools-and-apis/policyengine-core-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
-        "./skills/domain-knowledge/policyengine-healthcare-skill",
-        "./skills/technical-patterns/python-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill"
+      ],
+      "commands": [
+        "./commands/create-pr.md",
+        "./commands/fix-pr.md"
+      ],
+      "agents": [
+        "./agents/api/api-reviewer.md"
       ]
     },
     {
-      "name": "dashboard-builder",
-      "description": "Orchestrated AI workflow for creating PolicyEngine dashboards from natural-language descriptions",
-      "source": "./",
+      "name": "app-development",
+      "description": "React app development - app-v2, standalone tools, Vercel deployment, and PolicyEngine-specific patterns",
       "category": "development",
       "version": "3.22.3",
-      "keywords": ["dashboard", "calculator", "interactive", "workflow", "orchestration", "react", "vercel"],
+      "keywords": [
+        "react",
+        "frontend",
+        "app",
+        "ui",
+        "components",
+        "vercel",
+        "interactive-tools"
+      ],
       "author": {
         "name": "PolicyEngine",
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
-      "agents": [
-        "./agents/dashboard/dashboard-planner.md",
-        "./agents/dashboard/dashboard-scaffold.md",
-        "./agents/dashboard/backend-builder.md",
-        "./agents/dashboard/frontend-builder.md",
-        "./agents/dashboard/dashboard-integrator.md",
-        "./agents/dashboard/dashboard-build-validator.md",
-        "./agents/dashboard/dashboard-design-validator.md",
-        "./agents/dashboard/dashboard-architecture-validator.md",
-        "./agents/dashboard/dashboard-plan-validator.md",
-        "./agents/dashboard/dashboard-overview-updater.md"
-      ],
-      "commands": [
-        "./commands/create-dashboard.md",
-        "./commands/deploy-dashboard.md",
-        "./commands/dashboard-overview.md"
-      ],
+      "hooks": null,
       "skills": [
-        "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
-        "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
+        "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/tools-and-apis/policyengine-interactive-tools-skill",
         "./skills/tools-and-apis/policyengine-vercel-deployment-skill",
-        "./skills/tools-and-apis/policyengine-modal-deployment-skill",
-        "./skills/tools-and-apis/policyengine-api-v2-skill",
-        "./skills/tools-and-apis/policyengine-app-skill",
+        "./skills/tools-and-apis/policyengine-api-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-standards-skill",
         "./skills/documentation/policyengine-writing-skill",
+        "./skills/technical-patterns/seo-checklist-skill",
+        "./skills/technical-patterns/policyengine-test-writing-skill",
         "./skills/technical-patterns/policyengine-recharts-skill",
         "./skills/frontend/policyengine-tailwind-shadcn-skill",
         "./skills/frontend/policyengine-ui-kit-consumer-skill"
-      ]
-    },
-    {
-      "name": "content",
-      "description": "Content generation - social images and posts from blog articles",
-      "source": "./",
-      "category": "marketing",
-      "version": "3.22.3",
-      "keywords": ["content", "social", "marketing", "images"],
-      "author": {
-        "name": "PolicyEngine",
-        "url": "https://github.com/PolicyEngine"
-      },
-      "license": "MIT",
-      "agents": [
-        "./agents/content/content-orchestrator.md",
-        "./agents/shared/neutrality-reviewer.md"
       ],
       "commands": [
-        "./commands/generate-content.md"
+        "./commands/create-new-component.md",
+        "./commands/create-pr.md",
+        "./commands/fix-pr.md",
+        "./commands/new-tool.md",
+        "./commands/audit-seo.md",
+        "./commands/write-tests.md"
       ],
-      "skills": [
-        "./skills/content/content-generation-skill"
-      ]
-    },
-    {
-      "name": "complete",
-      "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
-      "source": "./",
-      "category": "complete",
-      "version": "3.22.3",
-      "keywords": ["complete", "all", "comprehensive"],
-      "author": {
-        "name": "PolicyEngine",
-        "url": "https://github.com/PolicyEngine"
-      },
-      "license": "MIT",
-      "hooks": "./hooks/hooks.json",
       "agents": [
-        "./agents/api/api-reviewer.md",
         "./agents/app/app-reviewer.md",
         "./agents/app/component-test-writer.md",
         "./agents/app/design-token-validator.md",
         "./agents/app/seo-meta-checker.md",
         "./agents/app/seo-crawlability-checker.md",
         "./agents/app/seo-performance-checker.md",
-        "./agents/app/seo-content-checker.md",
-        "./agents/branch-comparator.md",
-        "./agents/content/content-orchestrator.md",
-        "./agents/country-models/ci-fixer.md",
-        "./agents/country-models/cross-program-validator.md",
-        "./agents/country-models/document-collector.md",
-        "./agents/country-models/documentation-enricher.md",
-        "./agents/country-models/edge-case-generator.md",
-        "./agents/country-models/implementation-validator.md",
-        "./agents/country-models/integration-agent.md",
-        "./agents/country-models/isolation-enforcement.md",
-        "./agents/country-models/isolation-setup.md",
-        "./agents/country-models/issue-manager.md",
-        "./agents/country-models/performance-optimizer.md",
-        "./agents/country-models/pr-pusher.md",
-        "./agents/country-models/program-reviewer.md",
-        "./agents/country-models/rules-engineer.md",
-        "./agents/country-models/test-creator.md",
-        "./agents/country-models/workflow.md",
-        "./agents/dashboard/dashboard-planner.md",
-        "./agents/dashboard/dashboard-scaffold.md",
-        "./agents/dashboard/backend-builder.md",
-        "./agents/dashboard/frontend-builder.md",
-        "./agents/dashboard/dashboard-integrator.md",
-        "./agents/dashboard/dashboard-build-validator.md",
-        "./agents/dashboard/dashboard-design-validator.md",
-        "./agents/dashboard/dashboard-architecture-validator.md",
-        "./agents/dashboard/dashboard-plan-validator.md",
-        "./agents/dashboard/dashboard-overview-updater.md",
-        "./agents/legislation-statute-analyzer.md",
-        "./agents/reference-validator.md",
-        "./agents/shared/model-evaluator.md",
-        "./agents/shared/policyengine-standards.md",
-        "./agents/shared/pr-merge-checklist.md",
-        "./agents/shared/neutrality-reviewer.md"
+        "./agents/app/seo-content-checker.md"
+      ]
+    },
+    {
+      "name": "complete",
+      "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
+      "category": "complete",
+      "version": "3.22.3",
+      "keywords": [
+        "complete",
+        "all",
+        "comprehensive"
       ],
-      "commands": [
-        "./commands/audit-seo.md",
-        "./commands/backdate-program.md",
-        "./commands/create-new-component.md",
-        "./commands/create-pr.md",
-        "./commands/encode-policy-v2.md",
-        "./commands/encode-reform.md",
-        "./commands/generate-content.md",
-        "./commands/review-program.md",
-        "./commands/fix-pr.md",
-        "./commands/new-tool.md",
-        "./commands/setup-verbs.md",
-        "./commands/write-tests.md",
-        "./commands/create-dashboard.md",
-        "./commands/deploy-dashboard.md",
-        "./commands/dashboard-overview.md"
-      ],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "hooks": "./hooks/hooks.json",
       "skills": [
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
@@ -419,7 +202,287 @@
         "./skills/technical-patterns/policyengine-recharts-skill",
         "./skills/frontend/policyengine-tailwind-shadcn-skill",
         "./skills/frontend/policyengine-ui-kit-consumer-skill"
+      ],
+      "commands": [
+        "./commands/audit-seo.md",
+        "./commands/backdate-program.md",
+        "./commands/create-new-component.md",
+        "./commands/create-pr.md",
+        "./commands/encode-policy-v2.md",
+        "./commands/encode-reform.md",
+        "./commands/generate-content.md",
+        "./commands/review-program.md",
+        "./commands/fix-pr.md",
+        "./commands/new-tool.md",
+        "./commands/setup-verbs.md",
+        "./commands/write-tests.md",
+        "./commands/create-dashboard.md",
+        "./commands/deploy-dashboard.md",
+        "./commands/dashboard-overview.md"
+      ],
+      "agents": [
+        "./agents/api/api-reviewer.md",
+        "./agents/app/app-reviewer.md",
+        "./agents/app/component-test-writer.md",
+        "./agents/app/design-token-validator.md",
+        "./agents/app/seo-meta-checker.md",
+        "./agents/app/seo-crawlability-checker.md",
+        "./agents/app/seo-performance-checker.md",
+        "./agents/app/seo-content-checker.md",
+        "./agents/branch-comparator.md",
+        "./agents/content/content-orchestrator.md",
+        "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/cross-program-validator.md",
+        "./agents/country-models/document-collector.md",
+        "./agents/country-models/documentation-enricher.md",
+        "./agents/country-models/edge-case-generator.md",
+        "./agents/country-models/implementation-validator.md",
+        "./agents/country-models/integration-agent.md",
+        "./agents/country-models/isolation-enforcement.md",
+        "./agents/country-models/isolation-setup.md",
+        "./agents/country-models/issue-manager.md",
+        "./agents/country-models/performance-optimizer.md",
+        "./agents/country-models/pr-pusher.md",
+        "./agents/country-models/program-reviewer.md",
+        "./agents/country-models/rules-engineer.md",
+        "./agents/country-models/test-creator.md",
+        "./agents/country-models/workflow.md",
+        "./agents/dashboard/dashboard-planner.md",
+        "./agents/dashboard/dashboard-scaffold.md",
+        "./agents/dashboard/backend-builder.md",
+        "./agents/dashboard/frontend-builder.md",
+        "./agents/dashboard/dashboard-integrator.md",
+        "./agents/dashboard/dashboard-build-validator.md",
+        "./agents/dashboard/dashboard-design-validator.md",
+        "./agents/dashboard/dashboard-architecture-validator.md",
+        "./agents/dashboard/dashboard-plan-validator.md",
+        "./agents/dashboard/dashboard-overview-updater.md",
+        "./agents/legislation-statute-analyzer.md",
+        "./agents/reference-validator.md",
+        "./agents/shared/model-evaluator.md",
+        "./agents/shared/policyengine-standards.md",
+        "./agents/shared/pr-merge-checklist.md",
+        "./agents/shared/neutrality-reviewer.md"
       ]
+    },
+    {
+      "name": "content",
+      "description": "Content generation - social images and posts from blog articles",
+      "category": "marketing",
+      "version": "3.22.3",
+      "keywords": [
+        "content",
+        "social",
+        "marketing",
+        "images"
+      ],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "hooks": null,
+      "skills": [
+        "./skills/content/content-generation-skill"
+      ],
+      "commands": [
+        "./commands/generate-content.md"
+      ],
+      "agents": [
+        "./agents/content/content-orchestrator.md",
+        "./agents/shared/neutrality-reviewer.md"
+      ]
+    },
+    {
+      "name": "country-models",
+      "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages",
+      "category": "development",
+      "version": "3.22.3",
+      "keywords": [
+        "tax",
+        "benefits",
+        "microsimulation",
+        "country-models",
+        "rules",
+        "testing"
+      ],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "hooks": "./hooks/hooks.json",
+      "skills": [
+        "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/domain-knowledge/policyengine-healthcare-skill",
+        "./skills/tools-and-apis/policyengine-core-skill",
+        "./skills/data-science/policyengine-us-data-skill",
+        "./skills/technical-patterns/policyengine-aggregation-skill",
+        "./skills/technical-patterns/policyengine-period-patterns-skill",
+        "./skills/technical-patterns/policyengine-testing-patterns-skill",
+        "./skills/technical-patterns/policyengine-variable-patterns-skill",
+        "./skills/technical-patterns/policyengine-parameter-patterns-skill",
+        "./skills/technical-patterns/policyengine-vectorization-skill",
+        "./skills/technical-patterns/policyengine-review-patterns-skill",
+        "./skills/technical-patterns/policyengine-code-style-skill",
+        "./skills/technical-patterns/policyengine-code-organization-skill",
+        "./skills/technical-patterns/policyengine-reform-patterns-skill",
+        "./skills/technical-patterns/python-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill",
+        "./skills/technical-patterns/policyengine-test-writing-skill"
+      ],
+      "commands": [
+        "./commands/backdate-program.md",
+        "./commands/encode-policy-v2.md",
+        "./commands/encode-reform.md",
+        "./commands/review-program.md",
+        "./commands/fix-pr.md",
+        "./commands/create-pr.md",
+        "./commands/write-tests.md"
+      ],
+      "agents": [
+        "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/cross-program-validator.md",
+        "./agents/country-models/document-collector.md",
+        "./agents/country-models/documentation-enricher.md",
+        "./agents/country-models/edge-case-generator.md",
+        "./agents/country-models/implementation-validator.md",
+        "./agents/country-models/integration-agent.md",
+        "./agents/country-models/isolation-enforcement.md",
+        "./agents/country-models/isolation-setup.md",
+        "./agents/country-models/issue-manager.md",
+        "./agents/country-models/performance-optimizer.md",
+        "./agents/country-models/pr-pusher.md",
+        "./agents/country-models/program-reviewer.md",
+        "./agents/country-models/rules-engineer.md",
+        "./agents/country-models/test-creator.md",
+        "./agents/country-models/workflow.md"
+      ]
+    },
+    {
+      "name": "dashboard-builder",
+      "description": "Orchestrated AI workflow for creating PolicyEngine dashboards from natural-language descriptions",
+      "category": "development",
+      "version": "3.22.3",
+      "keywords": [
+        "dashboard",
+        "calculator",
+        "interactive",
+        "workflow",
+        "orchestration",
+        "react",
+        "vercel"
+      ],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "hooks": null,
+      "skills": [
+        "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
+        "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
+        "./skills/tools-and-apis/policyengine-interactive-tools-skill",
+        "./skills/tools-and-apis/policyengine-vercel-deployment-skill",
+        "./skills/tools-and-apis/policyengine-modal-deployment-skill",
+        "./skills/tools-and-apis/policyengine-api-v2-skill",
+        "./skills/tools-and-apis/policyengine-app-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill",
+        "./skills/technical-patterns/policyengine-recharts-skill",
+        "./skills/frontend/policyengine-tailwind-shadcn-skill",
+        "./skills/frontend/policyengine-ui-kit-consumer-skill"
+      ],
+      "commands": [
+        "./commands/create-dashboard.md",
+        "./commands/deploy-dashboard.md",
+        "./commands/dashboard-overview.md"
+      ],
+      "agents": [
+        "./agents/dashboard/dashboard-planner.md",
+        "./agents/dashboard/dashboard-scaffold.md",
+        "./agents/dashboard/backend-builder.md",
+        "./agents/dashboard/frontend-builder.md",
+        "./agents/dashboard/dashboard-integrator.md",
+        "./agents/dashboard/dashboard-build-validator.md",
+        "./agents/dashboard/dashboard-design-validator.md",
+        "./agents/dashboard/dashboard-architecture-validator.md",
+        "./agents/dashboard/dashboard-plan-validator.md",
+        "./agents/dashboard/dashboard-overview-updater.md"
+      ]
+    },
+    {
+      "name": "data-science",
+      "description": "Data analysis, survey enhancement, imputation, calibration, and microdata utilities",
+      "category": "data",
+      "version": "3.22.3",
+      "keywords": [
+        "data",
+        "microdata",
+        "survey",
+        "imputation",
+        "calibration",
+        "inequality",
+        "poverty",
+        "ml"
+      ],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "hooks": null,
+      "skills": [
+        "./skills/data-science/microdf-skill",
+        "./skills/data-science/microimpute-skill",
+        "./skills/data-science/microcalibrate-skill",
+        "./skills/data-science/l0-skill",
+        "./skills/data-science/policyengine-us-data-skill",
+        "./skills/tools-and-apis/policyengine-simulation-mechanics-skill",
+        "./skills/tools-and-apis/policyengine-microsimulation-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/domain-knowledge/policyengine-healthcare-skill",
+        "./skills/technical-patterns/python-skill",
+        "./skills/documentation/policyengine-design-skill",
+        "./skills/documentation/policyengine-standards-skill",
+        "./skills/documentation/policyengine-writing-skill"
+      ],
+      "commands": [],
+      "agents": []
+    },
+    {
+      "name": "essential",
+      "description": "Essential PolicyEngine knowledge for all users - understanding the platform, using the web app, and basic concepts",
+      "category": "getting-started",
+      "version": "3.22.3",
+      "keywords": [
+        "beginner",
+        "users",
+        "guide",
+        "basics"
+      ],
+      "author": {
+        "name": "PolicyEngine",
+        "url": "https://github.com/PolicyEngine"
+      },
+      "license": "MIT",
+      "hooks": "./hooks/hooks.json",
+      "skills": [
+        "./skills/documentation/policyengine-user-guide-skill",
+        "./skills/domain-knowledge/policyengine-us-skill",
+        "./skills/domain-knowledge/policyengine-uk-skill",
+        "./skills/domain-knowledge/policyengine-canada-skill",
+        "./skills/documentation/policyengine-writing-skill"
+      ],
+      "commands": [],
+      "agents": []
     }
   ]
 }
