@@ -78,7 +78,8 @@
       ],
       "commands": [
         "./commands/create-pr.md",
-        "./commands/fix-pr.md"
+        "./commands/fix-pr.md",
+        "./commands/rebase.md"
       ],
       "agents": [
         "./agents/api/api-reviewer.md"
@@ -126,7 +127,8 @@
         "./commands/fix-pr.md",
         "./commands/new-tool.md",
         "./commands/audit-seo.md",
-        "./commands/write-tests.md"
+        "./commands/write-tests.md",
+        "./commands/rebase.md"
       ],
       "agents": [
         "./agents/app/app-reviewer.md",
@@ -218,7 +220,8 @@
         "./commands/write-tests.md",
         "./commands/create-dashboard.md",
         "./commands/deploy-dashboard.md",
-        "./commands/dashboard-overview.md"
+        "./commands/dashboard-overview.md",
+        "./commands/rebase.md"
       ],
       "agents": [
         "./agents/api/api-reviewer.md",
@@ -341,7 +344,8 @@
         "./commands/review-program.md",
         "./commands/fix-pr.md",
         "./commands/create-pr.md",
-        "./commands/write-tests.md"
+        "./commands/write-tests.md",
+        "./commands/rebase.md"
       ],
       "agents": [
         "./agents/country-models/ci-fixer.md",
