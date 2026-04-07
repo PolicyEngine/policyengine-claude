@@ -25,29 +25,45 @@ description: |
 - **Parameter Discovery**: https://policyengine.github.io/policyengine-us/usage/parameter-discovery.html
 - **Reform.from_dict()**: https://policyengine.github.io/policyengine-core/usage/reforms.html
 
-## CRITICAL: Use calc() with MicroSeries — never use np.array() or manual weights
+## CRITICAL: Use calc() with MicroSeries — never strip weights or fetch them manually
 
-**MicroSeries handles all weighting automatically. Never convert to numpy or do manual weight math.**
+**MicroSeries handles all weighting automatically. Never convert to numpy, strip types, or do manual weight math.**
 
-### NEVER convert MicroSeries to numpy arrays
+### NEVER strip MicroSeries weights
 
-`calc()` and `calculate()` return MicroSeries with embedded weights AND entity context. Converting to numpy via `np.array()`, `.values`, or `.to_numpy()` strips both, causing:
-1. **Unweighted results** — `.mean()` on a numpy array is unweighted
-2. **Entity-level mismatches** — mixing arrays from different entities (e.g., 23K tax units vs 15K households) gives silently wrong results. Numpy won't error because boolean masks still index, but the mask from one entity applied to values from another is garbage.
+`calc()` and `calculate()` return MicroSeries with embedded weights AND entity context. Any of these operations strip both, producing silently wrong results:
+
+| Anti-pattern | Why it's wrong |
+|---|---|
+| `np.array(series)` | Converts to unweighted numpy array |
+| `series.values` / `series.to_numpy()` | Same — strips weights and entity context |
+| `series.astype(float)` / `.astype(int)` | Converts MicroSeries to plain pandas Series, losing weight metadata |
+| `float(series.sum())` | Premature scalar extraction — usually a sign of manual weight math nearby |
+| `np.average(x, weights=w)` | Manual weighting — `.mean()` already does this correctly |
+
+### NEVER fetch weight variables manually
+
+`calc()` returns MicroSeries that already knows its weights. There is no reason to fetch `household_weight`, `spm_unit_weight`, `person_weight`, or `tax_unit_weight` yourself. If you're writing `sim.calc("spm_unit_weight", ...)`, something is wrong — `calc()` handles weight mapping internally via the `map_to` parameter.
 
 ```python
-# ❌ WRONG - np.array() strips weights AND entity context
+# ❌ WRONG — fetching weights and doing manual math
+liheap = sim.calc("dc_liheap_payment", period=2026).astype(float)  # strips weights
+weights = sim.calc("spm_unit_weight", period=2026).astype(float)    # unnecessary
+total = float((liheap * weights).sum())                              # manual weighting
+avg = float(np.average(liheap[liheap > 0], weights=weights[liheap > 0]))  # numpy
+
+# ✅ CORRECT — MicroSeries does everything
+liheap = sim.calc("dc_liheap_payment", period=2026)
+total = liheap.sum()                  # Weighted total
+avg = liheap[liheap > 0].mean()       # Weighted mean of recipients
+
+# ❌ WRONG — np.array() strips weights AND entity context
 change_arr = np.array(sim.calc("income_tax", period=2026))
 weights = np.array(sim.calc("household_weight", period=2026))
 # These may be DIFFERENT LENGTHS (tax units vs households)!
-# Numpy boolean indexing won't error — it just gives wrong results.
 losers = weights[change_arr < -1].sum()  # SILENTLY WRONG
 
-# ❌ WRONG - .values and .to_numpy() have the same problem
-result = sim.calc("household_net_income", period=2026).values
-wrong_mean = result.mean()  # Unweighted!
-
-# ✅ CORRECT - keep as MicroSeries, all operations are weighted
+# ✅ CORRECT — keep as MicroSeries, all operations are weighted
 income_tax_b = baseline.calc("income_tax", period=2026)
 income_tax_r = reformed.calc("income_tax", period=2026)
 tax_change = income_tax_r - income_tax_b
@@ -97,9 +113,10 @@ print(f"Share losing: {(change < 0).mean():.1%}")
 
 ## API methods
 
-- `Microsimulation.calc()` (US) — returns MicroSeries (weighted). Use this for all US microsimulation.
-- `Microsimulation.calculate()` (UK) — returns MicroSeries (weighted). Use this for all UK microsimulation.
+- **US: `sim.calc()`** — `policyengine_us.Microsimulation` uses `.calc()`. Do NOT use `.calculate()` for US.
+- **UK: `sim.calculate()`** — `policyengine_uk.Microsimulation` uses `.calculate()`. It does NOT have `.calc()`.
 - Both return MicroSeries with automatic weighting. Use `.sum()`, `.mean()`, arithmetic operators.
+- Use the `period=` keyword: `sim.calc("variable", period=2026)`, not `sim.calc("variable", 2026)`.
 
 ## Creating reforms
 
@@ -407,10 +424,49 @@ print(p.gov.irs.credits.ctc.amount.base[0].amount("2026-01-01"))
 
 Both use `[index]` syntax in Reform.from_dict() — the difference is in the YAML structure. Use `CountryTaxBenefitSystem().parameters` to navigate and verify paths.
 
+## Complete analysis recipe: single-program impact with breakdowns
+
+This pattern covers the common case of analyzing a single benefit or tax variable with subgroup breakdowns. All operations stay in MicroSeries — no manual weights, no numpy, no `.astype()`.
+
+```python
+from policyengine_us import Microsimulation
+
+sim = Microsimulation()
+YEAR = 2026
+
+# All variables via calc() — returns weighted MicroSeries
+benefit = sim.calc("dc_liheap_payment", period=YEAR)
+income_level = sim.calc("dc_liheap_income_level", period=YEAR)
+unit_size = sim.calc("spm_unit_size", period=YEAR)
+
+# Summary stats — .sum() and .mean() are weighted automatically
+recipients = (benefit > 0)
+print(f"Total spending:  ${benefit.sum():>12,.0f}")
+print(f"Recipient units: {recipients.sum():>12,.0f}")
+print(f"Avg benefit:     ${benefit[recipients].mean():>12,.0f}")
+
+# Subgroup breakdowns — boolean mask preserves MicroSeries weights
+for level in range(1, 11):
+    at_level = recipients & (income_level == level)
+    if at_level.any():
+        print(f"Level {level}: {at_level.sum():,.0f} units, "
+              f"avg ${benefit[at_level].mean():,.0f}, "
+              f"total ${benefit[at_level].sum():,.0f}")
+
+# Size breakdown (grouped)
+for size in [1, 2, 3]:
+    mask = recipients & (unit_size == size)
+    if mask.any():
+        print(f"Size {size}: {mask.sum():,.0f} units, avg ${benefit[mask].mean():,.0f}")
+large = recipients & (unit_size >= 4)
+if large.any():
+    print(f"Size 4+: {large.sum():,.0f} units, avg ${benefit[large].mean():,.0f}")
+```
+
 ## Common variables for microsimulation
 
 ### Weights
-- `household_weight` — the only calibrated weight. Use `map_to='person'` or `map_to='spm_unit'` to project it to other entity levels.
+- `household_weight` — the only calibrated weight. `calc()` uses it internally via `map_to` — you should never need to fetch it directly. Use `map_to='person'` or `map_to='spm_unit'` on any `calc()` call to project to other entity levels.
 
 ### Person-level
 - `person_in_poverty` — SPM poverty indicator (boolean)

@@ -10,7 +10,6 @@
   "plugins": [
     {
       "name": "analysis-tools",
-      "source": "./",
       "description": "Policy analysis and research - impact studies, dashboards, notebooks, and visualizations",
       "category": "analysis",
       "version": "3.22.3",
@@ -28,6 +27,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/tools-and-apis/policyengine-python-client-skill",
@@ -50,7 +50,6 @@
     },
     {
       "name": "api-development",
-      "source": "./",
       "description": "API development - Flask endpoints, caching, services, and integration patterns",
       "category": "development",
       "version": "3.22.3",
@@ -66,6 +65,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
         "./skills/tools-and-apis/policyengine-api-skill",
         "./skills/tools-and-apis/policyengine-api-v2-skill",
@@ -86,7 +86,6 @@
     },
     {
       "name": "app-development",
-      "source": "./",
       "description": "React app development - app-v2, standalone tools, Vercel deployment, and PolicyEngine-specific patterns",
       "category": "development",
       "version": "3.22.3",
@@ -104,6 +103,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
         "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/tools-and-apis/policyengine-interactive-tools-skill",
@@ -140,7 +140,6 @@
     },
     {
       "name": "complete",
-      "source": "./",
       "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
       "category": "complete",
       "version": "3.22.3",
@@ -268,7 +267,6 @@
     },
     {
       "name": "content",
-      "source": "./",
       "description": "Content generation - social images and posts from blog articles",
       "category": "marketing",
       "version": "3.22.3",
@@ -283,6 +281,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
         "./skills/content/content-generation-skill"
       ],
@@ -296,7 +295,6 @@
     },
     {
       "name": "country-models",
-      "source": "./",
       "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages",
       "category": "development",
       "version": "3.22.3",
@@ -366,7 +364,6 @@
     },
     {
       "name": "dashboard-builder",
-      "source": "./",
       "description": "Orchestrated AI workflow for creating PolicyEngine dashboards from natural-language descriptions",
       "category": "development",
       "version": "3.22.3",
@@ -384,6 +381,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
         "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
         "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
@@ -421,7 +419,6 @@
     },
     {
       "name": "data-science",
-      "source": "./",
       "description": "Data analysis, survey enhancement, imputation, calibration, and microdata utilities",
       "category": "data",
       "version": "3.22.3",
@@ -440,6 +437,7 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
+      "hooks": null,
       "skills": [
         "./skills/data-science/microdf-skill",
         "./skills/data-science/microimpute-skill",
@@ -461,7 +459,6 @@
     },
     {
       "name": "essential",
-      "source": "./",
       "description": "Essential PolicyEngine knowledge for all users - understanding the platform, using the web app, and basic concepts",
       "category": "getting-started",
       "version": "3.22.3",
