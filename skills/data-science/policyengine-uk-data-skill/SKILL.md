@@ -59,6 +59,28 @@ uv pip install policyengine-uk-data
 uv pip install -e .
 ```
 
+### Accessing Restricted UK Datasets
+
+The raw FRS and WAS datasets are restricted and require special access:
+
+**1. Create Hugging Face token:**
+- Create an account at https://huggingface.co
+- Generate an access token at https://huggingface.co/settings/tokens
+- Store in `~/.huggingface/token` or set `HF_TOKEN` environment variable
+
+**2. Request dataset access:**
+- Email contact@policyengine.org with:
+  - Your Hugging Face username
+  - Proof of UKDS-backed access to FRS/WAS data
+- Access is granted separately from token creation
+- This is required for UK Data Service restricted datasets
+
+**Common error:**
+```
+403 Forbidden - You don't have permission to access this dataset
+```
+This means your Hugging Face account hasn't been granted access yet. Creating a token is not sufficient - you must request access via contact@policyengine.org.
+
 ## For Contributors
 
 ### Imputation Pattern
