@@ -58,6 +58,9 @@ Most benefit programs (SNAP, TANF, EITC) have a single income test and a single 
 | `medicaid_magi` | tax_unit | Modified AGI for Medicaid (= AGI + state additions) |
 | `takes_up_medicaid_if_eligible` | person | Pseudo-random take-up flag (default rate: 93%) |
 | `medicaid_cost` | person | Per-capita cost by eligibility group and state |
+| `medicaid_federal_share` | person | Applicable FMAP: 90% for expansion adults (42 USC 1396d(y)), state regular FMAP otherwise (42 USC 1396d(b)) |
+| `medicaid_federal_cost` | person | Federal portion of `medicaid_cost` (= cost × FMAP) |
+| `medicaid_state_cost` | person | State portion of `medicaid_cost` (= cost × (1 − FMAP)) |
 
 #### ACA marketplace
 
@@ -76,8 +79,21 @@ Most benefit programs (SNAP, TANF, EITC) have a single income test and a single 
 | Variable | Entity | Description |
 |----------|--------|-------------|
 | `per_capita_chip` | person | CHIP benefit per capita |
-| `is_chip_eligible` | person | CHIP eligibility |
+| `chip` | person | Annual CHIP benefit (= `per_capita_chip` when enrolled) |
+| `is_chip_eligible` | person | CHIP eligibility (requires `~is_medicaid_eligible` — mutually exclusive with Medicaid) |
 | `chip_category` | person | Enum: CHILD, PREGNANT_STANDARD, PREGNANT_FCEP, NONE |
+| `chip_federal_share` | person | Enhanced FMAP per 42 USC 1397ee(b): `min(FMAP + 30% × (1 − FMAP), 0.85)` |
+| `chip_federal_cost` | person | Federal portion of `chip` (= chip × eFMAP) |
+| `chip_state_cost` | person | State portion of `chip` (= chip × (1 − eFMAP)) |
+
+#### Cross-program federal/state attribution
+
+For consumer-facing fiscal impact analysis, aggregate variables sum across all programs with federal/state attribution (currently Medicaid and CHIP; will extend as SNAP, TANF, etc. get attribution):
+
+| Variable | Entity | Description |
+|----------|--------|-------------|
+| `federal_benefit_cost` | person | Sum of federal portions across all attributed programs |
+| `state_benefit_cost` | person | Sum of state portions across all attributed programs |
 
 ### Household setup for healthcare analysis
 
