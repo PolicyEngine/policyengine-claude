@@ -349,25 +349,6 @@ print(f"State/local tax revenue loss: ${state_tax_cost:,.1f}B")
 print(f"Benefit spending increase: ${benefit_cost:,.1f}B")
 ```
 
-### Federal vs. state benefit cost attribution
-
-Benefit programs with shared federal/state funding (Medicaid, CHIP; SNAP starting FY2028 under OBBBA) attribute cost per statute. Use `federal_benefit_cost` and `state_benefit_cost` to split benefit spending by level of government:
-
-```python
-# Federal share of benefit spending (Medicaid via FMAP, CHIP via eFMAP, …)
-fed_benefit_change = (reformed.calc('federal_benefit_cost', period=YEAR).sum() -
-                      baseline.calc('federal_benefit_cost', period=YEAR).sum()) / 1e9
-
-# State share
-state_benefit_change = (reformed.calc('state_benefit_cost', period=YEAR).sum() -
-                        baseline.calc('state_benefit_cost', period=YEAR).sum()) / 1e9
-
-print(f"Federal benefit cost change: ${fed_benefit_change:+.1f}B")
-print(f"State benefit cost change:   ${state_benefit_change:+.1f}B")
-```
-
-Per-program attribution is also available: `medicaid_federal_cost` / `medicaid_state_cost`, `chip_federal_cost` / `chip_state_cost`. The federal share comes from FMAP (42 USC 1396d(b), 90% for ACA expansion adults per 1396d(y)) and eFMAP for CHIP (42 USC 1397ee(b)). This is the right split for scoring reforms that affect Medicaid/CHIP participation — a rollback that reduces Medicaid spending by $X shifts a smaller amount to states and a larger amount to the federal government depending on state FMAPs.
-
 **Why not sum the program variable directly?** Example: making the CTC fully refundable
 shifts credits from non-refundable to refundable, changing `income_tax` by much more than
 the `ctc` variable itself changes. The `household_net_income` change captures the full effect.

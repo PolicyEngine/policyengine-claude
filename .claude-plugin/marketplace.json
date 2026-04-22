@@ -27,7 +27,6 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
-      "hooks": null,
       "skills": [
         "./skills/documentation/policyengine-user-guide-skill",
         "./skills/tools-and-apis/policyengine-python-client-skill",
@@ -46,7 +45,8 @@
         "./skills/documentation/policyengine-research-lookup-skill"
       ],
       "commands": [],
-      "agents": []
+      "agents": [],
+      "source": "./"
     },
     {
       "name": "api-development",
@@ -65,7 +65,6 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
-      "hooks": null,
       "skills": [
         "./skills/tools-and-apis/policyengine-api-skill",
         "./skills/tools-and-apis/policyengine-api-v2-skill",
@@ -82,7 +81,8 @@
       ],
       "agents": [
         "./agents/api/api-reviewer.md"
-      ]
+      ],
+      "source": "./"
     },
     {
       "name": "app-development",
@@ -103,7 +103,6 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
-      "hooks": null,
       "skills": [
         "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/tools-and-apis/policyengine-interactive-tools-skill",
@@ -136,7 +135,8 @@
         "./agents/app/seo-crawlability-checker.md",
         "./agents/app/seo-performance-checker.md",
         "./agents/app/seo-content-checker.md"
-      ]
+      ],
+      "source": "./"
     },
     {
       "name": "complete",
@@ -263,7 +263,8 @@
         "./agents/shared/policyengine-standards.md",
         "./agents/shared/pr-merge-checklist.md",
         "./agents/shared/neutrality-reviewer.md"
-      ]
+      ],
+      "source": "./"
     },
     {
       "name": "content",
@@ -281,7 +282,6 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
-      "hooks": null,
       "skills": [
         "./skills/content/content-generation-skill"
       ],
@@ -291,7 +291,8 @@
       "agents": [
         "./agents/content/content-orchestrator.md",
         "./agents/shared/neutrality-reviewer.md"
-      ]
+      ],
+      "source": "./"
     },
     {
       "name": "country-models",
@@ -360,7 +361,8 @@
         "./agents/country-models/rules-engineer.md",
         "./agents/country-models/test-creator.md",
         "./agents/country-models/workflow.md"
-      ]
+      ],
+      "source": "./"
     },
     {
       "name": "dashboard-builder",
@@ -381,7 +383,6 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
-      "hooks": null,
       "skills": [
         "./skills/tools-and-apis/policyengine-frontend-builder-spec-skill",
         "./skills/tools-and-apis/policyengine-dashboard-workflow-skill",
@@ -415,7 +416,8 @@
         "./agents/dashboard/dashboard-architecture-validator.md",
         "./agents/dashboard/dashboard-plan-validator.md",
         "./agents/dashboard/dashboard-overview-updater.md"
-      ]
+      ],
+      "source": "./"
     },
     {
       "name": "data-science",
@@ -437,7 +439,6 @@
         "url": "https://github.com/PolicyEngine"
       },
       "license": "MIT",
-      "hooks": null,
       "skills": [
         "./skills/data-science/microdf-skill",
         "./skills/data-science/microimpute-skill",
@@ -455,7 +456,8 @@
         "./skills/documentation/policyengine-writing-skill"
       ],
       "commands": [],
-      "agents": []
+      "agents": [],
+      "source": "./"
     },
     {
       "name": "essential",
@@ -482,7 +484,8 @@
         "./skills/documentation/policyengine-writing-skill"
       ],
       "commands": [],
-      "agents": []
+      "agents": [],
+      "source": "./"
     }
   ]
 }
