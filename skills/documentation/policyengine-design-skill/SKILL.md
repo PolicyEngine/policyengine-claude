@@ -90,6 +90,17 @@ The theme CSS has three layers:
 | Warning | `#FEC601` | `text-warning` / `bg-warning` |
 | Info | `#1890FF` | `text-info` / `bg-info` |
 
+### Accessible text colors
+
+These tokens meet WCAG AA contrast requirements (4.5:1) on white backgrounds:
+
+| Token | Hex | Tailwind class | Usage |
+|-------|-----|---------------|-------|
+| `text.error` | `#B91C1C` | `text-text-error` | Error messages, validation text (Tailwind red-700) |
+| `text.success` | `#15803D` | `text-text-success` | Success messages, confirmation text (Tailwind green-700) |
+
+Use these for text-heavy error/success states where accessibility is critical. Use the brighter `text-destructive` / `text-success` tokens for backgrounds, borders, or large UI elements where WCAG AA is less stringent.
+
 ### Gray scale
 
 | Token | Hex | Tailwind class |
