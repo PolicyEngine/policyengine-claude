@@ -1,5 +1,5 @@
 ---
-description: Scaffold a new PolicyEngine interactive tool (Next.js 14 + Tailwind 4 + ui-kit theme + embedding boilerplate)
+description: Scaffold a new PolicyEngine interactive tool (Next.js 16.2 + React 19.2 + Tailwind 4.2 + ui-kit theme + embedding boilerplate)
 ---
 
 # New interactive tool scaffold
@@ -20,13 +20,16 @@ Ask the user for:
 ## Step 2: Create the project
 
 ```bash
-# Create Next.js 14 + Tailwind project
-bunx create-next-app@14 TOOL_NAME --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
+# Create Next.js 16.2 + Tailwind project
+bunx create-next-app@latest TOOL_NAME --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd TOOL_NAME
 
-# Install dependencies
-bun add @policyengine/ui-kit recharts
+# Install dependencies matching canonical stack
+bun add @policyengine/ui-kit@^0.9 recharts
 bun add -D vitest
+
+# Ensure React 19.2 and Next 16.2 are installed
+bun add next@^16.2 react@^19.2 react-dom@^19.2
 ```
 
 Copy the favicon:
@@ -38,6 +41,35 @@ cp node_modules/@policyengine/ui-kit/src/assets/logos/policyengine/teal-square.s
 If using code highlighting:
 ```bash
 bun add prism-react-renderer
+```
+
+Configure ESLint with native flat config (Next 16 removed `next lint` support):
+```bash
+bun add -D eslint @next/eslint-plugin-next eslint-config-prettier
+```
+
+Create `eslint.config.mjs`:
+```js
+import nextPlugin from "@next/eslint-plugin-next";
+
+export default [
+  {
+    plugins: { "@next/next": nextPlugin },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+    },
+  },
+];
+```
+
+Add to `package.json` scripts:
+```json
+{
+  "scripts": {
+    "lint": "eslint ."
+  }
+}
 ```
 
 ## Step 3: Generate project files
