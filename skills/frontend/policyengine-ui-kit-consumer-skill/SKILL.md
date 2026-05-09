@@ -276,6 +276,20 @@ Both `colors.gray[N]` and `colors.text.warning` change visible color on migratio
 - **CI order: build before test.** ui-kit's `tests/consumer-types/` harness type-checks the *built* `dist/` surface against a bundler-resolution consumer. If your repo embeds a similar pattern (or just runs `tsc --noEmit` against `node_modules/@policyengine/ui-kit`), put `bun run build` *before* `bun run test` in the workflow.
 - **Don't fight Vercel's Root Directory.** If your `package.json` lives in a subdirectory (`app/`, `frontend/`, etc.), set the Vercel project's Root Directory to that subdir in the dashboard — don't add a root-level `vercel.json` with `cd subdir && bun install` commands. The two configs fight and the framework detector fails ("No Next.js version detected").
 - **`Header` API changed in 0.4.0.** Old props (`variant`, `logo`, `navLinks`, `children`) no longer exist. New API uses `navItems`, `logoSrc`, `linkComponent`. If you bump from `^0.3.x` and hit `Type '{ children: Element; variant: string; logo: Element; navLinks: …; }' is not assignable to type 'IntrinsicAttributes & HeaderProps'`, that's the migration. Read `@policyengine/ui-kit/dist/layout/header/Header.d.ts` for the current shape.
+- **ui-kit 0.9.x resets large text utilities.** The `theme.css` file in ui-kit 0.9+ resets `--text-*` CSS variables to `initial`, which drops Tailwind's default text size utilities above `text-4xl`. This specifically affects slides repositories that use `text-5xl` through `text-9xl` for presentation headings. The fix is to re-add these utilities in your local `globals.css` `@theme` block:
+  ```css
+  @import "tailwindcss";
+  @import "@policyengine/ui-kit/theme.css";
+
+  @theme {
+    --font-size-5xl: 3rem;
+    --font-size-6xl: 3.75rem;
+    --font-size-7xl: 4.5rem;
+    --font-size-8xl: 6rem;
+    --font-size-9xl: 8rem;
+  }
+  ```
+  This restores `text-5xl` (48px), `text-6xl` (60px), `text-7xl` (72px), `text-8xl` (96px), and `text-9xl` (128px) for use in slide titles and hero text. Regular web apps typically don't need sizes above `text-4xl`.
 
 ## Related Skills
 
