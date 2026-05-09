@@ -16,7 +16,7 @@ Architecture and patterns for developing the main PolicyEngine web application a
 ```
 policyengine-app-v2/
 ├── packages/
-│   └── design-system/          # @policyengine/design-system (npm)
+│   └── design-system/          # @policyengine/ui-kit/legacy (npm, design-system deprecated)
 ├── app/                        # Main Vite application
 │   ├── src/
 │   │   ├── pages/              # Page components (*.page.tsx)
@@ -47,7 +47,7 @@ policyengine-app-v2/
 | Routing | React Router v7 (`createBrowserRouter`) |
 | Charts | **Recharts** (standard), Plotly (maps only) |
 | Server state | React Query |
-| Design tokens | `@policyengine/design-system` |
+| Design tokens | `@policyengine/ui-kit/legacy` (formerly design-system) |
 | Language | TypeScript |
 | Formatting | Prettier + ESLint |
 | Testing | Vitest |

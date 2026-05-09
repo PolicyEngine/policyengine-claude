@@ -74,7 +74,7 @@ logo_path: Path to PolicyEngine logo
 
 ### Colors
 
-Source of truth: `policyengine-design-skill` and `@policyengine/design-system` CSS tokens.
+Source of truth: `policyengine-design-skill` and `@policyengine/ui-kit` CSS tokens.
 Social image generation runs in headless Chrome with design tokens loaded, so use CSS vars where possible. Fallback hex values for non-browser contexts:
 
 | Token | CSS var | Hex |

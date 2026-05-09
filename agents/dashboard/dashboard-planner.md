@@ -292,7 +292,7 @@ tests:
 
   design_compliance:
     - name: "uses_design_tokens"
-      description: "No hardcoded colors - all from @policyengine/design-system"
+      description: "No hardcoded colors - all from @policyengine/ui-kit"
     - name: "inter_font"
       description: "Inter font loaded and applied"
     - name: "sentence_case"

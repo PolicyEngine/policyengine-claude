@@ -256,7 +256,7 @@ https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/publ
 |-------------|-------------|------------|
 | **Standalone tool** | `@import "@policyengine/ui-kit/theme.css"` | Google Fonts: Inter |
 | **app-v2** | `import { colors } from '@/designTokens'` | Built-in (Mantine + Inter) |
-| **Python chart** | Hardcode or load `tokens.json` from `@policyengine/design-system` | Inter for Plotly |
+| **Python chart** | Hardcode or load `tokens.json` from `@policyengine/ui-kit` | Inter for Plotly |
 | **Blog HTML** | Hardcode from token values | Google Fonts: Inter |
 
 ## Accessibility
