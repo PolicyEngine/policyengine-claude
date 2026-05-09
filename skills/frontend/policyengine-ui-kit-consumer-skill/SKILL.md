@@ -283,3 +283,7 @@ Both `colors.gray[N]` and `colors.text.warning` change visible color on migratio
 - `policyengine-tailwind-shadcn-skill` — `@theme` namespace mechanics, SVG var() usage
 - `policyengine-interactive-tools-skill` — Full tool scaffolding checklist
 - `policyengine-vercel-deployment-skill` — Deploying consumer apps
+
+## Related References
+
+- `migrating-custom-tokens-tw3-to-tw4.md` — How to preserve custom legacy tokens when migrating from Tailwind v3 to v4
