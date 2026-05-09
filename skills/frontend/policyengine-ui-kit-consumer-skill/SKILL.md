@@ -238,6 +238,44 @@ After the two-line import, these are available:
 | Radius | `rounded-sm` (4px), `rounded-md` (6px), `rounded-lg` (8px) | `@theme inline` |
 | All Tailwind utilities | `flex`, `grid`, `p-4`, `gap-2`, `hidden`, etc. | `@import "tailwindcss"` |
 
+## Migrating from Legacy Versions
+
+When upgrading from `@policyengine/design-system` 0.2.x/0.3.x to `@policyengine/ui-kit` 0.8.x+:
+
+### Legacy Shim Support
+
+The package provides a `/legacy` subpath export for backward compatibility:
+
+```tsx
+// Old import (still works via legacy shim)
+import { colors, spacing } from '@policyengine/ui-kit/legacy'
+
+// New canonical import (preferred)
+import { palette, rootColorsLight } from '@policyengine/ui-kit'
+```
+
+### Be Aware of Value-Changing Migrations
+
+Some migration paths preserve the token name but change the underlying hex value. The legacy JSDoc annotations mark these:
+
+**Gray palette** (Tailwind-3 neutral → Tailwind-4 slate):
+```tsx
+// Legacy: colors.gray[500] = "#6B7280"
+// Canonical: palette.gray[500] = "#64748B"
+```
+
+**Warning text** (Mantine orange.9 → Tailwind orange-700, improved contrast):
+```tsx
+// Legacy: colors.text.warning = "#d9480f" (4.30:1, fails WCAG AA at small text)
+// Canonical: rootColorsLight['--text-warning'] = "#c2410c" (5.18:1, passes AA)
+```
+
+When migrating, visually verify areas using these tokens — the change is intentional (better contrast, updated brand), but may need design approval.
+
+### Legacy Tokens Restored in 0.8.1+
+
+If migrating from 0.8.0 specifically, note that `colors.blue` (Tailwind sky 50–900) and `colors.success = "#22C55E"` were missing from the initial legacy shim but are restored in 0.8.1+. Update to the latest patch if you see missing exports.
+
 ## Related Skills
 
 - `policyengine-design-skill` — Full token reference (hex values, usage guidelines)
