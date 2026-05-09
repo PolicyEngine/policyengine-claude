@@ -18,11 +18,12 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 
 ## Stack
 
-**Next.js 14 + Tailwind 4 + Recharts** for all tools (embeddable and standalone).
+**Next.js 16 + React 19 + Tailwind 4 + Recharts** for all tools (embeddable and standalone).
 
 | Component | Choice |
 |-----------|--------|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 16 (App Router) |
+| React | React 19 |
 | CSS | Tailwind 4 with `@policyengine/ui-kit` theme |
 | Charts | Recharts |
 | Code highlighting | Prism React Renderer |
@@ -445,7 +446,7 @@ For analysis repos that precompute data with Python microsimulation pipelines:
 ## Scaffolding a new tool
 
 ```bash
-bunx create-next-app@14 my-tool --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
+bunx create-next-app@latest my-tool --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd my-tool
 bun add @policyengine/ui-kit recharts
 bun add -D vitest
@@ -690,7 +691,7 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 
 ## Checklist for new tools
 
-- [ ] Next.js 14 + Tailwind 4 scaffold
+- [ ] Next.js 16 + React 19 + Tailwind 4 scaffold
 - [ ] `@policyengine/ui-kit` installed (`bun add @policyengine/ui-kit`)
 - [ ] `@import "@policyengine/ui-kit/theme.css"` in `globals.css`
 - [ ] Inter font loaded via Google Fonts CDN
