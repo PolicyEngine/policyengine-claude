@@ -2,10 +2,12 @@
 name: policyengine-ui-kit-consumer
 description: |
   This skill should be used when setting up a new project that uses @policyengine/ui-kit,
-  debugging CSS or styling issues in a consumer app, or when Tailwind utility classes are not
-  being generated. Also use when creating globals.css, configuring PostCSS, or troubleshooting
-  "no styles", "no spacing", or "no layout" problems.
-  Triggers: "ui-kit import", "globals.css setup", "Tailwind not working", "styles not applying",
+  migrating from the deprecated @policyengine/design-system package, debugging CSS or styling
+  issues in a consumer app, or when Tailwind utility classes are not being generated. Also use
+  when creating globals.css, configuring PostCSS, or troubleshooting "no styles", "no spacing",
+  or "no layout" problems.
+  Triggers: "ui-kit import", "design-system deprecated", "migrate from design-system",
+  "ui-kit/legacy", "globals.css setup", "Tailwind not working", "styles not applying",
   "utility classes missing", "setup ui-kit", "PostCSS config", "no styling", "CSS broken",
   "import ui-kit", "theme.css", "no layout", "no spacing", "@tailwindcss/postcss"
 ---
@@ -13,6 +15,8 @@ description: |
 # Consuming @policyengine/ui-kit
 
 How to correctly import and use the PolicyEngine UI kit's design system in any consumer application. This skill covers the required setup, the correct import order, and common mistakes that cause styling to break.
+
+> **Migrating from @policyengine/design-system?** See [migration-from-design-system.md](./references/migration-from-design-system.md) for the legacy compatibility path.
 
 ## Required Consumer Setup
 
