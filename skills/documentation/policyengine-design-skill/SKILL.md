@@ -67,7 +67,7 @@ The theme CSS has three layers:
 | Muted | `--muted` | `bg-muted` | `#F2F4F7` |
 | Muted foreground | `--muted-foreground` | `text-muted-foreground` | `#6B7280` |
 | Border | `--border` | `border-border` | `#E2E8F0` |
-| Destructive | `--destructive` | `bg-destructive` | `#EF4444` |
+| Destructive | `--destructive` | `bg-destructive` | `#DC2626` |
 | Card | `--card` | `bg-card` | `#FFFFFF` |
 | Ring | `--ring` | `ring-ring` | `#319795` |
 
@@ -83,23 +83,56 @@ The theme CSS has three layers:
 
 ### Additional semantic colors
 
+These are the **brand fill** values — use for status dots, badges, and tinted surfaces. They are *not* WCAG-AA-compliant when set as text on a white background; for text, use the accessible-on-white variants below.
+
 | Color | Hex | Tailwind class |
 |-------|-----|---------------|
 | Success | `#22C55E` | `text-success` / `bg-success` |
-| Error | `#EF4444` | `text-destructive` / `bg-destructive` |
+| Error | `#DC2626` | `text-destructive` / `bg-destructive` |
 | Warning | `#FEC601` | `text-warning` / `bg-warning` |
 | Info | `#1890FF` | `text-info` / `bg-info` |
 
+### Accessible-on-white text variants
+
+Distinct from the brand fills above — these are the values you use when you actually need to render colored text on a white background and want to clear WCAG 2.2 AA (4.5:1 contrast at small text). Available since ui-kit 0.5.0 as `--text-warning` / `--text-error` / `--text-success` and the corresponding Tailwind utilities.
+
+| Token | Hex | Tailwind class | Contrast on white |
+|-------|-----|---------------|-------------------|
+| `--text-warning` | `#c2410c` (Tailwind orange-700) | `text-warning-foreground` | 5.18:1 ✓ |
+| `--text-error` | `#B91C1C` (Tailwind red-700) | `text-error-foreground` | 5.94:1 ✓ |
+| `--text-success` | `#285E61` (PE teal-700) | `text-success-foreground` | 7.07:1 ✓ |
+
+The plain `text-warning` / `text-destructive` / `text-success` brand classes are intentionally *not* AA on white — they're meant for soft-tinted backgrounds and badge fills, not paragraph text.
+
+### Dark mode
+
+Available since ui-kit 0.6.0. Activate by adding `class="dark"` to any ancestor element — no JS or media query required. Every shadcn semantic token (`--primary`, `--background`, `--card`, `--border`, etc.) and accessible text variant has a dark-mode value pinned to clear AA on the dark page background `#0B0E14`. Dark-mode values are tested by `tests/theme/contrast.test.ts` in ui-kit and exposed under the `:root.dark` selector in `theme.css`.
+
+```html
+<!-- consumer site dark-mode toggle: just toggle the .dark class on <html> -->
+<html class="dark">
+  ...
+</html>
+```
+
+If you're rendering charts, prefer the CSS-var form (`fill="var(--chart-1)"`) over a hex literal — that way the chart picks up dark-mode swaps automatically. For Plotly / Python where there's no CSS runtime, use `chartPalette.light` and `chartPalette.dark` from `@policyengine/ui-kit` and pick by detected theme.
+
 ### Gray scale
+
+ui-kit's `palette.gray` is Slate-flavored (matches the dashboard's neutral surfaces and `--border` / `--muted` tokens). The legacy `@policyengine/ui-kit/legacy/tokens` shim still exports the Tailwind-3 grays (`#6B7280` for 500, `#4B5563` for 600) for design-system migration parity, but new code should use the canonical Slate values below.
 
 | Token | Hex | Tailwind class |
 |-------|-----|---------------|
-| `gray-50` | `#F9FAFB` | `bg-gray-50` |
+| `gray-50` | `#F0F9FF` | `bg-gray-50` |
 | `gray-100` | `#F2F4F7` | `bg-gray-100` |
 | `gray-200` | `#E2E8F0` | `bg-gray-200` |
-| `gray-500` | `#6B7280` | `text-gray-500` |
-| `gray-600` | `#4B5563` | `text-gray-600` |
+| `gray-300` | `#CBD5E1` | `bg-gray-300` |
+| `gray-400` | `#94A3B8` | `bg-gray-400` |
+| `gray-500` | `#64748B` | `text-gray-500` |
+| `gray-600` | `#475569` | `text-gray-600` |
 | `gray-700` | `#344054` | `text-gray-700` |
+| `gray-800` | `#1E293B` | `text-gray-800` |
+| `gray-900` | `#101828` | `text-gray-900` |
 
 ## Typography
 
@@ -207,7 +240,7 @@ def format_fig(fig):
 | Meaning | CSS variable | Hex |
 |---------|-------------|-----|
 | Positive / bonus / gains | `--chart-1` | `#319795` |
-| Negative / penalty / losses | `--chart-5` or `--destructive` | `#6B7280` or `#EF4444` |
+| Negative / penalty / losses | `--chart-5` or `--destructive` | `#6B7280` or `#DC2626` |
 | Neutral / baseline | `--border` | `#E2E8F0` |
 | Multi-series | `--chart-1` through `--chart-5` | See chart table above |
 

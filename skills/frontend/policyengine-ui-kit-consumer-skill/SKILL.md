@@ -238,6 +238,45 @@ After the two-line import, these are available:
 | Radius | `rounded-sm` (4px), `rounded-md` (6px), `rounded-lg` (8px) | `@theme inline` |
 | All Tailwind utilities | `flex`, `grid`, `p-4`, `gap-2`, `hidden`, etc. | `@import "tailwindcss"` |
 
+## Migrating from `@policyengine/design-system`
+
+`@policyengine/design-system` is **deprecated** — every new tool must use `@policyengine/ui-kit`. For repos still importing from design-system, ui-kit ships a backwards-compat shim under `@policyengine/ui-kit/legacy/*` that mirrors the design-system API exactly. Migrating is a pure import-path rename — no source rewrite needed.
+
+| Before | After |
+|---|---|
+| `from "@policyengine/design-system"` | `from "@policyengine/ui-kit/legacy"` |
+| `from "@policyengine/design-system/tokens"` | `from "@policyengine/ui-kit/legacy/tokens"` |
+| `from "@policyengine/design-system/tokens/colors"` | `from "@policyengine/ui-kit/legacy/tokens/colors"` |
+| `from "@policyengine/design-system/tokens/typography"` | `from "@policyengine/ui-kit/legacy/tokens/typography"` |
+| `from "@policyengine/design-system/tokens/spacing"` | `from "@policyengine/ui-kit/legacy/tokens/spacing"` |
+| `from "@policyengine/design-system/charts"` | `from "@policyengine/ui-kit/legacy/charts"` |
+| `next.config.*` `transpilePackages: ['@policyengine/design-system']` | `transpilePackages: ['@policyengine/ui-kit']` |
+| `vitest.config.*` `inline: ['@policyengine/design-system']` | `inline: ['@policyengine/ui-kit']` |
+| HTML CDN `unpkg.com/@policyengine/design-system/dist/tokens.css` | `unpkg.com/@policyengine/ui-kit/dist/styles.css` |
+| `package.json` deps `"@policyengine/design-system": "^0.3.x"` | `"@policyengine/ui-kit": "^0.9.0"` |
+
+After the rename, prefer the canonical exports for **new** code (this gets you accessibility wins from 0.6.0+):
+
+| Legacy | Canonical | Notes |
+|---|---|---|
+| `colors.primary[N]` | `palette.teal[N]` | same hex |
+| `colors.gray[N]` | `palette.gray[N]` | **DIFFERENT hex** — legacy is Tailwind-3 gray, canonical is Slate |
+| `colors.blue[N]` | `palette.blue[N]` | same hex |
+| `colors.warning` | `semanticFills.warning` | same `#FEC601` |
+| `colors.error` | `semanticFills.error` | same `#EF4444` |
+| `colors.text.warning` | `var(--text-warning)` | **DIFFERENT hex** — legacy `#d9480f` fails AA at small text; canonical `#c2410c` clears 5.18:1 |
+| `typography.fontFamily.primary` | `typography.fontFamily.sans` | same Inter stack |
+| `chartColors` (Plotly) | `chartPalette.light` / `chartPalette.dark` | by-theme resolved hex |
+
+Both `colors.gray[N]` and `colors.text.warning` change visible color on migration — don't bulk `sed`-replace, walk per usage.
+
+## Common gotchas
+
+- **Bun, not npm.** `@policyengine/ui-kit` ships ESM + CJS, but the lockfile pattern across PolicyEngine is `bun.lock` committed (NOT in `.gitignore`). If your CI runs `bun install --frozen-lockfile`, make sure `bun.lock` is committed — otherwise the install always fails.
+- **CI order: build before test.** ui-kit's `tests/consumer-types/` harness type-checks the *built* `dist/` surface against a bundler-resolution consumer. If your repo embeds a similar pattern (or just runs `tsc --noEmit` against `node_modules/@policyengine/ui-kit`), put `bun run build` *before* `bun run test` in the workflow.
+- **Don't fight Vercel's Root Directory.** If your `package.json` lives in a subdirectory (`app/`, `frontend/`, etc.), set the Vercel project's Root Directory to that subdir in the dashboard — don't add a root-level `vercel.json` with `cd subdir && bun install` commands. The two configs fight and the framework detector fails ("No Next.js version detected").
+- **`Header` API changed in 0.4.0.** Old props (`variant`, `logo`, `navLinks`, `children`) no longer exist. New API uses `navItems`, `logoSrc`, `linkComponent`. If you bump from `^0.3.x` and hit `Type '{ children: Element; variant: string; logo: Element; navLinks: …; }' is not assignable to type 'IntrinsicAttributes & HeaderProps'`, that's the migration. Read `@policyengine/ui-kit/dist/layout/header/Header.d.ts` for the current shape.
+
 ## Related Skills
 
 - `policyengine-design-skill` — Full token reference (hex values, usage guidelines)

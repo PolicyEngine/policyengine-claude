@@ -126,7 +126,7 @@ No helper function needed. The old `getCssVar()` / `getComputedStyle()` pattern 
 | `--muted-foreground` | `#6B7280` | Secondary text |
 | `--border` | `#E2E8F0` | Borders, dividers |
 | `--card` | `#FFFFFF` | Card backgrounds |
-| `--destructive` | `#EF4444` | Error states |
+| `--destructive` | `#DC2626` | Error states (red-600, clears WCAG AA on the white `--destructive-foreground`) |
 | `--ring` | `#319795` | Focus rings |
 | `--chart-1` through `--chart-5` | Teal→Gray | Chart series |
 
