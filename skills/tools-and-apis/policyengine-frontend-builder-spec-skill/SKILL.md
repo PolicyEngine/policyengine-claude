@@ -14,13 +14,21 @@ Authoritative specification for all PolicyEngine frontend projects (dashboards a
 The application MUST use **Tailwind CSS v4** for all styling. Tailwind utility classes are the primary styling mechanism.
 
 - MUST install `tailwindcss` (v4+)
+- MUST install `@tailwindcss/postcss` and `postcss` as dev dependencies
+- MUST have a `postcss.config.mjs` containing:
+  ```js
+  export default {
+    plugins: {
+      "@tailwindcss/postcss": {},
+    },
+  };
+  ```
 - MUST have a `globals.css` containing:
   ```css
   @import "tailwindcss";
   @import "@policyengine/ui-kit/theme.css";
   ```
 - MUST NOT have a `tailwind.config.ts` or `tailwind.config.js` — Tailwind v4 uses `@theme` in CSS instead
-- MUST NOT have a `postcss.config.js` or `postcss.config.mjs` — Tailwind v4 does not require PostCSS
 - MUST NOT use `@tailwind base; @tailwind components; @tailwind utilities;` — use `@import "tailwindcss"` instead
 - MUST NOT use plain CSS files or CSS modules (`*.module.css`) for layout or styling
 - MUST NOT use other CSS-in-JS libraries (styled-components, emotion, vanilla-extract)
@@ -261,6 +269,7 @@ DASHBOARD_NAME/
 - `axios`
 
 **Development:**
+- `@tailwindcss/postcss`, `postcss`
 - `typescript`, `@types/react`, `@types/react-dom`, `@types/node`
 - `vitest`, `@vitejs/plugin-react`, `jsdom`
 - `@testing-library/react`, `@testing-library/jest-dom`
@@ -291,7 +300,7 @@ Note: `@vitejs/plugin-react` is only used by Vitest for JSX transform during tes
 - MUST NOT use other bundlers (Webpack, Parcel, esbuild)
 - MUST NOT use other meta-frameworks (Remix, Gatsby, Astro)
 - MUST NOT use the Next.js Pages Router — use App Router only
-- MUST NOT have `tailwind.config.ts` or `postcss.config.js` — Tailwind v4 uses `@theme` in CSS
+- MUST NOT have `tailwind.config.ts` — Tailwind v4 uses `@theme` in CSS instead
 - MUST NOT use `@tailwind base; @tailwind components; @tailwind utilities;` — use `@import "tailwindcss"`
 - MUST NOT use plain CSS files or CSS modules for layout/styling
 - MUST NOT use styled-components, emotion, or vanilla-extract
