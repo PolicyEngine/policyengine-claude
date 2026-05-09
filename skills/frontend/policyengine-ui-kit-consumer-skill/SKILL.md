@@ -276,6 +276,21 @@ Both `colors.gray[N]` and `colors.text.warning` change visible color on migratio
 - **CI order: build before test.** ui-kit's `tests/consumer-types/` harness type-checks the *built* `dist/` surface against a bundler-resolution consumer. If your repo embeds a similar pattern (or just runs `tsc --noEmit` against `node_modules/@policyengine/ui-kit`), put `bun run build` *before* `bun run test` in the workflow.
 - **Don't fight Vercel's Root Directory.** If your `package.json` lives in a subdirectory (`app/`, `frontend/`, etc.), set the Vercel project's Root Directory to that subdir in the dashboard — don't add a root-level `vercel.json` with `cd subdir && bun install` commands. The two configs fight and the framework detector fails ("No Next.js version detected").
 - **`Header` API changed in 0.4.0.** Old props (`variant`, `logo`, `navLinks`, `children`) no longer exist. New API uses `navItems`, `logoSrc`, `linkComponent`. If you bump from `^0.3.x` and hit `Type '{ children: Element; variant: string; logo: Element; navLinks: …; }' is not assignable to type 'IntrinsicAttributes & HeaderProps'`, that's the migration. Read `@policyengine/ui-kit/dist/layout/header/Header.d.ts` for the current shape.
+- **Large text sizes in slides/presentations.** The ui-kit's `theme.css` resets `--text-*` to `initial`, which drops Tailwind defaults above `text-4xl`. If your project uses `text-5xl`, `text-6xl`, `text-7xl`, `text-8xl`, or `text-9xl` (common in slides repositories), you must restore them in your local `@theme` block:
+  ```css
+  @theme {
+    --text-5xl: 3rem;
+    --text-5xl--line-height: 1;
+    --text-6xl: 3.75rem;
+    --text-6xl--line-height: 1;
+    --text-7xl: 4.5rem;
+    --text-7xl--line-height: 1;
+    --text-8xl: 6rem;
+    --text-8xl--line-height: 1;
+    --text-9xl: 8rem;
+    --text-9xl--line-height: 1;
+  }
+  ```
 
 ## Related Skills
 
