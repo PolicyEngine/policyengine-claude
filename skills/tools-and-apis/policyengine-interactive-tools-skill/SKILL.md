@@ -18,17 +18,19 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 
 ## Stack
 
-**Next.js 14 + Tailwind 4 + Recharts** for all tools (embeddable and standalone).
+**Next.js 16 + Tailwind 4 + Recharts** for all tools (embeddable and standalone).
 
 | Component | Choice |
 |-----------|--------|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | CSS | Tailwind 4 with `@policyengine/ui-kit` theme |
 | Charts | Recharts |
 | Code highlighting | Prism React Renderer |
 | Testing | Vitest |
 | Deploy | Vercel under `policy-engine` scope |
 | Package manager | `bun` (not npm) |
+
+**IMPORTANT:** All PolicyEngine tools use Next.js, not Vite. If you encounter a Vite-based tool, it should be migrated to Next.js 16 with the App Router. Vite was used in earlier prototypes but is no longer the standard.
 
 **Requirements:**
 - `@policyengine/ui-kit` theme (installed via `bun add @policyengine/ui-kit`)
@@ -445,7 +447,7 @@ For analysis repos that precompute data with Python microsimulation pipelines:
 ## Scaffolding a new tool
 
 ```bash
-bunx create-next-app@14 my-tool --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
+bunx create-next-app@latest my-tool --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd my-tool
 bun add @policyengine/ui-kit recharts
 bun add -D vitest
@@ -690,7 +692,7 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 
 ## Checklist for new tools
 
-- [ ] Next.js 14 + Tailwind 4 scaffold
+- [ ] Next.js 16 + Tailwind 4 scaffold
 - [ ] `@policyengine/ui-kit` installed (`bun add @policyengine/ui-kit`)
 - [ ] `@import "@policyengine/ui-kit/theme.css"` in `globals.css`
 - [ ] Inter font loaded via Google Fonts CDN
