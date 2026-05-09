@@ -184,9 +184,9 @@ The ui-kit ships `@source` directives to tell Tailwind to scan its components. I
 
 ## Framework-Specific Notes
 
-### Next.js 14 (App Router)
+### Next.js 16+ (Canonical Stack)
 
-Standard setup. Requires `@tailwindcss/postcss` in PostCSS config.
+The canonical PolicyEngine frontend stack uses Next.js 16+ with App Router. Requires `@tailwindcss/postcss` in PostCSS config.
 
 ```
 app/
@@ -195,9 +195,11 @@ app/
 postcss.config.mjs
 ```
 
-### Next.js 15+ / Next.js 16
+All PolicyEngine frontend repos should target Next.js ^16.2.6 as of the Phase 2F modernization.
 
-Same setup. Turbopack processes PostCSS normally. No changes needed.
+### Next.js 14/15 (Legacy)
+
+Same setup. Turbopack processes PostCSS normally. No changes needed. Consider upgrading to Next.js 16+.
 
 ### Vite (non-Next.js)
 
