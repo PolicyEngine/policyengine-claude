@@ -4,10 +4,12 @@ description: |
   This skill should be used when setting up a new project that uses @policyengine/ui-kit,
   debugging CSS or styling issues in a consumer app, or when Tailwind utility classes are not
   being generated. Also use when creating globals.css, configuring PostCSS, or troubleshooting
-  "no styles", "no spacing", or "no layout" problems.
+  "no styles", "no spacing", or "no layout" problems. Also use when migrating from the deprecated
+  @policyengine/design-system package.
   Triggers: "ui-kit import", "globals.css setup", "Tailwind not working", "styles not applying",
   "utility classes missing", "setup ui-kit", "PostCSS config", "no styling", "CSS broken",
-  "import ui-kit", "theme.css", "no layout", "no spacing", "@tailwindcss/postcss"
+  "import ui-kit", "theme.css", "no layout", "no spacing", "@tailwindcss/postcss",
+  "migrate from design-system", "design-system to ui-kit", "/legacy subpath"
 ---
 
 # Consuming @policyengine/ui-kit
@@ -244,3 +246,8 @@ After the two-line import, these are available:
 - `policyengine-tailwind-shadcn-skill` — `@theme` namespace mechanics, SVG var() usage
 - `policyengine-interactive-tools-skill` — Full tool scaffolding checklist
 - `policyengine-vercel-deployment-skill` — Deploying consumer apps
+
+## Related Guides
+
+- `references/migration-from-design-system.md` — Migrate from deprecated @policyengine/design-system to ui-kit
+- `references/migration-from-broken-setup.md` — Fix broken Tailwind + ui-kit configurations
