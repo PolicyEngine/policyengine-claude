@@ -244,3 +244,8 @@ After the two-line import, these are available:
 - `policyengine-tailwind-shadcn-skill` — `@theme` namespace mechanics, SVG var() usage
 - `policyengine-interactive-tools-skill` — Full tool scaffolding checklist
 - `policyengine-vercel-deployment-skill` — Deploying consumer apps
+
+## Related References
+
+- `migration-from-design-system.md` — Migrating from deprecated `@policyengine/design-system` to `@policyengine/ui-kit/legacy`
+- `migration-from-broken-setup.md` — Fixing broken Tailwind + ui-kit configurations

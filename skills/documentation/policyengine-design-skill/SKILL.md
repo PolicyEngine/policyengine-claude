@@ -256,8 +256,9 @@ https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/publ
 |-------------|-------------|------------|
 | **Standalone tool** | `@import "@policyengine/ui-kit/theme.css"` | Google Fonts: Inter |
 | **app-v2** | `import { colors } from '@/designTokens'` | Built-in (Mantine + Inter) |
-| **Python chart** | Hardcode or load `tokens.json` from `@policyengine/design-system` | Inter for Plotly |
+| **Python chart** | Hardcode hex values with CSS var comments | Inter for Plotly |
 | **Blog HTML** | Hardcode from token values | Google Fonts: Inter |
+| **Legacy projects** | `@policyengine/ui-kit/legacy` (drop-in replacement for deprecated `@policyengine/design-system`) | Google Fonts: Inter |
 
 ## Accessibility
 
@@ -269,6 +270,7 @@ https://raw.githubusercontent.com/PolicyEngine/policyengine-app-v2/main/app/publ
 
 ## Related skills
 
+- `policyengine-ui-kit-consumer-skill` — Modern ui-kit setup and migration from `@policyengine/design-system`
 - `policyengine-interactive-tools-skill` — Building standalone tools that use these tokens
 - `policyengine-vercel-deployment-skill` — Deploying standalone tools
 - `policyengine-app-skill` — app-v2 development
