@@ -18,15 +18,21 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 
 ## Stack
 
-**Next.js 14 + Tailwind 4 + Recharts** for all tools (embeddable and standalone).
+**PolicyEngine canonical stack** (as of 2025):
+- **Next.js 16.2+** (App Router)
+- **React 19.2+**
+- **Tailwind CSS 4.2+** with `@policyengine/ui-kit` theme
+- **Recharts** for charts
 
 | Component | Choice |
 |-----------|--------|
-| Framework | Next.js 14 (App Router) |
-| CSS | Tailwind 4 with `@policyengine/ui-kit` theme |
+| Framework | Next.js ^16.2 (App Router) |
+| React | React ^19.2 |
+| CSS | Tailwind CSS ^4.2 with `@policyengine/ui-kit ^0.9` theme |
 | Charts | Recharts |
 | Code highlighting | Prism React Renderer |
 | Testing | Vitest |
+| Linting | ESLint with native flat config (eslint.config.mjs) |
 | Deploy | Vercel under `policy-engine` scope |
 | Package manager | `bun` (not npm) |
 
@@ -690,9 +696,10 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 
 ## Checklist for new tools
 
-- [ ] Next.js 14 + Tailwind 4 scaffold
-- [ ] `@policyengine/ui-kit` installed (`bun add @policyengine/ui-kit`)
+- [ ] Next.js ^16.2 + React ^19.2 + Tailwind CSS ^4.2 scaffold
+- [ ] `@policyengine/ui-kit ^0.9` installed (`bun add @policyengine/ui-kit`)
 - [ ] `@import "@policyengine/ui-kit/theme.css"` in `globals.css`
+- [ ] ESLint with native flat config (`eslint.config.mjs`, NOT FlatCompat)
 - [ ] Inter font loaded via Google Fonts CDN
 - [ ] **Use Tailwind classes from ui-kit theme** — no hardcoded hex colors
 - [ ] **Zero hardcoded font names** — all fonts via `var(--font-sans)`
