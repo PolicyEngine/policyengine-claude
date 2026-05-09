@@ -1,5 +1,5 @@
 ---
-description: Scaffold a new PolicyEngine interactive tool (Next.js 14 + Tailwind 4 + ui-kit theme + embedding boilerplate)
+description: Scaffold a new PolicyEngine interactive tool (Next.js 16 + Turbopack + Tailwind 4 + ui-kit theme + embedding boilerplate)
 ---
 
 # New interactive tool scaffold
@@ -20,8 +20,8 @@ Ask the user for:
 ## Step 2: Create the project
 
 ```bash
-# Create Next.js 14 + Tailwind project
-bunx create-next-app@14 TOOL_NAME --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
+# Create Next.js 16 + Turbopack + Tailwind project
+bunx create-next-app@latest TOOL_NAME --js --app --tailwind --eslint --no-src-dir --import-alias "@/*" --turbopack
 cd TOOL_NAME
 
 # Install dependencies
