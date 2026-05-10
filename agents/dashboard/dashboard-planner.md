@@ -120,7 +120,17 @@ For each component and endpoint, define what "working correctly" means:
 - Known-input/known-output benchmark cases
 - Design compliance checks
 
-### Step 7: Write the Plan
+### Step 7: Decide zone path
+
+Dashboards mount as Next.js multi-zones behind `policyengine.org`. The zone path determines where the dashboard appears on the host site. Follow the conventions in `policyengine-interactive-tools-skill` → "Multi-zone integration (preferred)":
+
+- `/us/<kebab-name>` — US-specific dashboard
+- `/uk/<kebab-name>` — UK-specific dashboard
+- `/<kebab-name>` — cross-country dashboard (rare)
+
+The kebab-case portion should match `dashboard.name`. Write this to `dashboard.zone_path` in the plan. If unclear, flag it to the user in Step 9 rather than guessing.
+
+### Step 8: Write the Plan
 
 Write `plan.yaml` to the working directory with this structure:
 
@@ -134,6 +144,10 @@ dashboard:
   description: "<One-paragraph description>"
   country: us  # us, uk, or both
   audience: public  # public, researchers, legislators, internal
+  # Multi-zone mount path on policyengine.org. REQUIRED — see policyengine-interactive-tools-skill
+  # "Multi-zone integration (preferred)" for conventions:
+  #   /us/<kebab-name>, /uk/<kebab-name>, or /<kebab-name> for cross-country
+  zone_path: "/us/<kebab-case-name>"
 
 data_pattern: policyengine-api  # precomputed | policyengine-api | custom-modal | precomputed-csv
 
@@ -309,16 +323,17 @@ tests:
       description: "Share URLs point to policyengine.org, not Vercel"
 ```
 
-### Step 8: Present the Plan
+### Step 9: Present the Plan
 
 After writing `plan.yaml`, present a human-readable summary:
 
 1. **Dashboard overview** - name, purpose, audience
-2. **Data pattern** - which pattern and why
-3. **Components** - list of inputs, charts, and metrics
-4. **API endpoints** - what data is needed
-5. **Test plan** - key acceptance criteria
-6. **Questions or concerns** - anything unclear from the description
+2. **Zone path** - where it mounts on policyengine.org
+3. **Data pattern** - which pattern and why
+4. **Components** - list of inputs, charts, and metrics
+5. **API endpoints** - what data is needed
+6. **Test plan** - key acceptance criteria
+7. **Questions or concerns** - anything unclear from the description
 
 **The plan is then presented to the user for approval, modification, or rejection.**
 
@@ -326,6 +341,7 @@ After writing `plan.yaml`, present a human-readable summary:
 
 Before presenting the plan:
 
+- [ ] `dashboard.zone_path` is set and follows `/us/<name>` | `/uk/<name>` | `/<name>` convention
 - [ ] Every chart has a `component_ref` pointing to an app-v2 pattern
 - [ ] All colors reference design tokens, not hex values
 - [ ] Data pattern choice is justified (simpler patterns preferred)

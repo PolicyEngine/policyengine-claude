@@ -45,10 +45,30 @@ cat plan.yaml
 
 Extract:
 - `dashboard.name` — for Vercel project and Modal app names
+- `dashboard.zone_path` — for multi-zone host rewrite verification
 - `data_pattern` — determines if Modal deploy is needed (`custom-backend` vs `api-v2-alpha`)
 - `tech_stack.framework` — should be `react-nextjs` (env var prefix: `NEXT_PUBLIC_*`)
 - `embedding.register_in_apps_json` — determines if apps.json update is needed
 - `embedding.slug` — the URL slug for policyengine.org
+
+### 2a. Pre-flight: check for existing host rewrites (informational)
+
+If this dashboard has deployed before, the host (`policyengine-app-v2/website/next.config.ts`) may already have rewrites pointing at it. Check so we know whether Step 5 needs to add them or they're already in place.
+
+```bash
+# Clone or pull the host repo
+if [ ! -d /tmp/policyengine-app-v2 ]; then
+  gh repo clone PolicyEngine/policyengine-app-v2 /tmp/policyengine-app-v2
+fi
+(cd /tmp/policyengine-app-v2 && git checkout main && git pull)
+
+# Invoke the multi-zone validator in host-only mode to check all rewrite structure at once
+# (beforeFiles placement, route + asset rewrite counts, destination format)
+```
+
+Spawn the `multizone-validator` agent with `TARGET_PATH=.` (current dashboard repo) and `HOST_CONFIG_PATH=/tmp/policyengine-app-v2/website/next.config.ts`. Record which host-check items PASS / FAIL — these feed into Step 5 below.
+
+**Do NOT stop if host rewrites are missing.** For a brand-new dashboard, the host can't have rewrites yet because Vercel hasn't assigned a production URL. Step 5 handles adding them **after** the first deploy captures the URL.
 
 ## Step 3: Deploy Backend (if custom-backend)
 
@@ -173,30 +193,56 @@ curl -s -o /dev/null -w "%{http_code}" https://VERCEL_PRODUCTION_URL/
 
 **IMPORTANT:** Use the auto-assigned Vercel production URL, not a custom alias. Custom aliases may have deployment protection issues.
 
-## Step 5: Register in apps.json (if applicable)
+## Step 5: Wire the zone into the host (policyengine-app-v2)
 
-**Only if `embedding.register_in_apps_json: true`:**
+After the Vercel deploy in Step 4, we have a production URL. Now wire the zone into `policyengine-app-v2` so it's reachable at `policyengine.org/<zone_path>`. This is a PR to `PolicyEngine/policyengine-app-v2`.
 
-This requires a PR to `PolicyEngine/policyengine-app-v2`.
+Two parts, both in the same PR:
+
+1. **Host rewrites** — required for every multi-zone dashboard. These make the zone reachable at `policyengine.org/<zone_path>`.
+2. **apps.json entry** — optional, only if `embedding.register_in_apps_json: true`. This is research-listing metadata; it does NOT affect routing.
+
+### 5a. Create the PR branch
 
 ```bash
 # Clone app-v2 if not already available
-gh repo clone PolicyEngine/policyengine-app-v2 /tmp/policyengine-app-v2
+if [ ! -d /tmp/policyengine-app-v2 ]; then
+  gh repo clone PolicyEngine/policyengine-app-v2 /tmp/policyengine-app-v2
+fi
 
 cd /tmp/policyengine-app-v2
 git checkout main
-git checkout -b add-DASHBOARD_NAME-tool
+git pull
+git checkout -b wire-DASHBOARD_NAME-zone
 ```
 
-Add entry to `app/src/data/apps/apps.json`:
+### 5b. Add host rewrites to `website/next.config.ts`
+
+Add these entries to `rewrites().beforeFiles` in `website/next.config.ts` (use `VERCEL_PRODUCTION_URL` captured from Step 4 — e.g. `my-dashboard-policy-engine.vercel.app`):
+
+```ts
+// Path-mounted zone: two route rewrites preserve the basePath in the destination
+{ source: '<zone_path>',        destination: 'https://<VERCEL_PRODUCTION_URL><zone_path>' },
+{ source: '<zone_path>/:path*', destination: 'https://<VERCEL_PRODUCTION_URL><zone_path>/:path*' },
+
+// Asset rewrite (required for zones using assetPrefix: '/_zones/<dashboard.name>')
+{ source: '/_zones/<dashboard.name>/:path*', destination: 'https://<VERCEL_PRODUCTION_URL>/_zones/<dashboard.name>/:path*' },
+```
+
+Skip the asset rewrite only if the zone does not set `assetPrefix`. For root-served zones (no `basePath`), keep the route rewrites but map destinations to the zone root instead: `<zone_path>` → `https://<VERCEL_PRODUCTION_URL>` and `<zone_path>/:path*` → `https://<VERCEL_PRODUCTION_URL>/:path*`. See `policyengine-interactive-tools-skill` for the two valid patterns: path-mounted and root-served.
+
+### 5c. Add apps.json entry (only if `embedding.register_in_apps_json: true`)
+
+This is research-listing metadata. The dashboard is reachable at `policyengine.org/<zone_path>` from Step 5b alone; this entry adds it to the research/interactives listing.
+
+Add to `app/src/data/apps/apps.json`:
 
 ```json
 {
-  "type": "iframe",
   "slug": "SLUG",
   "title": "TITLE",
   "description": "DESCRIPTION",
-  "source": "VERCEL_PRODUCTION_URL",
+  "path": "/COUNTRY/SLUG",
   "tags": ["COUNTRY", "policy", "interactives"],
   "countryId": "COUNTRY",
   "displayWithResearch": true,
@@ -205,6 +251,8 @@ Add entry to `app/src/data/apps/apps.json`:
   "authors": ["AUTHOR_SLUG"]
 }
 ```
+
+The `path` field is the multi-zone route on `policyengine.org` (the host rewrites from 5b make it reachable). Do not use `"type": "iframe"` — that's the legacy embedding model and does not apply to multi-zone deployments.
 
 Use `AskUserQuestion` to gather required metadata:
 
@@ -226,27 +274,36 @@ options:
     description: "Use a placeholder — you can add a cover image later"
 ```
 
+### 5d. Commit and open the PR
+
 ```bash
-git add app/src/data/apps/apps.json
-git commit -m "Register DASHBOARD_NAME interactive tool"
-git push -u origin add-DASHBOARD_NAME-tool
+git add website/next.config.ts app/src/data/apps/apps.json  # second path only if 5c ran
+git commit -m "Wire DASHBOARD_NAME zone"
+git push -u origin wire-DASHBOARD_NAME-zone
 
 gh pr create --repo PolicyEngine/policyengine-app-v2 \
-  --title "Register DASHBOARD_NAME tool" \
-  --body "Adds DASHBOARD_NAME to the interactive tools listing.
+  --title "Wire DASHBOARD_NAME zone" \
+  --body "Adds host rewrites (and apps.json entry, if applicable) so DASHBOARD_NAME is reachable at policyengine.org/COUNTRY/SLUG.
 
-Source: VERCEL_PRODUCTION_URL
-Slug: /COUNTRY/SLUG"
+Zone URL: VERCEL_PRODUCTION_URL
+Public path: /COUNTRY/SLUG"
 ```
 
 ## Step 6: Smoke Test
 
-After deployment:
+Direct-URL checks can run immediately. Public-path checks require the Step 5 PR to merge first.
 
-1. **Direct URL:** Visit the Vercel production URL, verify the dashboard loads
-2. **Embedded (if registered):** After apps.json PR merges, verify at `policyengine.org/COUNTRY/SLUG`
-3. **Hash sync:** Test that URL parameters work (add `#income=50000` etc.)
-4. **Country detection:** Test with `#country=uk` if the dashboard supports multiple countries
+Immediate (after Step 4):
+
+1. **Direct zone URL:** Visit `https://VERCEL_PRODUCTION_URL/<zone_path>`, verify the dashboard loads
+2. **Hash sync:** Test that URL parameters work (add `#income=50000` etc.) and survive refresh
+3. **Country detection (if supported):** Test with `#country=uk`
+
+After Step 5 PR merges:
+
+4. **Public path via host:** Verify the dashboard loads at `policyengine.org/COUNTRY/SLUG` (served through host rewrites, not an iframe)
+5. **Assets load:** Open DevTools → Network, refresh, confirm all `_next/static/*` assets return 200. For static-export zones, verify `/_zones/<dashboard.name>/*` requests reach the zone.
+6. **Shared chrome (if using ui-kit):** Verify Header/Footer render consistently with the rest of `policyengine.org`
 
 ## Step 7: Report
 
@@ -254,20 +311,20 @@ Present deployment summary to the user:
 
 > ## Dashboard deployed
 >
-> - **Live URL:** VERCEL_PRODUCTION_URL
+> - **Zone URL:** VERCEL_PRODUCTION_URL
+> - **Public path (after host PR merges):** policyengine.org/COUNTRY/SLUG
 > - **Vercel project:** DASHBOARD_NAME
 > [If custom backend:]
 > - **API endpoint:** https://policyengine--DASHBOARD_NAME-calculate.modal.run
 > - **Modal environment:** SELECTED_ENV
-> [If registered:]
-> - **apps.json PR:** PR_URL (will be available at policyengine.org/COUNTRY/SLUG after merge)
+> - **Host-wiring PR:** PR_URL (adds rewrites, and apps.json entry if applicable)
 >
 > ### Verify
-> - [ ] Dashboard loads at the Vercel URL
+> - [ ] Dashboard loads at the zone URL
 > - [ ] Calculations work (or stubs respond correctly)
 > - [ ] Hash parameters are preserved on refresh
-> [If registered:]
-> - [ ] After apps.json PR merges, dashboard embeds correctly in policyengine.org
+> - [ ] After host-wiring PR merges, dashboard loads at policyengine.org/COUNTRY/SLUG
+> - [ ] After host-wiring PR merges, assets (`_next/static/*`) load with 200 status
 
 ## Error Recovery
 

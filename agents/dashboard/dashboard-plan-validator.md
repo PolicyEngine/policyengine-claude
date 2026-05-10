@@ -28,6 +28,7 @@ Read `plan.yaml` and extract:
 - API endpoints or data sources
 - Embedding configuration
 - Test specifications
+- `dashboard.zone_path` (REQUIRED for multi-zone integration)
 
 ### Step 2: Run Checks
 
@@ -80,14 +81,22 @@ For each chart component:
 - Uses CSS variables for colors (`var(--chart-N)`), not hardcoded hex
 - Axes use appropriate formatting
 
+#### 6. Multi-zone plan completeness
+
+- `dashboard.zone_path` is present in `plan.yaml`
+- Value starts with `/` and matches `/us/<name>`, `/uk/<name>`, or `/<name>`
+- Kebab portion of `zone_path` matches `dashboard.name` (flag any mismatch)
+
+If `zone_path` is missing, the scaffold cannot produce a compliant `next.config.mjs` — report this as a blocking failure.
+
 ## Report Format
 
 ```
 ## Plan Compliance Report
 
 ### Summary
-- PASS: X/5 checks
-- FAIL: Y/5 checks
+- PASS: X/6 checks
+- FAIL: Y/6 checks
 
 ### Results
 
@@ -98,6 +107,7 @@ For each chart component:
 | 3 | Embedding | PASS/FAIL | ... |
 | 4 | Loading/error states | PASS/FAIL | ... |
 | 5 | Chart quality | PASS/FAIL | ... |
+| 6 | Multi-zone plan completeness | PASS/FAIL | zone_path present / missing |
 
 ### Failures (if any)
 

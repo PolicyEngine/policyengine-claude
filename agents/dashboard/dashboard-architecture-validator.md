@@ -165,7 +165,86 @@ grep -n 'policyengine' backend/modal_app.py
 # Should find NOTHING — gateway is lightweight
 ```
 
-### 7. Parameter Path Verification (custom-modal only)
+### 7. Multi-zone configuration
+
+Dashboards mount as Next.js multi-zones behind policyengine.org. The scaffold must produce a compliant `next.config.mjs` and `vercel.json`. See `policyengine-interactive-tools-skill` → "Multi-zone integration (preferred)" for the full rules.
+
+**Required: `next.config.mjs` exists and uses the phase-gated function form**
+
+```bash
+# File present
+test -f next.config.mjs && echo "PASS" || echo "FAIL: next.config.mjs missing"
+
+# Must export a function (so it receives `phase`)
+grep -nE 'export default function|export default \(phase\)' next.config.mjs
+# Should match
+
+# Must import PHASE_DEVELOPMENT_SERVER
+grep -n 'PHASE_DEVELOPMENT_SERVER' next.config.mjs
+# Should find the import and the comparison
+```
+
+**Required: `basePath` matches `dashboard.zone_path` from plan**
+
+```bash
+# Extract zone_path from plan.yaml
+PLAN_ZONE=$(grep -E '^\s*zone_path:' plan.yaml | head -1 | sed -E 's/.*zone_path:\s*"?([^"]*)"?/\1/')
+
+# Extract basePath from next.config.mjs
+CFG_BASE=$(grep -E 'basePath:' next.config.mjs | head -1 | sed -E "s/.*basePath:\s*['\"]([^'\"]+)['\"].*/\1/")
+
+# They must match
+[ "$PLAN_ZONE" = "$CFG_BASE" ] && echo "PASS" || echo "FAIL: basePath '$CFG_BASE' != plan.zone_path '$PLAN_ZONE'"
+```
+
+**Required: phase-gated `assetPrefix` pointing at `/_zones/<dashboard.name>`**
+
+```bash
+# Extract dashboard.name from plan.yaml
+DNAME=$(grep -E '^\s*name:' plan.yaml | head -1 | sed -E 's/.*name:\s*"?([^"]*)"?/\1/')
+
+# assetPrefix should be a ternary on isDev, with /_zones/<name> as the non-dev branch
+grep -nE "assetPrefix:.*isDev.*/_zones/$DNAME" next.config.mjs
+# Should find the pattern
+```
+
+**Prohibited: unconditional `assetPrefix`** (breaks `next dev`)
+
+```bash
+# assetPrefix without a phase gate — flag as FAIL
+grep -nE "assetPrefix:\s*['\"]" next.config.mjs
+# Should find NOTHING — the correct form is assetPrefix: isDev ? undefined : '/...'
+```
+
+**Prohibited: absolute-URL `assetPrefix`** (ties zone to a Vercel domain)
+
+```bash
+grep -nE "assetPrefix:.*https?://" next.config.mjs
+# Should find NOTHING
+```
+
+**Required: `vercel.json` self-rewrite**
+
+```bash
+test -f vercel.json && echo "PASS" || echo "FAIL: vercel.json missing"
+
+# Self-rewrite source must match /_zones/<dashboard.name>/_next/:path*
+grep -nE "/_zones/$DNAME/_next/:path\*" vercel.json
+# Should find the rewrite source
+
+grep -nE '"destination":\s*"/_next/:path\*"' vercel.json
+# Should find the destination
+```
+
+**Required: cross-zone links use `<a>`, not `<Link>`**
+
+```bash
+# <Link> to paths outside the zone's own basePath — flag for review
+grep -rnE '<Link[^>]+href=["'"'"']/(us|uk)/' app/ components/ --include='*.tsx' | grep -v node_modules
+# Any hits pointing at a path OUTSIDE the dashboard's own basePath are violations
+```
+
+### 8. Parameter Path Verification (custom-modal only)
 
 **Only run this check if `plan.yaml` has `data_pattern: custom-modal`.** Skip entirely for other patterns.
 
@@ -225,7 +304,7 @@ for path in paths_to_check:
 ## Architecture Compliance Report
 
 ### Summary
-- PASS: X/7 checks (or X/5 if not custom-modal)
+- PASS: X/8 checks (or X/6 if not custom-modal)
 - FAIL: Y checks
 
 ### Results
@@ -238,7 +317,8 @@ for path in paths_to_check:
 | 4 | Package manager | PASS/FAIL | ... |
 | 5 | Tailwind classes used | PASS/FAIL | ... |
 | 6 | Modal backend structure | PASS/FAIL/SKIP | ... |
-| 7 | Parameter path verification | PASS/FAIL/SKIP | ... |
+| 7 | Multi-zone configuration | PASS/FAIL | basePath, assetPrefix, vercel.json |
+| 8 | Parameter path verification | PASS/FAIL/SKIP | ... |
 
 ### Failures (if any)
 

@@ -12,6 +12,7 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 |---------|-------------|
 | `/create-dashboard` | Orchestrates multi-agent workflow: creates repo, plans, scaffolds, implements, validates, and commits a dashboard |
 | `/deploy-dashboard` | Deploys a completed dashboard to Vercel (and optionally Modal) and registers it in the app |
+| `/audit-multizone` | Audits an existing PolicyEngine Next.js zone app for multi-zone compliance (read-only) |
 | `/dashboard-overview` | This command — lists all dashboard builder ecosystem components |
 
 ## Agents
@@ -25,8 +26,9 @@ Display a complete inventory of all tools, commands, skills, and agents availabl
 | `dashboard-integrator` | 4 — Integrate | Wires frontend components to backend API client, handles data flow |
 | `dashboard-build-validator` | 5 — Validate | Runs build and test suite |
 | `dashboard-design-validator` | 5 — Validate | Checks design tokens, typography, sentence case, responsive |
-| `dashboard-architecture-validator` | 5 — Validate | Checks Tailwind v4, Next.js, ui-kit, package manager |
+| `dashboard-architecture-validator` | 5 — Validate | Checks Tailwind v4, Next.js, ui-kit, package manager, multi-zone config |
 | `dashboard-plan-validator` | 5 — Validate | Checks API contract, components, embedding, states vs plan |
+| `multizone-validator` | Audit (read-only) | Audits existing zone apps for multi-zone compliance (invoked via `/audit-multizone`) |
 | `dashboard-overview-updater` | Post — Update | Updates this overview if ecosystem components changed |
 
 ## Skills

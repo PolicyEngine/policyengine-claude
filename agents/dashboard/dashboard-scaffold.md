@@ -59,6 +59,7 @@ cat plan.yaml
 Extract key values:
 - `dashboard.name` - repo name and directory name
 - `dashboard.country` - determines which PE packages to use
+- `dashboard.zone_path` - REQUIRED. Drives `basePath` in `next.config.ts` and host rewrites. If missing, STOP and ask the user — don't guess
 - `data_pattern` - determines backend structure
 - `tech_stack` - confirms fixed stack choices
 - `components` - informs which dependencies to install
@@ -88,7 +89,8 @@ DASHBOARD_NAME/
 │   ├── layout.tsx                  # Root layout — Inter font + globals.css
 │   ├── page.tsx                    # Main dashboard page
 │   ├── globals.css                 # @import "tailwindcss" + @import ui-kit theme
-│   └── providers.tsx               # React Query provider (client component)
+│   ├── providers.tsx               # React Query provider (client component)
+│   └── icon.svg                    # PE logo favicon (basePath-safe via App Router)
 ├── components/
 │   └── (from plan.yaml components — only custom ones not in ui-kit)
 ├── lib/
@@ -99,8 +101,6 @@ DASHBOARD_NAME/
 │   ├── embedding.ts
 │   └── hooks/
 │       └── useCalculation.ts
-├── public/
-│   └── favicon.svg                 # PE logo favicon (from ui-kit)
 ├── __tests__/
 │   └── page.test.tsx
 ├── next.config.ts
@@ -119,7 +119,7 @@ DASHBOARD_NAME/
 
 ```
 DASHBOARD_NAME/
-├── ... (same structure as above, including Makefile and public/favicon.svg)
+├── ... (same structure as above, including Makefile and app/icon.svg)
 ├── backend/
 │   ├── _image_setup.py         # Standalone snapshot function (no package imports)
 │   ├── app.py                  # Modal worker app + function decorators (only `modal` at module level)
@@ -191,17 +191,54 @@ Generate from the fixed tech stack, including:
 - `axios`
 - Dev: `vitest`, `@vitejs/plugin-react`, `@testing-library/react`, `@testing-library/jest-dom`, `typescript`, `@types/react`, `@types/react-dom`, `@types/node`, `jsdom`
 
-#### next.config.ts
+#### next.config.mjs (static export with multi-zone)
 
-```typescript
-import type { NextConfig } from 'next'
+Dashboards use `output: 'export'` AND mount as multi-zones behind policyengine.org. This requires the three-piece static-export pattern (phase-gated `assetPrefix` + `vercel.json` self-rewrite + host asset rewrite) — see `policyengine-interactive-tools-skill` → "Canonical zone config — static export" for full rationale.
 
-const nextConfig: NextConfig = {
-  output: 'export',  // Static export for Vercel
+The scaffolded `next.config.mjs` MUST:
+1. Export a **function** that takes `phase` (so we can detect `next dev`)
+2. Set `basePath` to `dashboard.zone_path` from the plan
+3. Set `assetPrefix` conditionally: `undefined` in dev, `/_zones/<dashboard.name>` in builds
+
+Replace `DASHBOARD_NAME` with `dashboard.name` and `ZONE_PATH` with `dashboard.zone_path`:
+
+```js
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
+
+/** @type {import('next').NextConfig} */
+export default function nextConfig(phase) {
+  const isDev = phase === PHASE_DEVELOPMENT_SERVER;
+
+  return {
+    output: 'export',
+    basePath: 'ZONE_PATH',
+    // Phase-gated: undefined in `next dev` (local paths work),
+    // /_zones/DASHBOARD_NAME in builds (assets don't collide with host).
+    assetPrefix: isDev ? undefined : '/_zones/DASHBOARD_NAME',
+    trailingSlash: true,
+    images: { unoptimized: true },
+  };
 }
-
-export default nextConfig
 ```
+
+Do NOT scaffold a plain object-form `next.config.ts` — the phase gate requires the function form.
+
+#### vercel.json (multi-zone self-rewrite)
+
+Static-export dashboards need a self-rewrite in `vercel.json` so the zone's own Vercel preview can serve its built, prefixed assets. Without this, hitting `policyengine--DASHBOARD_NAME.vercel.app/ZONE_PATH` directly will 404 on all JS/CSS.
+
+Replace `DASHBOARD_NAME` with `dashboard.name`:
+
+```json
+{
+  "framework": "nextjs",
+  "rewrites": [
+    { "source": "/_zones/DASHBOARD_NAME/_next/:path*", "destination": "/_next/:path*" }
+  ]
+}
+```
+
+The host-side asset rewrite (`policyengine-app-v2/website/next.config.ts`) is added separately during deploy — see `/deploy-dashboard`.
 
 #### postcss.config.mjs
 
@@ -248,7 +285,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'TITLE - PolicyEngine',
   description: 'DESCRIPTION from plan',
-  icons: { icon: '/favicon.svg' },
+  // Favicon is picked up automatically from app/icon.svg (basePath-safe).
+  // Do NOT set icons: { icon: '/favicon.svg' } — that path is not basePath-prefixed
+  // and resolves to the host's favicon when the zone is served behind policyengine.org.
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -534,14 +573,13 @@ clean:
 
 #### Favicon
 
-Copy the PolicyEngine logo favicon from ui-kit into `public/`:
+Copy the PolicyEngine logo into `app/icon.svg` — the App Router convention. Next.js emits it at `<basePath>/icon.svg`, so it resolves correctly whether the zone is hit directly or served behind the host.
 
 ```bash
-mkdir -p public
-cp node_modules/@policyengine/ui-kit/src/assets/logos/policyengine/teal-square.svg public/favicon.svg
+cp node_modules/@policyengine/ui-kit/src/assets/logos/policyengine/teal-square.svg app/icon.svg
 ```
 
-The `layout.tsx` metadata already includes `icons: { icon: '/favicon.svg' }` (see template above).
+Do NOT use `public/favicon.svg` + `icons: { icon: '/favicon.svg' }` in metadata — that path is written verbatim into the HTML and is not basePath-prefixed. Behind the host, the browser will request it from `policyengine.org/favicon.svg` and get the host's favicon instead of the zone's.
 
 #### Embedding Boilerplate
 
@@ -615,6 +653,10 @@ If either fails, fix before proceeding.
 ## Quality Checklist
 
 - [ ] `plan.yaml` is included in the repo
+- [ ] `dashboard.zone_path` from plan is written as `basePath` in `next.config.mjs`
+- [ ] `next.config.mjs` exports a FUNCTION taking `phase` (not a plain object)
+- [ ] `assetPrefix` is phase-gated: `undefined` in dev, `/_zones/<dashboard.name>` in builds
+- [ ] `vercel.json` contains the self-rewrite: `/_zones/<dashboard.name>/_next/:path*` → `/_next/:path*`
 - [ ] `CLAUDE.md` follows existing applet patterns
 - [ ] `package.json` has all required dependencies (Next.js, Tailwind v4, ui-kit)
 - [ ] `globals.css` has `@import "tailwindcss"` + `@import "@policyengine/ui-kit/theme.css"`
@@ -628,8 +670,8 @@ If either fails, fix before proceeding.
 - [ ] `.claude/settings.json` auto-installs the dashboard-builder plugin
 - [ ] `vercel.json` is configured for frontend deployment
 - [ ] Feature branch is created and pushed
-- [ ] `public/favicon.svg` exists (PE logo)
-- [ ] `layout.tsx` metadata includes `icons: { icon: '/favicon.svg' }`
+- [ ] `app/icon.svg` exists (PE logo, basePath-safe via App Router)
+- [ ] `layout.tsx` metadata does NOT set `icons: { icon: '/favicon.svg' }` (that path isn't basePath-prefixed and would collide with the host behind policyengine.org)
 - [ ] Header uses `logos.whiteWordmark` or `logos.tealWordmark` (not text-only)
 - [ ] `Makefile` has correct targets for the data pattern
 - [ ] `make dev` uses port range 4000-4100 (not random, not hardcoded 3000)

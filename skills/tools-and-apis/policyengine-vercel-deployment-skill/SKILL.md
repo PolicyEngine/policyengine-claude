@@ -18,17 +18,19 @@ vercel link --scope policy-engine
 vercel --prod --yes --scope policy-engine
 ```
 
-### Naming convention
+### Production URLs
 
-Projects use the pattern `policyengine--{repo-name}`:
+Vercel auto-assigns the production URL on first deploy — the exact domain depends on team/name availability (suffixes like `-one`, `-phi`, or `-policy-engine` are common when the base name is taken). Examples of live PolicyEngine zones:
 
 ```
-policyengine--marriage.vercel.app
-policyengine--aca-calc.vercel.app
-policyengine--state-legislative-tracker.vercel.app
+working-americans-tax-cut-act-one.vercel.app
+keep-your-pay-act.vercel.app
+oregon-kicker-refund.vercel.app
+household-api-docs-policy-engine.vercel.app
+policyengine-model-phi.vercel.app
 ```
 
-Vercel auto-assigns a random production URL (e.g., `marriage-zeta-beryl.vercel.app`). Use that in apps.json as the source URL since custom aliases may have deployment protection issues.
+Capture whatever Vercel assigns on the first deploy and hardcode that exact URL anywhere it's needed (host rewrites, apps.json source). Do not assume a deterministic naming scheme, and do not use custom aliases — they may have deployment protection issues.
 
 ### First deploy
 
@@ -90,3 +92,22 @@ Must be at repo root. For Next.js static exports, configure rewrites as needed:
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
 ```
+
+## Multi-zone deployments
+
+PolicyEngine tools deploy as **Next.js multi-zones** mounted behind `policyengine.org`. The host (`policyengine-app-v2/website/`) proxies specific paths to each zone's Vercel deployment via `rewrites` in `beforeFiles`.
+
+Before deploying a new tool, make sure you've read `policyengine-interactive-tools-skill` → "Multi-zone integration (preferred)". The Vercel-facing implications:
+
+- **Vercel project URLs are not deterministic.** Vercel auto-assigns the production domain on first deploy (often appending suffixes like `-one`, `-phi`, or `-policy-engine` when the base name is taken). Capture whatever Vercel assigns and hardcode that exact URL in the host rewrite destination. Do not assume a naming convention.
+- **Static-export zones need a `vercel.json` self-rewrite** so the zone's own preview can serve prefixed assets:
+  ```json
+  {
+    "framework": "nextjs",
+    "rewrites": [
+      { "source": "/_zones/<repo-name>/_next/:path*", "destination": "/_next/:path*" }
+    ]
+  }
+  ```
+- **Host rewrites must land before the zone is reachable at `policyengine.org`** — add to `policyengine-app-v2/website/next.config.ts` in `rewrites().beforeFiles`, hardcoded to the zone's production Vercel URL. `/deploy-dashboard` handles this after the first deploy captures the production URL.
+- **Run `/audit-multizone` before announcing a zone as live** — validates `basePath`, phase-gated `assetPrefix`, `vercel.json` self-rewrite, and host rewrites in one pass.
