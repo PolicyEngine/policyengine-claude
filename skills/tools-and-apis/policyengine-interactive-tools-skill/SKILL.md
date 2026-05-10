@@ -9,16 +9,24 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 
 ## Examples
 
-- Marriage calculator (`PolicyEngine/marriage`) — uses PolicyEngine API
+Use `/new-tool` plus this skill as the canonical scaffold for new repos. The production repos below are useful pattern references, but they do **not** all match the current frontend standard.
+
+### Pattern references
+
 - GiveCalc (`PolicyEngine/givecalc`) — custom Modal API with policyengine-us
-- ACA reforms calculator (`PolicyEngine/aca-calc`) — precomputed data
-- State legislative tracker (`PolicyEngine/state-legislative-tracker`) — static data
-- UK salary sacrifice tool (`PolicyEngine/uk-salary-sacrifice-analysis`)
+- State legislative tracker (`PolicyEngine/state-legislative-tracker`) — precomputed/static data with external app embedding
 - SNAP BBCE repeal dashboard (`PolicyEngine/snap-bbce-repeal`) — precomputed CSV dashboard
 
-## Stack
+### Legacy repos still in production
 
-**Next.js 14 + Tailwind 4 + Recharts** for all tools (embeddable and standalone).
+- Marriage calculator (`PolicyEngine/marriage`) — older Vite-era frontend; use for business logic, not scaffolding
+- ACA reforms calculator (`PolicyEngine/ACA-Calc`) — older Vite-era frontend; use for data ideas, not scaffolding
+- Student loan calculator (`PolicyEngine/student-loan-calculator`) — legacy design-system/CDN setup; do not copy
+- Spring Statement dashboard (`PolicyEngine/uk-spring-statement-2026`) — custom migration case; use for policy logic, not baseline architecture
+
+## Current default stack
+
+**New tools default to Next.js 14 + Tailwind 4 + Recharts.** Some deployed tools predate this stack; treat those repos as migration targets or pattern references, not templates.
 
 | Component | Choice |
 |-----------|--------|
@@ -35,7 +43,8 @@ How to build standalone React apps (calculators, dashboards, visualizations) tha
 - Inter font via Google Fonts CDN
 - Recharts for charts
 - **NEVER hardcode hex colors or font names** — always use CSS variables from the ui-kit theme (e.g., `var(--primary)`, `var(--chart-1)`, `var(--font-sans)`)
-- **PolicyEngine logo** — always use the actual logo image, never styled text. Files at `policyengine-app-v2/app/public/assets/logos/policyengine/` (white.png for dark backgrounds, teal.png for light)
+- **PolicyEngine logo** — always use the actual logo image, never styled text. Copy it locally from `@policyengine/ui-kit` or PolicyEngine assets; never hotlink a raw GitHub URL
+- **Every new repo needs pull-request CI before launch** — at minimum install + build, and add lint/test when scripts exist
 - Sentence case on all UI text
 
 ## CRITICAL: Never hardcode computed data
@@ -516,7 +525,7 @@ Or use `style=` with `var()` for inline styles:
 
 ### 1. Register in apps.json
 
-Add entry to `policyengine-app-v2/app/src/data/apps/apps.json`:
+Add entry to `website/src/data/apps.json` in `policyengine-app-v2`:
 
 ```json
 {
@@ -545,6 +554,8 @@ Add entry to `policyengine-app-v2/app/src/data/apps/apps.json`:
 **Source URL:** Use the auto-assigned Vercel production URL (e.g., `marriage-zeta-beryl.vercel.app`), not a custom alias — aliases may have deployment protection issues.
 
 **Required fields for `displayWithResearch: true`:** `image`, `date`, `authors`.
+
+If the tool needs a proxied path or nonstandard rewrite instead of a direct iframe source URL, update `website/next.config.ts` in `policyengine-app-v2` at the same time.
 
 ### 2. Country detection
 
@@ -680,6 +691,48 @@ bunx vitest run
 
 Test API responses against Python fixtures for numerical accuracy. See `PolicyEngine/marriage/tests/` for examples.
 
+## Pull-request CI
+
+Every standalone tool repo should add `.github/workflows/ci.yml` before launch:
+
+```yaml
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Run PolicyEngine migration guardrails
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/main/scripts/audit_next_migration.py -o /tmp/audit_next_migration.py
+          python3 /tmp/audit_next_migration.py --root .
+      - run: bun install --frozen-lockfile
+      - name: Run lint
+        run: |
+          if jq -e '.scripts.lint' package.json >/dev/null; then
+            bun run lint
+          else
+            echo "No lint script"
+          fi
+      - name: Run tests
+        run: |
+          if jq -e '.scripts.test' package.json >/dev/null; then
+            bun run test
+          else
+            echo "No test script"
+          fi
+      - run: bun run build
+```
+
+Do not leave embedded repos deploy-only or schedule-only. If the repo ships on `policyengine.org`, it needs pull-request validation and migration guardrails.
+
 ### Frontend Verification Rules
 
 - **`curl` returning 200 does NOT mean a frontend works.** SPAs serve an HTML shell regardless of whether React components render. The only reliable check is `bun run build`.
@@ -703,6 +756,8 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 - [ ] Sentence case on all UI text
 - [ ] Data pattern chosen (precomputed JSON / precomputed CSV / API / Modal)
 - [ ] Deployed to Vercel under `policy-engine` scope
+- [ ] Pull-request CI added (`.github/workflows/ci.yml`)
+- [ ] Migration guardrails pass (`audit_next_migration.py`)
 - [ ] Mobile responsive (768px, 480px breakpoints)
 - [ ] Tests passing
 
@@ -711,7 +766,8 @@ Test API responses against Python fixtures for numerical accuracy. See `PolicyEn
 - [ ] Hash sync with postMessage to parent
 - [ ] Share URLs point to policyengine.org
 - [ ] Hide country toggle when embedded
-- [ ] Registered in apps.json (with cover image if `displayWithResearch`)
+- [ ] Registered in `policyengine-app-v2/website/src/data/apps.json` (with cover image if `displayWithResearch`)
+- [ ] `policyengine-app-v2/website/next.config.ts` updated when the tool needs a proxy/rewrite path
 
 ## Related skills
 

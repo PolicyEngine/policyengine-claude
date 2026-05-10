@@ -326,11 +326,55 @@ vercel env add NEXT_PUBLIC_API_URL production
 vercel --prod --force --yes --scope policy-engine
 ```
 
-## Step 6: Register in apps.json
+## Step 6: Add pull-request CI
 
-Add entry to `policyengine-app-v2/app/src/data/apps/apps.json`. Use the auto-assigned Vercel production URL (not a custom alias).
+Create `.github/workflows/ci.yml` so every new tool gets build validation before deploy:
 
-## Step 7: Verify
+```yaml
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Run PolicyEngine migration guardrails
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/main/scripts/audit_next_migration.py -o /tmp/audit_next_migration.py
+          python3 /tmp/audit_next_migration.py --root .
+      - run: bun install --frozen-lockfile
+      - name: Run lint
+        run: |
+          if jq -e '.scripts.lint' package.json >/dev/null; then
+            bun run lint
+          else
+            echo "No lint script"
+          fi
+      - name: Run tests
+        run: |
+          if jq -e '.scripts.test' package.json >/dev/null; then
+            bun run test
+          else
+            echo "No test script"
+          fi
+      - run: bun run build
+```
+
+Every embeddable tool should have migration guardrails plus at least install + build on pull requests. If the repo has `lint` or `test` scripts, wire them into CI immediately rather than leaving the repo deploy-only.
+
+## Step 7: Register in apps.json
+
+Add the tool entry to `website/src/data/apps.json` in `policyengine-app-v2`. Use the auto-assigned Vercel production URL (not a custom alias).
+
+If the tool needs a rewrite/proxy path rather than a direct iframe source URL, update `website/next.config.ts` in the same repo as part of the launch.
+
+## Step 8: Verify
 
 ```bash
 # Check deployment
@@ -338,6 +382,16 @@ curl -s -o /dev/null -w "%{http_code}" https://VERCEL_URL/
 
 # Start dev server for local development
 bun run dev
+
+# Validate the production build locally
+bun run build
+
+# Run migration guardrails locally
+curl -fsSL https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/main/scripts/audit_next_migration.py | python3 - --root .
+
+# Run lint/tests when the repo defines them
+if jq -e '.scripts.lint' package.json >/dev/null; then bun run lint; fi
+if jq -e '.scripts.test' package.json >/dev/null; then bun run test; fi
 ```
 
 ## Reference
