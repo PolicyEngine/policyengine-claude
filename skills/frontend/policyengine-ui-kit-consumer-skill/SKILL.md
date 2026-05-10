@@ -7,7 +7,8 @@ description: |
   "no styles", "no spacing", or "no layout" problems.
   Triggers: "ui-kit import", "globals.css setup", "Tailwind not working", "styles not applying",
   "utility classes missing", "setup ui-kit", "PostCSS config", "no styling", "CSS broken",
-  "import ui-kit", "theme.css", "no layout", "no spacing", "@tailwindcss/postcss"
+  "import ui-kit", "theme.css", "no layout", "no spacing", "@tailwindcss/postcss",
+  "PolicyEngineShell", "multizone shell", "PolicyEngine header", "PolicyEngine footer"
 ---
 
 # Consuming @policyengine/ui-kit
@@ -52,6 +53,76 @@ This provides:
 - shadcn/ui semantic tokens (`bg-primary`, `text-foreground`, `border-border`)
 - Brand palette (`bg-teal-500`, `text-gray-600`, `bg-blue-500`)
 - Base element styles (body font, border defaults, slider styling)
+
+## Canonical PolicyEngine Shell
+
+Multizone apps must render the PolicyEngine shell themselves. The parent app-v2
+rewrite cannot inject a header or footer into a child app response, and iframes
+should not be used to fake a shared shell.
+
+For Next App Router apps, prefer the runtime shell exports from ui-kit instead
+of copying header constants into each repo:
+
+```tsx
+import { PolicyEngineShell } from "@policyengine/ui-kit";
+import "./globals.css";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <PolicyEngineShell country="us">{children}</PolicyEngineShell>
+      </body>
+    </html>
+  );
+}
+```
+
+Use `country="uk"` for UK-only apps. If the app needs a custom main wrapper or
+sticky local toolbar, render the header and footer separately:
+
+```tsx
+import { PolicyEngineFooter, PolicyEngineHeader } from "@policyengine/ui-kit";
+import "./globals.css";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <PolicyEngineHeader country="uk" />
+        {children}
+        <PolicyEngineFooter country="uk" />
+      </body>
+    </html>
+  );
+}
+```
+
+When adding a PE header above an app-local sticky bar, offset the local sticky
+bar by the shared header height:
+
+```css
+.local-toolbar {
+  position: sticky;
+  top: var(--spacing-header, 58px);
+}
+```
+
+Static HTML routes still need visible PE branding and nav. Prefer migrating the
+route to the canonical Next stack; if that is not feasible, include a small
+static shell in the generated HTML. Do not rely on app-v2 rewrites, iframes, or
+the parent route to add the shell after the fact.
+
+For multizone apps, verify both the destination URL and the policyengine.org
+source URL. The source URL is the one users and ads see.
 
 ## How It Works
 
@@ -276,6 +347,21 @@ Both `colors.gray[N]` and `colors.text.warning` change visible color on migratio
 - **CI order: build before test.** ui-kit's `tests/consumer-types/` harness type-checks the *built* `dist/` surface against a bundler-resolution consumer. If your repo embeds a similar pattern (or just runs `tsc --noEmit` against `node_modules/@policyengine/ui-kit`), put `bun run build` *before* `bun run test` in the workflow.
 - **Don't fight Vercel's Root Directory.** If your `package.json` lives in a subdirectory (`app/`, `frontend/`, etc.), set the Vercel project's Root Directory to that subdir in the dashboard — don't add a root-level `vercel.json` with `cd subdir && bun install` commands. The two configs fight and the framework detector fails ("No Next.js version detected").
 - **`Header` API changed in 0.4.0.** Old props (`variant`, `logo`, `navLinks`, `children`) no longer exist. New API uses `navItems`, `logoSrc`, `linkComponent`. If you bump from `^0.3.x` and hit `Type '{ children: Element; variant: string; logo: Element; navLinks: …; }' is not assignable to type 'IntrinsicAttributes & HeaderProps'`, that's the migration. Read `@policyengine/ui-kit/dist/layout/header/Header.d.ts` for the current shape.
+
+## Next 16 Multizone Migration Checklist
+
+For child apps served under `policyengine.org`, the target state is:
+
+1. Next.js App Router on Next 16.
+2. Tailwind v4 with `@import "tailwindcss";` before `@import "@policyengine/ui-kit/theme.css";`.
+3. `@policyengine/ui-kit` installed and used for the PE shell.
+4. No Vite-era Vercel overrides (`framework: vite`, stale `outputDirectory`, or root-level `cd subdir &&` build commands).
+5. The deployed policyengine.org source route renders PE branding plus the main nav labels (`Research`, `Model`, `API`, `Donate`).
+
+Use `PolicyEngineShell` for straightforward tools, and use
+`PolicyEngineHeader`/`PolicyEngineFooter` separately when the page structure
+needs a custom main container. Keep the shell runtime-owned by ui-kit; do not
+copy nav arrays into new apps.
 
 ## Related Skills
 
