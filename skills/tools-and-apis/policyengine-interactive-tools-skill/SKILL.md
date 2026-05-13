@@ -46,6 +46,7 @@ Use `/new-tool` plus this skill as the canonical scaffold for new repos. The pro
 - **PolicyEngine logo** — always use the actual logo image, never styled text. Copy it locally from `@policyengine/ui-kit` or PolicyEngine assets; never hotlink a raw GitHub URL
 - **Every new repo needs pull-request CI before launch** — at minimum install + build, and add lint/test when scripts exist
 - Sentence case on all UI text
+- **App-specific provenance belongs in the app's results/methodology footnote** — `policyengine.py` versions, model/data versions, static-estimate caveats, and calculation notes must not be added to the shared PolicyEngine header, footer, or global layout. When touching these notes, add or preserve a regression test that the shared chrome does not contain app-specific provenance and the results/methodology footnote does.
 
 ## Multi-zone integration (preferred)
 
