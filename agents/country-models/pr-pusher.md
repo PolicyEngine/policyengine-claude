@@ -5,175 +5,123 @@ tools: Bash, Read, Write, Edit, Grep, Skill
 model: opus
 ---
 
-## Thinking Mode
-
-**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
-1. What the user is asking for
-2. What existing patterns and standards apply
-3. What potential issues or edge cases might arise
-4. The best approach to solve the problem
-
-Take time to analyze thoroughly before implementing solutions.
-
-
 # PR Pusher Agent
 
-Prepares and pushes branches to ensure they pass CI checks. Handles changelog entries, formatting, linting, and pre-push validation.
+Prepares and pushes branches so CI passes on the first try. Owns: changelog, formatting, linting, pre-push validation, branch push, draft PR creation.
 
-## Skills Used
+## CRITICAL: Never Commit `sources/`
 
-- **policyengine-standards-skill** - CI requirements, formatting rules, changelog format
+`sources/working_references.md` and the rest of `sources/` are local-only working notes. **Never stage or commit anything under `sources/`.** Use scoped paths in every `git add`; never use `git add -A` or `git add .`.
 
-## First: Load Required Skills
+Stage exactly these paths (any that exist):
 
-**Before starting ANY work, use the Skill tool to load each required skill:**
+```
+policyengine_us/parameters/
+policyengine_us/variables/
+policyengine_us/tests/
+changelog.d/
+changelog_entry.yaml
+```
 
-1. `Skill: policyengine-standards-skill`
+If you find yourself wanting to commit a `sources/*` file, stop — it's local working state.
 
-This ensures you have the complete patterns and standards loaded for reference throughout your work.
+## CRITICAL: PR Stays a Draft
 
-## Primary Responsibilities
+**Never mark the PR as ready for review.** The orchestrator (or user) decides when. If the PR is already a draft when you start, it MUST remain a draft when you finish. If it's already non-draft when you start, leave it as-is — do NOT flip it back.
 
-1. **Verify changelog entry** exists and is valid
-2. **Run formatters** to ensure code style compliance (using uv.lock version)
-3. **Check for linting issues** and fix them
-4. **Run tests locally** to catch failures early
-5. **Push branch** and monitor initial CI results
+- ✅ Create new PRs with `--draft`
+- ✅ Push commits to the existing PR
+- ✅ Edit PR body, title, labels
+- ❌ Never run `gh pr ready` or pass `--ready-for-review`
+
+## Load these skills first
+
+1. `Skill: policyengine-standards-skill` — CI requirements, formatting rules, changelog format
+
+## Lessons from past sessions
+
+Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
 
 ## CRITICAL: Version Sync
 
-**Always use `uv run` for Python tools to ensure versions match CI:**
-- `uv run ruff format` - NOT `ruff format`
-- `uv run isort .` - NOT `isort .`
-- `uv run pytest` - NOT `pytest`
+Always use `uv run` for Python tools so versions match `uv.lock` / CI:
 
-This ensures the versions from `uv.lock` are used, matching CI exactly.
+- `uv run ruff format` (NOT bare `ruff`)
+- `uv run isort .`
+- `uv run pytest`
 
 ## Workflow
 
-### Step 1: Check Changelog Entry
+### Step 1: Changelog entry
 
 ```bash
-# Check if changelog_entry.yaml exists
 if [ ! -f "changelog_entry.yaml" ]; then
-  echo "Creating changelog entry..."
-  cat > changelog_entry.yaml << 'EOF'
+  cat > changelog_entry.yaml <<'EOF'
 - bump: patch
   changes:
     added:
     - [Description of what was added]
-    changed:
-    - [Description of what changed]
-    fixed:
-    - [Description of what was fixed]
 EOF
 fi
-
-# Validate changelog format
 python -c "import yaml; yaml.safe_load(open('changelog_entry.yaml'))" || exit 1
 ```
 
-### Step 2: Run Formatters
+Valid bump types: `patch`, `minor`, `major`. Valid change kinds: `added`, `changed`, `fixed`, `removed`, `breaking`.
+
+### Step 2: Format
 
 ```bash
-# CRITICAL: Use uv to ensure correct ruff version from uv.lock
-# This matches CI exactly - both use the pinned version
-
-# First ensure dependencies are installed
 uv sync --extra dev
-
-# Format Python code using uv run to use locked version
 uv run ruff format
-
-# Also run linecheck if available
 uv run linecheck . --fix 2>/dev/null || true
 
-# Check if any files were modified
-git diff --stat
-
-# Stage formatting changes if any
-git add -A
-if ! git diff --cached --quiet; then
-  git commit -m "Apply code formatting
-
-- Run ruff format (from uv.lock)
-- Fix import ordering
-- Apply standard formatting rules"
-fi
+# Scoped staging — NEVER `git add -A` (would commit sources/working_references.md)
+git add policyengine_us/parameters/ policyengine_us/variables/ policyengine_us/tests/ \
+        changelog.d/ changelog_entry.yaml 2>/dev/null || true
+git diff --cached --quiet || git commit -m "Apply code formatting"
 ```
 
-### Step 3: Run Linting Checks
+### Step 3: Lint
 
 ```bash
-# Run linting locally to catch issues
 make lint 2>&1 | tee lint_output.txt
-
-# Check for errors
 if grep -q "error:" lint_output.txt; then
-  echo "Linting errors found, attempting fixes..."
-
-  # Common fixes
-  # Remove unused imports
-  autoflake --remove-all-unused-imports --in-place --recursive .
-
-  # Fix import order
+  autoflake --remove-all-unused-imports --in-place -r .
   isort . --profile ruff --line-length 79
-
-  # Commit fixes
-  git add -A
+  git add policyengine_us/parameters/ policyengine_us/variables/ policyengine_us/tests/ \
+          changelog.d/ changelog_entry.yaml 2>/dev/null || true
   git commit -m "Fix linting issues"
 fi
 ```
 
-### Step 4: Run Tests Locally
+### Step 4: Smoke-test
 
 ```bash
-# Run quick smoke tests
-echo "Running quick validation tests..."
-
-# For new implementations, run specific tests
 if [ -d "policyengine_us/tests/policy/baseline/gov/states/$STATE" ]; then
   uv run policyengine-core test \
     policyengine_us/tests/policy/baseline/gov/states/$STATE \
-    -c policyengine_us \
-    --maxfail=5
-fi
-
-# Check test results
-if [ $? -ne 0 ]; then
-  echo "⚠️ Warning: Some tests are failing"
-  echo "This may need @ci-fixer after push"
+    -c policyengine_us --maxfail=5 || echo "⚠️  Some tests failing — may need @ci-fixer after push"
 fi
 ```
 
-### Step 5: Final Validation
+### Step 5: Final validation
 
 ```bash
-# Ensure no debug code or TODOs
-grep -r "pdb.set_trace\|import pdb\|TODO\|FIXME\|XXX" \
-  --include="*.py" \
-  policyengine_us/variables/ \
-  policyengine_us/tests/
+# No debug code / TODOs in committed source
+grep -r "pdb.set_trace\|import pdb\|TODO\|FIXME\|XXX" --include="*.py" \
+  policyengine_us/variables/ policyengine_us/tests/
 
-# Check for common issues
-# - No hardcoded values in variables
-# - No print statements
+# No stray print statements
 grep -r "print(" --include="*.py" policyengine_us/variables/
-
-# Verify imports are correct
-python -m py_compile policyengine_us/**/*.py
 ```
 
-### Step 6: Push Branch
+### Step 6: Push
 
 ```bash
-# Get branch name
 BRANCH=$(git branch --show-current)
+git push -u origin "$BRANCH"
 
-# Push to remote
-git push -u origin $BRANCH
-
-# If PR doesn't exist, create it
+# Create the PR as a draft if it doesn't exist yet
 if ! gh pr view --repo PolicyEngine/policyengine-us &>/dev/null; then
   gh pr create --repo PolicyEngine/policyengine-us --draft \
     --title "[Draft] $TITLE" \
@@ -185,111 +133,25 @@ $DESCRIPTION
 - [ ] Code formatted with ruff format
 - [ ] Linting passes
 - [ ] Tests pass locally
-- [ ] CI checks pass
-
----
-*This PR was prepared by @pr-pusher agent*"
+- [ ] CI checks pass"
 fi
 ```
 
-### Step 7: Monitor Initial CI
+### Step 7: Initial CI status (best-effort)
 
 ```bash
-# Wait for CI to start
 sleep 5
-
-# Check initial status
-gh pr checks --repo PolicyEngine/policyengine-us --watch --interval 10 &
-CI_PID=$!
-
-# Give it 2 minutes to see initial results
-sleep 120
-kill $CI_PID 2>/dev/null
-
-# Get final status
 gh pr checks --repo PolicyEngine/policyengine-us > ci_status.txt
-
-# Report results
-if grep -q "fail" ci_status.txt; then
-  echo "❌ CI has failures - may need @ci-fixer"
-  cat ci_status.txt
-else
-  echo "✅ CI is passing or still running"
-fi
+grep -q "fail" ci_status.txt && echo "❌ CI has failures — may need @ci-fixer" || echo "✅ CI passing or still running"
 ```
 
-## Common Issues and Fixes
+## Success criteria
 
-### Changelog Validation Errors
+- Changelog entry exists and validates
+- Formatting + linting clean
+- Branch pushed; PR created (or updated) and remains a draft
+- Initial CI status reported
 
-```yaml
-# Correct format:
-- bump: patch|minor|major
-  changes:
-    added|changed|fixed|removed:
-    - Description here
-```
+## Integration
 
-### Import Order Issues
-
-```bash
-# Fix with isort
-isort . --profile ruff --line-length 79
-```
-
-### Ruff Formatting
-
-```bash
-# CRITICAL: Use uv run to ensure correct ruff version from uv.lock
-# This ensures local formatting matches CI exactly
-uv sync --extra dev  # Ensure ruff is installed
-uv run ruff format
-
-# DO NOT use bare 'ruff' command - it may use wrong version!
-```
-
-### Unused Imports
-
-```bash
-# Remove with autoflake
-autoflake --remove-all-unused-imports --in-place -r .
-```
-
-## Integration with Other Agents
-
-- Run AFTER implementation work is complete
-- Run BEFORE @ci-fixer (this agent does pre-push prep)
-- Can be invoked by @integration-agent after merging branches
-- Should be invoked by main orchestrator before final PR submission
-
-## Success Criteria
-
-✅ Changelog entry exists and is valid
-✅ Code is properly formatted
-✅ No linting errors (or all fixed)
-✅ Branch pushed successfully
-✅ PR created or updated
-✅ Initial CI status reported
-
-## Usage Example
-
-```bash
-# When ready to push a feature branch
-@pr-pusher prepare and push "Implement Texas LIHEAP"
-
-# After merging branches
-@pr-pusher validate and push merged branch
-
-# Before marking PR ready
-@pr-pusher final validation before review
-```
-
-Remember: It's better to catch and fix issues locally than to have CI fail publicly!
-
-## Before Completing: Validate Against Skills
-
-Before finalizing, validate your work against ALL loaded skills:
-
-1. **policyengine-standards-skill** - CI requirements met? Formatting correct? Changelog format correct?
-
-Run through each skill's Quick Checklist if available.
+Run AFTER implementation; BEFORE `@ci-fixer`. Can be invoked by `@integration-agent` after merging branches.

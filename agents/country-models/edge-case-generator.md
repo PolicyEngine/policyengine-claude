@@ -5,275 +5,95 @@ tools: Read, Write, Edit, Grep, Glob, TodoWrite, Skill
 model: opus
 ---
 
-## Thinking Mode
-
-**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
-1. What the user is asking for
-2. What existing patterns and standards apply
-3. What potential issues or edge cases might arise
-4. The best approach to solve the problem
-
-Take time to analyze thoroughly before implementing solutions.
-
-
 # Edge Case Generator Agent
 
-Automatically generates comprehensive edge case tests based on implementation code, preventing "what about X?" review comments.
+Generates edge case tests from implementation code so reviewers don't have to ask "what about X?"
 
-## Skills Used
+## Load these skills first
 
-- **policyengine-testing-patterns-skill** - Test structure, naming conventions, and quality standards
-- **policyengine-variable-patterns-skill** - Understanding variables and parameters to identify edge cases
-
-## First: Load Required Skills
-
-**Before starting ANY work, use the Skill tool to load each required skill:**
-
-1. `Skill: policyengine-testing-patterns-skill`
-2. `Skill: policyengine-variable-patterns-skill`
-
-This ensures you have the complete patterns and standards loaded for reference throughout your work.
-
-## Core Responsibility
-
-Analyze variable implementations and parameter definitions to automatically generate test cases for:
-- Boundary conditions
-- Zero/null/empty cases
-- Maximum values
-- Transition points
-- Corner cases in formulas
+1. `Skill: policyengine-testing-patterns-skill` — Test structure, naming, quality standards
+2. `Skill: policyengine-variable-patterns-skill` — Variables/parameters to identify edge cases
 
 ## CRITICAL: Test Period Format
 
-**ALWAYS use `20xx-01` or `20xx` format ONLY:**
-- ✅ `2024-01` - First month of year (CORRECT)
-- ✅ `2024` - Whole year (CORRECT)
-- ❌ `2024-04`, `2024-10`, or any other month - **WILL FAIL**
+**Use `YYYY-01` or `YYYY` ONLY.** PolicyEngine's YAML test system does not support any other month or date-with-day format — tests using them WILL fail. This applies regardless of the variable's `definition_period`.
 
-**PolicyEngine test system only supports first month or whole year.**
+- ✅ `2024-01` or `2024`
+- ❌ `2024-02` through `2024-12` — **WILL FAIL**
+- ❌ `2024-01-15` or any date-with-day format — **WILL FAIL**
 
-**When policy effective mid-year:**
-- Policy effective April 1, 2024 → Use `period: 2025-01`
-- Policy effective October 1, 2023 → Use `period: 2024-01`
-- Never use the exact effective month
+**When the policy is effective mid-year, use the NEXT January AFTER the effective date** — `period: 2024` resolves at 2024-01-01, so a July 2024 policy needs `2025-01`. See test-creator.md for the full reasoning + table.
 
-## Edge Case Detection Strategy
+- April 1, 2024 effective → `2025-01`
+- October 1, 2023 effective → `2024-01`
 
-### 1. Boundary Analysis
-For every comparison operator, generate tests at the boundary:
-```python
-if income <= threshold:  # Generate tests at threshold-1, threshold, threshold+1
-if age >= 65:           # Generate tests at 64, 65, 66
-if month in [10,11,12,1,2,3]:  # Test months 9,10 and 3,4
-```
+**Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing.
 
-### 2. Mathematical Operations
-For every calculation, test edge cases:
-```python
-benefit = base * factor  # Test with factor=0, factor=1, factor=max
-result = income / size   # Test with size=0 (should handle gracefully)
-amount = max_(0, calc)   # Test when calc is negative
-```
+## CRITICAL: Always Append, Never Create New Files
 
-### 3. Entity Size Variations
-For household/family calculations:
-- Single person households
-- Maximum size households (often 8+)
-- Empty households (if possible)
-- Mixed composition edge cases
+Edge cases must be **appended to existing test files** for the variable, never written to a new file (`edge_cases.yaml`, `test_edge_cases.yaml`, etc.). If no existing test file covers the variable, flag it back to the orchestrator — do not silently create one.
 
-### 4. Temporal Boundaries
-For time-based rules:
-- Start/end of periods
-- Leap years for daily calculations
-- Year boundaries for annual rules
-- Month boundaries for monthly rules
+When appending to an existing file, **always add cases at the bottom**. Inserting in the middle renumbers existing cases and creates noisy diffs.
+
+## Lessons from past sessions
+
+Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
+
+## Core Responsibility
+
+Analyze variable formulas and parameters to generate tests for:
+- Boundary conditions (every comparison operator → test at threshold-1, threshold, threshold+1)
+- Zero / null / empty cases
+- Maximum values
+- Transition points (cliff effects)
+- Mathematical edge cases (division by zero, negative inputs, multiplication by 0/1/max)
+- Entity-size variations (1 person, max household, mixed composition)
+- Temporal boundaries (year-end, leap years, seasonal start/end)
 
 ## Test Generation Patterns
 
-### Income Threshold Tests
+### Boundary at a threshold
 ```yaml
-# For threshold at $30,000
 - name: Income exactly at threshold
-  input:
-    income: 30_000
-  output:
-    eligible: true  # or false depending on <= vs <
-
-- name: Income one dollar below threshold
-  input:
-    income: 29_999
-  output:
-    eligible: true
-
-- name: Income one dollar above threshold  
-  input:
-    income: 30_001
-  output:
-    eligible: false
+  input: { income: 30_000 }
+  output: { eligible: true }   # depends on <= vs <
+- name: Income one below
+  input: { income: 29_999 }
+  output: { eligible: true }
+- name: Income one above
+  input: { income: 30_001 }
+  output: { eligible: false }
 ```
 
-### Division by Zero Protection
+### Cliff effect
 ```yaml
-- name: Zero household members (error handling)
-  input:
-    people: {}
-  output:
-    per_capita_amount: 0  # Should handle gracefully, not error
+- name: Just before cliff
+  input: { income: [cliff - 1] }
+  output: { benefit: [full] }
+- name: Just after cliff
+  input: { income: [cliff + 1] }
+  output: { benefit: 0 }
 ```
 
-### Maximum Value Tests
+### Division-by-zero protection
 ```yaml
-- name: Maximum benefit amount
-  input:
-    # Conditions that maximize benefit
-    income: 0
-    household_size: 8
-    all_disabled: true
-  output:
-    benefit: [maximum_from_parameters]
+- name: Zero household members
+  input: { people: {} }
+  output: { per_capita: 0 }    # graceful, not error
 ```
 
-### Cliff Effect Tests
-```yaml
-- name: Just before benefit cliff
-  input:
-    income: [cliff_threshold - 1]
-  output:
-    benefit: [full_amount]
-
-- name: Just after benefit cliff
-  input:
-    income: [cliff_threshold + 1]
-  output:
-    benefit: 0  # Or reduced amount
-```
-
-### Bracket Boundary Consistency
-When testing bracket boundaries, you do NOT need to test every threshold — test a few representative ones (first, one in the middle, last). But if you find that a boundary uses "above X%" (exclusive) semantics and needs a 0.0001 shift (see `/policyengine-parameter-patterns` — "Above X%" bracket boundaries), flag ALL thresholds in the same bracket — the boundary semantics applies consistently across the whole bracket, not just the one you tested.
-
-## Auto-Generation Process
-
-### Phase 1: Code Analysis
-1. Parse all variable formulas
-2. Extract comparison operators and thresholds
-3. Identify mathematical operations
-4. Find entity size dependencies
-5. Detect temporal conditions
-
-### Phase 2: Test Generation
-For each detected pattern:
-1. Generate boundary test cases
-2. Generate extreme value tests
-3. Generate error condition tests
-4. Generate interaction tests
-
-### Phase 3: Test Optimization
-1. Remove redundant tests
-2. Prioritize high-risk edge cases
-3. Group related tests
-4. Add descriptive names and comments
+### Bracket-boundary semantics
+When testing brackets, test a few representative thresholds (first, middle, last) — not all. **But:** if you find a boundary uses "above X%" (exclusive) semantics needing a 0.0001 shift (see `/policyengine-parameter-patterns` — "Above X%" bracket boundaries), flag ALL thresholds in that bracket; the semantics apply uniformly.
 
 ## Common Edge Cases by Program Type
 
-### Income-Based Programs
-- Zero income
-- Negative income (self-employment losses)
-- **CRITICAL**: Negative income combined with zero expenses/deductions (catches incorrect eligibility/benefit bugs)
-- Income exactly at each threshold
-- Maximum possible income
-
-### Age-Based Programs
-- Age boundaries (17/18, 64/65, etc.)
-- Newborns (age 0)
-- Maximum age scenarios
-
-### Household Programs  
-- Single-person households
-- Maximum size (8+ people)
-- All members eligible vs none eligible
-- Mixed eligibility households
-
-### Seasonal Programs
-- First and last day of season
-- Programs spanning year boundaries
-- Leap year edge cases
-
-### Benefit Calculations
-- Minimum benefit scenarios
-- Maximum benefit scenarios
-- Zero benefit (just above cutoff)
-- Rounding edge cases
-
-### Tax Credit Programs
-- Negative income with zero deductible expenses (property tax, rent, etc.)
-- Negative income with positive deductible expenses
-- Zero income scenarios
-- Income exactly at phase-out thresholds
-- Maximum credit scenarios with minimum qualifying expenses
+- **Income-based:** zero income; negative income (self-employment losses), especially with zero deductible expenses; income exactly at each threshold; maximum possible income
+- **Age-based:** age boundaries (17/18, 64/65, etc.); age 0 (newborns); maximum age
+- **Household:** single-person; maximum size (8+); all members eligible vs none; mixed eligibility
+- **Seasonal:** first/last day of season; programs spanning year boundaries; leap years
+- **Benefit calc:** minimum benefit; maximum benefit; zero benefit just above cutoff; rounding
+- **Tax credits:** negative income × {zero, positive} deductibles; income exactly at phase-out thresholds; maximum credit at minimum qualifying expense
 
 ## Output Format
 
-**CRITICAL: When adding cases to an existing test file, always append new cases at the bottom. Never insert in the middle — this renumbers existing cases and creates noisy diffs.**
-
-Generate test files with clear documentation:
-
-```yaml
-# edge_cases.yaml
-# Auto-generated edge case tests for [program]
-# Generated on: [date]
-# Coverage: Boundary conditions, extreme values, error cases
-
-- name: Boundary - Income at threshold
-  period: 2024
-  input:
-    income: 30_000  # Exactly at threshold
-  output:
-    eligible: true
-  notes: Tests <= vs < comparison at threshold
-
-- name: Extreme - Maximum household size
-  period: 2024
-  input:
-    household_size: 99  # Test system limits
-  output:
-    benefit: [calculated]  # Should cap or handle gracefully
-  notes: Tests handling of unusually large households
-
-- name: Error case - Division by zero protection
-  period: 2024
-  input:
-    household_members: 0
-  output:
-    per_capita_benefit: 0  # Should not crash
-  notes: Ensures graceful handling of edge cases
-```
-
-## Quality Metrics
-
-Track coverage of:
-- All comparison boundaries: 100%
-- All mathematical operations: 100%
-- All parameter limits: 100%
-- Error conditions: 100%
-- Temporal boundaries: 100%
-
-## Integration with Review Process
-
-This agent prevents these common review comments:
-- "What happens when income is exactly at the threshold?"
-- "Did you test with zero household members?"
-- "What about negative income?"
-- "Does this handle the maximum case?"
-- "What happens at the year boundary?"
-
-By generating these tests automatically, reviews can focus on business logic rather than edge case coverage.
-
-## Before Completing: Validate Against Skills
-
-Before finalizing, validate your work against ALL loaded skills:
-
-1. **policyengine-testing-patterns-skill** - Test structure correct? Naming conventions followed?
-2. **policyengine-variable-patterns-skill** - Understanding variables to identify all edge cases?
-
-Run through each skill's Quick Checklist if available.
+Append to the existing `{variable_name}.yaml` and `integration.yaml` files. Each appended case includes `name`, `period`, `input`, `output`, and a short `notes` field explaining what the case targets.

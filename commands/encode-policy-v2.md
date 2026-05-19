@@ -45,7 +45,11 @@ Derive:
 ```bash
 LESSONS_PATH=$(ls -d ~/.claude/projects/*/memory 2>/dev/null | head -1)/agent-lessons.md
 ```
-Pass `{LESSONS_PATH}` to all agent prompts that include "LEARN FROM PAST SESSIONS".
+
+## Standard agent boilerplate
+
+- **Lessons** — each spawn prompt below contains a literal `LESSONS_PATH: {LESSONS_PATH}` line. Each agent file's "Lessons from past sessions" section tells the agent to read it (plus `lessons/agent-lessons.md` repo-relative). Don't strip the line — it's load-bearing.
+- **Do not commit** — every implementation agent's definition already says "DO NOT commit; pr-pusher handles all commits." Don't restate in prompts.
 
 ### Step 0B: Clean Up & Create Team
 
@@ -98,7 +102,7 @@ run_in_background: true
 
 RULES:
 - PDF hrefs include #page=XX (file page number, NOT printed page number)
-- DO NOT commit — pr-pusher handles all commits"
+"
 ```
 
 ### Step 0D: Collect Setup Results
@@ -355,12 +359,10 @@ name: "create-parameters"
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Study the reference implementation listed in the impl spec.
+LESSONS_PATH: {LESSONS_PATH}
+
 Load skills: /policyengine-parameter-patterns, /policyengine-variable-patterns,
   /policyengine-code-organization.
-
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
 
 REUSE EXISTING VARIABLES AND PARAMETERS:
 PolicyEngine-US has hundreds of existing variables for common concepts (fpg, smi,
@@ -374,7 +376,7 @@ RULES:
 - DO NOT skip any in-scope requirement (check against scope decision)
 - Every value must have a reference with subsection and #page=XX for PDFs
 - Store rates (not dollar amounts) when the legal code defines a percentage
-- DO NOT commit — pr-pusher handles all commits"
+"
 ```
 
 ### Step 3B: Create Variables and Tests (Parallel)
@@ -394,13 +396,11 @@ name: "create-variables"
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Study the reference implementation listed in the impl spec.
+LESSONS_PATH: {LESSONS_PATH}
+
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-vectorization, /policyengine-aggregation, /policyengine-period-patterns,
   /policyengine-code-style, /policyengine-code-organization.
-
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
 
 REUSE EXISTING VARIABLES AND PARAMETERS:
 PolicyEngine-US has hundreds of existing variables for common concepts (fpg, smi,
@@ -416,7 +416,7 @@ RULES:
 - Verify person vs group entity level from the legal code
 - Follow patterns from the reference implementation
 - DO NOT skip any in-scope requirement (check against scope decision)
-- DO NOT commit — pr-pusher handles all commits"
+"
 ```
 
 **Agent: Test Creator**
@@ -430,12 +430,10 @@ name: "create-tests"
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Read sources/working_references.md for calculation examples.
+LESSONS_PATH: {LESSONS_PATH}
+
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
   /policyengine-aggregation, /policyengine-variable-patterns, /policyengine-code-organization.
-
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
 
 REUSE EXISTING VARIABLES:
 PolicyEngine-US has hundreds of existing variables. Use only real, existing variables
@@ -448,7 +446,7 @@ RULES:
 - Period format: 2024-01 or 2024 only
 - Test realistic values from documentation
 - DO NOT skip any in-scope requirement (check against scope decision)
-- DO NOT commit — pr-pusher handles all commits"
+"
 ```
 
 ### Step 3C: Generate Edge Case Tests
@@ -463,18 +461,25 @@ name: "create-edge-cases"
 "Generate edge case tests for {STATE} {PROGRAM}.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Analyze variables and parameters in the program folder.
+LESSONS_PATH: {LESSONS_PATH}
+
 Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns.
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
+OUTPUT LOCATION — IMPORTANT:
+- Edge case scenarios MUST be APPENDED to the existing test files created in Step 3B,
+  located at policyengine_us/tests/policy/baseline/gov/states/{ST}/...
+- Find the existing unit test file for each variable and add edge case scenarios to it.
+- Find the existing integration test file and add edge case scenarios to it.
+- DO NOT create new files (no separate edge_cases.yaml, no test_edge_cases.yaml, etc.).
+- If no existing test file covers the variable in question, flag it — do not silently
+  create a new file.
 
 Focus on:
 - Income at threshold boundaries (threshold-1, threshold, threshold+1)
 - Zero income, maximum income
 - Family size at min/max
 - Negative income with zero deductions
-- DO NOT commit — pr-pusher handles all commits"
+"
 ```
 
 ### Step 3D: Integration into Benefits System (DISABLED)
@@ -545,6 +550,8 @@ Read the coverage report at /tmp/{PREFIX}-coverage-report.md.
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Study existing variables and parameters already created for this program.
+LESSONS_PATH: {LESSONS_PATH}
+
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-code-style, /policyengine-code-organization.
 
@@ -553,12 +560,7 @@ Do not modify existing variables or parameters — only add what's missing.
 
 REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
 codebase first. PolicyEngine-US likely already has it.
-
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
-
-DO NOT commit — pr-pusher handles all commits."
+"
 ```
 
 After gap-fixer completes, re-run the requirements-tracker (same prompt as above) to verify all gaps are filled. If gaps remain after one fix round, report to user and proceed.
@@ -567,47 +569,120 @@ After gap-fixer completes, re-run the requirements-tracker (same prompt as above
 
 ## Phase 4: Validation & Fix
 
-### Step 4A: Implementation Validator
+### Step 4A: Implementation Validator (cross-file structural)
 
 ```
 subagent_type: "complete:country-models:implementation-validator"
 team_name: "{PREFIX}-encode"
 name: "implementation-validator"
 
-"Validate and fix {STATE} {PROGRAM} implementation for PolicyEngine standards compliance.
-Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
-  /policyengine-code-style, /policyengine-period-patterns, /policyengine-vectorization,
-  /policyengine-aggregation, /policyengine-review-patterns, /policyengine-code-organization.
+"Validate {STATE} {PROGRAM} for cross-file structural issues, fix mechanical issues yourself,
+and escalate judgmental ones.
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
+MODE: Mode A — structural validation. Run Phases 1–3 only. Do NOT run Phase 4
+(code-pattern audit) — that's `/review-program` Validator 3's job, not this step's.
 
-Check AND fix: naming conventions, folder structure, parameter formatting, variable code style,
-hard-coded values, adds vs add(), reference format, entity levels, period handling.
-Fix all issues directly — do not just report them."
+Scope (3 phases only):
+- Phase 1: YAML structural integrity (orphaned values after metadata:, breakdown enum
+  mismatches, duplicate keys, effective-date placement)
+- Phase 2: Cross-reference linkage (orphan parameters, missing param references, empty
+  directories, orphan files)
+- Phase 3: Federal/State jurisdiction placement (federal-sourced values in /gov/{agency}/,
+  state-sourced in /gov/states/{state}/, defined_for present on state variables)
+
+LESSONS_PATH: {LESSONS_PATH}
+
+Load skills: /policyengine-parameter-patterns, /policyengine-variable-patterns,
+  /policyengine-code-organization.
+
+Per-file rules (description format, reference format, period format, hard-coded values,
+naming, adds/add(), wrappers) are NOT your scope in Mode A — they are self-checked by
+rules-engineer and test-creator at write time, and re-checked by /review-program Mode B
+later. Note such issues in 'Notes for review' but do NOT make them blocking.
+
+Fix MECHANICAL issues yourself (orphan dirs, breakdown enum renames, YAML block moves,
+git mv for placement, adding defined_for). Escalate JUDGMENTAL issues (orphan parameter
+needing variable, missing param ref with no obvious typo) to rules-engineer.
+
+Write your report to /tmp/{PREFIX}-validator-report.md with three sections:
+1. FIXED — what you fixed and where
+2. ESCALATED — issues for rules-engineer with proposed fix, OR 'NONE' if no escalations
+3. Notes for review — per-file issues observed in passing (description format, naming,
+   hard-coded values); these are NOT blocking — /review-program Mode B handles them.
+"
 ```
 
-### Step 4B: CI Fixer
+### Step 4A-fix: Handle Validator Escalations
+
+After implementation-validator completes, read `/tmp/{PREFIX}-validator-report.md`.
+
+**If the ESCALATED section is 'NONE'**: proceed to Step 4B.
+
+**If the ESCALATED section has items**: spawn rules-engineer to fix them:
+
+```
+subagent_type: "complete:country-models:rules-engineer"
+team_name: "{PREFIX}-encode"
+name: "validator-escalation-fixer"
+
+"Fix the judgmental issues escalated by implementation-validator for {STATE} {PROGRAM}.
+Read the validator report at /tmp/{PREFIX}-validator-report.md.
+Focus ONLY on items under the ESCALATED section.
+Read the implementation spec at /tmp/{PREFIX}-impl-spec.md for policy context.
+Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
+LESSONS_PATH: {LESSONS_PATH}
+
+Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
+  /policyengine-code-organization.
+
+After fixing, append a 'POST-FIX' section to /tmp/{PREFIX}-validator-report.md
+listing what you changed.
+"
+```
+
+After validator-escalation-fixer completes, proceed to Step 4B. (No re-run of the validator
+unless you specifically suspect the fixer introduced new structural issues.)
+
+### Step 4B: CI Fixer (owns the full test-passing loop)
 
 ```
 subagent_type: "complete:country-models:ci-fixer"
 team_name: "{PREFIX}-encode"
 name: "ci-fixer"
 
-"Run tests for {STATE} {PROGRAM}, fix failures, iterate until all pass.
-Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns,
-  /policyengine-code-style, /policyengine-period-patterns.
-Read sources/working_references.md for policy rules.
+"Run tests locally for {STATE} {PROGRAM} and make them pass. You OWN the full loop —
+both mechanical fixes (test syntax, entity mismatch, period format) AND policy /
+calculation fixes (wrong formula, wrong test expectation, missing parameter). There is
+no downstream specialist dispatch step; do not classify-and-escalate.
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
+LESSONS_PATH: {LESSONS_PATH}
+
+Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns,
+  /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-code-style,
+  /policyengine-aggregation, /policyengine-vectorization, /policyengine-code-organization.
+
+Read these for policy context:
+- sources/working_references.md (primary policy source)
+- /tmp/{PREFIX}-impl-spec.md (structured implementation spec)
+- /tmp/{PREFIX}-scope-decision.md (user's scope choices — don't fix excluded items)
 
 Run: policyengine-core test policyengine_us/tests/policy/baseline/gov/states/{ST}/... -c policyengine_us -v
-Fix failures based on documentation. Iterate until pass.
-After tests pass, run make format."
+
+Iterate up to the 8-iteration budget. If two consecutive iterations don't move a failure,
+classify it BLOCKED. Apply make format when done.
+
+Write status to /tmp/{PREFIX}-ci-fixer-status.md with STATUS: PASS or BLOCKED only
+(no PARTIAL). For BLOCKED, list each remaining failure with root cause and why it's
+blocked.
+"
 ```
+
+After ci-fixer completes, read `/tmp/{PREFIX}-ci-fixer-status.md`. **Proceed to Step 4C
+regardless of STATUS** — BLOCKED failures continue downstream (they'll surface in CI,
+and the PR description will note them). No user prompt, no halt.
+
+If STATUS = BLOCKED, note the remaining-failure count for the PR description (Step 5B
+reads the same status file and includes a "Known failing tests" section).
 
 ### Step 4C: Quick Audit
 
@@ -645,10 +720,13 @@ subagent_type: "complete:country-models:pr-pusher"
 team_name: "{PREFIX}-encode"
 name: "pr-pusher"
 
-"Ensure {STATE} {PROGRAM} PR is ready:
+"Prepare {STATE} {PROGRAM} PR for review (but keep it as a draft):
 - Create changelog fragment in changelog.d/ (towncrier format)
 - Run make format
-- Push branch"
+- Push branch
+
+CRITICAL: The PR MUST remain a draft. Do NOT run `gh pr ready` or any flag that converts
+the draft. The orchestrator (or user) marks ready later — never this agent."
 ```
 
 ### Step 5B: PR Description
@@ -665,6 +743,9 @@ READ:
 - /tmp/{PREFIX}-coverage-report.md (requirements coverage)
 - /tmp/{PREFIX}-research-summary.md (sources)
 - /tmp/{PREFIX}-impl-spec.md (regulatory details)
+- /tmp/{PREFIX}-ci-fixer-status.md (test status — if STATUS = BLOCKED, list the
+  remaining failures in a 'Known failing tests' section near the bottom of the PR
+  description so reviewers see what didn't pass and why)
 - sources/working_references.md (references)
 
 Write /tmp/{PREFIX}-pr-description.md:
@@ -700,6 +781,11 @@ Closes #{ISSUE_NUMBER}
 
 ## Not Modeled
 {Excluded requirements with reasons}
+
+## Known Failing Tests
+{If /tmp/{PREFIX}-ci-fixer-status.md has STATUS: BLOCKED, list each remaining failure
+with its root cause and why ci-fixer couldn't resolve it. Omit this section entirely
+if STATUS: PASS.}
 
 ## Historical Notes
 If the regulatory reviewer or document-collector noted historical changes to any parameter
@@ -751,34 +837,91 @@ Read `/tmp/review-program-summary.md` (max 20 lines).
 
 **If critical > 0**: Proceed to Step 6.1C.
 
-#### Step 6.1C: Fix Critical Issues
+#### Common rules for all review-fix prompts (rounds 1–3)
+
+Every review-fix spawn below references these rules. Include the section name in each prompt body; do not restate the rules per prompt.
+
+**[REVIEW-FIX RULES]**
+- Read `/tmp/{PREFIX}-scope-decision.md` first. For each review item, check whether the scope decision intentionally excluded it or chose a non-default value (e.g., "use 200% FPL because state has transitional rate"). If yes, do NOT fix — append `[SKIPPED-PER-SCOPE]` to your checklist line and move on.
+- Read `/tmp/{PREFIX}-impl-spec.md` ONLY when the fix touches a parameter VALUE or a variable FORMULA. For formatting, references, hard-coded value swaps, naming, or structural fixes — skip it to save context.
+- For round 2+: read `/tmp/{PREFIX}-checklist.md` first to see prior rounds' fixes; do not reintroduce earlier patterns. (Round 1 fixers do NOT read this file — it doesn't exist yet.)
+- **REUSE EXISTING VARIABLES**: before creating any non-program-specific variable, Grep the codebase. PolicyEngine-US likely already has it (`fpg`, `smi`, `tanf_fpg`, `ssi`, etc.).
+- Apply fixes via Edit/MultiEdit, then run `make format`.
+- **WRITE your fix log to a PER-FIXER FILE** (not the shared checklist). The path is in your invocation prompt; it will be one of:
+  - `/tmp/{PREFIX}-checklist-vars-r{N}.md` (rules-engineer)
+  - `/tmp/{PREFIX}-checklist-tests-r{N}.md` (test-creator)
+  Writing to your own file avoids race conditions with the parallel fixer. The orchestrator concatenates both files into the shared `/tmp/{PREFIX}-checklist.md` after you both complete.
+- Format each line as:
+  `- [ROUND N] [SCOPE] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}`
+  - SCOPE = `VARS` (rules-engineer) or `TESTS` (test-creator)
+  - Categories (vars/params): `HARD-CODED`, `WRONG-PERIOD`, `MISSING-REF`, `BAD-REF`, `DEDUCTION-ORDER`, `UNUSED-PARAM`, `WRONG-ENTITY`, `NAMING`, `FORMULA-LOGIC`, `OTHER`
+  - Categories (tests): `TEST-GAP`, `WRONG-PERIOD`, `WRONG-EXPECTATION`, `NON-FUNCTIONAL-TEST`, `OTHER`
+- If you have zero items in scope, write a single line `- [ROUND N] [SCOPE] NO-ISSUES — nothing to fix` to your per-fixer file and return DONE with 0 fixes.
+
+#### Step 6.1C: Fix Critical Issues (parallel — split by ownership)
+
+Spawn BOTH fixers in parallel. Each reads the same review report but only fixes items
+in its own scope. If a fixer's scope has zero items, it returns DONE with 0 fixes.
+
+**Fixer 1: rules-engineer (parameters and variables)**
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
 team_name: "{PREFIX}-encode"
-name: "review-fixer-1"
+name: "review-fixer-1-vars"
+run_in_background: true
 
-"Fix the critical issues from the /review-program review (round 1).
-Read the full review report at /tmp/review-program-full-report.md.
-Focus ONLY on items marked CRITICAL — do not change anything else.
+"Fix CRITICAL parameter/variable issues from the /review-program review (round 1).
+Read /tmp/review-program-full-report.md. Focus ONLY on items in parameter (.yaml)
+or variable (.py) files. SKIP test-file items — test-creator handles those in parallel.
+LESSONS_PATH: {LESSONS_PATH}
+
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
-Apply fixes. Run make format.
 
-REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
-codebase first. PolicyEngine-US likely already has it (fpg, smi, tanf_fpg, ssi, etc.).
-
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
-
-AFTER fixing, write your fixes to /tmp/{PREFIX}-checklist.md:
-Format each line as:
-- [ROUND 1] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}
-
-Categories: HARD-CODED, WRONG-PERIOD, MISSING-REF, BAD-REF, DEDUCTION-ORDER,
-UNUSED-PARAM, WRONG-ENTITY, NAMING, FORMULA-LOGIC, TEST-GAP, OTHER"
+Follow [REVIEW-FIX RULES] (see section above this step). Tag checklist lines with
+SCOPE=VARS, ROUND=1. Write your fix log to /tmp/{PREFIX}-checklist-vars-r1.md
+(NOT the shared checklist — that file is merged by the orchestrator after both
+parallel fixers finish)."
 ```
+
+**Fixer 2: test-creator (test files)**
+
+```
+subagent_type: "complete:country-models:test-creator"
+team_name: "{PREFIX}-encode"
+name: "review-fixer-1-tests"
+run_in_background: true
+
+"Fix CRITICAL test-file issues from the /review-program review (round 1).
+Read /tmp/review-program-full-report.md. Focus ONLY on items in test (.yaml under tests/)
+files. SKIP items in parameter or variable files — rules-engineer handles those in parallel.
+
+Common critical test issues: missing unit tests for formula variables; non-functional
+tests (e.g., absolute_error_margin >= 1 on boolean outputs); wrong period format (not
+YYYY-01 or YYYY); wrong test expectations.
+
+LESSONS_PATH: {LESSONS_PATH}
+
+Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
+  /policyengine-variable-patterns.
+
+Follow [REVIEW-FIX RULES] (see section above this step). Tag checklist lines with
+SCOPE=TESTS, ROUND=1. Write your fix log to /tmp/{PREFIX}-checklist-tests-r1.md
+(NOT the shared checklist — that file is merged by the orchestrator after both
+parallel fixers finish)."
+```
+
+Wait for both fixers to complete, then **merge their per-fixer files into the shared checklist** (orchestrator step):
+
+```bash
+# Concatenate round-1 per-fixer files into the canonical checklist.
+# Use >> so round 2's merge later appends to (not overwrites) round 1's contents.
+cat /tmp/{PREFIX}-checklist-vars-r1.md /tmp/{PREFIX}-checklist-tests-r1.md \
+  >> /tmp/{PREFIX}-checklist.md 2>/dev/null
+```
+
+Then proceed to 6.1D.
 
 #### Step 6.1D: Run Tests & Commit
 
@@ -787,8 +930,15 @@ subagent_type: "complete:country-models:ci-fixer"
 team_name: "{PREFIX}-encode"
 name: "ci-fixer-1"
 
-"Run tests for {STATE} {PROGRAM} after review-fix round 1.
-Fix any test failures introduced by the fixes. Run make format."
+"Run tests locally for {STATE} {PROGRAM} after review-fix round 1.
+Apply your 5-iteration budget. Fix mechanical test failures directly; classify and
+escalate policy/calculation issues in your status report.
+Run make format after tests pass (or budget exhausted).
+
+Write status to /tmp/{PREFIX}-ci-fixer-status.md with STATUS: PASS / PARTIAL / BLOCKED.
+
+NOTE: PARTIAL status is acceptable here — round 2 will re-run /review-program and pick
+up any remaining issues. Do NOT loop beyond your 5-iteration budget."
 ```
 
 ```bash
@@ -830,38 +980,59 @@ If user says no → report remaining issues, **Phase 6 complete.**
 
 If user says yes → proceed to Step 6.2C.
 
-#### Step 6.2C: Fix Critical Issues
+#### Step 6.2C: Fix Critical Issues (parallel — same split as Round 1)
+
+Round 2 uses the same parallel split as Round 1 — `rules-engineer` for parameter/variable
+fixes, `test-creator` for test-file fixes. If either has zero items, it returns DONE.
+
+**Fixer 1: rules-engineer (vars/params)**
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
 team_name: "{PREFIX}-encode"
-name: "review-fixer-2"
+name: "review-fixer-2-vars"
+run_in_background: true
 
-"Fix the critical issues from the /review-program review (round 2).
-Read the full review report at /tmp/review-program-full-report.md.
-Focus ONLY on items marked CRITICAL — do not change anything else.
+"Fix CRITICAL parameter/variable issues from the /review-program review (round 2).
+Read /tmp/review-program-full-report.md. SKIP test-file items.
+LESSONS_PATH: {LESSONS_PATH}
+
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
-Apply fixes. Run make format.
 
-REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
-codebase first. PolicyEngine-US likely already has it (fpg, smi, tanf_fpg, ssi, etc.).
-
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- lessons/agent-lessons.md
-
-LEARN FROM PREVIOUS ROUNDS:
-Read /tmp/{PREFIX}-checklist.md FIRST. It contains issues found and fixed in round 1.
-Do NOT reintroduce any of those patterns.
-
-AFTER fixing, APPEND your fixes to /tmp/{PREFIX}-checklist.md:
-Format each line as:
-- [ROUND 2] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}
-
-Categories: HARD-CODED, WRONG-PERIOD, MISSING-REF, BAD-REF, DEDUCTION-ORDER,
-UNUSED-PARAM, WRONG-ENTITY, NAMING, FORMULA-LOGIC, TEST-GAP, OTHER"
+Follow [REVIEW-FIX RULES] (see section above 6.1C). Tag checklist lines with SCOPE=VARS,
+ROUND=2. Write your fix log to /tmp/{PREFIX}-checklist-vars-r2.md (NOT the shared
+checklist — orchestrator merges after both fixers complete)."
 ```
+
+**Fixer 2: test-creator (tests)**
+
+```
+subagent_type: "complete:country-models:test-creator"
+team_name: "{PREFIX}-encode"
+name: "review-fixer-2-tests"
+run_in_background: true
+
+"Fix CRITICAL test-file issues from the /review-program review (round 2).
+Read /tmp/review-program-full-report.md. SKIP parameter/variable items.
+LESSONS_PATH: {LESSONS_PATH}
+
+Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
+  /policyengine-variable-patterns.
+
+Follow [REVIEW-FIX RULES] (see section above 6.1C). Tag checklist lines with SCOPE=TESTS,
+ROUND=2. Write your fix log to /tmp/{PREFIX}-checklist-tests-r2.md (NOT the shared
+checklist — orchestrator merges after both fixers complete)."
+```
+
+Wait for both fixers to complete, then **merge their per-fixer files into the shared checklist**:
+
+```bash
+cat /tmp/{PREFIX}-checklist-vars-r2.md /tmp/{PREFIX}-checklist-tests-r2.md \
+  >> /tmp/{PREFIX}-checklist.md 2>/dev/null
+```
+
+Wait for both fixers to complete before 6.2D.
 
 #### Step 6.2D: Run Tests & Commit
 
@@ -1011,7 +1182,8 @@ Present to user:
 | `/tmp/{PREFIX}-pr-description.md` | reporter | gh pr edit | Full |
 | `/tmp/{PREFIX}-final-report.md` | reporter | Main Claude | Short (25 lines) |
 | `/tmp/{PREFIX}-new-lessons.md` | lesson-extractor | Main Claude | Short |
-| `/tmp/{PREFIX}-checklist.md` | review-fixer (append) | review-fixer (read) | Growing |
+| `/tmp/{PREFIX}-checklist-{vars,tests}-r{N}.md` | per-fixer (write) | orchestrator (merge) | One per fixer per round |
+| `/tmp/{PREFIX}-checklist.md` | orchestrator (cat-merge) | review-fixer round 2+ (read) | Growing |
 
 ---
 

@@ -5,148 +5,82 @@ tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, TodoWrite, Skill
 model: opus
 ---
 
-## Thinking Mode
-
-**IMPORTANT**: Use careful, step-by-step reasoning before taking any action. Think through:
-1. What the user is asking for
-2. What existing patterns and standards apply
-3. What potential issues or edge cases might arise
-4. The best approach to solve the problem
-
-Take time to analyze thoroughly before implementing solutions.
-
-
 # Test Creator Agent
 
 Creates comprehensive integration tests for government benefit programs based on documentation.
 
-## Skills Used
+## CRITICAL: Test Period Format
 
-- **policyengine-testing-patterns-skill** - Test file structure, naming conventions, period formats
-- **policyengine-period-patterns-skill** - Period conversion rules for YEAR/MONTH variables
-- **policyengine-aggregation-skill** - Understanding variable aggregation patterns
-- **policyengine-variable-patterns-skill** - Variable creation patterns, wrapper variable detection
-- **policyengine-code-organization-skill** - Naming conventions and folder structure
+**Use `YYYY-01` or `YYYY` ONLY.** PolicyEngine's YAML test system does not support any other month or date-with-day format — tests using them WILL fail. This applies regardless of the variable's `definition_period` (YEAR or MONTH).
 
-## First: Load Required Skills
+- ✅ `2024-01` (first month) or `2024` (whole year)
+- ❌ `2024-02`, `2024-03`, `2024-04`, `2024-05`, `2024-06`, `2024-07`, `2024-08`, `2024-09`, `2024-10`, `2024-11`, `2024-12` — **WILL FAIL**
+- ❌ `2024-01-15` or any date-with-day format — **WILL FAIL**
 
-**Before starting ANY work, use the Skill tool to load each required skill:**
+**When the policy is effective mid-year — use the NEXT January AFTER the effective date.**
 
-1. `Skill: policyengine-testing-patterns-skill`
-2. `Skill: policyengine-period-patterns-skill`
-3. `Skill: policyengine-aggregation-skill`
-4. `Skill: policyengine-variable-patterns-skill`
-5. `Skill: policyengine-code-organization-skill`
+PolicyEngine resolves annual parameters at the START of the period. `period: 2024` and `period: 2024-01` both look up at 2024-01-01. If the policy only becomes effective later in 2024, those periods return the OLD pre-effective value — your test will silently assert against the wrong parameter, or pressure the implementer to backdate the new value just to make the test pass.
 
-This ensures you have the complete patterns and standards loaded for reference throughout your work.
+Always pick the first January **on or after** the effective date:
+
+| Effective date | Use period | Why |
+|---|---|---|
+| January 1, 2024 | `2024-01` or `2024` | Lookup at 2024-01-01 IS the effective date |
+| April 1, 2024 | `2025-01` | `2024` resolves to 2024-01-01 (pre-April) |
+| July 1, 2024 | `2025-01` | `2024` resolves to 2024-01-01 (pre-July) |
+| October 1, 2023 | `2024-01` or `2024` | Lookup at 2024-01-01 is post-October |
+
+**Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing.
+
+## Load these skills first
+
+1. `Skill: policyengine-testing-patterns-skill` — Test file structure, naming, period formats
+2. `Skill: policyengine-period-patterns-skill` — Period conversion rules for YEAR/MONTH variables
+3. `Skill: policyengine-aggregation-skill` — Variable aggregation patterns
+4. `Skill: policyengine-variable-patterns-skill` — Variable patterns, wrapper variable detection
+5. `Skill: policyengine-code-organization-skill` — Naming conventions, folder structure
+
+## Lessons from past sessions
+
+Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
 
 ## Workflow
 
-### Step 1: Access Documentation
+### Step 1: Read documentation
 
-Read `sources/working_references.md` in the repository for program documentation.
+Read `sources/working_references.md` for the program documentation. Pull out:
+- Official program name and variable prefix (used for naming test files and variables)
+- Income limits, thresholds, benefit formulas
+- Eligibility rules and special cases
 
-Use this file to understand:
-- **Official Program Name and Variable Prefix** - use this for naming test files and variables
-- Income limits and thresholds for test values
-- Benefit calculation formulas for expected outputs
-- Eligibility rules for test scenarios
-- Special cases and exceptions to test
+### Step 2: Create test files
 
-### Step 2: Create Test Files
+Follow **policyengine-testing-patterns-skill** for structure. For each variable:
 
-Follow the patterns from **policyengine-testing-patterns-skill**:
+1. **Skip** variables that only use `adds` / `subtracts` (no formula to test)
+2. **Skip** wrapper variables that the decision tree in **policyengine-variable-patterns-skill** says shouldn't exist
+3. **Create** a unit test file at `tests/policy/baseline/gov/states/{state}/{agency}/{program}/{variable_name}.yaml` for each variable with a formula
+4. **Create** `integration.yaml` (never prefixed) with 5–7 scenarios, inline calculation comments, and 8–10 intermediate value checks per scenario
 
-1. **Determine which variables need tests**
-   - Skip variables using only `adds` or `subtracts`
-   - Test variables with formulas, conditions, or calculations
+### Step 3: Apply standards
 
-**CRITICAL: Check policyengine-variable-patterns-skill**
+- **Period format:** only `YYYY-01` or `YYYY` (see CRITICAL section above)
+- **Variable names:** only use variables that exist in PolicyEngine
+- **Person names:** `person1`, `person2` (not descriptive)
+- **Numbers:** underscores for thousands (`50_000` not `50000`)
+- **Enums:** verify against actual enum definitions before using
+- **YEAR variables:** input as annual amounts; expect monthly values in MONTH-period tests
 
-See section "Avoiding Unnecessary Wrapper Variables" to determine:
-- Which state variables should exist (have state logic)
-- Which should use federal baseline directly
+### Step 4: Save and stop
 
-Only create tests for variables that should exist according to the skill's decision tree.
+Save test files. **Do not commit** — `pr-pusher` handles all commits.
 
-2. **Create unit test files**
-   - Name: `variable_name.yaml` (matches variable exactly)
-   - Location: `/tests/policy/baseline/gov/states/[state]/[agency]/[program]/`
-   - Follow naming and structure patterns from skill
-
-3. **Create integration.yaml**
-   - Always named `integration.yaml` (never prefixed)
-   - Include 5-7 comprehensive scenarios
-   - Document calculations with inline comments
-   - Verify 8-10 intermediate values per test
-
-### Step 4: Apply Critical Rules
-
-From **policyengine-testing-patterns-skill**:
-
-- **Period Format**: Only use `2024-01` or `2024` (no other formats work)
-- **Variable Names**: Only use existing PolicyEngine variables
-- **Person Names**: Use `person1`, `person2` (not descriptive names)
-- **Number Format**: Always use underscores (`50_000` not `50000`)
-- **Enum Values**: Verify actual enum definitions before using
-
-For period conversion (from **policyengine-period-patterns-skill**):
-- Input YEAR variables as annual amounts
-- Expect monthly values in output for MONTH period tests
-
-### Step 5: Validate Test Quality
-
-Check against testing patterns skill checklist:
-- [ ] All variables exist in PolicyEngine
-- [ ] Period format is `2024-01` or `2024` only
-- [ ] Integration tests have calculation comments
-- [ ] 5-7 comprehensive scenarios included
-- [ ] Enum values verified against actual code
-- [ ] Output values realistic, not placeholders
-
-**Additional Validation - Follow Skills:**
-- [ ] Applied decision tree from policyengine-variable-patterns-skill
-- [ ] No tests for wrapper variables as defined in the skills
-- [ ] Tests align with "State Variables to AVOID Creating" guidance
-
-### Step 6: Create Files Only
-
-Create your test files in the appropriate directory:
-- `policyengine_us/tests/policy/baseline/gov/states/<state>/<agency>/<program>/`
-
-**DO NOT commit or push** - the pr-pusher agent will handle all commits.
-
-```bash
-# Just create test files - DO NOT commit
-# pr-pusher will stage, commit, and push all files together
-```
-
-## Key References
-
-For detailed patterns and examples, consult:
-- **policyengine-testing-patterns-skill** for all test creation patterns
-- **policyengine-period-patterns-skill** for period handling
-- **policyengine-aggregation-skill** for understanding variable summation
-
-## Before Completing: Validate Against Skills
-
-Before finalizing, validate your work against ALL loaded skills:
-
-1. **policyengine-testing-patterns-skill** - Test structure, naming, period formats correct?
-2. **policyengine-period-patterns-skill** - Period conversion rules followed?
-3. **policyengine-aggregation-skill** - Aggregation patterns understood?
-4. **policyengine-variable-patterns-skill** - Using correct variables?
-5. **policyengine-code-organization-skill** - Folder structure correct?
-
-Run through each skill's Quick Checklist if available.
-
-## Quality Standards
+## Quality bar
 
 Tests must:
-- Validate realistic calculations based on parameters
+- Validate realistic calculations driven by parameters (not placeholders)
 - Include edge cases at thresholds
-- Document calculation steps in comments
+- Document calculation steps inline
 - Cover all eligibility paths
-- Use only existing PolicyEngine variables
-- NOT exhaustively test every entry in a lookup table — for brackets indexed by household size, FPL tier, etc., test a few representative points (first, middle, last) not every value
-- **Cover all sub-regions/breakdowns** — If a variable uses regional breakdowns (e.g., Alaska's 6 SNAP regions, New York's 3 sub-regions), create at least one test per region plus a default/fallback test. This catches county-to-region mapping errors and ensures all breakdown keys have correct parameter values.
+- **Cover all sub-regions / breakdowns** — variables with regional breakdowns (e.g., Alaska SNAP regions, NY sub-regions) need ≥ 1 test per region plus a default/fallback. This catches county-to-region mapping errors.
+- **Not exhaustively cover lookup tables** — for brackets indexed by household size, FPL tier, etc., test representative points (first, middle, last), not every value
