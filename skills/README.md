@@ -45,8 +45,13 @@ skills/
 │   ├── policyengine-user-guide-skill/
 │   └── policyengine-writing-skill/
 │
-└── analysis/              # Policy analysis and research
-    └── policyengine-analysis-skill/
+├── analysis/              # Policy analysis and research
+│   └── policyengine-analysis-skill/
+│
+└── workflows/             # Codex command-style workflows
+    ├── encode-policy-v2-skill/
+    ├── review-program-skill/
+    └── fix-pr-skill/
 ```
 
 ## Skill Categories
@@ -125,6 +130,16 @@ Policy analysis and research methodologies.
 |-------|-------------|-------------|
 | **policyengine-analysis-skill** | Common analysis patterns | CRFB, newsletters, dashboards, impact studies |
 
+### Workflows (`workflows/`)
+
+Codex command-style workflows that mirror the highest-value Claude commands as portable skills.
+
+| Skill | Description | Primary Use |
+|-------|-------------|-------------|
+| **encode-policy-v2** | Implement a new PolicyEngine-US state benefit program | Research, scope approval, implementation, tests, validation, draft PR |
+| **review-program** | Review a PolicyEngine PR | `$review-program` or Codex `/review` with read-only code validation, reference checks, PDF audit, GitHub comment |
+| **fix-pr** | Fix a PolicyEngine PR | Apply review findings, CI fixes, verification, optional push/comment |
+
 ## Skill Structure
 
 Each skill follows a consistent structure with a `SKILL.md` file:
@@ -183,6 +198,7 @@ To add a new skill:
    - `data-science/` for data analysis skills
    - `documentation/` for standards and guides
    - `analysis/` for research methodologies
+   - `workflows/` for Codex command-style workflows
 
 2. **Create the skill directory**: `skills/[category]/your-skill-name/`
 
