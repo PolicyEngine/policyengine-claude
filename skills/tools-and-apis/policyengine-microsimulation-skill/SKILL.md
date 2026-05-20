@@ -2,19 +2,8 @@
 name: policyengine-microsimulation
 description: |
   ALWAYS USE THIS SKILL for PolicyEngine microsimulation, population-level analysis, winners/losers calculations.
-  Triggers: "microsimulation", "share who would lose/gain", "policy impact", "national average", "weighted analysis",
-  "cost", "revenue impact", "budgetary", "estimate the cost", "federal revenues", "tax revenue", "budget score",
-  "how much would it cost", "how much would the policy cost", "total cost of", "aggregate impact",
-  "cost to the government", "revenue loss", "fiscal impact",
-  "poverty impact", "child poverty", "deep poverty", "poverty rate", "poverty reduction",
-  "how many people lifted out of poverty", "SPM poverty", "distributional impact",
-  "state tax", "state-level", "California", "New York",
-  "UBI", "universal basic income", "flat tax", "standard deduction",
-  "winners and losers", "winners", "losers",
-  "inequality", "Gini", "decile",
-  "SALT", "marginal tax rate", "effective tax rate".
-  NOT for single-household calculations like "what would my benefit be" — use policyengine-us or policyengine-uk for those.
-  Use this skill's code pattern, but explore the codebase to find specific parameter paths if needed.
+  Triggers: microsimulation, share who would lose/gain, policy impact, national average, weighted analysis, cost, revenue impact, budgetary, estimate the cost, federal revenues, tax revenue, budget score, how much would it cost, how much would the policy cost, total cost of, aggregate impact, cost to the government, revenue loss, fiscal impact, poverty impact, child poverty, deep poverty, poverty rate, poverty reduction, how many people lifted out of poverty, SPM poverty, distributional impact, state tax, state-level, California, New York, UBI, universal basic income, flat tax, standard deduction, winners and losers, winners, losers, inequality, Gini, decile, SALT, marginal tax rate, effective tax rate.
+  NOT for single-household calculations like "what would my benefit be" - use policyengine-us or policyengine-uk for those. Use this skill's code pattern; explore codebase for parameter paths if needed.
 ---
 
 # PolicyEngine Microsimulation
