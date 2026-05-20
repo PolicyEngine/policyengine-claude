@@ -88,8 +88,9 @@ grep '@policyengine/ui-kit' package.json
 # Actually imported in components
 grep -rn "from '@policyengine/ui-kit'" app/ components/ --include='*.tsx' --include='*.ts'
 
-# No CDN link for design-system
+# No CDN link for design-system (deprecated package)
 grep -rn 'unpkg.com/@policyengine/design-system' app/ --include='*.tsx'
+grep -rn 'unpkg.com/@policyengine/ui-kit' app/ --include='*.tsx'
 ```
 
 ### 4. Package Manager
