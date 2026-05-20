@@ -173,6 +173,31 @@ ruff format --check .
 
 ## JavaScript/React Standards
 
+### Canonical Frontend Stack (2026)
+
+All PolicyEngine frontend repositories should use the following versions as of the Phase 2F modernization:
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| **Next.js** | `^16.2.6` | App Router required |
+| **React** | `^19.2.0` | With React DOM 19 |
+| **@policyengine/ui-kit** | `^0.9.0` | Design system |
+| **Tailwind CSS** | `^4.2.4` | CSS-first config (no .js config) |
+| **ESLint** | `^9` | Flat config (eslint.config.mjs) |
+
+**Stack features:**
+- Next.js 16 with App Router (not Pages Router)
+- React 19 with concurrent features
+- Tailwind v4 CSS-first configuration (no `tailwind.config.js`)
+- ESLint 9 flat config (`eslint.config.mjs` replaces `.eslintrc.json`)
+- ui-kit 0.9+ with full dark mode and accessibility improvements
+
+**When reviewing dependency upgrades:**
+- Verify all dependencies are at or above canonical versions
+- Check that legacy configs (`.eslintrc.json`, `tailwind.config.js`) are removed
+- Ensure `postcss.config.mjs` uses `@tailwindcss/postcss`
+- Confirm `globals.css` imports Tailwind v4 correctly
+
 ### Formatting
 - **Formatters**: Prettier + ESLint
 - **Command**: `bun run lint -- --fix && bunx prettier --write .`

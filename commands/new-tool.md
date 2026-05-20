@@ -1,10 +1,10 @@
 ---
-description: Scaffold a new PolicyEngine interactive tool (Next.js 14 + Tailwind 4 + ui-kit theme + embedding boilerplate)
+description: Scaffold a new PolicyEngine interactive tool (Next.js 16 + React 19 + Tailwind 4 + ui-kit 0.9 + embedding boilerplate)
 ---
 
 # New interactive tool scaffold
 
-Creates a complete project for a standalone PolicyEngine interactive tool that embeds in policyengine.org.
+Creates a complete project for a standalone PolicyEngine interactive tool that embeds in policyengine.org using the canonical frontend stack.
 
 ## Step 1: Gather requirements
 
@@ -20,19 +20,37 @@ Ask the user for:
 ## Step 2: Create the project
 
 ```bash
-# Create Next.js 14 + Tailwind project
-bunx create-next-app@14 TOOL_NAME --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
+# Create Next.js 16 + Tailwind project with canonical stack
+bunx create-next-app@latest TOOL_NAME --js --app --tailwind --eslint --no-src-dir --import-alias "@/*"
 cd TOOL_NAME
 
-# Install dependencies
-bun add @policyengine/ui-kit recharts
-bun add -D vitest
+# Install canonical dependencies
+bun add @policyengine/ui-kit@^0.9.0 recharts
+bun add -D vitest @tailwindcss/postcss@^4.2.4 postcss
 ```
+
+This creates a project with:
+- Next.js 16+ with App Router
+- React 19+
+- Tailwind CSS 4+
+- ESLint 9 flat config
+- ui-kit 0.9+
 
 Copy the favicon:
 ```bash
 mkdir -p public
 cp node_modules/@policyengine/ui-kit/src/assets/logos/policyengine/teal-square.svg public/favicon.svg
+```
+
+Create PostCSS config for Tailwind v4:
+```bash
+cat > postcss.config.mjs << 'EOF'
+export default {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+EOF
 ```
 
 If using code highlighting:
