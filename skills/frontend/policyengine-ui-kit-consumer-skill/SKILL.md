@@ -369,3 +369,8 @@ copy nav arrays into new apps.
 - `policyengine-tailwind-shadcn-skill` — `@theme` namespace mechanics, SVG var() usage
 - `policyengine-interactive-tools-skill` — Full tool scaffolding checklist
 - `policyengine-vercel-deployment-skill` — Deploying consumer apps
+
+## Related Guides
+
+- `references/migration-from-broken-setup.md` — Fixing repos where ui-kit was imported incorrectly
+- `references/vite-to-nextjs-migration.md` — Migrating Vite/React apps to Next.js 16 App Router
