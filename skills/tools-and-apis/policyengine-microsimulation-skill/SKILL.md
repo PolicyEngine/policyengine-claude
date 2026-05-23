@@ -184,6 +184,12 @@ income.gini()           # Weighted Gini coefficient
 
 Use built-in MicroSeries methods — never reimplement Gini or other inequality metrics manually:
 
+**Include the full distribution by default.** PolicyEngine distributional tables
+should not drop the bottom 5%, trim nonpositive incomes, or otherwise exclude
+income tails unless the user explicitly requests that exclusion or you are
+replicating a cited external method. If you do apply an exclusion, make it
+visible in the table/chart labels and methodology.
+
 ```python
 baseline_income = baseline.calc('household_net_income', period=2026, map_to='person')
 reformed_income = reformed.calc('household_net_income', period=2026, map_to='person')
