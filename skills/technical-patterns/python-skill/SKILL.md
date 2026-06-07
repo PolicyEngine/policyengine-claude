@@ -7,7 +7,8 @@ description: |
   "pip install", "install packages", "uv pip", "uv venv", "python version",
   "VIRTUAL_ENV", "venv conflict", "which python", "activate", "deactivate",
   "run the script", "run with uv", "uv run", "pyproject.toml", "install dependencies",
-  "install requirements", "install the package", "editable install", "pip install -e".
+  "install requirements", "install the package", "editable install", "pip install -e",
+  "latest package", "latest version", "current version", "newest version".
 ---
 
 # Python Environment — PolicyEngine Standard
@@ -62,6 +63,55 @@ uv pip install -e .
 # Install with extras
 uv pip install -e ".[dev]"
 ```
+
+### Verifying latest package versions
+
+If the user asks for the "latest", "current", or "newest" version of a Python
+package, verify it from PyPI immediately before installing or pinning it.
+Do not treat search snippets, local installed versions, lockfiles, stale docs,
+or repo dependency constraints as proof of latest.
+
+```bash
+export PACKAGE=policyengine
+
+# Authoritative PyPI metadata.
+python - <<'PY'
+import json
+import os
+import urllib.request
+
+package = os.environ["PACKAGE"]
+with urllib.request.urlopen(
+    f"https://pypi.org/pypi/{package}/json",
+    timeout=20,
+) as response:
+    print(json.load(response)["info"]["version"])
+PY
+
+# Cross-check available versions when pip can reach PyPI.
+python -m pip index versions "$PACKAGE"
+```
+
+Then install the exact verified version and confirm the resolved distribution:
+
+```bash
+VERSION=1.2.3
+uv pip install "${PACKAGE}==${VERSION}"
+
+python - <<'PY'
+from importlib import metadata
+import os
+
+package = os.environ["PACKAGE"]
+print(f"{package}=={metadata.version(package)}")
+direct_url = metadata.distribution(package).read_text("direct_url.json")
+if direct_url:
+    print(direct_url)
+PY
+```
+
+For extras, query the base distribution and pin the extra install to that same
+version, for example `uv pip install "policyengine[us]==4.14.2"`.
 
 ---
 

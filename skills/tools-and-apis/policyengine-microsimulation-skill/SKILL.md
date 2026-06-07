@@ -14,6 +14,73 @@ description: |
 - **Parameter Discovery**: https://policyengine.github.io/policyengine-us/usage/parameter-discovery.html
 - **Reform.from_dict()**: https://policyengine.github.io/policyengine-core/usage/reforms.html
 
+## Latest rules and microdata provenance
+
+When the user asks to use the latest PolicyEngine rules, data, microdata,
+variable weights, sampled households, or default datasets, verify the package
+release from authoritative live metadata before running the microsimulation.
+Do not infer "latest" from search snippets, local installed versions, lockfiles,
+or repo constraints.
+
+For `policyengine.py` bundled rules plus default microdata:
+
+```bash
+# Verify the latest policyengine.py release.
+python - <<'PY'
+import json
+import urllib.request
+
+with urllib.request.urlopen(
+    "https://pypi.org/pypi/policyengine/json",
+    timeout=20,
+) as response:
+    print(json.load(response)["info"]["version"])
+PY
+python -m pip index versions policyengine
+
+# Install the exact verified version with the country extra.
+uv pip install "policyengine[us]==X.Y.Z"
+```
+
+Then confirm the resolved model/data bundle without importing top-level
+`policyengine`, which may initialize countries and private data you are not
+using:
+
+```bash
+python - <<'PY'
+import json
+from importlib import metadata
+from pathlib import Path
+
+for package in ["policyengine", "policyengine-us"]:
+    print(f"{package}=={metadata.version(package)}")
+    direct_url = metadata.distribution(package).read_text("direct_url.json")
+    if direct_url:
+        print(f"{package} direct_url={direct_url}")
+
+manifest_path = Path(
+    metadata.distribution("policyengine").locate_file(
+        "policyengine/data/release_manifests/us.json"
+    )
+)
+manifest = json.loads(manifest_path.read_text())
+print(json.dumps({
+    "bundle_id": manifest.get("bundle_id"),
+    "model_package": manifest.get("model_package"),
+    "data_package": manifest.get("data_package"),
+    "default_dataset": manifest.get("default_dataset"),
+    "default_dataset_uri": (
+        manifest.get("certified_data_artifact") or {}
+    ).get("uri"),
+    "certification": manifest.get("certification"),
+}, indent=2, sort_keys=True))
+PY
+```
+
+Only call a run "latest" after this verification. If PyPI, npm, GitHub, or the
+official provider source cannot be reached, report that latest could not be
+verified instead of guessing.
+
 ## CRITICAL: Use calc() with MicroSeries — never strip weights or fetch them manually
 
 **MicroSeries handles all weighting automatically. Never convert to numpy, strip types, or do manual weight math.**

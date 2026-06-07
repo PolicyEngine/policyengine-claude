@@ -15,12 +15,89 @@ This skill covers programmatic access to PolicyEngine for analysts and researche
 
 ## Installation
 
+If the user asks for the latest PolicyEngine package version, verify from PyPI
+immediately before installing. Do not rely on search snippets, local installed
+packages, lockfiles, or old docs as proof of latest.
+
 ```bash
-# Install the Python client
-uv pip install policyengine
+# Verify the latest umbrella package on PyPI.
+python - <<'PY'
+import json
+import urllib.request
+
+with urllib.request.urlopen(
+    "https://pypi.org/pypi/policyengine/json",
+    timeout=20,
+) as response:
+    print(json.load(response)["info"]["version"])
+PY
+python -m pip index versions policyengine
+
+# Install the Python client, pinned to the verified version.
+uv pip install "policyengine==X.Y.Z"
 
 # Or for local development
 uv pip install policyengine-us  # Just the US model (offline)
+```
+
+When using `policyengine.py` as the source of both rules and default microdata,
+install the country extra at the exact verified umbrella package version:
+
+```bash
+uv pip install "policyengine[us]==X.Y.Z"
+uv pip install "policyengine[uk]==X.Y.Z"
+```
+
+If the user instead asks for the latest direct country package, run the same
+PyPI JSON + `pip index` check for `policyengine-us`, `policyengine-uk`, or the
+specific package named by the user, then pin that exact package version.
+
+Confirm the resolved package versions and whether any package is a direct GitHub
+install:
+
+```bash
+python - <<'PY'
+from importlib import metadata
+
+for package in ["policyengine", "policyengine-us", "policyengine-uk"]:
+    try:
+        print(f"{package}=={metadata.version(package)}")
+        direct_url = metadata.distribution(package).read_text("direct_url.json")
+        if direct_url:
+            print(f"{package} direct_url={direct_url}")
+    except metadata.PackageNotFoundError:
+        pass
+PY
+```
+
+For bundle/data provenance, inspect the installed release manifest directly
+instead of relying on a top-level `import policyengine`; top-level imports can
+initialize countries you are not using and may require private data tokens.
+
+```bash
+python - <<'PY'
+import json
+from importlib import metadata
+from pathlib import Path
+
+country = "us"
+manifest_path = Path(
+    metadata.distribution("policyengine").locate_file(
+        f"policyengine/data/release_manifests/{country}.json"
+    )
+)
+manifest = json.loads(manifest_path.read_text())
+print(json.dumps({
+    "bundle_id": manifest.get("bundle_id"),
+    "model_package": manifest.get("model_package"),
+    "data_package": manifest.get("data_package"),
+    "default_dataset": manifest.get("default_dataset"),
+    "default_dataset_uri": (
+        manifest.get("certified_data_artifact") or {}
+    ).get("uri"),
+    "certification": manifest.get("certification"),
+}, indent=2, sort_keys=True))
+PY
 ```
 
 ## Quick Start: Python Client
