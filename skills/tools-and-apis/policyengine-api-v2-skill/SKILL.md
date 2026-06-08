@@ -182,10 +182,14 @@ grep -r "@policyengine/design" package.json
 cat package.json | grep -A 5 "dependencies"
 ```
 
-**If using npm design tokens:**
+**If using design tokens:**
 ```bash
-# Design tokens from app-v2
-bun install @policyengine/design-tokens
+# Design tokens currently live in PolicyEngine frontend repos, not a public npm package.
+# Inspect local/workspace token sources instead of installing an unclaimed package name.
+rg "design.*token|designTokens" ../policyengine-app-v2 ../policyengine-ui-kit package.json
+
+# If a repo defines a local workspace package, install it by explicit local path.
+bun add ./path/to/design-tokens
 ```
 
 ### OpenAPI Specification
