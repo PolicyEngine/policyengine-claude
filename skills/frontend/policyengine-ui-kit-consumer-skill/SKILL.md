@@ -284,6 +284,60 @@ No `postcss.config.mjs` needed — the Vite plugin handles everything.
 
 `globals.css` is the same two imports.
 
+### Migrating from Vite to Next.js
+
+When converting a Vite project to Next.js (e.g., adding routing, SSR, or API routes):
+
+1. **Remove Vite files**:
+   ```bash
+   rm vite.config.js index.html
+   ```
+
+2. **Switch Tailwind plugin**:
+   ```bash
+   bun remove @tailwindcss/vite
+   bun add -D @tailwindcss/postcss postcss
+   ```
+
+3. **Create `postcss.config.mjs`**:
+   ```js
+   export default {
+     plugins: {
+       "@tailwindcss/postcss": {},
+     },
+   };
+   ```
+
+4. **Move app entry point**:
+   - Delete `src/main.jsx` (Vite entry)
+   - Create `app/layout.tsx` (Next.js root layout with `<html>` and `<body>`)
+   - Move component tree to `app/page.jsx`
+   - Import `globals.css` in `layout.tsx` instead of `main.jsx`
+
+5. **Create `next.config.ts`**:
+   ```ts
+   export default {
+     // Add any Next.js config here
+   };
+   ```
+
+6. **Fix environment variable references**:
+   - Replace `import.meta.env.BASE_URL` with absolute paths (e.g., `/data.json`)
+   - Replace `import.meta.env.VITE_*` with `process.env.NEXT_PUBLIC_*`
+
+7. **Update package.json scripts**:
+   ```json
+   {
+     "scripts": {
+       "dev": "next dev",
+       "build": "next build",
+       "start": "next start"
+     }
+   }
+   ```
+
+The `globals.css` stays the same — two imports, Tailwind first.
+
 ## Quick Reference
 
 | What | Where | Content |
