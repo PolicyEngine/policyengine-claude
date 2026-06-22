@@ -42,10 +42,24 @@
         "./skills/data-science/microdf-skill",
         "./skills/documentation/policyengine-design-skill",
         "./skills/documentation/policyengine-writing-skill",
-        "./skills/documentation/policyengine-research-lookup-skill"
+        "./skills/documentation/policyengine-research-lookup-skill",
+        "./skills/domain-knowledge/policyengine-prior-scores-skill",
+        "./skills/domain-knowledge/policyengine-calibration-diagnostics-skill"
       ],
-      "commands": [],
-      "agents": [],
+      "commands": [
+        "./commands/analyze-policy.md"
+      ],
+      "agents": [
+        "./agents/policy-text-researcher.md",
+        "./agents/parameter-locator.md",
+        "./agents/prior-scores-finder.md",
+        "./agents/reform-describer.md",
+        "./agents/microsim-runner.md",
+        "./agents/reform-classifier.md",
+        "./agents/reform-comparator.md",
+        "./agents/calibration-diagnostics.md",
+        "./agents/report-logger.md"
+      ],
       "source": "./"
     },
     {
