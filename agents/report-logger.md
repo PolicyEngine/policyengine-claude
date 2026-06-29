@@ -17,20 +17,90 @@ Final stage of `/analyze-policy`. Takes the assembled report and the verdict, an
 - `no_log`: if true, skip logging entirely
 - `command_args`: the original `$ARGUMENTS` passed to /analyze-policy (for traceability)
 
-## Auto-routing rules
+## Routing — runtime prompt, context-aware
 
-If `--log-to` was NOT explicitly passed, route based on verdict:
+Destinations depend on **where the analyst is working** and **what the analysis is for**. Rather than a single auto-route, the agent computes a **context-aware destination shortlist** and prompts the analyst to pick.
 
-| Verdict | Destinations |
+If `--log-to` was explicitly passed: skip the prompt, use the list verbatim.
+If `--no-log`: skip the prompt, write nothing.
+If `--auto-confirm` AND no `--log-to`: use the verdict default (local archive only) without prompting.
+
+Otherwise:
+
+### Step 1: Detect context
+
+Run these checks in parallel (cheap):
+
+```bash
+# Current repo
+git rev-parse --show-toplevel 2>/dev/null      # e.g., /Users/pavel/policyengine-app
+gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null  # e.g., PolicyEngine/policyengine-app
+
+# Is there a posts/articles directory? (policyengine-app shape)
+test -d src/posts/articles && echo "HAS_POSTS_DIR"
+
+# Is there an analyses/ directory? (this repo's shape)
+test -d analyses && echo "HAS_ANALYSES_DIR"
+
+# Country from --country flag or from the reform's jurisdiction
+echo "$COUNTRY"
+```
+
+### Step 2: Build the shortlist
+
+Always include:
+- **Local archive** (path per resolution order in next section)
+- **Skip / no-log** (cancel destination)
+
+Append context-specific options:
+
+| Context | Add this option |
 |---|---|
-| `PASS` | archive |
-| `PASS-WITH-NOTES` | archive |
-| `INVESTIGATE` | archive + issue:policyengine-us-data (with calibration hypothesis) |
-| `structural` | archive + issue:policyengine-us (with model-change estimate) |
-| `not-possible` | archive (with the rationale; no issue) |
-| `deployed-model-lag` | archive (with the missing-paths list and a note: re-run after next release) |
+| Inside `policyengine-app` repo (HAS_POSTS_DIR) | "Save as draft research post: `src/posts/articles/{slug}.md` + update `posts.json`" |
+| Inside `policyengine-skills` or any repo with `analyses/` | "Just the archive in `analyses/`" (already covered by local archive but make the path explicit) |
+| Verdict is `INVESTIGATE` | "Open GitHub issue in `PolicyEngine/policyengine-{country}-data` (calibration hypothesis)" |
+| Verdict is `structural` | "Open GitHub issue in `PolicyEngine/policyengine-{country}` (model-change estimate)" |
+| Verdict is `PASS*` AND inside `policyengine-app` | "Open draft PR to policyengine-app with the post body" |
+| Always | "Custom path / repo — type a destination spec" |
 
-If `--log-to` was explicitly passed, use that list verbatim. If `--no-log`, write nothing.
+The country is derived from the reform's jurisdiction (`us`, `uk`, `ca`), so the issue repo names are fully qualified.
+
+### Step 3: Prompt the analyst
+
+Show the shortlist and ask the analyst to pick one or multiple destinations. Default highlighted: local archive only.
+
+Example prompt rendering:
+
+```
+Where should this analysis go?
+
+[x] Local archive: /Users/pavel/policyengine-skills/analyses/2026-06-29-us-salt-cap-plus-100k.md  (default)
+[ ] GitHub issue: PolicyEngine/policyengine-us-data  (verdict: INVESTIGATE → calibration)
+[ ] Draft PR: PolicyEngine/policyengine-app → src/posts/articles/salt-cap-plus-100k.md
+[ ] Custom: --log-to <spec>
+[ ] Skip / no-log
+
+Select destinations (comma-separated, default = 1):
+```
+
+Capture the response and proceed to per-destination handling below.
+
+### Step 4: Preview before any non-local destination
+
+For any destination other than `local archive`, **show the full body that will be submitted** (issue body, PR description, post markdown) and ask Y/N/edit. This is the safety rail against malformed issues or premature PRs. Bypass only with `--auto-confirm`.
+
+If the analyst picks `edit`, drop them into `$EDITOR` (or open the file path if `--no-tty`) on a temp copy. Re-show the preview after edits.
+
+### Verdict defaults (what gets pre-selected in the prompt)
+
+| Verdict | Pre-selected |
+|---|---|
+| `PASS` / `PASS-WITH-NOTES` / `PASS-WITH-CORROBORATION` | local archive only |
+| `INVESTIGATE` | local archive + GH issue in `policyengine-{country}-data` |
+| `structural` | local archive + GH issue in `policyengine-{country}` |
+| `not-possible` / `deployed-model-lag` | local archive only |
+
+The analyst can override the pre-selection in the prompt.
 
 ## Destination: archive
 

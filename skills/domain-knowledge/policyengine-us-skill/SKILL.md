@@ -191,7 +191,7 @@ datasets = ensure_datasets(
     data_folder="./data",
     years=[2026],
 )
-dataset = datasets["enhanced_cps_2024_2026"]
+dataset = datasets["enhanced_cps_2024_2026"]  # local-mode key; backs to populace-us-2024 on the API as of PE-US 1.729.0+
 ```
 
 ### Running Simulations

@@ -154,8 +154,25 @@ The output MUST include a `tier_coverage` block:
 
 If a tier was not searched, this fails downstream — the comparator will refuse to issue PASS without external benchmark coverage.
 
+### Reform-shape specificity (REQUIRED for Stage 5.5)
+
+Each `thinktank_scores[]` entry MUST include a `reform_shape` field specific enough that `model-corroborator` (Stage 5.5) can translate it into a mirror reform-dict. The minimum: explicit parameter values for every dimension the source touched (cap dollar values per filing status, phase-out thresholds, refundability flags, etc.) plus the source's stated baseline.
+
+Bad (too vague to mirror):
+```
+"reform_shape": "raise the SALT cap"
+```
+
+Good (mirrorable):
+```
+"reform_shape": "$30K single / $60K joint / $30K HoH / $60K SS / $30K separate, no phase-out, no floor, baseline TCJA-extension ($10K flat)"
+```
+
+If a source publishes a range, capture the endpoints. If a source publishes only an overall total with no per-filing-status breakdown, infer using the standard TPC/CRFB convention (HoH groups with single, separate halves the joint cap) and note the inference in `reform_shape_inference_notes`.
+
 ## Hand-off
 
 Returns the anchor list. Downstream:
 - `reform-comparator` (Stage 5) uses the preferred anchor to bracket the expected microsim magnitude.
+- `model-corroborator` (Stage 5.5) reads `thinktank_scores[].reform_shape` to pick mirror candidates when no direct external comparator exists.
 - `calibration-diagnostics` (Stage 6) reads `methodology_notes` to identify whose calibration the prior was built on.

@@ -124,6 +124,8 @@ ecps = us["enhanced_cps_2024_2026"]
 
 **Default US dataset:** `enhanced_cps_2024.h5` (Enhanced CPS), years 2024–2028.
 
+**API dataset names** (as of PE-US 1.729.0+, May 2026): The deployed API at `api.policyengine.org/us/economy/*` advertises only two dataset names: `cps` (default) and `enhanced_cps`. The `enhanced_cps` API name is now backed by `populace-us-2024` data, replacing the older Enhanced CPS. **Do not** pass `enhanced_cps_2024` or year-suffixed names to the API — they silently fall back to raw `cps`. Local mode keeps the year-suffixed key (`enhanced_cps_2024_2026`); only the API dropped the suffix.
+
 ### Inspecting available variables
 
 Always inspect the dataset to find available variable names — never guess:

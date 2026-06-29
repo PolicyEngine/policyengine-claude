@@ -69,6 +69,18 @@ Flags:
        │
        ├── PASS ──► write report, EXIT
        │
+       ├── PASS-WITH-NOTES (or near-INVESTIGATE on external benchmarks)
+       │      │
+       │      ▼ trigger Stage 5.5
+       │   ┌──────────────────┐         Stage 5.5: Corroborate
+       │   │ model-           │  ───►   Run external mirror-shape reforms
+       │   │ corroborator     │         through our model; check agreement
+       │   └──────────────────┘
+       │      │
+       │      ├── CORROBORATED ──► upgrade verdict to PASS-WITH-CORROBORATION
+       │      ├── PARTIAL ─────► stay at PASS-WITH-NOTES
+       │      └── FAILED ──────► escalate to INVESTIGATE
+       │
        ▼ INVESTIGATE
 ┌──────────────────┐         Stage 6: Diagnose
 │ calibration-     │  ───►   Ranked hypotheses + tests to run
@@ -156,6 +168,31 @@ Returns `verdict`:
 - **`PASS`** / **`PASS-WITH-NOTES`** — proceed to write-up.
 - **`INVESTIGATE`** — invoke `calibration-diagnostics` with the deviation signature.
 
+The comparator itself may invoke `model-corroborator` (Stage 5.5) at the end of its Step 2b if external benchmarks don't directly anchor the reform — see Phase 5.5 below.
+
+## Phase 5.5 (conditional) — Model corroboration
+
+Triggered automatically by `reform-comparator` Step 2c when Step 2b yields fewer than 2 external sources within ±25%. Invoke `model-corroborator`:
+
+```
+model-corroborator
+  our_reform_dict=<reform_dict>
+  our_jurisdiction=<jurisdiction>
+  benchmark_sources=<thinktank_scores from prior-scores-finder>
+  our_microsim_result=<result>
+  our_baseline_policy_id=<typically 2 for US>
+```
+
+The corroborator picks 1-2 closest-shape externally-scored reforms, builds mirror reform-dicts (and a baseline policy if the external source uses a different baseline schedule like TCJA-extension), submits to the PE API, polls for completion (~6-10 min per mirror in parallel), and reports per-candidate agreement.
+
+Outcomes:
+- **`CORROBORATED`** (≥2 candidates within ±25%) — comparator upgrades verdict to `PASS-WITH-CORROBORATION`.
+- **`PARTIAL-CORROBORATION`** (1 corroborated with explainable drift on others) — stay at PASS-WITH-NOTES.
+- **`CORROBORATION-FAILED`** (0 candidates corroborated) — force escalation to INVESTIGATE.
+- **`NO-CORROBORATION-POSSIBLE`** (no suitable candidates) — fall back to Step 2b verdict.
+
+Skipped when `--skip-microsim` is set (no original-reform microsim to anchor against).
+
 ## Phase 6 (conditional) — Calibration diagnosis
 
 Only if Stage 5 returned `INVESTIGATE`. Invoke `calibration-diagnostics`:
@@ -185,16 +222,23 @@ report-logger
   command_args=<original $ARGUMENTS>
 ```
 
-**Auto-routing default** (when no `--log-to` and no `--no-log`):
+**Destination routing — runtime prompt, context-aware** (when no `--log-to` and no `--no-log` and no `--auto-confirm`):
 
-| Verdict | Destinations |
+The logger detects the current repo, surfaces a shortlist tailored to the context, and asks the analyst to pick. Pre-selected defaults by verdict:
+
+| Verdict | Pre-selected |
 |---|---|
-| `PASS` | archive |
-| `PASS-WITH-NOTES` | archive |
-| `INVESTIGATE` | archive + issue:policyengine-us-data (with diagnostic hypothesis as the action item) |
-| `structural` | archive + issue:policyengine-{country} (with model-change estimate) |
-| `not-possible` | archive (rationale only; no issue) |
-| `deployed-model-lag` | archive (note to re-run after next release; no issue unless --log-to issue:* is set) |
+| `PASS` / `PASS-WITH-NOTES` / `PASS-WITH-CORROBORATION` | local archive only |
+| `INVESTIGATE` | local archive + GH issue in `policyengine-{country}-data` |
+| `structural` | local archive + GH issue in `policyengine-{country}` |
+| `not-possible` / `deployed-model-lag` | local archive only |
+
+Context-specific additions surfaced in the prompt:
+- Inside `policyengine-app` repo → "Save as draft research post: `src/posts/articles/{slug}.md` + update `posts.json`"
+- Inside any PE repo → corresponding `gh issue` option
+- Always available → "Custom path / repo — type a destination spec"
+
+All non-local destinations get a body preview before submission (skip with `--auto-confirm`).
 
 **Archive path resolution** (matters for plugin installations):
 1. Explicit `--log-to archive:<path>` wins
@@ -290,6 +334,7 @@ This command loads (with their plugin paths for clarity):
 4. `prior-scores-finder`
 5. `microsim-runner` (unless `--skip-microsim`)
 6. `reform-comparator`
-7. `calibration-diagnostics` (only if Stage 5 INVESTIGATE)
-8. `reform-describer`
-9. `report-logger` (unless `--no-log`)
+7. `model-corroborator` (Stage 5.5 — only when no exact-shape external comparator exists; skipped on `--skip-microsim`)
+8. `calibration-diagnostics` (only if Stage 5 INVESTIGATE)
+9. `reform-describer`
+10. `report-logger` (unless `--no-log`)

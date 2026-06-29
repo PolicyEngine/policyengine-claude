@@ -110,13 +110,49 @@ Build a `benchmark_agreement` block in the output:
 }
 ```
 
+### Step 2c: Model corroboration via mirror-shape runs (Stage 5.5 trigger)
+
+**Trigger condition:** Step 2b returned PASS-WITH-NOTES or INVESTIGATE-due-to-external-disagreement (i.e., fewer than 2 external sources within ±25%) AND at least one external source has a SPECIFIC reform shape (cap dollar values, refundability flag, etc.) suitable for mirroring through the model.
+
+When the trigger fires, invoke `model-corroborator` with the original reform context and the benchmark cluster. The corroborator picks 1-2 closest-shape candidates, builds mirror reform-dicts (and a baseline policy if the source uses a different baseline schedule like TCJA-extension vs OBBBA-current-law), submits them to the PE API, polls for completion, and computes per-candidate corroboration:
+
+| Mirror-shape candidates corroborated within ±25% | Corroboration verdict |
+|---|---|
+| ≥2 | `CORROBORATED` — upgrade comparator verdict by one tier (INVESTIGATE→PASS-WITH-NOTES, PASS-WITH-NOTES→PASS-WITH-CORROBORATION) |
+| 1 with explainable drift on others | `PARTIAL-CORROBORATION` — keep verdict at PASS-WITH-NOTES, document corroboration evidence |
+| 0 corroborated (all mirror runs drift) | `CORROBORATION-FAILED` — force escalation to INVESTIGATE regardless of Step 2b result; calibration likely off in the parameter family |
+| Stage skipped (no suitable candidates, or `--skip-microsim`) | `NO-CORROBORATION-POSSIBLE` — fall back to Step 2b verdict, document the gap |
+
+This is the **independent-evidence** layer: if the model can reproduce CRFB's $30K/$60K within ±25% AND TF's $62K/$124K-with-phase-out within ±25%, we have evidence the parameter family is correctly calibrated. The original reform's headline is then anchored on real model validation rather than on tolerance-band gymnastics.
+
+Each mirror run costs ~6-10 min wall-clock. Default to 1-2 mirrors; escalate to 3 only when the original reform spans a wide cap range AND 3 well-shaped candidates exist.
+
+Output:
+
+```json
+{
+  "corroboration": {
+    "stage_fired": true,
+    "candidates_run": [
+      {"source": "CRFB Jan 2025", "shape": "$30K/$60K vs TCJA extension", "their_yr1_billion": 82.0, "our_yr1_billion": 78.4, "delta_pct": -4.4, "verdict": "CORROBORATED"},
+      {"source": "TF May 2025", "shape": "$62K/$124K w/ $500K phase-out vs current law", "their_yr1_billion": 52.6, "our_yr1_billion": 53.1, "delta_pct": 1.0, "verdict": "CORROBORATED"}
+    ],
+    "candidates_corroborated": 2,
+    "overall_verdict": "CORROBORATED",
+    "verdict_upgrade_applied": true,
+    "implications": "SALT cap parameter family validated for $30K-$124K cap range; $140K extrapolation is anchored on model agreement."
+  }
+}
+```
+
 ### Step 3: Verdict
 
-The verdict combines the per-metric tolerance check (Step 2) AND the external-benchmark agreement (Step 2b). Both must align:
+The verdict combines the per-metric tolerance check (Step 2), external-benchmark agreement (Step 2b), and (if triggered) model corroboration (Step 2c). All three must align:
 
 - **`PASS`** — all headline metrics within 0–80% of the tolerance band **AND** Step 2b returns PASS-eligible. Proceed to write-up.
-- **`PASS-WITH-NOTES`** — at least one metric within 80–100% of the band (i.e., not breached, but close enough to warrant a flag). Proceed, but list the close-call metrics in the write-up so the reader knows where to look if the result is republished against a refined anchor.
-- **`INVESTIGATE`** — at least one headline metric outside the tolerance band OR external benchmarks consensus-disagree with our run. Trigger `calibration-diagnostics` with the deviation signature.
+- **`PASS-WITH-CORROBORATION`** — would have been PASS-WITH-NOTES at Step 2b, but Stage 5.5 corroboration returned `CORROBORATED`. The parameter family has been independently validated. Document the corroboration evidence in the write-up.
+- **`PASS-WITH-NOTES`** — at least one metric within 80–100% of the band, OR Step 2b returned PASS-WITH-NOTES and Stage 5.5 returned `PARTIAL-CORROBORATION` / `NO-CORROBORATION-POSSIBLE`. Proceed, list the close-call metrics in the write-up.
+- **`INVESTIGATE`** — at least one headline metric outside the tolerance band, OR external benchmarks consensus-disagree with our run, OR Stage 5.5 returned `CORROBORATION-FAILED`. Trigger `calibration-diagnostics` with the deviation signature.
 - **`BLOCKED`** — benchmark coverage is incomplete (Tier 2 or Tier 3 not searched). Pipeline must re-run `prior-scores-finder` with full tier coverage before any PASS-family verdict can issue.
 
 Example: tolerance is ±25% on cost. Δ within 0–20% → PASS. Δ within 20–25% → PASS-WITH-NOTES. Δ > 25% → INVESTIGATE.

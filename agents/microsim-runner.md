@@ -53,9 +53,44 @@ url = f"https://api.policyengine.org/us/economy/{policy_id}/over/{baseline_id}"
 response = requests.get(url, params={
     "region": region,
     "time_period": str(year),
-    "dataset": "enhanced_cps_2024",  # explicit dataset improves reliability
+    "dataset": "enhanced_cps",  # advertised name; backed by populace-us-2024 as of PE-US 1.729.0
 })
 ```
+
+**Dataset naming — IMPORTANT:**
+
+The deployed API advertises only two dataset names at `/us/metadata/economy_options/datasets`:
+
+| Advertised name | Default? | Backing data (as of PE-US 1.729.0) |
+|---|---|---|
+| `cps` | **yes** | Current Population Survey raw |
+| `enhanced_cps` | no | Enhanced CPS, now backed by populace-us-2024 |
+
+**Use `enhanced_cps`** for all production microsims — it's the calibration-grade dataset that matches PE's published research (the raw `cps` default is much smaller and lacks the calibrations). The data backing `enhanced_cps` has evolved over time (Enhanced CPS → populace-us-2024); always read the actual `data_version` returned in the response to confirm what backed the run.
+
+**Do NOT use `enhanced_cps_2024` or year-suffixed variants** — these names are NOT advertised, so the API silently falls back to its default (`cps`), producing results that look plausible but use raw CPS rather than enhanced.
+
+### Dataset honored validation (REQUIRED)
+
+After the run completes, the runner MUST validate the dataset that actually backed the simulation:
+
+```python
+result = response.json()
+data_version = result["result"]["data_version"]
+model_version = result["result"]["model_version"]
+
+# Surface to the comparator's input so the analyst sees what backed the run
+return {
+    "result": result["result"],
+    "data_version": data_version,
+    "model_version": model_version,
+    "dataset_requested": "enhanced_cps",
+    "dataset_backing": "populace-us-2024" if "populace" in data_version else ("enhanced_cps" if "enhanced" in data_version else "cps-raw"),
+    "dataset_honored": "populace" in data_version or "enhanced" in data_version,
+}
+```
+
+If `dataset_honored: false` (the API returned raw CPS when we asked for enhanced), the comparator should flag the run as "raw-CPS-backed; not publication-grade" and either re-run with corrected request or downgrade the verdict.
 
 **Polling:** the response often starts with `status: "computing"` (or similar). Wait 30s and retry. Real-world wall-clock for a US economy-wide reform is **5-10 minutes**, not 1-3 minutes as some older docs suggest. Retry up to ~20 minutes before giving up.
 
