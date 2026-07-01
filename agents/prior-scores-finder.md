@@ -16,9 +16,38 @@ Returns a ranked list of analog reforms with **specific magnitudes** (10-year co
 
 ## Process
 
-**ALL THREE TIERS ARE REQUIRED.** A prior PE hit (Tier 1) does NOT excuse skipping Tier 2 or Tier 3 — those are *external benchmarks*, not redundant priors. The pipeline's PASS verdict requires external-source agreement (see `reform-comparator`); skipping the external tiers is a silent quality regression.
+**ALL THREE TIERS ARE REQUIRED**, plus a Tier-0 knowledge-base check before them. A prior PE hit (Tier 1) does NOT excuse skipping Tier 2 or Tier 3 — those are *external benchmarks*, not redundant priors. The pipeline's PASS verdict requires external-source agreement (see `reform-comparator`); skipping the external tiers is a silent quality regression.
 
 For each tier, you MUST produce a structured report. If a tier returns nothing, emit `{"tier": N, "searched": [...], "results": [], "note": "searched X+Y+Z; nothing relevant"}` — silence is not an acceptable output. The downstream comparator distinguishes "no external source exists" from "we didn't look".
+
+### Tier 0: Local archive knowledge base (do this first)
+
+Before hitting any external source, grep the local analyses archive for prior runs of the same (or a similar) reform. This is the fastest way to detect duplicate work AND to seed anchors with real PE microsim numbers rather than starting from a web search.
+
+```bash
+# Same jurisdiction + parameter family search (returns matching archived analyses)
+python3 scripts/analyses_kb.py search --country us --family salt
+
+# Find analyses similar to the reform-to-be-scored (by tags + jurisdiction)
+python3 scripts/analyses_kb.py similar --file <candidate-archive-path>
+
+# Cross-run duplicate detection (which analyses in the archive already overlap?)
+python3 scripts/analyses_kb.py duplicates
+```
+
+Programmatic:
+
+```python
+from scripts.analyses_kb import search_analyses, find_similar
+hits = search_analyses(country="us", parameter_families=["ctc", "refundability"])
+```
+
+**How to use Tier 0 hits:**
+
+- If a prior archived analysis matches the SAME reform (identical parameter family + verdict + jurisdiction), surface a "duplicate-run detection" note to the analyst. Options: (a) return the archived result verbatim, (b) re-run for fresh numbers (dataset/model may have evolved — populace vintages change), (c) both.
+- If a prior archived analysis matches a SIMILAR reform in the same family, cite it as a Tier-1-adjacent anchor. Its `benchmark_sources` block may already have the right Tier-3 externals; borrow them rather than re-searching.
+
+Do NOT skip Tiers 1-3 based on Tier-0 hits. The archive is a shortcut for prior PE work; Tier 2 (JCT/CBO) and Tier 3 (think-tanks) are still required for a PASS-eligible verdict.
 
 ### Tier 1: PolicyEngine prior scores (highest priority)
 
@@ -40,19 +69,41 @@ Extract for each PE prior:
 - Poverty impact (overall + child)
 - Methodology notes (static / dynamic, dataset version)
 
+### Sources — load from the scorekeepers registry (do NOT hardcode)
+
+Tier 2 (official fiscal offices) and Tier 3 (think-tanks) sources are declared in `presets/scorekeepers.yaml`. Enumerate the relevant sources by jurisdiction before searching:
+
+```bash
+python3 scripts/scorekeepers.py list --country us --tier 2   # e.g., JCT, CBO, OTA, SSA-OCACT
+python3 scripts/scorekeepers.py list --country us --tier 3   # CRFB, TPC, Tax Foundation, CBPP, ITEP, Penn Wharton, Yale Budget Lab, Peterson, AEI, Brookings, BPC, EPI, NBER + global OECD/IMF
+python3 scripts/scorekeepers.py list --country uk --tier 2   # OBR, HMT, HMRC
+python3 scripts/scorekeepers.py list --country uk --tier 3   # IFS, IPPR, Resolution Foundation, NIESR, Fabian Society, TaxWatch
+python3 scripts/scorekeepers.py list --country ca --tier 2   # PBO, DoF-Canada
+python3 scripts/scorekeepers.py list --country ca --tier 3   # CD Howe, IRPP, Fraser Institute, CCPA
+```
+
+Programmatic (from within an agent implementation):
+
+```python
+from scripts.scorekeepers import list_scorekeepers
+tier_2 = list_scorekeepers(country=jurisdiction["country"], tier=2)
+tier_3 = list_scorekeepers(country=jurisdiction["country"], tier=3)
+```
+
+Each scorekeeper entry has `search_hints` (query prefixes like `site:crfb.org`) — use them to construct WebSearch queries.
+
+**Adding a scorekeeper** (e.g., for a jurisdiction/domain not currently covered): append to `presets/scorekeepers.yaml`. No agent code change. The prior-scores-finder loads the registry each run.
+
 ### Tier 2: Official fiscal scores (REQUIRED)
 
-For federal reforms, **always** search for JCT/CBO scores:
+Iterate through the Tier-2 scorekeepers for the reform's country. For each, run its `search_hints` against WebSearch and capture the magnitude and methodology (static vs dynamic, publication window).
 
-```
-"{reform_keywords}" site:jct.gov
-"{reform_keywords}" site:cbo.gov
-"{reform_keywords}" JCX score
-```
+Federal-level examples:
+- US: JCT publishes per-section revenue tables (e.g., `jct.gov/publications/2024/jcx-XX-24`); CBO publishes baseline and reform scoring.
+- UK: OBR publishes Economic and Fiscal Outlook twice yearly with individual measure costings.
+- Canada: PBO publishes cost estimates and legislative costings on request.
 
-JCT publishes per-section revenue tables for tax bills (e.g., `jct.gov/publications/2024/jcx-XX-24`); CBO publishes baseline and reform scoring (`cbo.gov/publication/...`). Capture the magnitude and methodology (static vs dynamic, 10-year window).
-
-For state bills, find the legislative fiscal office note:
+For state/subnational bills, find the legislative fiscal office note (US examples):
 
 | State | Source |
 |---|---|
@@ -70,21 +121,11 @@ For state bills, find the legislative fiscal office note:
 | WV | `wvlegislature.gov` → Fiscal Note |
 | GA | `legis.ga.gov` → Fiscal Note |
 
-For federal: JCT scores at `jct.gov/publications`, CBO at `cbo.gov`.
+For UK subnational: Scottish Fiscal Commission, Welsh Government Chief Economist's report. Add to the state/subnational fiscal-office table above as encountered.
 
 ### Tier 3: Think-tank analyses (REQUIRED — minimum 2 sources searched)
 
-You must search at least 2 of these and report the results structured:
-
-```
-"{reform_keywords}" site:taxfoundation.org
-"{reform_keywords}" site:itep.org
-"{reform_keywords}" site:cbpp.org
-"{reform_keywords}" site:taxpolicycenter.org
-"{reform_keywords}" site:crfb.org
-"{reform_keywords}" site:budget.house.gov
-"{reform_keywords}" site:budget.senate.gov
-```
+Enumerate Tier-3 scorekeepers for the reform's country from the registry. Search at least 2 that are domain-relevant for the reform (e.g., a benefits reform should search CBPP + EPI over Tax Foundation + Peterson; a UK reform should default to IFS + Resolution Foundation).
 
 Extract magnitudes with **methodology notes** — these are external benchmarks for the comparator. For each finding capture:
 
