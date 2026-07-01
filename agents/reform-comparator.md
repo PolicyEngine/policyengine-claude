@@ -112,7 +112,15 @@ Build a `benchmark_agreement` block in the output:
 
 ### Step 2c: Model corroboration via mirror-shape runs (Stage 5.5 trigger)
 
-**Trigger condition:** Step 2b returned PASS-WITH-NOTES or INVESTIGATE-due-to-external-disagreement (i.e., fewer than 2 external sources within ±25%) AND at least one external source has a SPECIFIC reform shape (cap dollar values, refundability flag, etc.) suitable for mirroring through the model.
+**Trigger condition:** any of the following. Stage 5.5 fires whenever it can add evidence, not only when Step 2b was ambiguous.
+
+1. **No exact-shape external comparator exists** for the original reform (the most common case) AND at least one external source has a numeric estimate for an ADJACENT-shape reform in the same parameter family (e.g., our reform is +$1K std ded, and OBBBA scored +$750/$1500; TCJA scored +$6K/+$12K).
+2. Step 2b returned PASS-WITH-NOTES or INVESTIGATE-due-to-external-disagreement (fewer than 2 external sources within ±25%).
+3. The reform is in a novel parameter family for PE (no PE prior) AND ANY adjacent externally-scored reform exists.
+
+The stage does NOT fire only when the reform has a full external cluster within ±25% (Step 2b already CORROBORATED).
+
+**Rule of thumb — replace verbal reasoning with model runs.** If the natural comparator section is written as "TCJA scored X, our reform is 1/6 the size, so linear scaling suggests Y" — that's a mirror candidate. Run TCJA's shape through our model and check we reproduce X. Verbal linear-scaling should not appear in a final report; it should either be corroborated by a mirror run or explicitly labeled as an unvalidated sanity check.
 
 When the trigger fires, invoke `model-corroborator` with the original reform context and the benchmark cluster. The corroborator picks 1-2 closest-shape candidates, builds mirror reform-dicts (and a baseline policy if the source uses a different baseline schedule like TCJA-extension vs OBBBA-current-law), submits them to the PE API, polls for completion, and computes per-candidate corroboration:
 

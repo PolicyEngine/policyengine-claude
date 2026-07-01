@@ -94,6 +94,24 @@ If `dataset_honored: false` (the API returned raw CPS when we asked for enhanced
 
 **Polling:** the response often starts with `status: "computing"` (or similar). Wait 30s and retry. Real-world wall-clock for a US economy-wide reform is **5-10 minutes**, not 1-3 minutes as some older docs suggest. Retry up to ~20 minutes before giving up.
 
+### Multi-year runs (horizon > 1)
+
+The API is single-year per call. Multi-year horizons submit N parallel calls to `/economy/{policy_id}/over/{baseline_id}?time_period={year}` (one per year) and poll each until complete. Wall-clock is the max of the individual runs, not the sum — a full 10-year submit finishes in ~10-15 min if all 10 run in parallel.
+
+```python
+def run_horizon(policy_id, baseline_id, years):
+    """Submit all years in parallel, poll to completion, return per-year results."""
+    urls = {
+        year: f"https://api.policyengine.org/us/economy/{policy_id}/over/{baseline_id}?region=us&time_period={year}&dataset=enhanced_cps"
+        for year in years
+    }
+    # Kick off in parallel; each API call independently retries the polling loop
+    results = parallel_poll(urls)  # dict {year: result}
+    return results
+```
+
+**Do NOT compute a naive `yr1 × N` extrapolation.** If the horizon is `1`, report yr-1 cost only in the archive. If the horizon is `10` (or a custom multi-year list), report the actual per-year cost table AND the summed multi-year cost. Never multiply single-year cost by 10 to fabricate a 10-year number — this is misleading whenever the baseline changes over the window (2030 OBBBA snap-backs, inflation-indexed thresholds, phase-out schedules).
+
 ### Step 2b: Real response shape
 
 The API returns **raw baseline and reform LEVELS**, not deltas. The agent must compute deltas itself. Top-level keys (representative):

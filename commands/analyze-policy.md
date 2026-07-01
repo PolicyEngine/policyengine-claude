@@ -13,7 +13,12 @@ The structured analogue of `/encode-policy-v2` for the analyst persona: less abo
 
 Flags:
 - `--country {us|uk|ca}` (default `us`)
-- `--year YYYY` (default current year)
+- `--horizon <spec>` — time horizon for the microsim. When omitted, the pipeline prompts the analyst at the start of Phase 4. Accepts:
+  - `1` — single-year (default entry: current year), fastest, ~6-10 min
+  - `10` — full 10-year (year 2026-2035 for US, submitted in parallel to the API, ~10-15 min wall clock)
+  - `custom:YYYY[,YYYY...]` — specific years (e.g. `custom:2026,2029,2030,2035`)
+  - `custom:YYYY-YYYY` — year range (e.g. `custom:2026-2028`)
+- `--year YYYY` (only used with `--horizon 1`; default current year)
 - `--mode {api|local}` (default `api` for microsim execution)
 - `--skip-microsim` (process-test mode — stops at Stage 5, predicts from prior anchor)
 - `--auto-investigate` (if Stage 5 returns INVESTIGATE, auto-run top calibration hypothesis)
@@ -21,6 +26,26 @@ Flags:
 - `--log-to <dest>[,<dest>...]` (override auto-routing; see Phase 8). Examples: `--log-to archive`, `--log-to "archive,issue:policyengine-us-data"`, `--log-to draft:policyengine-analysis/posts/arpa-ctc.md`
 - `--no-log` (skip Phase 8 entirely — write the `/tmp` report only)
 - `--auto-confirm` (skip confirmation prompts before opening GitHub issues; only honor in non-interactive contexts)
+
+## Phase 0 — Horizon prompt (when `--horizon` not passed)
+
+Before Phase 4 (microsim), if the analyst didn't pass `--horizon`, prompt:
+
+```
+How many years should the microsim cover?
+
+[x] Single year — fastest, one API call (~6-10 min), yields yr-1 cost only.
+[ ] Full 10 years — submits all 10 years in parallel (~10-15 min wall clock), yields real 10yr cost.
+[ ] Custom — comma-separated years or a range (e.g. "2026,2029,2030,2035" or "2026-2028").
+
+Choice (default = single year):
+```
+
+The prompt is skipped in headless / `--auto-confirm` contexts (default = single year in those).
+
+**Critical:** with `--horizon 1`, the archive reports yr-1 cost only. **Do NOT compute a naive `yr1 × 10` 10-year cost.** Naive extrapolation across regime shifts (2030 OBBBA snap-backs, inflation-indexed baselines, phase-out threshold changes) is misleading — the analyst asked for one year, give them one year. A 10-year cost is only valid when the microsim actually ran all 10 years.
+
+With `--horizon 10` (or a custom multi-year list), the microsim-runner submits all years in parallel and the report shows the actual per-year cost table plus the summed multi-year cost.
 
 ## Workflow
 
