@@ -24,15 +24,17 @@ The Stage-2 gate of `/analyze-policy`. Takes the provisions + parameter-locator 
 For each provision:
 
 1. Did `parameter-locator` return `verdict: "parametric"` with `confidence: "high"`? → **parametric**.
-2. Did it return `verdict: "no-parameter"` with a `structural_hint`? → **structural for this provision**.
-3. Does the provision describe something not in scope? → **not-possible for this provision**.
+2. Did it return `verdict: "deployed-model-lag"`? → **deployed-model-lag for this provision** (the parameter exists on master but not on the deployed API release; nothing structural to fix here — just wait for the next release).
+3. Did it return `verdict: "no-parameter"` with a `structural_hint`? → **structural for this provision**.
+4. Does the provision describe something not in scope? → **not-possible for this provision**.
    - Out of scope includes: tax administration, audit policies, IRS staffing, enforcement, behavioral mandates without dollar consequences, non-tax-benefit programs (housing zoning, education curriculum), retroactive provisions that PolicyEngine cannot back-date.
 
-Aggregate across provisions:
+Aggregate across provisions (order matters — first match wins):
 
-- If **all parametric** → reform is parametric. Proceed to Stage 3/4.
-- If **any structural** but rest parametric → reform is structural (overall). Emit which provisions need model changes; **stop the pipeline** unless `--force-partial` is set.
-- If **any not-possible** → reform is not-possible (overall). Emit rationale; stop.
+- If **any deployed-model-lag** and no structural/not-possible → reform is `deployed-model-lag` (overall). Emit `missing_paths` and `next_action: "Wait for next PE-{country} release, or re-run with --skip-microsim for process-test mode."` Stop the pipeline.
+- If **any not-possible** → reform is `not-possible` (overall). Emit rationale; stop.
+- If **any structural** → reform is `structural` (overall). Emit which provisions need model changes with `model_change_estimate`; stop the pipeline.
+- If **all parametric** → reform is `parametric`. Proceed to Stage 3/4.
 
 ## Output
 
@@ -49,6 +51,25 @@ Aggregate across provisions:
     "gov.irs.credits.ctc.refundable.fully_refundable": {"2026-01-01.2035-12-31": true}
   },
   "next_stage": "find-priors"
+}
+```
+
+For **deployed-model-lag**:
+
+```json
+{
+  "classification": "deployed-model-lag",
+  "lag_provisions": [
+    {
+      "label": "Rhode Island CTC amount",
+      "parameter_path": "gov.states.ri.tax.income.credits.ctc.amount",
+      "on_master": true,
+      "on_deployed_api": false,
+      "deployed_release": "1.715.2",
+      "rationale": "Variable added to master 2026-06-12; deployed API doesn't yet include it."
+    }
+  ],
+  "next_action": "Wait for next PolicyEngine-us release, or re-run with --skip-microsim for process-test mode using the anchor as predicted result."
 }
 ```
 

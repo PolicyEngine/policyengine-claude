@@ -1,6 +1,6 @@
 ---
 name: report-logger
-description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Auto-routes by default (INVESTIGATE → policyengine-us-data issue; structural → policyengine-us issue; everything → archive).
+description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Country-aware routing (INVESTIGATE → policyengine-{country}-data issue; structural → policyengine-{country} issue; everything → archive).
 tools: Read, Write, Bash
 model: sonnet
 ---
@@ -75,7 +75,7 @@ Example prompt rendering:
 Where should this analysis go?
 
 [x] Local archive: /Users/pavel/policyengine-skills/analyses/2026-06-29-us-salt-cap-plus-100k.md  (default)
-[ ] GitHub issue: PolicyEngine/policyengine-us-data  (verdict: INVESTIGATE → calibration)
+[ ] GitHub issue: PolicyEngine/policyengine-{country}-data  (verdict: INVESTIGATE → calibration)
 [ ] Draft PR: PolicyEngine/policyengine-app → src/posts/articles/salt-cap-plus-100k.md
 [ ] Custom: --log-to <spec>
 [ ] Skip / no-log
@@ -128,42 +128,58 @@ Always print the resolved path to the agent's output so the user can find the fi
 
 ### File contents
 
-1. **YAML frontmatter** with the required fields:
+1. **YAML frontmatter.** The full canonical schema is documented in `analyses/README.md` — treat that as the source of truth. Minimum required fields:
+
    ```yaml
    ---
    policy_id: 97759
    date: 2026-06-19
    jurisdiction:
      country: us
-     state: null  # or "ri", "vt", etc.
+     state: null
    title: ARPA-style federal CTC expansion (2026-2035)
-   verdict: PASS-WITH-NOTES
-   anchor_url: https://policyengine.org/us/research/restoration-of-the-american-rescue-plan-acts-expanded-child-tax-credit
-   anchor_normalized_cost_billion: 110.0
-   our_cost_billion: 86.6
+   verdict: PASS-WITH-NOTES        # includes PASS-WITH-CORROBORATION, BLOCKED, structural, etc.
+   tags: [ctc, federal, refundability, arpa]
+
+   # Run metadata (thread these from microsim-runner output, do NOT hardcode)
+   run_id: 97759
+   model_version_at_run: 1.745.0
+   data_version_at_run: populace-us-2024-cd-concept-budget-...
+   command_args: "ARPA-style federal CTC expansion: $3,000 ages 6-17, $3,600 ages 0-5, fully refundable"
+
+   # Horizon (from Phase 0 prompt)
+   horizon: 1                      # or 10, or custom list
+   horizon_note: "..."
+
+   # Headline
+   our_cost_billion_year1: 86.6
+   our_cost_billion_10yr_actual_federal: null  # only populated when horizon > 1
    our_child_poverty_pct_change_relative: -34.8
-   benchmark_sources:
-     - source: CBPP
-       url: https://www.cbpp.org/...
-       their_estimate_10yr_billion: 950
-       delta_pct: -2.1
-       within_25pct: true
-     - source: TPC
-       url: https://www.taxpolicycenter.org/...
-       their_estimate_child_poverty_pct: -36.0
-       delta_pp: -1.2
-       within_band: true
+
+   # Anchors + benchmarks
+   anchor_url: https://policyengine.org/us/research/...
+   anchor_normalized_cost_billion: 110.0
+   benchmark_sources: [...]
    external_sources_in_agreement: 2
    external_sources_in_disagreement: 0
-   tags:
-     - ctc
-     - federal
-     - refundability
-     - arpa
-   issues_opened: []  # filled in after issue:* destinations finish
-   command_args: 'ARPA-style federal CTC expansion: $3,000 ages 6-17, $3,600 ages 0-5, fully refundable'
+   benchmark_verdict: PASS-WITH-NOTES
+
+   # Stage 5.5 (only when corroborator ran)
+   stage_5_5_corroboration:
+     ran: true
+     overall_verdict: CORROBORATED
+     candidates: [...]
+
+   # Auto-widening
+   auto_widening_applied: 2.73
+   auto_widening_triggers: [...]
+
+   # Destinations (populated after issues fire)
+   issues_opened: []
    ---
    ```
+
+   **All `model_version_at_run` and `data_version_at_run` must come from the microsim result's `model_version` and `data_version` fields.** Never hardcode "Enhanced CPS 2024" or a specific PE-US version in the frontmatter.
 
 2. **The full report body** verbatim (markdown).
 
@@ -173,8 +189,10 @@ Always print the resolved path to the agent's output so the user can find the fi
 
 ### Repo selection (auto-routed)
 
-- `INVESTIGATE` → `PolicyEngine/policyengine-us-data`
-- `structural` → `PolicyEngine/policyengine-us` (or country repo from jurisdiction)
+- `INVESTIGATE` → `PolicyEngine/policyengine-{country}-data` (where `{country}` is derived from the reform's jurisdiction: `us` → `policyengine-us-data`, `uk` → `policyengine-uk-data`, `ca` → `policyengine-canada-data`)
+- `structural` → `PolicyEngine/policyengine-{country}` (same country mapping)
+
+**CRITICAL:** never hardcode `policyengine-us-data` or `policyengine-us`. Always parameterize by the reform's country. A UK CDCC-equivalent reform's calibration issue does not belong in the US data repo.
 - Explicit `issue:<repo>` → use that repo
 
 ### Issue body shape per verdict
@@ -244,7 +262,7 @@ See archived report.
 
 ```bash
 gh issue create \
-  --repo PolicyEngine/policyengine-us-data \
+  --repo PolicyEngine/policyengine-${country}-data \  # ${country} from jurisdiction: us / uk / canada
   --title "{title}" \
   --body "$(cat <<'EOF'
 {body}
@@ -277,7 +295,7 @@ Skip this destination unless `--log-to tracker` is explicitly passed AND credent
 {
   "destinations_written": [
     {"type": "archive", "path": "~/.policyengine/analyses/2026-06-19-us-arpa-ctc-restoration.md"},
-    {"type": "issue", "repo": "PolicyEngine/policyengine-us-data", "url": "https://github.com/.../issues/4823"}
+    {"type": "issue", "repo": "PolicyEngine/policyengine-{country}-data", "url": "https://github.com/.../issues/4823"}
   ],
   "skipped": [],
   "errors": []

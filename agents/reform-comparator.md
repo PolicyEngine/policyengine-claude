@@ -51,8 +51,8 @@ Most prior PE scores are reported as either single-year cost or 10-year cost, on
    - Wage growth: assume +2.5-3.5%/yr nominal (use CBO macroeconomic projections if explicit).
    - Population growth: +0.5-0.7%/yr.
    - Combined uprating factor: anchor_2023 × (1 + 0.035)^(2026-2023) ≈ × 1.10 for 2026 single-year.
-2. **Single-year → 10-year extrapolation.** If anchor is single-year and our run is 10-year, multiply by ~10.5-11.5 (accounting for growth over the window). Or, if anchor is a 5-year score and ours is 10-year, double.
-3. **Dataset version note.** If the anchor used the older CPS dataset and our run uses Enhanced CPS, flag a known direction-of-difference (Enhanced CPS typically yields ~5-10% higher refundable-credit costs).
+2. **Single-year vs 10-year normalization.** If the anchor is a 10-year score and our run is single-year, normalize the ANCHOR to a per-year average (divide by 10). Do NOT extrapolate our single-year to 10 years by multiplication — this is banned pipeline-wide because per-year cost evolves nontrivially over any window with baseline changes (see the 2026-07-01 std-ded case: yr1×10 understated the real 10-year by 10%). If a real 10-year comparison is required, re-run the microsim with `--horizon 10`.
+3. **Dataset version note.** Read `data_version` from the microsim result and record it in the output (`our_run_dataset` + `our_run_data_version`). Do NOT hardcode the dataset name. As of PE-US 1.729.0+ the deployed API's `enhanced_cps` name backs to `populace-us-2024`. Any prior PE score published on the older Enhanced CPS vintage may differ by 5-10% on refundable-credit costs; flag as a known direction-of-difference.
 4. **CRITICAL — baseline-schedule alignment.** Most published anchors are scored against a specific current-law baseline at the time of writing. If the law has changed since (e.g., SALT cap raised to $40K by OBBBA in 2025, then snapping back to $10K in 2030), comparing our 2026 run (against the OBBBA $40K baseline) to a 2023 prior (against the TCJA $10K baseline) overstates the reform's incremental impact. The 2030 snap-back also means single-year extrapolation across 2030 is biased.
 
    **Required:** populate a `baseline_alignment` block in the output:
@@ -196,15 +196,17 @@ When triggering `calibration-diagnostics`, pass a precise signature so the diagn
 
 ```json
 {
-  "verdict": "PASS" | "PASS-WITH-NOTES" | "INVESTIGATE",
+  "verdict": "PASS" | "PASS-WITH-NOTES" | "PASS-WITH-CORROBORATION" | "INVESTIGATE" | "BLOCKED",
   "comparison_table": [...],
-  "normalization_notes": "Anchor 2023 single-year cost uprated 1.10x for 2026; extrapolated to 10-year by *10.8.",
+  "normalization_notes": "Anchor 2023 single-year cost uprated 1.10x for 2026. Anchor 10-year normalized to per-year average for comparison (yr1×N extrapolation is banned).",
   "deviation_signature": null | {...},
   "methodology_carried_forward": {
     "anchor_dataset": "Enhanced CPS 2023",
     "anchor_static_or_dynamic": "static",
     "anchor_url": "https://policyengine.org/us/research/...",
-    "our_run_dataset": "Enhanced CPS 2026",
+    "our_run_dataset": "populace-us-2024",        // read from result.data_version
+    "our_run_data_version": "populace-us-2024-cd-concept-budget-...",
+    "our_run_model_version": "1.745.0",           // read from result.model_version
     "our_run_mode": "api"
   },
   "next_stage": "write-report" | "diagnose-calibration"
@@ -230,7 +232,7 @@ Apply the wider band **automatically** when any of these conditions hold. Each w
 | Small state (CPS sample <10k person-records) | jurisdiction.state ∈ {RI, VT, WY, AK, ND, SD, DE, MT, NH, ME, HI, ID, NM, NE, WV, UT} | ×1.5 |
 | Narrow-population reform | see threshold guidance below — eligibility-narrow not just "less than 5% of households" | ×1.3 |
 | Baseline-schedule mismatch | `baseline_alignment.alignment_caveat` is non-empty OR the only available anchor is from a different jurisdiction (structural analog) | ×1.5 |
-| Naive 10-year extrapolation across a regime shift | extrapolation method uses `year1 × N` and a sunset/snap-back falls in the window | ×1.4 |
+| Single-year run compared against multi-year anchor | analyst chose horizon=1 but the anchor is a 10-year score; normalization to per-year average carries variance from baseline growth | ×1.4 |
 | Anchor is from a different dataset version | `methodology.dataset` differs from our run's dataset by a major version | ×1.2 |
 | Stage-6 SKILL coverage thin for this program | `policyengine-calibration-diagnostics` SKILL row has <3 sensitivities | ×1.3 |
 | Reform is structurally self-offsetting | some recipients gain and others lose under the same reform (e.g., raising a match rate that cuts off bracket below the prior rate) | ×1.3 |

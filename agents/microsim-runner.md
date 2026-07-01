@@ -94,23 +94,83 @@ If `dataset_honored: false` (the API returned raw CPS when we asked for enhanced
 
 **Polling:** the response often starts with `status: "computing"` (or similar). Wait 30s and retry. Real-world wall-clock for a US economy-wide reform is **5-10 minutes**, not 1-3 minutes as some older docs suggest. Retry up to ~20 minutes before giving up.
 
-### Multi-year runs (horizon > 1)
+### Reform-dict row coverage pre-flight (REQUIRED before submission)
 
-The API is single-year per call. Multi-year horizons submit N parallel calls to `/economy/{policy_id}/over/{baseline_id}?time_period={year}` (one per year) and poll each until complete. Wall-clock is the max of the individual runs, not the sum — a full 10-year submit finishes in ~10-15 min if all 10 run in parallel.
+**The `.` (dot) separator in a reform-dict date-range key does NOT sweep forward through the baseline's later rows.** A key like `"2026-01-01.2035-12-31": 33200` inserts a single value at 2026-01-01 with an end date at 2035-12-31 — but if the baseline has intermediate rows (2027-01-01, 2028-01-01, ...), those take precedence for their respective years and the reform is silently a no-op for years 2027+.
 
-```python
-def run_horizon(policy_id, baseline_id, years):
-    """Submit all years in parallel, poll to completion, return per-year results."""
-    urls = {
-        year: f"https://api.policyengine.org/us/economy/{policy_id}/over/{baseline_id}?region=us&time_period={year}&dataset=enhanced_cps"
-        for year in years
-    }
-    # Kick off in parallel; each API call independently retries the polling loop
-    results = parallel_poll(urls)  # dict {year: result}
-    return results
+**This is exactly what happened to the std-ded +$1K reform on 2026-07-01.** Policy 97852 used `{"2026-01-01.2035-12-31": 33200}` for each filing status. The 2026 result was correct (−$17.86B), but 2027-2035 all reported budgetary_impact=0 because the baseline had inflation-indexed per-year rows the reform-dict didn't override. Policy 97853 fixed it with per-year values.
+
+**Required pre-flight** — before submitting any policy:
+
+1. Fetch the baseline parameter's `values` object via `/{country}/metadata` for every parameter path in the reform-dict.
+2. For each parameter path, count the number of baseline rows falling inside the reform's date range.
+3. If a single reform-dict row covers a date range where the baseline has >1 row, emit:
+
+```json
+{
+  "warning": "reform_dict_row_coverage_mismatch",
+  "parameter_path": "gov.irs.deductions.standard.amount.JOINT",
+  "reform_dict_rows_in_range": 1,
+  "baseline_rows_in_range": 10,
+  "baseline_row_years": [2026, 2027, 2028, ..., 2035],
+  "risk": "reform will only override year 2026; years 2027+ will fall back to inflation-indexed baseline values",
+  "suggested_fix": "expand reform-dict to per-year values: {2026-01-01.2026-12-31: X_2026, 2027-01-01.2027-12-31: X_2027, ...}",
+  "auto_expand_available": true
+}
 ```
 
-**Do NOT compute a naive `yr1 × N` extrapolation.** If the horizon is `1`, report yr-1 cost only in the archive. If the horizon is `10` (or a custom multi-year list), report the actual per-year cost table AND the summed multi-year cost. Never multiply single-year cost by 10 to fabricate a 10-year number — this is misleading whenever the baseline changes over the window (2030 OBBBA snap-backs, inflation-indexed thresholds, phase-out schedules).
+4. If `--auto-expand` (or the agent has authority): rewrite the reform-dict to per-year values. Compute reform value per year as `baseline[year] + delta`, where `delta` is inferred from the (single row value) − (baseline at row start date).
+5. If not auto-expanding: refuse to submit the run and surface the warning to the analyst.
+
+**Applies to any inflation-indexed parameter family**: standard deduction, tax brackets, EITC amounts, CTC amounts, phase-out thresholds. Does NOT apply to parameters with only 1-2 baseline rows in the reform window (like SALT cap under OBBBA, which has 2026 + 2030 rows only — a single reform-dict row `"2026-01-01.2035-12-31": 60000` correctly overrides both).
+
+### Multi-year runs (horizon > 1) — use the budget-window endpoint
+
+The API provides a native multi-year endpoint that queues all years server-side with progress tracking. **Prefer it over N parallel single-year calls** — it's simpler to poll, gives a unified response shape, and doesn't rely on client-side parallel orchestration.
+
+```
+GET /{country}/economy/{policy_id}/over/{baseline_id}/budget-window
+    ?region={region}
+    &start_year=YYYY
+    &window_size=N
+    &dataset={dataset}
+```
+
+Response while computing:
+
+```json
+{
+  "status": "computing",
+  "progress": 0.3,
+  "message": "Queued 2029 (3 of 10 complete)...",
+  "completed_years": ["2026", "2027", "2028"],
+  "computing_years": ["2029"],
+  "queued_years": ["2030", "2031", "2032", "2033", "2034", "2035"],
+  "result": null,
+  "error": null
+}
+```
+
+When `status: "ok"`, `result` contains per-year budgetary data plus (typically) the summed multi-year total. Read `data_version` and `model_version` from `result` as usual.
+
+**Polling cadence:** the endpoint returns quickly; poll every 30-60s while `status == "computing"`. Wall-clock for a full 10-year US run is typically 15-25 min (depends on API queue).
+
+**Fallback:** if the budget-window endpoint returns an error (older PE-{country} releases without it), fall back to N parallel calls to the single-year endpoint. Log the fallback so the analyst knows the runner degraded gracefully.
+
+```python
+def run_horizon(country, policy_id, baseline_id, start_year, window_size):
+    url = (
+        f"https://api.policyengine.org/{country}/economy/{policy_id}/over/{baseline_id}/budget-window"
+        f"?region={country}&start_year={start_year}&window_size={window_size}&dataset=enhanced_cps"
+    )
+    while True:
+        r = requests.get(url).json()
+        if r["status"] != "computing":
+            return r["result"]
+        time.sleep(60)
+```
+
+**Do NOT compute a naive `yr1 × N` extrapolation.** If the horizon is `1`, report yr-1 cost only in the archive. If the horizon is `10` (or a custom multi-year list), use the budget-window endpoint and report the actual per-year cost table AND the summed multi-year cost.
 
 ### Step 2b: Real response shape
 
@@ -161,12 +221,11 @@ The API returns **raw baseline and reform LEVELS**, not deltas. The agent must c
 
 ### Step 3: For multi-year scoring
 
-There is **no native 10-year endpoint** as of 2026-06. Options:
-1. Loop the call for each year `2026..2035`, summing budgetary impacts. Costly: each call is 5-10 minutes.
-2. Single-year × naive growth factor (~×10.5-11.5 over 10 years). Cheap but fragile around regime breaks (e.g., the 2030 OBBBA SALT snap-back distorts naive extrapolation).
-3. Use the most relevant single year as the anchor and document the extrapolation method explicitly.
+There is **no native 10-year endpoint** as of 2026-07. The pipeline handles multi-year scoring through the horizon prompt in `/analyze-policy` (see Phase 0) and the multi-year runner block below (parallel per-year API calls).
 
-For a baseline-shift reform (TCJA-style sunsets, OBBBA-style phase-outs), warn the user that single-year extrapolation may overstate or understate magnitudes vs published 10-year scores.
+**Naive `yr1 × N` extrapolation is banned.** It silently misstates 10-year totals whenever the baseline evolves over the window (inflation-indexed thresholds, 2030 OBBBA snap-back, phase-out schedules, TCJA-style sunsets). Empirical case from 2026-07-01 std-ded +$1K: yr1×10 = $178.6B understated the real 10-year cost ($196.10B) by 10%. If the analyst asks for a single year, the archive reports one year — no fabricated 10-year total.
+
+If a 10-year cost is required, run all 10 years via `run_horizon(policy_id, baseline_id, years=range(2026, 2036))` and sum the actual per-year budgetary impacts.
 
 ## Process — Local path
 
@@ -198,10 +257,11 @@ The agent normalizes the raw API response into this canonical shape. **Always in
   "results": {
     "budget": {
       "annual_cost_billion_year1": 86.6,
-      "ten_year_cost_billion": null,
-      "ten_year_cost_billion_estimate": 980.0,
-      "ten_year_extrapolation_method": "year1 * 11.3 (naive growth), warning: 2030 baseline shift not accounted for"
+      "ten_year_cost_billion_actual": null,
+      "ten_year_cost_billion_actual_note": "null unless horizon > 1; naive yr1×N extrapolation is banned"
     },
+    "years_run": [2026],
+    "per_year_budget_billion": {"2026": 86.6},
     "poverty": {
       "overall_baseline": 0.124, "overall_reform": 0.118, "overall_pct_change": -4.8,
       "child_baseline": 0.143, "child_reform": 0.094, "child_pct_change": -34.3,
@@ -237,7 +297,7 @@ The comparator agent expects BOTH absolute and relative values for Gini — publ
   - **Integer-typed parameters** (ages, qualifying-children counts): the string `".inf"` fails silently — the POST is accepted but the `/economy` call later returns `status: "error", message: null` with no diagnostic. Use a large *integer* like `999` instead.
   - When unsure, read the YAML — if it has `value_type: int` or values look like integers (no decimal), use the integer form.
 - **Wrong baseline ID:** calling `/over/1` against an arbitrary reform returns a parse error or a stale baseline. Always use `/over/{baseline_policy_id}` — see Step 2.
-- **Multi-year discontinuities:** TCJA / OBBBA / similar regime-shift parameters cause naive `year1 × 11` extrapolation to be wrong by 10-30%. When the reform touches a parameter that sunsets, run the actual end-year (e.g., 2030) and compare to year-1 before extrapolating.
+- **Multi-year discontinuities:** TCJA / OBBBA / similar regime-shift parameters make single-year results unrepresentative of a 10-year window. When the reform touches a parameter that sunsets or inflates, run all 10 years (`--horizon 10`) — do NOT extrapolate. The 2026-07-01 std-ded +$1K empirical case: yr1×10 = $178.6B understated the real 10-year cost ($196.10B) by 10%.
 
 ## Hand-off
 

@@ -192,6 +192,22 @@ Steps 4 and 5 are related but distinct: #5 is "is this whole parameter family di
 }
 ```
 
+### Step 3e: Per-year-indexed baseline detection (REQUIRED before Step 4)
+
+**Before emitting a reform snippet with a single date-range key, check whether the baseline has per-year rows in the reform window.** A snippet like `{"2026-01-01.2035-12-31": 33200}` only overrides the 2026 row. If the baseline parameter's `values` object has additional rows at 2027-01-01, 2028-01-01, ... (typical for inflation-indexed parameters: standard deduction, EITC amounts, tax bracket thresholds, CTC amount schedules), those rows take precedence for their respective years and the reform is silently a no-op for years 2027+.
+
+**Empirical case:** on 2026-07-01, policy 97852 (std ded +$1K) used a single-row snippet for 2026-2035. Yr-1 (2026) correctly showed −$17.86B; years 2027-2035 all showed $0 impact because the inflation-indexed baseline rows took precedence. Corrected policy 97853 emitted per-year values (`{"2026-01-01.2026-12-31": 33200, "2027-01-01.2027-12-31": 34050, ...}`) and produced the real 10-year cost of −$196.10B.
+
+**Required check:**
+
+1. For each parameter path in the reform, count the number of baseline rows falling in the reform's date range (fetch from `/{country}/metadata`).
+2. If baseline rows > 1 AND your reform snippet has only 1 row, expand the snippet to per-year values:
+   - Compute reform value per year as `baseline[year] + delta` (where `delta` is the reform's magnitude at the snippet's start date).
+   - Emit `{"2026-01-01.2026-12-31": v_2026, "2027-01-01.2027-12-31": v_2027, ...}`.
+3. Include the expansion in the locator's output so `microsim-runner` can validate against the baseline row count as a final pre-flight.
+
+Parameters with only 1-2 baseline rows in the reform window (SALT cap under OBBBA has 2026 + 2030 rows only; single-row snippets correctly override both) do not require expansion.
+
 ### Step 4: Emit the reform snippet
 
 **Scalar parameter** (single value):
