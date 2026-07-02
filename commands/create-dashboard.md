@@ -1,10 +1,15 @@
 ---
-description: Orchestrates multi-agent workflow to create a PolicyEngine dashboard from a natural-language description
+description: Multi-agent workflow that plans, scaffolds, and validates a multi-page policy analysis dashboard (map + reform sliders + charts). For a single-purpose calculator or embedded widget, use /new-tool instead.
 ---
 
 # Creating Dashboard: $ARGUMENTS
 
 Coordinate a multi-agent workflow to plan, scaffold, implement, validate, and commit a production-ready PolicyEngine dashboard application.
+
+## When to use vs `/new-tool`
+
+- **`/create-dashboard`** — multi-page policy analysis apps with plan/scaffold/implement/validate phases. Think "child poverty rates by state under different CTC reform scenarios" — multiple views, filters, embedded charts, backend calls.
+- **`/new-tool`** — bootstrapper for a single-purpose interactive calculator (e.g., "SALTernative", "ACA-calc"). Blank canvas + design tokens; you implement the specific tool logic yourself.
 
 ## Arguments
 

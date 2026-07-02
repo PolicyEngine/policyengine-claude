@@ -1,10 +1,15 @@
 ---
-description: Scaffold a new PolicyEngine interactive tool (Next.js 14 + Tailwind 4 + ui-kit theme + embedding boilerplate)
+description: Scaffold a single-purpose interactive PolicyEngine tool (calculator or widget) — Next.js 14 + Tailwind 4 + ui-kit + embedding boilerplate. For multi-page policy analysis dashboards, use /create-dashboard.
 ---
 
 # New interactive tool scaffold
 
 Creates a complete project for a standalone PolicyEngine interactive tool that embeds in policyengine.org.
+
+## When to use vs `/create-dashboard`
+
+- **`/new-tool`** (this command) — one-purpose calculator or widget. Ships with design tokens + embedding boilerplate; you write the specific tool logic. Examples: `salternative`, `aca-calc`, `marriage-penalty-calculator`.
+- **`/create-dashboard`** — multi-page policy analysis app with multi-agent plan/scaffold/implement/validate. Use when there are multiple views, comparison modes, filters, or the dashboard is answering a research question rather than performing a calculation.
 
 ## Step 1: Gather requirements
 

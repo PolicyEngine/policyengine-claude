@@ -20,6 +20,35 @@ Coordinate a multi-agent workflow to implement $ARGUMENTS as a complete, product
 
 ---
 
+## When to use vs `/encode-reform`
+
+Rule of thumb:
+
+| The target program... | Command |
+|---|---|
+| Does NOT exist in PolicyEngine yet (new state credit, new benefit, new deduction family) | `/encode-policy-v2` (this command) |
+| Exists in PolicyEngine and you're changing PARAMETERS (raise a cap, add a phase-out, change a match rate) | `/encode-reform` |
+| Exists but you're adding a NEW STRUCTURAL COMPONENT (new phase-out rule, new eligibility gate that requires a formula edit) | `/encode-policy-v2` (structural additions to existing programs are treated as new-program work) |
+
+### Pre-flight — check whether the program already exists
+
+Before Phase 1 kicks off, `/encode-policy-v2` should run:
+
+```bash
+gh api "repos/PolicyEngine/policyengine-{country}/contents/policyengine_{country}/variables/gov/states/{state}/tax/income/credits/{program}" 2>/dev/null
+```
+
+If the directory exists AND the reform is purely parametric, print:
+
+```
+The {program} exists in policyengine-{country}. If you're changing parameters
+(caps, rates, thresholds), use /encode-reform instead — it's the lighter-weight
+workflow for existing-program reforms. This command is for adding a new program
+or a new structural component.
+
+Continue anyway? (y/N)
+```
+
 ## Phase 0: Parse Arguments & Setup
 
 ### Step 0A: Parse Arguments
