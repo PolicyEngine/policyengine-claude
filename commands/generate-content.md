@@ -19,15 +19,12 @@ Generate branded PolicyEngine content from a source blog post or announcement.
 
 ## What this command does
 
-1. **Parses the source** - Extracts title, key quotes, author info, and main content
-2. **Generates localized variants** - Creates UK and US versions with appropriate:
-   - Spelling (modeling vs modelling)
-   - References (10 Downing Street vs UK Prime Minister's office)
-   - Context framing
-   - Flags and regional sections
-3. **Renders outputs**:
-   - **Social images**: 1200x630 PNGs via Chrome headless
-   - **Social copy**: Platform-optimized text for LinkedIn/X
+Orchestrates the content-generation pipeline through two dedicated agents:
+
+1. `content-orchestrator` (agent) — parses the source, generates localized variants (UK/US spelling, references, framing), and renders the outputs (social images via Chrome headless, social copy for LinkedIn/X).
+2. `neutrality-reviewer` (agent) — reviews the generated copy for advocacy language, speculation, or one-sided framing before publish. See `targets/claude/agents/shared/neutrality-reviewer.md`.
+
+The command is the entry point; the agents own the mechanics. Loads `content-generation` skill for templates and `policyengine-writing` skill for the tone standard.
 
 ## Usage
 
