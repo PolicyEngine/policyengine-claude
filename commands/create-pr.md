@@ -291,7 +291,7 @@ git commit -m "Add feature"
 
 ## Integration with Other Commands
 
-**After /encode-policy or /fix-pr:**
+**After /encode-policy-v2 or /fix-pr:**
 ```bash
 # These commands might push code
 # Use /create-pr to create PR and wait for CI

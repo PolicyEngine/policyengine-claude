@@ -86,7 +86,7 @@ Output:
 ### Step 2: Extract bill text
 
 - **HTML:** use WebFetch.
-- **PDF:** invoke the `fetch-pdf` helper agent — `curl -L -o /tmp/{slug}.pdf "URL"` then `pdftotext /tmp/{slug}.pdf /tmp/{slug}.txt`.
+- **PDF:** `curl -L -o /tmp/{slug}.pdf "URL"` then `pdftotext /tmp/{slug}.pdf /tmp/{slug}.txt` (requires `poppler-utils`; fall back to `python3 -c "import pdfplumber; ..."` if unavailable).
 - Prefer the **enrolled / chaptered** version if passed, latest **introduced** version if pending.
 
 ### Step 3: Identify affected programs

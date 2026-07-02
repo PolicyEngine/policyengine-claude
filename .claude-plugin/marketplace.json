@@ -80,7 +80,6 @@
       },
       "license": "MIT",
       "skills": [
-        "./skills/tools-and-apis/policyengine-api-skill",
         "./skills/tools-and-apis/policyengine-api-v2-skill",
         "./skills/tools-and-apis/policyengine-core-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
@@ -121,7 +120,6 @@
         "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/tools-and-apis/policyengine-interactive-tools-skill",
         "./skills/tools-and-apis/policyengine-vercel-deployment-skill",
-        "./skills/tools-and-apis/policyengine-api-skill",
         "./skills/domain-knowledge/policyengine-us-skill",
         "./skills/domain-knowledge/policyengine-uk-skill",
         "./skills/documentation/policyengine-design-skill",
@@ -181,7 +179,6 @@
         "./skills/tools-and-apis/policyengine-core-skill",
         "./skills/tools-and-apis/policyengine-github-agent-skill",
         "./skills/tools-and-apis/policyengine-python-client-skill",
-        "./skills/tools-and-apis/policyengine-api-skill",
         "./skills/tools-and-apis/policyengine-api-v2-skill",
         "./skills/tools-and-apis/policyengine-app-skill",
         "./skills/tools-and-apis/policyengine-interactive-tools-skill",
