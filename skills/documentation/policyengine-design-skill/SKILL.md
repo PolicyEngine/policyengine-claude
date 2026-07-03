@@ -44,6 +44,29 @@ The theme CSS has three layers:
 2. **`@theme inline`** — Bridges `:root` vars to Tailwind utilities (`bg-primary`, `text-foreground`)
 3. **`@theme`** — Brand palette (`bg-teal-500`, `text-gray-600`), font sizes, spacing, breakpoints
 
+## Migrating from @policyengine/design-system
+
+**The `@policyengine/design-system` package is deprecated.** All projects should migrate to `@policyengine/ui-kit`.
+
+For projects using the old design-system's component API (not just CSS tokens), use the `/legacy` subpath as a drop-in replacement:
+
+```bash
+# Replace
+import { Button, Input } from "@policyengine/design-system";
+
+# With
+import { Button, Input } from "@policyengine/ui-kit/legacy";
+```
+
+The `/legacy` export in ui-kit 0.8.0+ mirrors design-system's API exactly. This is a pure import-path rename — no code changes required beyond the import statements.
+
+**Migration steps:**
+1. Update `package.json`: Replace `@policyengine/design-system` with `@policyengine/ui-kit`
+2. Find-and-replace all imports: `@policyengine/design-system` → `@policyengine/ui-kit/legacy`
+3. No other code changes needed
+
+**Note:** The `/legacy` subpath is transitional. New code should use ui-kit's modern components directly (see `policyengine-ui-kit-consumer-skill`). The legacy path exists to enable gradual migration without breaking existing projects.
+
 ## Colors
 
 ### Primary — teal
