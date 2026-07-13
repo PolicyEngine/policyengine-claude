@@ -50,6 +50,18 @@ publication router). Every human gate gets a deterministic resolution:
   collision with `--skip-init` ambiguity, etc.): STOP and write the result
   file with `"status": "failed"` and the reason.
 
+**CI compute constraint (CRITICAL in headless mode):** hosted runners have
+16GB RAM — a `policyengine-us` national microsimulation OOM-kills the runner
+(verified 2026-07-13: exit 143 mid-build). Agents must NEVER run local
+microsimulations in headless mode. For `precomputed` data patterns, fetch
+impacts from the PolicyEngine API instead (create the policy via
+`POST /us/policy`, then the `/economy/{policy}/over/{baseline}` endpoints —
+the same server-side compute /analyze-policy uses), and scope the plan's
+metrics to what the API provides (budget, decile, poverty, winners/losers).
+Pass this constraint into the planner and backend-builder prompts verbatim.
+If a required metric genuinely cannot come from the API, drop it and record
+the omission in the result file's `"warnings"` rather than computing locally.
+
 **Result file contract** (headless runs MUST write this, success or failure):
 
 ```json
