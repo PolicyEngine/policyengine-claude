@@ -141,6 +141,14 @@ Always print the resolved path to the agent's output so the user can find the fi
    verdict: PASS-WITH-NOTES        # includes PASS-WITH-CORROBORATION, BLOCKED, structural, etc.
    tags: [ctc, federal, refundability, arpa]
 
+   # Publication inputs (consumed by the CRM publication router; see analyses/README.md)
+   # description = reform-describer's 1-paragraph neutral provisions summary.
+   # reform_dict = the EXACT validated JSON from the Phase 2 classifier, minified
+   # on a single line inside a block scalar. Omit for structural / not-possible runs.
+   description: "Expands the federal CTC to $3,000 ($3,600 under age 6) with full refundability, effective 2026."
+   reform_dict: |
+     {"gov.irs.credits.ctc.amount.base[0].amount": {"2026-01-01.2026-12-31": 3000}}
+
    # Run metadata (thread these from microsim-runner output, do NOT hardcode)
    run_id: 97759
    model_version_at_run: 1.745.0

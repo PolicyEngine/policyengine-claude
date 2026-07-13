@@ -247,6 +247,11 @@ report-logger
   command_args=<original $ARGUMENTS>
 ```
 
+The `frontmatter` metadata must include the publication inputs `description`
+(reform-describer's 1-paragraph summary) and `reform_dict` (the exact validated
+JSON from Phase 2, omitted for structural/not-possible verdicts) — downstream
+automation (the CRM publication router) parses these from the archived report.
+
 **Destination routing.** `report-logger` owns the runtime prompt, the pre-selected defaults by verdict, the context-aware shortlist (which options to surface based on which repo the analyst is in), the body preview flow, and archive path resolution. See `report-logger.md` sections "Routing — runtime prompt, context-aware" and "Path resolution" for the source of truth. This document only summarizes the outputs the analyst sees:
 
 The Phase 8 step also prints the destination summary to the user as the final output:

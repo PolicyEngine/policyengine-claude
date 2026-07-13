@@ -19,6 +19,9 @@ Coordinate a multi-agent workflow to plan, scaffold, implement, validate, and co
   - `--repo NAME_OR_PATH` — use an existing repo (searches sibling of cwd, `~/Documents/PolicyEngine/`, `~/PolicyEngine/`, `~/`)
   - `--skip-init` — use current working directory as the repo (no repo creation or cloning)
   - `--skip-validate` — skip the Phase 5 validation loop
+  - `--auto-confirm` — headless mode: no AskUserQuestion gates (see "Headless mode" below)
+  - `--reform-json PATH` — path to a validated reform_dict JSON file; the planner must treat it as the canonical reform definition (typically produced by a prior /analyze-policy run)
+  - `--dry-run` — with `--auto-confirm`: run Phase 0 argument parsing + Phase 1 planning only; no repo creation, no build, no push
 
 **Examples:**
 ```
@@ -26,7 +29,44 @@ Coordinate a multi-agent workflow to plan, scaffold, implement, validate, and co
 /create-dashboard --repo child-poverty-dashboard "Add a comparison mode showing baseline vs reform"
 /create-dashboard --skip-init "Build a SNAP eligibility calculator for a single household"
 /create-dashboard --skip-validate "A simple income tax calculator using the PolicyEngine API"
+/create-dashboard --repo ctc-restoration-dashboard --auto-confirm --reform-json /tmp/reform.json "Dashboard analyzing the ARPA CTC restoration: budgetary cost, child poverty impact, distributional effects by decile and state"
 ```
+
+## Headless mode (`--auto-confirm`)
+
+Used by CI (`.github/workflows/create-dashboard.yml`, dispatched from the CRM
+publication router). Every human gate gets a deterministic resolution:
+
+- **Phase 0 (repo name / clone path):** `--repo NAME` is REQUIRED with
+  `--auto-confirm` — it names the desired repo. If not found locally and
+  `gh repo view PolicyEngine/{NAME}` 404s, create `PolicyEngine/{NAME}` and
+  clone to the sibling of cwd. No questions.
+- **Phase 1 (plan approval):** auto-approve the planner's plan.yaml.
+- **Phase 5 (validation loop):** if validators still fail after max fix
+  cycles, CONTINUE with warnings (record them in the result file) rather
+  than stopping.
+- **Phase 6 (commit gate):** auto commit + push.
+- Any error that would otherwise AskUserQuestion (auth failure, repo
+  collision with `--skip-init` ambiguity, etc.): STOP and write the result
+  file with `"status": "failed"` and the reason.
+
+**Result file contract** (headless runs MUST write this, success or failure):
+
+```json
+// /tmp/create-dashboard-result.json
+{
+  "status": "pushed",            // pushed | dry-run | failed
+  "repo_url": "https://github.com/PolicyEngine/ctc-restoration-dashboard",
+  "dashboard_name": "ctc-restoration-dashboard",
+  "warnings": [],
+  "error": null
+}
+```
+
+With `--dry-run`, stop after Phase 1: no repo creation, no build, no push;
+write the result file with `"status": "dry-run"` and the plan summary path in
+`"warnings"`. Deployment (`/deploy-dashboard`) stays a separate, human-run
+step in both modes.
 
 ---
 
@@ -112,6 +152,8 @@ find ~ -maxdepth 6 -path '*/policyengine-claude/agents/dashboard/dashboard-plann
 4. Set `REPO_PATH` to the found path. Skip to Phase 1.
 
 **Otherwise**: Create a new repository:
+
+**If `--auto-confirm`**: a bare description with no `--repo` is an error — STOP and write the result file with `"status": "failed"` (headless runs must name the repo). With `--repo NAME` that wasn't found locally: if `gh repo view PolicyEngine/{NAME}` 404s, run steps 2-3 below with `DASHBOARD_NAME = NAME`, clone to the sibling of cwd, and skip both AskUserQuestion gates.
 
 1. Derive a dashboard name from the description (kebab-case, 2-4 words), then ask user:
 
@@ -207,6 +249,8 @@ AskUserQuestion:
     - "Modify — I have feedback"
     - "Reject — start over"
 ```
+
+**If `--auto-confirm`**: auto-approve (skip the question). If `--dry-run` is also set, STOP here and write `/tmp/create-dashboard-result.json` with `"status": "dry-run"`.
 
 **If "Approve"**: Continue to Phase 2.
 
@@ -457,6 +501,8 @@ AskUserQuestion:
     - "Stop — don't commit"
 ```
 
+**If `--auto-confirm`**: accept as-is (skip the question) and record the remaining issues in the result file's `"warnings"`.
+
 **If "Accept"**: Continue to Phase 6.
 **If "Keep trying"**: Increment MAX_ROUNDS by 1, go back to Step 5A.
 **If "Stop"**: STOP.
@@ -493,6 +539,8 @@ AskUserQuestion:
     - "Commit and push" (Recommended)
     - "Stop — I want to review locally first"
 ```
+
+**If `--auto-confirm`**: commit and push without asking, then write `/tmp/create-dashboard-result.json` with `"status": "pushed"` and the repo URL.
 
 **If "Commit and push"**:
 ```bash
