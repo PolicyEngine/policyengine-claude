@@ -242,21 +242,31 @@ const PAGES = [
   { label: 'Households', href: '/household' },
 ];
 
+/** Trailing-slash-insensitive match (trailingSlash: true in next.config). */
+function isActive(pathname: string, href: string): boolean {
+  const normalize = (p: string) => (p !== '/' && p.endsWith('/') ? p.slice(0, -1) : p);
+  return normalize(pathname) === normalize(href);
+}
+
 export function SiteChrome() {
-  const pathname = usePathname();
+  // Nullish outside the app router (unit tests render without it).
+  const pathname = usePathname() ?? '';
   return (
     <>
       <PolicyEngineHeader country="us" />
-      <nav aria-label="Dashboard pages" className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl gap-6 px-6">
+      <nav aria-label="Dashboard pages" className="border-b border-border bg-background">
+        {/* Container MUST match the page layout container so tabs align with
+            content — SingleColumnLayout defaults to 976px with px-4. */}
+        <div className="mx-auto flex gap-6 overflow-x-auto px-4" style={{ maxWidth: '976px' }}>
           {PAGES.map(({ label, href }) => (
             <Link
               key={href}
               href={href}
-              className={`border-b-2 py-3 text-sm font-medium ${
-                pathname === href
-                  ? 'border-teal-600 text-teal-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              aria-current={isActive(pathname, href) ? 'page' : undefined}
+              className={`-mb-px whitespace-nowrap border-b-2 py-3 text-sm font-medium transition-colors ${
+                isActive(pathname, href)
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
               }`}
             >
               {label}
@@ -268,6 +278,12 @@ export function SiteChrome() {
   );
 }
 ```
+
+Styling rules for the tab strip — design-system tokens ONLY, no raw
+palette classes (`teal-600`, `gray-500`, hex codes are all violations):
+active = `border-primary text-primary`; inactive = `text-muted-foreground`
+with a `hover:border-border hover:text-foreground` cue; strip =
+`border-b border-border bg-background`.
 
 (For a single-route dashboard whose views are client-side tabs, keep the same
 two-row chrome and use ui-kit `Tabs`/`TabsList`/`TabsTrigger` for the strip

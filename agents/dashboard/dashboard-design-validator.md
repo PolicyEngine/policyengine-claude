@@ -160,6 +160,25 @@ FAIL if `PolicyEngineHeader` is absent, or if a `Header`/`PolicyEngineHeader`
 receives `navItems` pointing at the dashboard's internal routes (internal
 page links belong in the tab strip below the header, not in the header).
 
+The tab strip itself must use design-system tokens and align with the page
+container:
+
+```
+# Raw palette classes in the chrome are violations (tokens only):
+grep -nE 'teal-[0-9]|gray-[0-9]|#[0-9a-fA-F]{3,6}' components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
+
+# Active tab must use the primary token; strip border the border token:
+grep -n 'border-primary' components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
+grep -n 'border-border' components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
+
+# Tab container must match the page layout width (SingleColumnLayout: 976px),
+# not an unrelated max-w-* — misaligned chrome reads as two different designs:
+grep -n "976px\|maxWidth" components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
+```
+
+FAIL on raw palette classes in the chrome, or a tab container width that
+doesn't match the page layout container.
+
 ## Report Format
 
 ```
