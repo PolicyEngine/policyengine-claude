@@ -218,6 +218,49 @@ Outcomes:
 
 Skipped when `--skip-microsim` is set (no original-reform microsim to anchor against).
 
+## Phase 5.6 — Data calibration check (always, cheap)
+
+Every parametric run verifies that the underlying microdata is well-calibrated
+for the variables the reform touches, using the live populace calibration
+dashboard API (no auth, reads the current release from Hugging Face):
+
+```
+BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace
+GET {BASE}/target-diagnostics?source=<source>            # per-target fit
+GET {BASE}/target-investigation?target=<id>              # drill one bad target
+```
+
+1. Map the reform's domain to calibration sources (check the run's
+   `sources` list for what's available): Social Security → `ssa`;
+   Medicaid/ACA/Medicare → `cms_medicaid` / `cms_aca` / `cms_medicare`;
+   TANF → `hhs_acf_tanf`; income tax / credits → `irs_soi`, `jct`, `cbo`;
+   state income tax → `state_income_*`.
+2. Fetch the matching targets and summarize: count checked, share within
+   tolerance, and the worst `relative_error` values with target names.
+3. Add a `calibration_check` block to the frontmatter:
+
+   ```yaml
+   calibration_check:
+     release_id: populace-us-2024-...
+     sources_checked: [ssa]
+     targets_checked: 6
+     worst:
+       - {name: "ssa_supplement...ssi_payments.payment_amount@2024", relative_error: -0.125}
+     note: "SSI payment totals run 12.5% low in the current release — SSI-heavy results skew low."
+   ```
+
+4. Interpretation is INFORMATIVE, not a gate: a poorly calibrated but
+   reform-relevant target does not change the comparator verdict on its own,
+   but the report's Comparison section MUST mention it (it often explains
+   drift vs external anchors), and the reform-describer threads the note
+   into the write-up. If the reform's PRIMARY variable is badly calibrated
+   (|relative_error| > 25% on a directly-load-bearing target), recommend
+   INVESTIGATE treatment in the discussion even when headline numbers match
+   anchors.
+
+API unreachable → record `calibration_check: {status: unavailable}` and move
+on; never block the run on this.
+
 ## Phase 6 (conditional) — Calibration diagnosis
 
 Only if Stage 5 returned `INVESTIGATE`. Invoke `calibration-diagnostics`:

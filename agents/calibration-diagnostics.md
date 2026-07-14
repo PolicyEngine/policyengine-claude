@@ -105,8 +105,25 @@ Cross-reference the signature with the sensitivity table. Examples:
 
 ### Step 4: Sources to consult
 
+**First stop — the live calibration API** (per-target fit for the current
+populace release, no auth, reads from Hugging Face):
+
+```
+BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace
+GET {BASE}/target-diagnostics?source=<ssa|cms_medicaid|cms_aca|cms_medicare|hhs_acf_tanf|irs_soi|jct|cbo|...>
+GET {BASE}/target-investigation?target=<target-id>   # full investigation packet for one target
+GET {BASE}/releases                                  # release ids for pinning
+```
+
+Rank hypotheses with actual `relative_error` numbers from these endpoints
+rather than assumptions — a target that is already >10% off in the release
+diagnostics is a stronger hypothesis than any prior. The
+`target-investigation` packet includes ledger metadata, artifact paths, and
+suggested repo searches for the drill-down.
+
+Also:
 - `github.com/PolicyEngine/policyengine-us-data` — calibration targets in `utils/loss.py`; documentation site at `policyengine.github.io/policyengine-us-data`.
-- `github.com/PolicyEngine/calibration-diagnostics` — the live dashboard (see Repos tab in the ecosystem dashboard).
+- `github.com/PolicyEngine/calibration-diagnostics` — the dashboard source (UI at `/calibration/dashboard/populace`).
 - Open issues on `policyengine-us` and `policyengine-us-data` matching the program keyword.
 
 ## Output

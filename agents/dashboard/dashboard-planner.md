@@ -74,6 +74,15 @@ addition to whatever the description asks for:
    the verification verdict if one exists, model + data versions, analysis
    year(s), and methodology notes (static analysis, dataset, single-year vs
    10-year). Honest-caveats section for anything dropped or assumed.
+   **Include a data-calibration section**: at build time, query the live
+   calibration API
+   (`https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace/target-diagnostics?source=<source>`)
+   for the sources relevant to the reform's variables (ssa, cms_*, irs_soi,
+   jct, cbo, hhs_acf_tanf, ...), and show: release id, targets checked,
+   share within tolerance, and any relevant target with |relative error|
+   above 10% named explicitly, with a link to the calibration dashboard.
+   This tells readers whether the underlying microdata is well-calibrated
+   for THIS reform's domain.
 3. **Impacts page(s)** — the charts and metric cards (as today).
 4. **Household page** — impact on example households (and a simple
    income-slider view where feasible). Include by default; omit ONLY when
