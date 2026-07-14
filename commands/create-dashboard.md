@@ -29,7 +29,10 @@ Coordinate a multi-agent workflow to plan, scaffold, implement, validate, and co
 explanation page (provisions + source links + parameter table) and a
 validation page (results vs external benchmarks, versions, methodology) in
 addition to the impacts pages — see dashboard-planner.md "Step 1b". The
-household page is standard unless `--no-household`.
+household page is standard unless `--no-household`; its inputs must mirror
+the reform's levers (CTC → children/ages; SS taxation → benefit + filing
+status + other income) with 3-5 representative precomputed preset cases —
+see dashboard-planner.md Step 1b item 4.
 
 **Standard chrome:** every page keeps the real PolicyEngine site header
 (ui-kit `PolicyEngineHeader`) on top — site nav, logo, country selector —

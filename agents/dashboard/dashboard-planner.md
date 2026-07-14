@@ -84,9 +84,24 @@ addition to whatever the description asks for:
    This tells readers whether the underlying microdata is well-calibrated
    for THIS reform's domain.
 3. **Impacts page(s)** — the charts and metric cards (as today).
-4. **Household page** — impact on example households (and a simple
-   income-slider view where feasible). Include by default; omit ONLY when
-   the description passes `--no-household`.
+4. **Household page** — impact on example households. Include by default;
+   omit ONLY when the description passes `--no-household`. Two requirements:
+
+   - **Inputs mirror the reform's levers.** The controls are the household
+     characteristics that determine THIS reform's impact — derive them from
+     the parameters the reform changes, not a generic income slider. CTC
+     reform → number of children/dependents and their ages; pension-credit
+     reform → head/spouse ages and pension income; Social Security taxation
+     → benefit amount, filing status, and other income; state EITC → earnings,
+     filing status, and children. An income slider alone is a planning
+     failure unless income genuinely is the reform's only lever.
+   - **Representative precomputed cases.** 3-5 named preset households
+     (e.g. "average single retiree", "dual-earner couple, two kids") shown
+     as selectable cards with each case's reform impact, mapping onto grid
+     points so selecting one sets the controls. For the `precomputed` data
+     pattern, sweep a grid over the lever inputs (one fast /calculate call
+     per grid slice — household-level, never a microsim) so every control
+     combination resolves to a precomputed point.
 
 **Standard chrome (every dashboard, no exceptions):** the top of every page
 is the real PolicyEngine site header — ui-kit `PolicyEngineHeader` with the
