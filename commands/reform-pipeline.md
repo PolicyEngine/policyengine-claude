@@ -32,12 +32,34 @@ the newsroom's scheduled discovery.
 /reform-pipeline "UT SB60" --publish tracker --dry-run
 ```
 
+## Phase 0 — Clarify (skipped with `--auto-confirm` or when fully specified)
+
+Before scanning anything, resolve what's underspecified with ONE
+AskUserQuestion round (ask only the questions the arguments left open —
+a concrete bill id leaves nothing to ask):
+
+1. **Sources** (multi-select): where should discovery look?
+   - CRM newsroom (needs `CRM_API_URL` + `CRM_API_TOKEN`; only offer when reachable)
+   - Web news search (last 14 days)
+   - Bill trackers (congress.gov federal search; state bills named in coverage)
+   - Default: all available.
+2. **Scope** (when the topic doesn't imply it): federal, a specific state,
+   or either — this changes both where to look and the eventual publication
+   route (state → tracker, federal → dashboard).
+3. **Publication intent** (when `--publish` wasn't passed): auto-route /
+   bill tracker / dashboard / analysis only. Sets the `--publish` value.
+4. **Recency window** only if the user's phrasing suggests older material
+   ("that bill from March") — default 14 days otherwise, don't ask.
+
+With `--auto-confirm`: all available sources, either scope, auto-route,
+14 days.
+
 ## Phase 1 — Discover (skipped when a concrete bill/reform was given)
 
 Find the single most prominent, concrete, MODELABLE reform in the topic:
 
-1. **Scan sources** (parallel):
-   - WebSearch: recent news (last 14 days) on `<topic> bill OR reform OR tax OR benefit <country>` — prefer coverage that names a specific bill.
+1. **Scan the sources chosen in Phase 0** (parallel):
+   - WebSearch: recent news (window from Phase 0) on `<topic> bill OR reform OR tax OR benefit <country>` — prefer coverage that names a specific bill.
    - For US topics, also check bill trackers: congress.gov search for the topic (federal), and note any state bills the coverage names.
    - If the CRM newsroom API is reachable (`CRM_API_URL` + `CRM_API_TOKEN` env set), query it for recent high-relevance items on the topic and merge them into the pool. Optional — absence is normal outside the CRM environment.
 2. **Extract the reform** using the same conservatism as the CRM's discovery:
