@@ -140,6 +140,19 @@ For each visualization or interaction:
 - Choropleth maps: Follow map patterns from policyengine-app-v2
 - Metric cards: Follow existing card patterns from policyengine-app-v2
 
+**Standard impact charts are NEVER custom-built.** The canonical PolicyEngine
+chart components (from `@policyengine/ui-kit`, or the exact app-v2 pattern
+when ui-kit lacks one) are REQUIRED for:
+- Winners/losers by income decile (intra-decile gain/loss stacked bar)
+- Average impact by income decile
+- Poverty rate change (overall / child / senior)
+- Budgetary impact
+These must look identical to the same charts on policyengine.org — that
+visual consistency is part of the brand. In plan.yaml, name the specific
+component each standard chart uses (e.g. `component: ui-kit
+IntraDecileChart`); a bespoke chart is acceptable only for a visualization
+genuinely specific to the reform, and the plan must say why.
+
 ### Step 6: Define Test Criteria
 
 For each component and endpoint, define what "working correctly" means:

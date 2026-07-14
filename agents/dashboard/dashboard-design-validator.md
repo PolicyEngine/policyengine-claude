@@ -121,6 +121,25 @@ grep -rn 'className.*bg-.*text-.*rounded.*px-' components/ --include='*.tsx' | g
 
 FAIL if no layout component is imported from ui-kit, or if hand-rolled equivalents are found for components available in ui-kit.
 
+### 10. Standard Impact Charts Use Canonical Components
+
+The standard impact charts — winners/losers by decile (intra-decile stacked
+bar), average impact by decile, poverty change, budgetary impact — must come
+from `@policyengine/ui-kit` (or be an exact port of the app-v2 component when
+ui-kit lacks one), never a bespoke Recharts approximation. They must be
+visually identical to policyengine.org.
+
+```
+# A winners/losers or decile chart built from raw Recharts primitives is a violation:
+grep -rln 'winners\|losers\|decile\|intra' components/ app/ --include='*.tsx' | while read f; do
+  grep -l 'from .recharts.' "$f"
+done
+```
+
+For each hit, FAIL unless the file is a faithful port of the app-v2
+component (same palette vars, decile ordering, gain/loss stacking, hover
+format) and the plan.yaml documents why ui-kit couldn't be used.
+
 ## Report Format
 
 ```

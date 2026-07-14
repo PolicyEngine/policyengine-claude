@@ -167,6 +167,14 @@ export function HouseholdInputs({ onChange, initialValues }: HouseholdInputsProp
 
 ### Step 3: Implement Charts
 
+**Standard impact charts (winners/losers by decile, decile impact, poverty
+change, budgetary impact) MUST use the canonical PolicyEngine components —
+never hand-roll them.** Check `@policyengine/ui-kit` first; if ui-kit lacks
+the chart, port the exact component from policyengine-app-v2 (same colors,
+ordering, hover format, axis conventions) rather than approximating it with
+a generic Recharts build. These charts must be indistinguishable from the
+same charts on policyengine.org.
+
 For each `type: chart` component in the plan, **prefer ui-kit chart components**:
 
 ```tsx
