@@ -92,10 +92,12 @@ addition to whatever the description asks for:
 is the real PolicyEngine site header — ui-kit `PolicyEngineHeader` with the
 appropriate `country` — carrying the standard policyengine.org nav (Research,
 Model, About, …), logo, and country selector. NEVER replace the site nav with
-the dashboard's own page links. The dashboard's page navigation (The reform /
-Validation / Impacts / Households) is a separate horizontal tab strip rendered
-BELOW the header, present on every page via the shared layout. The plan's
-component list must include this two-row chrome explicitly.
+the dashboard's own page links. Below the header, the flagship dashboard
+chrome (as on south-carolina-2026-tax-changes and tx-rebate-checks): a
+primary-500 hero band holding the dashboard title, folder-style page tabs
+(The reform / Validation / Impacts / Households), and content in a white
+card on a gray-50 page — see frontend-builder.md "Site chrome rule" for the
+exact classes. The plan's component list must include this chrome explicitly.
 
 **Time horizon:** default to single-year impacts. Only plan 10-year series
 when the description passes `--horizon 10` — the API's budget-window compute

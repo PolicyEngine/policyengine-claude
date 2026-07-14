@@ -33,7 +33,8 @@ household page is standard unless `--no-household`.
 
 **Standard chrome:** every page keeps the real PolicyEngine site header
 (ui-kit `PolicyEngineHeader`) on top — site nav, logo, country selector —
-with the dashboard's page navigation as a separate tab strip below it.
+with the flagship dashboard chrome below it (hero band + folder-style page
+tabs + white content card on gray, as on south-carolina-2026-tax-changes).
 Never swap the dashboard's page links into the header's nav (see
 dashboard-planner.md "Standard chrome" and frontend-builder.md Step 5).
 

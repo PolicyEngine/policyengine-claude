@@ -223,12 +223,38 @@ import { MetricCard, SummaryText, DataTable } from '@policyengine/ui-kit';
 site header on top — ui-kit `PolicyEngineHeader` with the right `country` —
 which supplies the policyengine.org nav, logo, and country selector. Do NOT
 pass the dashboard's own pages as the header's `navItems`; the header's nav
-is PolicyEngine's site nav. The dashboard's page navigation is a separate
-horizontal tab strip rendered directly below the header, in the shared
-layout so it appears on every page:
+is PolicyEngine's site nav.
+
+Below the header, use the standard dashboard chrome shared by the live
+one-off dashboards (south-carolina-2026-tax-changes, tx-rebate-checks):
+
+1. **Hero band** — `bg-primary-500 text-white py-8 px-4 shadow-md`, holding
+   the dashboard's single `<h1>` and a one-line subtitle, in a `max-w-5xl`
+   container. Page-level titles inside content are `<h2>`.
+2. **Folder-style tabs** — active: `bg-white text-primary-600 border-t-4
+   border-primary-500`; inactive: `bg-gray-200 text-gray-700
+   hover:bg-gray-300`; base: `px-6 py-3 rounded-t-lg font-semibold
+   transition-colors`. Buttons with `role="tablist"` for single-route
+   dashboards; `Link`s with `aria-current` for multi-route ones.
+3. **Content card** — `bg-white rounded-lg shadow-md p-6` on a `bg-gray-50`
+   page, same `max-w-5xl` container as the hero and tabs.
+
+The `primary-*` utilities map to the ui-kit teal scale via `@theme inline`
+in `globals.css`:
+
+```css
+@theme inline {
+  --color-primary-500: var(--color-teal-500);
+  --color-primary-600: var(--color-teal-600);
+  --color-primary-700: var(--color-teal-700);
+  --color-primary-800: var(--color-teal-800);
+}
+```
+
+Multi-route shape (shared `PageShell` wrapping every page's content):
 
 ```tsx
-// components/SiteChrome.tsx — shared across all pages via app/layout.tsx
+// components/PageShell.tsx — wraps every page's content
 'use client'
 
 import Link from 'next/link';
@@ -248,46 +274,48 @@ function isActive(pathname: string, href: string): boolean {
   return normalize(pathname) === normalize(href);
 }
 
-export function SiteChrome() {
+export function PageShell({ children }: { children: React.ReactNode }) {
   // Nullish outside the app router (unit tests render without it).
   const pathname = usePathname() ?? '';
   return (
     <>
       <PolicyEngineHeader country="us" />
-      <nav aria-label="Dashboard pages" className="border-b border-border bg-background">
-        {/* Container MUST match the page layout container so tabs align with
-            content — SingleColumnLayout defaults to 976px with px-4. */}
-        <div className="mx-auto flex gap-6 overflow-x-auto px-4" style={{ maxWidth: '976px' }}>
-          {PAGES.map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={isActive(pathname, href) ? 'page' : undefined}
-              className={`-mb-px whitespace-nowrap border-b-2 py-3 text-sm font-medium transition-colors ${
-                isActive(pathname, href)
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
+      <main className="min-h-screen bg-gray-50">
+        <div className="bg-primary-500 px-4 py-8 text-white shadow-md">
+          <div className="mx-auto max-w-5xl">
+            <h1 className="mb-2 text-4xl font-bold">DASHBOARD_TITLE</h1>
+            <p className="text-lg opacity-90">DASHBOARD_SUBTITLE</p>
+          </div>
         </div>
-      </nav>
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <nav aria-label="Dashboard pages" className="mb-4 flex space-x-1 overflow-x-auto">
+            {PAGES.map(({ label, href }) => (
+              <Link
+                key={href}
+                href={href}
+                aria-current={isActive(pathname, href) ? 'page' : undefined}
+                className={`whitespace-nowrap rounded-t-lg px-6 py-3 font-semibold transition-colors ${
+                  isActive(pathname, href)
+                    ? 'border-t-4 border-primary-500 bg-white text-primary-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+          <div className="rounded-lg bg-white p-6 shadow-md">{children}</div>
+        </div>
+      </main>
     </>
   );
 }
 ```
 
-Styling rules for the tab strip — design-system tokens ONLY, no raw
-palette classes (`teal-600`, `gray-500`, hex codes are all violations):
-active = `border-primary text-primary`; inactive = `text-muted-foreground`
-with a `hover:border-border hover:text-foreground` cue; strip =
-`border-b border-border bg-background`.
-
-(For a single-route dashboard whose views are client-side tabs, keep the same
-two-row chrome and use ui-kit `Tabs`/`TabsList`/`TabsTrigger` for the strip
-instead of links.)
+Color rules: hex codes in the chrome are violations. The `gray-*` scale
+comes from the ui-kit theme; `primary-*` comes from the `@theme inline`
+mapping above — both are token-backed. Reference:
+no-tax-on-social-security-dashboard `components/PageShell.tsx`.
 
 Then use ui-kit layout components for the page body:
 

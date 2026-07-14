@@ -160,24 +160,40 @@ FAIL if `PolicyEngineHeader` is absent, or if a `Header`/`PolicyEngineHeader`
 receives `navItems` pointing at the dashboard's internal routes (internal
 page links belong in the tab strip below the header, not in the header).
 
-The tab strip itself must use design-system tokens and align with the page
-container:
+The chrome below the header must follow the flagship dashboard pattern
+(south-carolina-2026-tax-changes / tx-rebate-checks — see frontend-builder.md
+"Site chrome rule"): primary-500 hero band with the dashboard's only `<h1>`,
+folder-style tabs, content in a white card on gray-50, all in the same
+`max-w-5xl` container.
 
 ```
-# Raw palette classes in the chrome are violations (tokens only):
-grep -nE 'teal-[0-9]|gray-[0-9]|#[0-9a-fA-F]{3,6}' components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
+CHROME=$(ls components/PageShell.tsx components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null)
 
-# Active tab must use the primary token; strip border the border token:
-grep -n 'border-primary' components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
-grep -n 'border-border' components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
+# Hero band with the h1:
+grep -n 'bg-primary-500' $CHROME
 
-# Tab container must match the page layout width (SingleColumnLayout: 976px),
-# not an unrelated max-w-* — misaligned chrome reads as two different designs:
-grep -n "976px\|maxWidth" components/SiteChrome.tsx components/SiteHeader.tsx 2>/dev/null
+# Folder tabs — active card with teal top border; gray inactive:
+grep -n 'border-t-4 border-primary-500 bg-white text-primary-600' $CHROME
+grep -n 'bg-gray-200 text-gray-700' $CHROME
+
+# Content card on gray page:
+grep -n 'bg-gray-50' $CHROME
+grep -n 'rounded-lg bg-white p-6 shadow-md' $CHROME
+
+# Hex codes in the chrome are violations (scale utilities must be
+# token-backed: gray-* from the ui-kit theme, primary-* from the
+# @theme inline mapping in globals.css):
+grep -nE '#[0-9a-fA-F]{3,6}' $CHROME
+grep -n 'color-primary-500: var(--color-teal-500)' app/globals.css
+
+# The hero owns the only h1 — page content uses h2:
+grep -rn '<h1' app/ --include='*.tsx' | grep -v node_modules
+# Should hit ONLY the chrome component's hero
 ```
 
-FAIL on raw palette classes in the chrome, or a tab container width that
-doesn't match the page layout container.
+FAIL on: missing hero, tabs that don't match the folder-tab classes, hex
+codes in the chrome, a missing primary→teal @theme mapping, or an `<h1>`
+outside the hero.
 
 ## Report Format
 
