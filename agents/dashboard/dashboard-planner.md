@@ -57,6 +57,34 @@ Extract from the natural-language input:
 - **Interactions**: What can users change or explore?
 - **Outputs**: What visualizations, metrics, or tables should be shown?
 
+### Step 1b: Include the standard pages (policy-analysis dashboards)
+
+Every dashboard that analyzes a specific reform MUST plan these pages, in
+addition to whatever the description asks for:
+
+1. **Policy explanation page** — what the reform changes, explained
+   provision-by-provision in plain language, with links to the primary
+   sources (bill text, official pages, driving news coverage) and the
+   parameter changes rendered readably (parameter → current law → reform
+   value → effective dates). If a reform JSON was provided (`--reform-json`),
+   derive this table from it verbatim.
+2. **Validation page** — how the numbers were produced and checked:
+   PolicyEngine's results next to external benchmarks/anchors when the brief
+   provides them (fiscal notes, JCT/CBO/CRFB, prior PolicyEngine scores),
+   the verification verdict if one exists, model + data versions, analysis
+   year(s), and methodology notes (static analysis, dataset, single-year vs
+   10-year). Honest-caveats section for anything dropped or assumed.
+3. **Impacts page(s)** — the charts and metric cards (as today).
+4. **Household page** — impact on example households (and a simple
+   income-slider view where feasible). Include by default; omit ONLY when
+   the description passes `--no-household`.
+
+**Time horizon:** default to single-year impacts. Only plan 10-year series
+when the description passes `--horizon 10` — the API's budget-window compute
+takes 15-25 minutes and most dashboards don't need it. When horizon is 1,
+the validation page must state that costs are single-year (never extrapolate
+a naive ×10).
+
 ### Step 2: Research Existing Dashboards
 
 Search the PolicyEngine GitHub organization for similar existing tools:

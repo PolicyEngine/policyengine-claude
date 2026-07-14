@@ -22,6 +22,14 @@ Coordinate a multi-agent workflow to plan, scaffold, implement, validate, and co
   - `--auto-confirm` — headless mode: no AskUserQuestion gates (see "Headless mode" below)
   - `--reform-json PATH` — path to a validated reform_dict JSON file; the planner must treat it as the canonical reform definition (typically produced by a prior /analyze-policy run)
   - `--dry-run` — with `--auto-confirm`: run Phase 0 argument parsing + Phase 1 planning only; no repo creation, no build, no push
+  - `--horizon {1|10}` — impact time horizon (default `1`). `10` adds 10-year series via the API's budget-window compute (~15-25 min extra) — opt in only when the dashboard needs it
+  - `--no-household` — omit the household example page (included by default)
+
+**Standard pages:** every policy-analysis dashboard includes a policy
+explanation page (provisions + source links + parameter table) and a
+validation page (results vs external benchmarks, versions, methodology) in
+addition to the impacts pages — see dashboard-planner.md "Step 1b". The
+household page is standard unless `--no-household`.
 
 **Examples:**
 ```
