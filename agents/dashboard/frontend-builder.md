@@ -219,13 +219,67 @@ import { MetricCard, SummaryText, DataTable } from '@policyengine/ui-kit';
 
 ### Step 5: Wire Page Layout
 
-Use ui-kit layout components in `app/page.tsx`:
+**Site chrome rule (mandatory):** every page renders the real PolicyEngine
+site header on top — ui-kit `PolicyEngineHeader` with the right `country` —
+which supplies the policyengine.org nav, logo, and country selector. Do NOT
+pass the dashboard's own pages as the header's `navItems`; the header's nav
+is PolicyEngine's site nav. The dashboard's page navigation is a separate
+horizontal tab strip rendered directly below the header, in the shared
+layout so it appears on every page:
+
+```tsx
+// components/SiteChrome.tsx — shared across all pages via app/layout.tsx
+'use client'
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { PolicyEngineHeader } from '@policyengine/ui-kit';
+
+const PAGES = [
+  { label: 'The reform', href: '/' },
+  { label: 'Validation', href: '/validation' },
+  { label: 'Impacts', href: '/impacts' },
+  { label: 'Households', href: '/household' },
+];
+
+export function SiteChrome() {
+  const pathname = usePathname();
+  return (
+    <>
+      <PolicyEngineHeader country="us" />
+      <nav aria-label="Dashboard pages" className="border-b border-gray-200 bg-white">
+        <div className="mx-auto flex max-w-7xl gap-6 px-6">
+          {PAGES.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`border-b-2 py-3 text-sm font-medium ${
+                pathname === href
+                  ? 'border-teal-600 text-teal-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </>
+  );
+}
+```
+
+(For a single-route dashboard whose views are client-side tabs, keep the same
+two-row chrome and use ui-kit `Tabs`/`TabsList`/`TabsTrigger` for the strip
+instead of links.)
+
+Then use ui-kit layout components for the page body:
 
 ```tsx
 'use client'
 
 import { useState } from 'react';
-import { DashboardShell, Header, SidebarLayout, InputPanel, ResultsPanel } from '@policyengine/ui-kit';
+import { DashboardShell, SidebarLayout, InputPanel, ResultsPanel } from '@policyengine/ui-kit';
 import { getCountryFromHash } from '@/lib/embedding';
 import { HouseholdInputs } from '@/components/HouseholdInputs';
 import { useHouseholdSimulation } from '@/lib/hooks/useCalculation';
@@ -236,7 +290,6 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell>
-      <Header logo={<span className="font-bold text-white">PolicyEngine</span>} variant="dark" />
       <SidebarLayout
         sidebar={
           <InputPanel title="Settings">

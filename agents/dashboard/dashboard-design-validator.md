@@ -140,6 +140,26 @@ For each hit, FAIL unless the file is a faithful port of the app-v2
 component (same palette vars, decile ordering, gain/loss stacking, hover
 format) and the plan.yaml documents why ui-kit couldn't be used.
 
+### 11. Site Chrome: PolicyEngine Header + Tabs Below
+
+Every page must render the real PolicyEngine site header on top
+(`PolicyEngineHeader` from ui-kit, with `country` set) and the dashboard's
+own page navigation as a separate tab strip BELOW it. The header's nav is
+PolicyEngine's site nav — dashboard page links must never be passed as the
+header's `navItems`.
+
+```
+# Header must be the PolicyEngine one:
+grep -rn 'PolicyEngineHeader' app/ components/ --include='*.tsx'
+
+# Violation: dashboard page routes passed into a Header's navItems
+grep -rn 'navItems' app/ components/ --include='*.tsx' | grep -v node_modules
+```
+
+FAIL if `PolicyEngineHeader` is absent, or if a `Header`/`PolicyEngineHeader`
+receives `navItems` pointing at the dashboard's internal routes (internal
+page links belong in the tab strip below the header, not in the header).
+
 ## Report Format
 
 ```

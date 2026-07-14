@@ -31,6 +31,12 @@ validation page (results vs external benchmarks, versions, methodology) in
 addition to the impacts pages — see dashboard-planner.md "Step 1b". The
 household page is standard unless `--no-household`.
 
+**Standard chrome:** every page keeps the real PolicyEngine site header
+(ui-kit `PolicyEngineHeader`) on top — site nav, logo, country selector —
+with the dashboard's page navigation as a separate tab strip below it.
+Never swap the dashboard's page links into the header's nav (see
+dashboard-planner.md "Standard chrome" and frontend-builder.md Step 5).
+
 **Examples:**
 ```
 /create-dashboard A dashboard showing child poverty rates by state under different CTC reform scenarios
