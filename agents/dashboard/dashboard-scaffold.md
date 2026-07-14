@@ -223,17 +223,22 @@ export default function nextConfig(phase) {
 
 Do NOT scaffold a plain object-form `next.config.ts` — the phase gate requires the function form.
 
-#### vercel.json (multi-zone self-rewrite)
+#### vercel.json (static deploy + multi-zone self-rewrites)
 
-Static-export dashboards need a self-rewrite in `vercel.json` so the zone's own Vercel preview can serve its built, prefixed assets. Without this, hitting `policyengine--DASHBOARD_NAME.vercel.app/ZONE_PATH` directly will 404 on all JS/CSS.
+Static-export dashboards deploy as **plain static sites** (`"framework": null`): Vercel silently IGNORES `vercel.json` rewrites under the Next.js framework preset, and `next.config` rewrites can't be used with `output: 'export'` — with the preset, the deployed zone 404s on every basePath route and asset. The rewrites map the basePath routes and prefixed assets onto the export root (static export writes pages at the `out/` root; internal links carry the basePath). The catch-all must be a regex param `:path(.*)` — `:path*` doesn't match the trailing-slash URLs the app generates.
 
-Replace `DASHBOARD_NAME` with `dashboard.name`:
+Replace `DASHBOARD_NAME` with `dashboard.name` and `ZONE_PATH` with `dashboard.zone_path`:
 
 ```json
 {
-  "framework": "nextjs",
+  "framework": null,
+  "buildCommand": "bun run build",
+  "outputDirectory": "out",
+  "trailingSlash": true,
   "rewrites": [
-    { "source": "/_zones/DASHBOARD_NAME/_next/:path*", "destination": "/_next/:path*" }
+    { "source": "/_zones/DASHBOARD_NAME/_next/:path*", "destination": "/_next/:path*" },
+    { "source": "ZONE_PATH", "destination": "/" },
+    { "source": "ZONE_PATH/:path(.*)", "destination": "/:path" }
   ]
 }
 ```
@@ -656,7 +661,7 @@ If either fails, fix before proceeding.
 - [ ] `dashboard.zone_path` from plan is written as `basePath` in `next.config.mjs`
 - [ ] `next.config.mjs` exports a FUNCTION taking `phase` (not a plain object)
 - [ ] `assetPrefix` is phase-gated: `undefined` in dev, `/_zones/<dashboard.name>` in builds
-- [ ] `vercel.json` contains the self-rewrite: `/_zones/<dashboard.name>/_next/:path*` → `/_next/:path*`
+- [ ] `vercel.json` has `framework: null`, `outputDirectory: out`, `trailingSlash: true`, the asset self-rewrite (`/_zones/<dashboard.name>/_next/:path*` → `/_next/:path*`), and the basePath route rewrites (`<zone_path>` → `/`, `<zone_path>/:path(.*)` → `/:path`)
 - [ ] `CLAUDE.md` follows existing applet patterns
 - [ ] `package.json` has all required dependencies (Next.js, Tailwind v4, ui-kit)
 - [ ] `globals.css` has `@import "tailwindcss"` + `@import "@policyengine/ui-kit/theme.css"`

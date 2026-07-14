@@ -133,17 +133,30 @@ export default function nextConfig(phase) {
 
 Export a **function** (not an object) so Next.js passes the build phase. `PHASE_DEVELOPMENT_SERVER` fires during `next dev`; all other phases (`next build`, `next start`) do not.
 
-**2. Zone's `vercel.json` — self-rewrite**
+**2. Zone's `vercel.json` — static deploy + self-rewrites**
 
 ```json
 {
+  "framework": null,
+  "buildCommand": "bun run build",
+  "outputDirectory": "out",
+  "trailingSlash": true,
   "rewrites": [
-    { "source": "/_zones/my-tool/_next/:path*", "destination": "/_next/:path*" }
+    { "source": "/_zones/my-tool/_next/:path*", "destination": "/_next/:path*" },
+    { "source": "/us/my-tool", "destination": "/" },
+    { "source": "/us/my-tool/:path(.*)", "destination": "/:path" }
   ]
 }
 ```
 
-Lets the zone's **own** Vercel deployment serve its built, prefixed assets when hit directly at its `.vercel.app` URL (e.g. for zone-only previews).
+Lets the zone's **own** Vercel deployment serve its pages and built, prefixed assets when hit directly at its `.vercel.app` URL — both for zone-only previews and for the host's proxied requests.
+
+Every line matters — deviate and the deployed zone 404s:
+
+- **`"framework": null` + explicit `buildCommand`/`outputDirectory`.** Vercel IGNORES `vercel.json` rewrites under the Next.js framework preset (it takes routing from `next.config`, which can't define rewrites when `output: 'export'`). Deploying as a plain static site is the only way to make these rewrites apply.
+- **basePath route rewrites.** Static export writes pages to the root of `out/` (no basePath directories), but every internal link carries the basePath — without the two route rewrites, `my-tool.vercel.app/us/my-tool/` 404s while the pages sit at `/`.
+- **Regex param `:path(.*)`, not `:path*`.** `:path*` does not match trailing-slash URLs, and the app builds with `trailingSlash: true`, so every internal link has one.
+- **`"trailingSlash": true`** at the platform level, matching the Next.js config, so slash/non-slash variants normalize instead of 404ing.
 
 **3. Host's `website/next.config.ts` — asset rewrite**
 
@@ -159,7 +172,7 @@ Plus the two route rewrites (same as server-rendered). Total: **three rewrites**
 | Environment | Who serves the request | Which piece fixes it |
 |---|---|---|
 | `bun dev` at `localhost:3001/us/my-tool` | `next dev` — ignores `vercel.json` | **Phase gate** drops the prefix |
-| Zone-only preview at `my-tool.vercel.app/us/my-tool` | Zone's own Vercel deploy | **`vercel.json` self-rewrite** strips the prefix internally |
+| Zone-only preview at `my-tool.vercel.app/us/my-tool` | Zone's own Vercel deploy | **`vercel.json` self-rewrites** (static deploy) map basePath routes + prefixed assets onto the export root |
 | Prod via host at `policyengine.org/us/my-tool` | Host website, proxying to zone | **Host asset rewrite** forwards `/_zones/*` to the zone |
 
 Drop any one and the corresponding environment 404s its JS/CSS.
@@ -199,7 +212,7 @@ The zone path must match the repo name's kebab-case form unless there's a strong
 
 - [ ] Zone path decided and agreed with the team before scaffold
 - [ ] Zone pattern chosen (path-mounted or root-served) and matches the zone's public path ownership
-- [ ] If `output: 'export'`: phase-gated `assetPrefix: '/_zones/<repo-name>'` + `vercel.json` self-rewrite
+- [ ] If `output: 'export'`: phase-gated `assetPrefix: '/_zones/<repo-name>'` + `vercel.json` with `framework: null`, `outputDirectory: out`, and the asset + basePath route self-rewrites (see template above — the Next.js framework preset silently drops `vercel.json` rewrites)
 - [ ] Host rewrites added to `policyengine-app-v2/website/next.config.ts` in `beforeFiles` — shape matches the chosen pattern (preserve basePath in destination for path-mounted; map to zone root for root-served), hardcoded to the zone's production Vercel URL
 - [ ] Cross-zone links use `<a>`, not `<Link>`
 - [ ] Favicon/icon uses the [Next.js file convention](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons) (`app/icon.{png,svg,...}`) so basePath is auto-prefixed — **do not** use `metadata.icons` URLs (see [vercel/next.js#61487](https://github.com/vercel/next.js/issues/61487))

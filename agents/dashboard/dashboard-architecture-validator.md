@@ -223,17 +223,30 @@ grep -nE "assetPrefix:.*https?://" next.config.mjs
 # Should find NOTHING
 ```
 
-**Required: `vercel.json` self-rewrite**
+**Required: `vercel.json` static deploy + self-rewrites**
 
 ```bash
 test -f vercel.json && echo "PASS" || echo "FAIL: vercel.json missing"
 
-# Self-rewrite source must match /_zones/<dashboard.name>/_next/:path*
-grep -nE "/_zones/$DNAME/_next/:path\*" vercel.json
-# Should find the rewrite source
+# Must deploy as a plain static site — Vercel IGNORES vercel.json rewrites
+# under the Next.js framework preset (and next.config rewrites can't be
+# used with output: 'export'), so framework MUST be null with an explicit
+# output directory:
+grep -nE '"framework":\s*null' vercel.json    # required
+grep -nE '"outputDirectory":\s*"out"' vercel.json    # required
+grep -nE '"framework":\s*"nextjs"' vercel.json && echo "FAIL: nextjs preset drops vercel.json rewrites"
 
+# Asset self-rewrite: /_zones/<dashboard.name>/_next/:path* → /_next/:path*
+grep -nE "/_zones/$DNAME/_next/:path\*" vercel.json
 grep -nE '"destination":\s*"/_next/:path\*"' vercel.json
-# Should find the destination
+
+# basePath route self-rewrites: static export writes pages at the out/ root,
+# so the zone path must map onto it. The catch-all MUST be a regex param
+# (:path(.*)) — :path* does not match the trailing-slash URLs the app
+# generates with trailingSlash: true.
+grep -nE '"source":\s*"<zone_path>"' vercel.json      # bare path → "/"
+grep -nE ':path\(\.\*\)' vercel.json                   # catch-all → "/:path"
+grep -nE '"trailingSlash":\s*true' vercel.json         # platform-level normalize
 ```
 
 **Required: cross-zone links use `<a>`, not `<Link>`**
