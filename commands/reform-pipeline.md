@@ -120,8 +120,31 @@ Dispatch (requires `gh` with repo write access):
 # tracker route
 gh workflow run publish-reform.yml --repo PolicyEngine/state-legislative-tracker \
   -f id=<slug> -f state=<state> -f label="<label>" -f reform_json='<reform_dict>' \
+  -f baseline_json='<prior-law counterfactual — REQUIRED when the bill is already
+     enacted into the policyengine-us baseline, so impacts carry the bill's true
+     effect and signs; omit for not-yet-law reforms>' \
   -f title="<title>" -f description="<provisions summary>" -f tags="<tags>" \
-  -f source_url="<primary source>" -f dry_run=<--dry-run?>
+  -f source_url="<primary source>" \
+  -f review_notes="<markdown decision log + validation record — see below>" \
+  -f dry_run=<--dry-run?>
+```
+
+**`review_notes` is not optional in practice** — the bill-review PR is the
+human approval gate, and the reviewer must be able to approve from the PR
+alone. Compose it from the analysis you just ran:
+
+- **Decision log** (table): baseline framing (and why, if `baseline_json`
+  was used), headline framing choice, what was scored vs held out of scope,
+  model version, route choice.
+- **Validation record**: the /analyze-policy verdict with a link to the
+  archive entry; the benchmark table (each pre-registered external source,
+  its framing, estimate, and delta vs ours); this run's computed number vs
+  the analysis number with the dataset difference explained; the dry-run
+  rehearsal link; known limitations (e.g. unscored provisions and why).
+- **Notable findings** from the Phase 5.7 interrogation, when any exist.
+
+Example: state-legislative-tracker PR #215 (GA HB 463).
+```
 
 # dashboard route
 gh workflow run create-dashboard.yml --repo PolicyEngine/policyengine-skills \
