@@ -60,6 +60,14 @@ Find the single most prominent, concrete, MODELABLE reform in the topic:
 
 1. **Scan the sources chosen in Phase 0** (parallel):
    - WebSearch: recent news (window from Phase 0) on `<topic> bill OR reform OR tax OR benefit <country>` — prefer coverage that names a specific bill.
+   - **Recency means COVERAGE recency, ranked newest-first.** Verify each
+     candidate has coverage dated inside the window, and prefer items
+     covered in the last 72 hours. Search engines surface evergreen pages
+     about months-old enacted bills — an enactment date outside the window
+     is fine (an old bill back in this week's news is timely; see HI SB3125,
+     signed in May, covered heavily in July), but a candidate whose most
+     recent coverage is weeks old is NOT a discovery, it is archaeology.
+     Include the newest coverage date next to each candidate at Gate 1.
    - For US topics, also check bill trackers: congress.gov search for the topic (federal), and note any state bills the coverage names.
    - If the CRM newsroom API is reachable (`CRM_API_URL` + `CRM_API_TOKEN` env set), query it for recent high-relevance items on the topic and merge them into the pool. Optional — absence is normal outside the CRM environment.
 2. **Extract the reform** using the same conservatism as the CRM's discovery:
