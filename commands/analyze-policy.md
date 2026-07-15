@@ -165,6 +165,23 @@ prior-scores-finder
 
 Returns `anchors[]`. If empty, surface "novel reform — no PE prior found" in the final report. The comparison will rely on fiscal notes / think-tank scores.
 
+## Phase 3b — Blind outcome prediction (parallel with Phase 3)
+
+Invoke `outcome-predictor` in `predict` mode, in parallel with
+`prior-scores-finder` — it MUST complete on provisions alone, before any
+microsim result or anchor score exists:
+
+```
+outcome-predictor mode=predict
+  provisions=<provisions>
+  jurisdiction=<jurisdiction>
+  year=<year>
+```
+
+Pass ONLY those inputs — no anchors, no archive hits, no scores. Hold the
+returned predictions for Phase 5.7. Never re-run predict mode after results
+exist.
+
 ## Phase 4 — Run the microsim
 
 If `--skip-microsim` is set, **skip this phase** — Stage 5 will use the anchor as a predicted result. Otherwise invoke `microsim-runner`:
@@ -261,6 +278,32 @@ GET {BASE}/target-investigation?target=<id>              # drill one bad target
 API unreachable → record `calibration_check: {status: unavailable}` and move
 on; never block the run on this.
 
+## Phase 5.7 — Independent interrogation (always)
+
+Invoke `outcome-predictor` in `interrogate` mode with its own Phase 3b
+predictions plus the actual results:
+
+```
+outcome-predictor mode=interrogate
+  predictions=<phase 3b output>
+  microsim_result=<result>
+  comparator_verdict=<verdict>
+  provisions=<provisions>
+```
+
+Returns `{confirmed, notable_findings, challenges, red_flags_fired}`.
+
+- **`notable_findings`** — counterintuitive-but-correct results (e.g. a
+  senior tax cut that leaves senior poverty unchanged because the taxation
+  thresholds sit above poverty-level incomes). These flow into the report
+  (Phase 7), the archive entry, and any downstream publication brief — they
+  are typically the most publishable part of the analysis.
+- **`challenges` / `red_flags_fired`** — divergences the interrogation
+  could not explain from statute. Add them to the INVESTIGATE hypothesis
+  list. If the comparator said PASS but a challenge is material to a
+  headline number, apply the agent's `verdict_recommendation` (usually
+  PASS → PASS-WITH-NOTES) and record why.
+
 ## Phase 6 (conditional) — Calibration diagnosis
 
 Only if Stage 5 returned `INVESTIGATE`. Invoke `calibration-diagnostics`:
@@ -335,6 +378,17 @@ Invoke `reform-describer` for the mechanical provisions write-up. Assemble the f
 ## Comparison
 **Verdict:** PASS
 Headline metrics within tolerance band. See normalization notes.
+
+## Independent review (blind prediction vs result)
+**Predicted before results:** budget ~-$100B/yr; gains concentrated in
+deciles 6-10; senior poverty ~unchanged (thresholds sit above
+poverty-level incomes).
+
+**Notable findings** (counterintuitive but correct — publication assets):
+- <headline>: <mechanism explanation> (<evidence>)
+
+**Challenges:** none | <expected vs actual, hypotheses, verdict
+recommendation>
 
 ## (if INVESTIGATE) Calibration diagnosis
 **Top hypothesis:** Non-filer CTC takeup

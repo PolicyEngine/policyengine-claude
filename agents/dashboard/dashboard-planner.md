@@ -83,7 +83,13 @@ addition to whatever the description asks for:
    above 10% named explicitly, with a link to the calibration dashboard.
    This tells readers whether the underlying microdata is well-calibrated
    for THIS reform's domain.
-3. **Impacts page(s)** — the charts and metric cards (as today).
+3. **Impacts page(s)** — the charts and metric cards (as today). When the
+   brief carries notable findings from the analysis's independent review
+   (counterintuitive-but-correct results, e.g. "senior poverty essentially
+   unchanged despite a senior tax cut"), render each as a callout next to
+   the chart it explains — a headline plus the 2-4 sentence mechanism.
+   These pre-empt the "is this a bug?" reaction and are usually the most
+   interesting content on the page.
 4. **Household page** — impact on example households. Include by default;
    omit ONLY when the description passes `--no-household`. Two requirements:
 

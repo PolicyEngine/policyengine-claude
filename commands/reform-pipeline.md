@@ -86,9 +86,13 @@ Run the full scoring pipeline inline:
 ```
 
 This covers: bill text → provisions → parameter mapping → classification →
-prior scores → microsim → comparison against external anchors → **the Phase
-5.6 data-calibration check** (is the populace release well-calibrated for
-this reform's variables?) → report + archive.
+prior scores + **blind outcome prediction** (the independent reviewer
+predicts expected outcomes from the reform text alone, before any numbers
+exist) → microsim → comparison against external anchors → **the Phase 5.6
+data-calibration check** (is the populace release well-calibrated for this
+reform's variables?) → **the Phase 5.7 interrogation** (predictions vs
+results: counterintuitive-but-correct findings become publication assets;
+unexplained divergences become INVESTIGATE leads) → report + archive.
 
 Branch on the verdict:
 - **PASS / PASS-WITH-NOTES / PASS-WITH-CORROBORATION** → continue to Phase 3.
@@ -121,7 +125,7 @@ gh workflow run publish-reform.yml --repo PolicyEngine/state-legislative-tracker
 
 # dashboard route
 gh workflow run create-dashboard.yml --repo PolicyEngine/policyengine-skills \
-  -f brief="<brief + validation context (verdict, costs, anchors)>" \
+  -f brief="<brief + validation context (verdict, costs, anchors) + notable findings from the Phase 5.7 interrogation>" \
   -f repo_name=<slug>-dashboard -f reform_json='<reform_dict>' \
   -f horizon=<horizon> -f dry_run=<--dry-run?>
 ```
