@@ -101,10 +101,13 @@ addition to whatever the description asks for:
      → benefit amount, filing status, and other income; state EITC → earnings,
      filing status, and children. An income slider alone is a planning
      failure unless income genuinely is the reform's only lever.
-   - **Representative precomputed cases.** 3-5 named preset households
-     (e.g. "average single retiree", "dual-earner couple, two kids") shown
-     as selectable cards with each case's reform impact, mapping onto grid
-     points so selecting one sets the controls. For the `precomputed` data
+   - **Representative precomputed cases.** 3-5 preset households shown as
+     selectable cards with each case's reform impact, mapping onto grid
+     points so selecting one sets the controls. Preset labels and
+     descriptions are QUANTITATIVE compositions, never characterizations:
+     "Single filer, $25,000 benefit" and "Married couple, two children,
+     $40,000 earnings" — not "average retiree", "typical family",
+     "higher-income couple", or "modest income". The numbers ARE the label. For the `precomputed` data
      pattern, sweep a grid over the lever inputs (one fast /calculate call
      per grid slice — household-level, never a microsim) so every control
      combination resolves to a precomputed point.
@@ -119,6 +122,15 @@ primary-500 hero band holding the dashboard title, folder-style page tabs
 (The reform / Validation / Impacts / Households), and content in a white
 card on a gray-50 page — see frontend-builder.md "Site chrome rule" for the
 exact classes. The plan's component list must include this chrome explicitly.
+
+**Language (all user-facing copy):** follow the `policyengine-writing`
+skill everywhere — active voice, sentence case, quantitative statements.
+No vague or characterizing adjectives: never "modest", "substantial",
+"significant", "generous", "higher-income"/"wealthy" (state the threshold
+or amount instead), "average"/"typical" as a label (state the number; a
+sourced statistic like "the 2026 average retired-worker benefit is
+$X/month" is fine in prose). If a sentence needs an adjective to land,
+replace it with the number that would justify the adjective.
 
 **Time horizon:** default to single-year impacts. Only plan 10-year series
 when the description passes `--horizon 10` — the API's budget-window compute

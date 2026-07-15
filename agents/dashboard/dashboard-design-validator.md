@@ -195,6 +195,26 @@ FAIL on: missing hero, tabs that don't match the folder-tab classes, hex
 codes in the chrome, a missing primary→teal @theme mapping, or an `<h1>`
 outside the hero.
 
+### 12. Language Neutrality (policyengine-writing)
+
+All user-facing copy is quantitative and neutral. Vague or characterizing
+adjectives are violations — the fix is always to state the number.
+
+```
+# Vague/characterizing adjectives in user-facing strings:
+grep -rniE '\b(modest|substantial|significant(ly)?|dramatic(ally)?|generous|massive|huge|considerable|wealthy|affluent|typical|higher-income|low-income)\b' app/ components/ --include='*.tsx' | grep -v node_modules
+
+# "average"/"typical" used as a label or characterization (a sourced
+# statistic in prose is fine; a preset called "Average retiree" is not):
+grep -rniE '"[^"]*\b(average|typical)\b[^"]*"' app/ components/ public/data/household.json | grep -viE 'decile|\baverage\b.*(benefit is|was) \$'
+```
+
+For each hit, FAIL unless the word is part of a quantitative statement
+(e.g. "the average benefit in decile 9 is $2,535") rather than a
+characterization ("average retiree", "modest income", "higher-income
+couple"). Preset labels must be compositions with dollar amounts
+("Single filer, $25,000 benefit").
+
 ## Report Format
 
 ```
