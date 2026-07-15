@@ -107,7 +107,11 @@ Branch on the verdict:
 - **INVESTIGATE** → report the calibration diagnosis and STOP — unverified
   numbers never publish. The auto-filed policyengine-{country}-data issue is
   the follow-up thread.
-- **structural / not-possible** → report why and STOP.
+- **structural** → report why and STOP publication. Offer the unblock:
+  `/implement-structural <backlog issue>` opens the policyengine-{country}
+  model PR; once merged AND deployed, re-run this pipeline — the frozen
+  benchmark registry from this run carries over.
+- **not-possible** → report why and STOP.
 
 ## Phase 3 — Route & publish
 
