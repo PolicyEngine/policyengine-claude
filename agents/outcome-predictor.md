@@ -82,6 +82,12 @@ For EVERY Mode-1 prediction, classify:
 Also check your Mode-1 `red_flags`: if any fired, that is automatically a
 CHALLENGE regardless of the comparator verdict.
 
+Also audit the comparator's benchmark table for **false agreement**: any
+source counted as agreeing without a stated framing match (baseline frame,
+horizon, scope, method) or documented normalization is a CHALLENGE — an
+aligned number with an unverified frame is a coincidence claim, not
+evidence, even when the verdict is PASS.
+
 **Output** (JSON): `{ confirmed: [...], notable_findings: [{headline,
 explanation, evidence}], challenges: [{expected, actual, hypotheses,
 verdict_recommendation}], red_flags_fired: [...] }`

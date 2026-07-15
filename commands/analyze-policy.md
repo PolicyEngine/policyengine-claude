@@ -414,9 +414,9 @@ Invoke `reform-describer` for the mechanical provisions write-up. Assemble the f
 
 ## Prior anchors (pre-registered before scoring)
 *Registry frozen: <timestamp> — before any PE number for this reform existed.*
-| Prior | Year | Cost | Poverty Δ | URL |
-|---|---|---|---|---|
-| Restoration of ARPA CTC | 2023 | $100B/yr | -37% child | ... |
+| Prior | Year | Framing | Cost | Poverty Δ | URL |
+|---|---|---|---|---|---|
+| Restoration of ARPA CTC | 2023 | current-law baseline, single-year, static | $100B/yr | -37% child | ... |
 
 ## Our microsim result
 | Metric | Value |
@@ -427,7 +427,12 @@ Invoke `reform-describer` for the mechanical provisions write-up. Assemble the f
 
 ## Comparison
 **Verdict:** PASS
-Headline metrics within tolerance band. See normalization notes.
+Headline metrics within tolerance band. Every benchmark row states its
+framing and commensurability; each agreement carries a one-line "why this
+agreement is meaningful" (matched frame/year/scope, or the normalization
+applied — e.g. a separate framing-matched counterfactual run).
+Incommensurable sources appear with the reason and are excluded from the
+agreement count in both directions.
 
 ## Independent review (blind prediction vs result)
 **Predicted before results:** budget ~-$100B/yr; gains concentrated in

@@ -91,7 +91,35 @@ magnitude. You compare our number against the registry exactly as frozen
 BLOCKED path below — a blind re-run of `prior-scores-finder` with its
 original inputs, never a search of your own.
 
-For each external score, compute the percent difference between our run and the external estimate (using same year and same broad reform shape — note structural differences explicitly).
+**Commensurability audit — required for EVERY source, especially the ones
+that agree.** Two numbers that align while measuring different things are
+false validation; agreement earns zero evidentiary weight until the frames
+are shown to match. For each registered source, before computing any delta:
+
+1. Compare the source's registered framing (`baseline_frame`, `horizon`,
+   `scope`, `method`) against OUR run's framing, dimension by dimension.
+2. Classify the comparison:
+   - **commensurable** — frames match, or the mismatch was explicitly
+     normalized (e.g. we ran a separate framing-matched counterfactual, as
+     with GA HB463's 20bp Run B built specifically to match OPB/GBPI's
+     year-over-year frame). Document the normalization next to the delta.
+   - **incommensurable** — frames differ and cannot be normalized (a
+     full-implementation scenario vs our single-year; dynamic vs static
+     without a published static variant; different provision scope).
+     Report the source WITH the reason, but it does NOT count toward the
+     ≥2-source agreement requirement — in either direction. Excluding a
+     divergent-but-incommensurable source and counting an
+     aligned-but-incommensurable one are the same error.
+3. **Interrogate agreement as hard as disagreement.** When a source lands
+   within ±25%, state WHY the agreement is meaningful: matched frame,
+   matched year, matched scope — or what adjustment made them comparable.
+   "OPB $778M vs our $721M (−7.3%)" is only evidence because both measure
+   the 20bp year-over-year change for TY2026; the same numbers with
+   mismatched frames would be coincidence. An unexplained agreement in the
+   report is treated as an unverified claim by the interrogation stage
+   (Phase 5.7) and by reviewers.
+
+For each commensurable source, compute the percent difference between our run and the external estimate (using same year and same broad reform shape — note structural differences explicitly).
 
 | Condition | Verdict effect |
 |---|---|
@@ -108,9 +136,9 @@ Build a `benchmark_agreement` block in the output:
   "benchmark_agreement": {
     "pe_internal": {"source": "PE W&M $30K cap", "our_normalized": 18.4, "anchor_normalized": 21.0, "delta_pct": -12.4, "within_25pct": true},
     "external": [
-      {"source": "CRFB", "url": "...", "their_estimate_billion": 22.0, "year": 2026, "delta_pct": -16.4, "within_25pct": true},
-      {"source": "Tax Foundation", "url": "...", "their_estimate_billion": 19.5, "year": 2026, "delta_pct": -5.6, "within_25pct": true},
-      {"source": "JCT JCX-50-24", "url": "...", "their_estimate_billion": null, "note": "JCT scored OBBBA SALT but not this $60K variant; structural distance noted"}
+      {"source": "CRFB", "url": "...", "their_estimate_billion": 22.0, "year": 2026, "framing": {"baseline_frame": "current law", "horizon": "single-year 2026", "method": "static"}, "commensurable": true, "why_agreement_is_meaningful": "same baseline, year, and static method as our run", "delta_pct": -16.4, "within_25pct": true},
+      {"source": "Tax Foundation", "url": "...", "their_estimate_billion": 19.5, "year": 2026, "framing": {"baseline_frame": "current law", "horizon": "single-year 2026", "method": "static"}, "commensurable": true, "why_agreement_is_meaningful": "same frame; TF table 3 static variant used, not their dynamic headline", "delta_pct": -5.6, "within_25pct": true},
+      {"source": "JCT JCX-50-24", "url": "...", "their_estimate_billion": null, "commensurable": false, "note": "JCT scored OBBBA SALT but not this $60K variant; structural distance noted — excluded from the agreement count"}
     ],
     "external_sources_in_agreement": 2,
     "external_sources_in_disagreement": 0,

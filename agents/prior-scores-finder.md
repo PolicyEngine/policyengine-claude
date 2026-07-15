@@ -23,6 +23,22 @@ honest, you must be blind to our own number:
   this run's result.)
 - Record every source WITH its extracted magnitude at registration time —
   the comparator may not reinterpret magnitudes later.
+- **Record every source's FRAMING at registration time.** A magnitude
+  without its frame is not a benchmark. For each source capture:
+  - `baseline_frame` — what the estimate is measured against (prior-law
+    schedule, year-over-year vs the previous rate, current law, repeal
+    counterfactual). Example: GA HB463's official scores measured the
+    year-over-year 5.19%→4.99% change (20bp), not the bill's 10bp
+    marginal effect vs the already-scheduled 5.09%.
+  - `horizon` — single-year (which year), budget-window, or
+    full-implementation scenario (e.g. GBPI's "$6.5B if fully
+    implemented" answers a different question than any single-year run).
+  - `scope` — which provisions the estimate includes/excludes.
+  - `method` — static vs dynamic scoring, dataset vintage if stated.
+  - `geography` / `units` where relevant.
+  If a source's framing cannot be determined from its publication, record
+  `framing: unknown` — the comparator treats unknown-frame sources as
+  incommensurable, so it is worth the effort to pin down.
 - Stamp the output with `registered_at: <ISO timestamp>`.
 - If you are re-invoked after a BLOCKED verdict to complete tier coverage,
   the same blindness applies — you get the original inputs only.
