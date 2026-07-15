@@ -77,12 +77,24 @@ addition to whatever the description asks for:
    **Include a data-calibration section**: at build time, query the live
    calibration API
    (`https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace/target-diagnostics?source=<source>`)
-   for the sources relevant to the reform's variables (ssa, cms_*, irs_soi,
-   jct, cbo, hhs_acf_tanf, ...), and show: release id, targets checked,
-   share within tolerance, and any relevant target with |relative error|
-   above 10% named explicitly, with a link to the calibration dashboard.
-   This tells readers whether the underlying microdata is well-calibrated
-   for THIS reform's domain.
+   and present the THREE RINGS from analyze-policy Phase 5.6 — not just the
+   reform's own source:
+   - **Ring 1** — the primary variable's marginals (ssa, cms_*, irs_soi,
+     jct, cbo, hhs_acf_tanf, ...).
+   - **Ring 2** — the mechanism's other inputs: every variable entering
+     the formula the reform changes (e.g. dividends, taxable interest, and
+     pensions for a Social Security taxation reform — they set combined
+     income).
+   - **Ring 3** — the interacted quantity the reform directly reprices
+     when a target for it exists (e.g. `taxable_social_security_amount`),
+     shown as the headline of the section: its relative error bounds the
+     score's data-side bias. If no ring-3 target exists, state
+     "joint distribution untargeted" explicitly.
+   Show: release id, targets checked per ring, share within tolerance, and
+   any relevant target with |relative error| above 10% named explicitly,
+   with a link to the calibration dashboard. This tells readers whether the
+   underlying microdata is well-calibrated for THIS reform's mechanism, not
+   just its topic.
 3. **Impacts page(s)** — the charts and metric cards (as today). When the
    brief carries notable findings from the analysis's independent review
    (counterintuitive-but-correct results, e.g. "senior poverty essentially
