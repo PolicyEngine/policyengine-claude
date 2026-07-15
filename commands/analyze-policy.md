@@ -267,33 +267,62 @@ GET {BASE}/target-diagnostics?source=<source>            # per-target fit
 GET {BASE}/target-investigation?target=<id>              # drill one bad target
 ```
 
-1. Map the reform's domain to calibration sources (check the run's
-   `sources` list for what's available): Social Security → `ssa`;
-   Medicaid/ACA/Medicare → `cms_medicaid` / `cms_aca` / `cms_medicare`;
-   TANF → `hhs_acf_tanf`; income tax / credits → `irs_soi`, `jct`, `cbo`;
-   state income tax → `state_income_*`.
-2. Fetch the matching targets and summarize: count checked, share within
-   tolerance, and the worst `relative_error` values with target names.
-3. Add a `calibration_check` block to the frontmatter:
+Check three rings, from the reform's variable outward. Checking only ring 1
+is the classic miss: a reform's cost usually depends on the JOINT
+distribution of its variable with other income, and the primary marginal can
+calibrate perfectly while the interaction is off.
+
+1. **Ring 1 — the primary variable's marginals.** Map the reform's domain
+   to calibration sources (check the run's `sources` list for what's
+   available): Social Security → `ssa`; Medicaid/ACA/Medicare →
+   `cms_medicaid` / `cms_aca` / `cms_medicare`; TANF → `hhs_acf_tanf`;
+   income tax / credits → `irs_soi`, `jct`, `cbo`; state income tax →
+   `state_income_*`.
+2. **Ring 2 — the mechanism's other inputs.** List every variable that
+   enters the formula the reform changes, and check their targets too.
+   SS-benefit taxation depends on combined income, so dividends, taxable
+   interest, and pensions (`irs_soi`) are load-bearing; a CTC phase-in
+   depends on earnings; a SNAP change on rents and deductions. These are
+   usually `irs_soi` table targets, including by state and AGI band.
+3. **Ring 3 — the interacted quantity itself (best single check).** Search
+   the targets for the DOWNSTREAM outcome the reform directly reprices —
+   e.g. `taxable_social_security_amount` for SS-taxation reforms,
+   `eitc_amount` for EITC reforms, itemizer counts for deduction caps.
+   When such a target exists, it validates the joint distribution
+   end-to-end through the actual formula, and its relative error bounds
+   the data-side bias of the score — weight it above every marginal.
+   Worked example: for HR 904, `ssa` total benefits calibrate to −0.2%
+   (ring 1 ✅) while `irs_soi ... taxable_social_security_amount` runs
+   −10.9% (ring 3 ⚠) — the score's operative base is ~11% low in the data
+   even though the headline marginal is nearly exact.
+4. Fetch the matching targets and summarize per ring: count checked, share
+   within tolerance, and the worst `relative_error` values with target
+   names. When no ring-3 target exists, SAY SO — "marginals within
+   tolerance; joint distribution untargeted" is materially weaker evidence
+   than a passing ring-3 check, and the note must not imply otherwise.
+5. Add a `calibration_check` block to the frontmatter:
 
    ```yaml
    calibration_check:
      release_id: populace-us-2024-...
-     sources_checked: [ssa]
-     targets_checked: 6
-     worst:
-       - {name: "ssa_supplement...ssi_payments.payment_amount@2024", relative_error: -0.125}
-     note: "SSI payment totals run 12.5% low in the current release — SSI-heavy results skew low."
+     sources_checked: [ssa, irs_soi]
+     rings:
+       primary: {targets: 6, worst: -0.002}
+       mechanism_inputs: {targets: 14, worst: {name: "...ordinary_dividends_amount@2024", relative_error: -0.189}}
+       interacted: {name: "irs_soi...taxable_social_security_amount@2024", relative_error: -0.109}
+     note: "Benefits marginal near-exact; taxable-SS (the repriced base) runs 10.9% low — score biased low on the data side by up to ~11%."
    ```
 
-4. Interpretation is INFORMATIVE, not a gate: a poorly calibrated but
+6. Interpretation is INFORMATIVE, not a gate: a poorly calibrated but
    reform-relevant target does not change the comparator verdict on its own,
    but the report's Comparison section MUST mention it (it often explains
    drift vs external anchors), and the reform-describer threads the note
-   into the write-up. If the reform's PRIMARY variable is badly calibrated
-   (|relative_error| > 25% on a directly-load-bearing target), recommend
-   INVESTIGATE treatment in the discussion even when headline numbers match
-   anchors.
+   into the write-up. Escalation: if a directly-load-bearing target —
+   the primary variable OR the ring-3 interacted quantity — is off by
+   |relative_error| > 25%, recommend INVESTIGATE treatment in the
+   discussion even when headline numbers match anchors. A ring-3 error in
+   the 10-25% band belongs in the report's uncertainty discussion as an
+   explicit data-side bias bound on the score.
 
 API unreachable → record `calibration_check: {status: unavailable}` and move
 on; never block the run on this.
