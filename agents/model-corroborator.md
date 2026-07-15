@@ -29,6 +29,14 @@ This is the answer to "we have no exact-shape external comparator — how do we 
 
 ### Step 1: Pick mirror-shape candidates
 
+**Frozen-registry rule:** candidates come ONLY from `benchmark_sources[]` —
+the registry pre-registered before the microsim ran. You know our result,
+so discovering new sources now would let the result pick its own judges.
+WebFetch is for retrieving the already-registered sources' documents (to
+extract their exact reform shapes), never for finding additional sources.
+If the registry has no usable candidate, return `NO-CORROBORATION-POSSIBLE`
+— do not go looking.
+
 From `benchmark_sources[]`, pick 1-3 candidates with:
 - **Same parameter family** as our reform (e.g., SALT cap → SALT cap; CTC amount → CTC amount).
 - **A specific reform shape** that's expressable as a reform-dict (vague "raise the cap" without numbers is not usable).

@@ -82,6 +82,15 @@ For each headline metric:
 
 Before issuing a PASS verdict, evaluate agreement with **at least 2 external sources** from `prior-scores-finder`'s `official_scores` (Tier 2) and `thinktank_scores` (Tier 3). External-source agreement is what distinguishes a PE-internal consistency check from an actual benchmark.
 
+**Frozen-registry rule:** the benchmark set was pre-registered before the
+microsim ran, and you know our result — so you may NOT search for new
+sources, drop registered ones, or reinterpret a registered source's
+magnitude. You compare our number against the registry exactly as frozen
+(normalization for year/horizon is fine; re-reading a source to extract a
+"better" figure is not). If coverage is incomplete, the remedy is the
+BLOCKED path below — a blind re-run of `prior-scores-finder` with its
+original inputs, never a search of your own.
+
 For each external score, compute the percent difference between our run and the external estimate (using same year and same broad reform shape — note structural differences explicitly).
 
 | Condition | Verdict effect |

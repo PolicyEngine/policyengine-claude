@@ -165,6 +165,26 @@ prior-scores-finder
 
 Returns `anchors[]`. If empty, surface "novel reform — no PE prior found" in the final report. The comparison will rely on fiscal notes / think-tank scores.
 
+**Pre-registration rule (hard ordering constraint):** Phase 3 MUST complete
+before Phase 4 starts — comparisons are found first, then the score is run,
+never the other way around. Phase 3's output is the **frozen benchmark
+registry**: the complete set of sources, each with its extracted magnitude,
+recorded with a freeze timestamp before any PE number for this reform
+exists. After Phase 4 begins:
+
+- No agent may add, drop, reweight, or reinterpret registry sources with
+  knowledge of our result. The comparator compares against the registry
+  as frozen; model-corroborator picks mirror candidates only from it.
+- The ONLY way to expand the registry (e.g. a BLOCKED verdict from
+  incomplete tier coverage) is a **blind re-run** of `prior-scores-finder`:
+  invoke it with the same Phase 1/2 inputs it would have received
+  originally — never the microsim result, the comparator's deltas, or any
+  hint of our number. Merge its output into the registry and mark those
+  entries `registered_post_score_blind: true` in the report.
+- The report's anchors section is titled "Prior anchors (pre-registered
+  before scoring)" and carries the freeze timestamp, so a reader can
+  verify the benchmarks were not selected to fit the score.
+
 ## Phase 3b — Blind outcome prediction (parallel with Phase 3)
 
 Invoke `outcome-predictor` in `predict` mode, in parallel with
@@ -363,7 +383,8 @@ Invoke `reform-describer` for the mechanical provisions write-up. Assemble the f
 **Verdict:** parametric (high confidence)
 **Reform dict:** ```json {reform_dict} ```
 
-## Prior anchors
+## Prior anchors (pre-registered before scoring)
+*Registry frozen: <timestamp> — before any PE number for this reform existed.*
 | Prior | Year | Cost | Poverty Δ | URL |
 |---|---|---|---|---|
 | Restoration of ARPA CTC | 2023 | $100B/yr | -37% child | ... |

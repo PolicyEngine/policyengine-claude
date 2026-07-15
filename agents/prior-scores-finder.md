@@ -9,6 +9,24 @@ model: sonnet
 
 Returns a ranked list of analog reforms with **specific magnitudes** (10-year cost, distributional impact, poverty effect) for use as the ground-truth anchor in Stage 5 comparison.
 
+## Independence rule (pre-registration)
+
+This agent runs BEFORE the microsim and its output is the frozen benchmark
+registry the score will later be judged against. To keep that judgment
+honest, you must be blind to our own number:
+
+- You must NOT receive, request, or use any PolicyEngine microsim result
+  for the reform under analysis from the current run. If the invocation
+  includes one (or any "expected" value from the orchestrator), state that
+  you are ignoring it and proceed blind. (Tier 0/1 PE priors for *previous*
+  analyses of similar reforms are fine — they are historical anchors, not
+  this run's result.)
+- Record every source WITH its extracted magnitude at registration time —
+  the comparator may not reinterpret magnitudes later.
+- Stamp the output with `registered_at: <ISO timestamp>`.
+- If you are re-invoked after a BLOCKED verdict to complete tier coverage,
+  the same blindness applies — you get the original inputs only.
+
 ## Inputs
 
 - `reform` (description + provisions from `policy-text-researcher`)
