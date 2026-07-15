@@ -199,6 +199,24 @@ For custom Recharts charts not covered by ui-kit, use CSS vars directly:
 
 ### Step 4: Implement Metric Cards and Display
 
+**Notable-finding callout (standard component, build it once):**
+
+```tsx
+// components/Callout.tsx — eyebrow names the reader's question; headline is
+// quantified; body explains the mechanism. Place adjacent to the chart it explains.
+export function Callout({ eyebrow, headline, children }: {
+  eyebrow: string; headline: string; children: React.ReactNode;
+}) {
+  return (
+    <aside className="rounded-r-lg border-l-4 border-primary-500 bg-teal-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">{eyebrow}</p>
+      <p className="mt-1 font-semibold text-gray-900">{headline}</p>
+      <div className="mt-1 text-sm text-gray-700">{children}</div>
+    </aside>
+  );
+}
+```
+
 **Use ui-kit's MetricCard, SummaryText, DataTable:**
 
 ```tsx

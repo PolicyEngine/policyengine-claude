@@ -123,6 +123,29 @@ primary-500 hero band holding the dashboard title, folder-style page tabs
 card on a gray-50 page — see frontend-builder.md "Site chrome rule" for the
 exact classes. The plan's component list must include this chrome explicitly.
 
+**Presentation structure (every page):** neutral does not mean flat — the
+data carries the interest, so lead with it and give the page rhythm:
+
+1. **The landing page opens with a "Key results ({year})" band** — 3-4
+   MetricCards (cost, share of households gaining, the headline poverty or
+   subgroup change), mirroring the key-findings bullets that open every PE
+   blog analysis.
+2. **Never more than two consecutive paragraphs of prose.** The third
+   element must be a table, chart, metric band, or callout. Statutory
+   schedules (thresholds x filing status x rate) are tables, not bullet
+   lists — per the writing skill's "tables and data" rule.
+3. **Every chart gets a one-sentence quantitative takeaway directly above
+   it**, computed from the data it plots ("14.4% of households see higher
+   net income; 85.6% see no change"). The chart is the evidence for the
+   sentence, never an unexplained figure.
+4. **Notable findings render as designed callouts** (left accent rule,
+   eyebrow naming the question the reader is about to ask — "Why senior
+   poverty barely moves" — then a quantified headline and the mechanism),
+   placed adjacent to the chart they explain.
+5. **Page shape: takeaway → evidence → detail.** Fine print (methodology,
+   dataset, caveats) closes the page in a bordered footer, never
+   interrupts the middle.
+
 **Language (all user-facing copy):** follow the `policyengine-writing`
 skill everywhere — active voice, sentence case, quantitative statements.
 No vague or characterizing adjectives: never "modest", "substantial",

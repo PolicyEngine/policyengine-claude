@@ -215,6 +215,29 @@ characterization ("average retiree", "modest income", "higher-income
 couple"). Preset labels must be compositions with dollar amounts
 ("Single filer, $25,000 benefit").
 
+### 13. Presentation Structure
+
+Pages lead with data and keep a text/visual rhythm (planner "Presentation
+structure"):
+
+```
+# Landing page opens with a key-results metric band:
+grep -n 'Key results' app/page.tsx
+grep -c 'MetricCard' app/page.tsx    # >= 3 expected
+
+# Charts have a takeaway sentence computed from data (look for chart
+# components rendered without a preceding <p> in the same section):
+grep -B3 -nE '<[A-Za-z]*Chart' app/*/page.tsx | grep -c '<p'
+
+# Notable-finding callout component exists and is used when the brief
+# carried findings:
+test -f components/Callout.tsx && grep -rn '<Callout' app/ --include='*.tsx'
+```
+
+FAIL if the landing page lacks a key-results band, any chart renders
+without a quantitative takeaway sentence, or the brief carried notable
+findings that no callout renders.
+
 ## Report Format
 
 ```
