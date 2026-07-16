@@ -121,6 +121,12 @@ Apply the standard routing rules (identical to the CRM publication router):
 - otherwise (routine state bill) → **bill tracker**
 - `--publish tracker|dashboard` overrides; `--publish none` stops here.
 
+**Publication preconditions (from Phase 2's `enactment_reconciliation`):**
+consult the block before dispatching — it says whether `baseline_json` is
+required, and whether this publication SUPERSEDES an earlier entry (a
+pre-enactment draft score); superseding means the old entry/PR gets closed
+with a pointer, never left as a duplicate.
+
 **Gate 2 (skip with `--auto-confirm`):** show the route, the literal workflow
 inputs, and what "publish" means for that route (tracker: hidden `in_review`
 entry + a bill-review PR whose merge publishes; dashboard: a new repo is
@@ -132,9 +138,10 @@ Dispatch (requires `gh` with repo write access):
 # tracker route
 gh workflow run publish-reform.yml --repo PolicyEngine/state-legislative-tracker \
   -f id=<slug> -f state=<state> -f label="<label>" -f reform_json='<reform_dict>' \
-  -f baseline_json='<prior-law counterfactual — REQUIRED when the bill is already
-     enacted into the policyengine-us baseline, so impacts carry the bill's true
-     effect and signs; omit for not-yet-law reforms>' \
+  -f baseline_json='<prior-law counterfactual — REQUIRED whenever the analysis
+     frontmatter has enactment_reconciliation.publication_requirements.baseline_json:
+     required (enacted + already in the model baseline), so impacts carry the
+     bill's true effect and signs; omit for not-yet-law reforms>' \
   -f title="<title>" -f description="<provisions summary>" -f tags="<tags>" \
   -f source_url="<primary source>" \
   -f review_notes="<markdown decision log + validation record — see below>" \

@@ -153,6 +153,51 @@ Branch on `classification`:
 
 Capture `reform_dict` from the classifier output.
 
+## Phase 2c — Enactment × baseline reconciliation (required, evidenced)
+
+Getting this wrong silently corrupts everything downstream — the sign of
+the score, the publication framing, and dedup. Establish BOTH facts
+independently, with evidence, and never infer either from news coverage:
+
+**1. Legal status, from the primary source only.** The bill page /
+session-law record, not articles: `enacted` (act number + signing date),
+`proposed` (chamber status), `ballot` (election date), or `hypothetical`.
+News framing misleads systematically — HI Act 24 was covered as news in
+July, eight weeks after signing; a "new tax" headline says nothing about
+enactment. Record per-provision effective dates: enacted-but-not-yet-
+effective (Act 24's TY2027 tables) is still ENACTED.
+
+**2. Model status, probed empirically per provision.** Read the deployed
+API's parameter values at the effective date (metadata endpoint) and
+master. Do not assume from the model's version date.
+
+The intersection sets the run configuration:
+
+| Legal × model | Consequence |
+|---|---|
+| enacted + value in deployed baseline | Score the PRIOR-LAW COUNTERFACTUAL and negate signs. Tracker publication REQUIRES `baseline_json`. (GA HB463) |
+| enacted + on master only | `deployed-model-lag` — existing exit; wait for release. |
+| enacted + absent everywhere | Model is behind enacted law → `/implement-structural` (schema gap) or a baseline value-update PR (schema fits, value missing). Never score around it. |
+| proposed/ballot + parametric | Standard reform-vs-current-law. If the probe finds the "proposal" already in the baseline, your legal status is wrong — go back to step 1. |
+| any + prior law schedules changes for the scoring year | The baseline for marginal effect is the SCHEDULE, not today's visible rate (GA: 5.09% scheduled, not 5.19% current). State both framings when external scores use the other one. |
+
+**3. Version dedup.** If a prior analysis or tracker entry covers an
+earlier VERSION of the bill (a committee draft, a pre-enactment score),
+the current version supersedes it — record the superseded entry id so
+publication replaces rather than duplicates (HI: the stale HD1 draft).
+
+Record the block in the report frontmatter:
+
+```yaml
+enactment_reconciliation:
+  legal_status: enacted   # + act number, signed date, source URL
+  effective: {rates: 2027-01-01}
+  per_provision:
+    - {provision: top_bracket, deployed: absent, master: absent, evidence: "live /calculate probe rejected rates.single[12]"}
+  scoring_frame: counterfactual-negated | reform-vs-current-law
+  publication_requirements: {baseline_json: required | none, supersedes: <entry-id> | none}
+```
+
 ## Phase 3 — Find anchor scores
 
 Invoke `prior-scores-finder` (loads the `policyengine-prior-scores` skill internally):

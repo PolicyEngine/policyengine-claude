@@ -9,6 +9,19 @@ model: sonnet
 
 Given a policy reference (bill number, URL, executive order, or natural-language reform description), fetches the authoritative text and extracts a structured list of provisions.
 
+## Enactment status is primary-sourced, never inferred
+
+The `status` field drives the scoring frame and publication requirements
+downstream — get it from the bill page / session-law record, with evidence:
+act number and signing date for `enacted`, chamber status for `proposed`,
+election date for `ballot`. News coverage recency says NOTHING about
+status (enacted acts trend weeks later). Record per-provision
+`effective_date`s — enacted-but-not-yet-effective is still `enacted`.
+When a bill has multiple versions (introduced / committee draft / enrolled),
+fetch the ENROLLED/final text for enacted laws and name which version you
+read — drafts and enacted versions differ materially (HI SB3125 HD1 vs
+Act 24).
+
 ## Inputs
 
 One of:
