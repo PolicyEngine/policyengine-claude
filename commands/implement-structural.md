@@ -36,8 +36,12 @@ estimate. Then choose:
 
 ## Phase 2 — Implement (baseline mode)
 
-Work in a fresh clone/worktree of `policyengine-{country}`. Invoke the
-country-models agents in sequence:
+Invoke the `structural-implementer` agent — it owns this whole phase
+(statute verification, baseline edits, inertness + boundary tests, draft
+PR). Its non-negotiables include re-deriving the spec from the ENROLLED
+statute: backlog issues can be materially wrong (HI SB3125's issue said
+"append one bracket"; the act replaced the whole rate table). For complex
+multi-variable changes it may in turn use the country-models agents:
 
 1. `parameter-architect` — the parameter-schema change: exact YAML edits,
    statutory references on every value (bill section + effective date),
