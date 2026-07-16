@@ -59,8 +59,31 @@ Extract from the natural-language input:
 
 ### Step 1b: Include the standard pages (policy-analysis dashboards)
 
-Every dashboard that analyzes a specific reform MUST plan these pages, in
-addition to whatever the description asks for:
+**Canonical exemplar: `nj-ctc-increase`** (David's New Jersey dashboard).
+When any structural question isn't answered here, answer it the way that
+repo does.
+
+**Hard cap: 4 tabs.** The NJ set is Policy overview / Household impact /
+Statewide impact / Congressional districts (districts for state reforms
+with district data; otherwise the 4th slot is free or unused). The
+standard CONTENT below maps into those tabs — validation and methodology
+are SECTIONS (on the policy or statewide tab, plus the methodology
+footer), not tabs. A 5th tab is a planning failure: ECPA shipped 7 tabs
+and was the complaint that created this rule.
+
+**Every explanation lives in exactly ONE place.** Data caveats, validation
+notes, methodology — write each once, on the tab it belongs to, and link
+to it from anywhere else it's relevant ("see the data note on the
+Statewide tab"). Duplicated explainers made ECPA verbose and hard to
+scan; the takeaway→evidence→detail rhythm (below) plus single-sourcing is
+the fix.
+
+**Budgetary impact is never hidden.** It is the FIRST metric in the
+key-results band on the landing tab AND appears on the statewide/impacts
+tab. If a reader can't find the cost in five seconds, the plan is wrong.
+
+Every dashboard that analyzes a specific reform MUST plan this content,
+in addition to whatever the description asks for:
 
 1. **Policy explanation page** — what the reform changes, explained
    provision-by-provision in plain language, with links to the primary
@@ -114,12 +137,21 @@ addition to whatever the description asks for:
      filing status, and children. An income slider alone is a planning
      failure unless income genuinely is the reform's only lever.
    - **Representative precomputed cases.** 3-5 preset households shown as
-     selectable cards with each case's reform impact, mapping onto grid
-     points so selecting one sets the controls. Preset labels and
+     selectable cards with each case's reform impact. Preset labels and
      descriptions are QUANTITATIVE compositions, never characterizations:
      "Single filer, $25,000 benefit" and "Married couple, two children,
      $40,000 earnings" — not "average retiree", "typical family",
-     "higher-income couple", or "modest income". The numbers ARE the label. For the `precomputed` data
+     "higher-income couple", or "modest income". The numbers ARE the label.
+   - **Hybrid compute (the NJ pattern), not a full precomputed grid.**
+     Presets ship as precomputed JSON (`public/data/example_households.json`)
+     so their charts render instantly; CUSTOM household inputs go to a
+     Modal spawn-and-poll backend (`scripts/modal_household_endpoint.py`,
+     `POST /household/start` → poll `/household/status/{id}`, per
+     nj-ctc-increase / CPID) that pins its own policyengine-us — so the
+     calculator neither depends on the deployed API's version nor requires
+     precomputing every control combination. Plan a full precomputed grid
+     ONLY when the description forbids a backend; grid precompute burns
+     build time and caps the input space. For the `precomputed` data
      pattern, sweep a grid over the lever inputs (one fast /calculate call
      per grid slice — household-level, never a microsim) so every control
      combination resolves to a precomputed point.

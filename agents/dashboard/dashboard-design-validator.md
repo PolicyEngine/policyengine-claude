@@ -238,6 +238,40 @@ FAIL if the landing page lacks a key-results band, any chart renders
 without a quantitative takeaway sentence, or the brief carried notable
 findings that no callout renders.
 
+### 14. Tab Count, Dedup, Formatting, Budget Visibility (the ECPA checks)
+
+Each of these caught a real shipped failure — run all four.
+
+```
+# (a) Hard cap: 4 tabs. Count the page-nav entries (PAGES / TAB_CONFIG):
+grep -rEc "label:" components/PageShell.tsx components/DashboardChrome.tsx app/*/page.tsx 2>/dev/null | head -3
+# and count route dirs for multi-route apps:
+ls -d app/*/ | grep -v _  | wc -l
+# FAIL if the tab strip exceeds 4 entries. Validation/methodology are
+# sections, not tabs.
+
+# (b) Single-sourced explanations — duplicated explainer text across pages:
+# extract 10+-word literal strings from page files and flag any appearing
+# in more than one page:
+grep -rhoE '"[^"]{60,}"' app/*/page.tsx app/page.tsx 2>/dev/null | sort | uniq -d | head
+# FAIL on any hit: each caveat/methodology/data note lives on ONE tab,
+# linked from elsewhere.
+
+# (c) Centralized formatting:
+test -f lib/format.ts || echo "FAIL: no lib/format.ts"
+grep -rnE "toFixed\(|toLocaleString\(" app/ components/ --include='*.tsx' | grep -v node_modules
+# FAIL on hits outside lib/format.ts — ad-hoc formatting is how unrounded
+# values ship.
+
+# (d) Decile completeness assertions in chart components:
+grep -rn "length !== 10\|length != 10\|expected 10" components/*Decile*.tsx components/*decile*.tsx 2>/dev/null
+# FAIL if decile chart components accept arbitrary-length data silently.
+
+# (e) Budgetary impact is the FIRST key-results metric on the landing tab:
+grep -A3 "Key results" app/page.tsx | grep -iE "cost|budget|revenue"
+# FAIL if the cost metric is absent from the landing key-results band.
+```
+
 ## Report Format
 
 ```

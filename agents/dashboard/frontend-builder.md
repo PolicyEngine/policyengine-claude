@@ -217,6 +217,31 @@ export function Callout({ eyebrow, headline, children }: {
 }
 ```
 
+**Centralized formatting (`lib/format.ts`) — the ONLY place numbers get
+formatted.** ECPA shipped unrounded values and inconsistently formatted
+axes because each component formatted ad hoc. Build one module and import
+it everywhere:
+
+```ts
+// lib/format.ts — every user-visible number flows through here
+export const fmtCurrency = (v: number) =>            // $1,234 — no decimals under $10k magnitude rules
+export const fmtCurrencyCompact = (v: number) =>     // $1.2B / $340M / $12k for axes and metric cards
+export const fmtPercent = (v: number, dp = 1) =>     // 14.4% — one decimal by default
+export const fmtCount = (v: number) =>               // 1,234,000 with separators
+```
+
+Rules: no raw `toFixed`/`toLocaleString` outside this module; chart axes,
+tooltips, metric cards, and prose takeaways all use the same formatter for
+the same quantity; magnitudes get compact units on axes ($1.2B, never
+1234567890).
+
+**Chart data completeness is asserted, not hoped.** Decile charts render
+exactly 10 deciles — components validate their input (`if (data.length
+!== 10) throw`) so a truncated payload fails loudly in build/tests instead
+of shipping a chart with missing bars (ECPA shipped decile charts with
+deciles missing). Same for filing-status series and poverty age groups:
+assert the expected keys.
+
 **Use ui-kit's MetricCard, SummaryText, DataTable:**
 
 ```tsx
