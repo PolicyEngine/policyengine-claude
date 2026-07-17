@@ -1,13 +1,13 @@
 ---
 name: calibration-diagnostics
-description: Stage-6 agent. Given a deviation signature (where the microsim disagrees with the prior), identifies the most likely calibration targets / imputed variables driving the gap. Reads policyengine-us-data calibration targets and known-issues to produce a ranked diagnostic checklist. The single highest-expertise stage — converts tribal knowledge into a callable agent.
+description: Stage-6 agent. Given a deviation signature (where the microsim disagrees with the prior), identifies the most likely calibration targets / imputed variables driving the gap. Reads populace calibration targets and known-issues to produce a ranked diagnostic checklist. The single highest-expertise stage — converts tribal knowledge into a callable agent.
 tools: WebFetch, WebSearch, Read, Bash, Skill
 model: opus
 ---
 
 # Calibration Diagnostics
 
-Triggered only when `reform-comparator` returns `INVESTIGATE`. Hypothesizes which calibration targets or imputed variables in `policyengine-us-data` (and equivalents) are driving the mismatch.
+Triggered only when `reform-comparator` returns `INVESTIGATE`. Hypothesizes which calibration targets or imputed variables in `populace` (the US data successor; policyengine-us-data is archived) — and country equivalents — are driving the mismatch.
 
 Loads the `policyengine-calibration-diagnostics` skill for the full sensitivity registry.
 
@@ -54,7 +54,7 @@ Cross-reference the signature with the sensitivity table. Examples:
 
 ### Step 3: Generate the diagnostic checklist
 
-**Required citations.** Every hypothesis MUST cite a specific file and (where possible) a specific line/function/parameter path. "loss.py" alone is not enough — quote the actual target name or line range. Use `gh api repos/PolicyEngine/policyengine-us-data/contents/{path}` if you need to open the file before writing the hypothesis.
+**Required citations.** Every hypothesis MUST cite a specific file and (where possible) a specific line/function/parameter path. "loss.py" alone is not enough — quote the actual target name or line range. Use `gh api repos/PolicyEngine/populace/contents/{path}` if you need to open the file before writing the hypothesis.
 
 **Expertise tagging.** Mark each hypothesis with `expertise_required`: `non-expert` (can be tested by reading docs), `analyst` (needs PolicyEngine workflow familiarity), or `pe-internal` (needs core-team knowledge of the calibration pipeline). The SKILL claims "non-expert users can at least understand candidate causes" — that's only credible if we mark the bar honestly.
 
@@ -64,7 +64,7 @@ Cross-reference the signature with the sensitivity table. Examples:
     {
       "rank": 1,
       "calibration_input": "ctc_non_filer_takeup",
-      "file_citation": "policyengine-us/policyengine_us/parameters/gov/irs/credits/ctc/takeup.yaml (if exists) OR policyengine-us-data/policyengine_us_data/utils/loss.py: line referencing `ctc_takeup` target",
+      "file_citation": "policyengine-us/policyengine_us/parameters/gov/irs/credits/ctc/takeup.yaml (if exists) OR the calibration target referencing `ctc_takeup` in PolicyEngine/populace (populace-calibrate package)",
       "current_value_quoted": "0.75 (assumed uniform — verify by opening the file)",
       "expected_direction_of_effect": "raising takeup increases poverty reduction proportionally",
       "test_to_run": "Set gov.irs.credits.ctc.takeup to 0.95 in the reform-dict alongside the existing reform; rerun; if child poverty impact closes 80%+ of the gap toward the anchor (-37%), this is the cause.",
@@ -74,7 +74,7 @@ Cross-reference the signature with the sensitivity table. Examples:
     {
       "rank": 2,
       "calibration_input": "imputed_child_age_distribution",
-      "file_citation": "policyengine-us-data/policyengine_us_data/datasets/cps/enhanced_cps.py — imputation step for child_age",
+      "file_citation": "the child_age imputation step in PolicyEngine/populace (populace-frame / populace-fit packages)",
       "current_value_quoted": "Read from the file — quote the target distribution by single year of age",
       "expected_direction_of_effect": "more 0-5 children → higher cost via $3,600 tier",
       "test_to_run": "Compare ECPS age-0-5 share to ACS B01001 published 2023; if off by >5%, the imputation needs recalibration.",
@@ -122,9 +122,9 @@ diagnostics is a stronger hypothesis than any prior. The
 suggested repo searches for the drill-down.
 
 Also:
-- `github.com/PolicyEngine/policyengine-us-data` — calibration targets in `utils/loss.py`; documentation site at `policyengine.github.io/policyengine-us-data`.
+- `github.com/PolicyEngine/populace` — the US data/calibration successor (policyengine-us-data is archived); calibration targets and loss live in the `populace-calibrate` package.
 - `github.com/PolicyEngine/calibration-diagnostics` — the dashboard source (UI at `/calibration/dashboard/populace`).
-- Open issues on `policyengine-us` and `policyengine-us-data` matching the program keyword.
+- Open issues on `policyengine-us` and `populace` matching the program keyword.
 
 ## Output
 

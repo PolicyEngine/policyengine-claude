@@ -20,7 +20,6 @@ policyengine_us/parameters/
 policyengine_us/variables/
 policyengine_us/tests/
 changelog.d/
-changelog_entry.yaml
 ```
 
 If you find yourself wanting to commit a `sources/*` file, stop — it's local working state.
@@ -38,10 +37,6 @@ If you find yourself wanting to commit a `sources/*` file, stop — it's local w
 
 1. `Skill: policyengine-standards-skill` — CI requirements, formatting rules, changelog format
 
-## Lessons from past sessions
-
-Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
-
 ## CRITICAL: Version Sync
 
 Always use `uv run` for Python tools so versions match `uv.lock` / CI:
@@ -52,21 +47,20 @@ Always use `uv run` for Python tools so versions match `uv.lock` / CI:
 
 ## Workflow
 
-### Step 1: Changelog entry
+### Step 1: Changelog entry (towncrier fragment)
+
+<!-- stale-ok -->
+PolicyEngine country repos use towncrier: one fragment file per PR in `changelog.d/`, named `<branch>.<type>.md`. **Never** edit `CHANGELOG.md` directly and **never** use the deprecated `changelog_entry.yaml`.
 
 ```bash
-if [ ! -f "changelog_entry.yaml" ]; then
-  cat > changelog_entry.yaml <<'EOF'
-- bump: patch
-  changes:
-    added:
-    - [Description of what was added]
-EOF
+BRANCH=$(git branch --show-current)
+# Fragment type: added (new program/feature) | changed | fixed
+if ! ls changelog.d/"${BRANCH}".*.md >/dev/null 2>&1; then
+  echo "Add <program> for <state>." > "changelog.d/${BRANCH}.added.md"
 fi
-python -c "import yaml; yaml.safe_load(open('changelog_entry.yaml'))" || exit 1
 ```
 
-Valid bump types: `patch`, `minor`, `major`. Valid change kinds: `added`, `changed`, `fixed`, `removed`, `breaking`.
+Valid fragment types: `added`, `changed`, `fixed`, `removed`, `breaking`. GitHub Actions runs `towncrier build` on merge to compile the fragments into `CHANGELOG.md` and bump the version.
 
 ### Step 2: Format
 
@@ -77,7 +71,7 @@ uv run linecheck . --fix 2>/dev/null || true
 
 # Scoped staging — NEVER `git add -A` (would commit sources/working_references.md)
 git add policyengine_us/parameters/ policyengine_us/variables/ policyengine_us/tests/ \
-        changelog.d/ changelog_entry.yaml 2>/dev/null || true
+        changelog.d/ 2>/dev/null || true
 git diff --cached --quiet || git commit -m "Apply code formatting"
 ```
 
@@ -89,7 +83,7 @@ if grep -q "error:" lint_output.txt; then
   autoflake --remove-all-unused-imports --in-place -r .
   isort . --profile ruff --line-length 79
   git add policyengine_us/parameters/ policyengine_us/variables/ policyengine_us/tests/ \
-          changelog.d/ changelog_entry.yaml 2>/dev/null || true
+          changelog.d/ 2>/dev/null || true
   git commit -m "Fix linting issues"
 fi
 ```
@@ -154,4 +148,4 @@ grep -q "fail" ci_status.txt && echo "❌ CI has failures — may need @ci-fixer
 
 ## Integration
 
-Run AFTER implementation; BEFORE `@ci-fixer`. Can be invoked by `@integration-agent` after merging branches.
+Run AFTER implementation; BEFORE `@ci-fixer`.

@@ -35,10 +35,6 @@ Edge cases must be **appended to existing test files** for the variable, never w
 
 When appending to an existing file, **always add cases at the bottom**. Inserting in the middle renumbers existing cases and creates noisy diffs.
 
-## Lessons from past sessions
-
-Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
-
 ## Core Responsibility
 
 Analyze variable formulas and parameters to generate tests for:

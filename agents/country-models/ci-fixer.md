@@ -37,10 +37,6 @@ policyengine-core test policyengine_us/tests/policy/baseline/gov/states/[STATE]/
 
 **Maximum 8 fix iterations.** Each round: run tests → fix failures → re-run. If you make NO progress on a failure across two consecutive iterations (same test still failing the same way), classify it as BLOCKED and stop — endless loops waste context and rarely converge.
 
-## Lessons from past sessions
-
-Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing. These files capture mistakes from past runs — don't repeat them.
-
 ## Workflow
 
 ### Step 1: Read policy documentation

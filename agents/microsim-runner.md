@@ -68,6 +68,7 @@ The deployed API advertises only two dataset names at `/us/metadata/economy_opti
 
 **Use `enhanced_cps`** for all production microsims — it's the calibration-grade dataset that matches PE's published research (the raw `cps` default is much smaller and lacks the calibrations). The data backing `enhanced_cps` has evolved over time (Enhanced CPS → populace-us-2024); always read the actual `data_version` returned in the response to confirm what backed the run.
 
+<!-- stale-ok -->
 **Do NOT use `enhanced_cps_2024` or year-suffixed variants** — these names are NOT advertised, so the API silently falls back to its default (`cps`), producing results that look plausible but use raw CPS rather than enhanced.
 
 ### Dataset honored validation (REQUIRED)
@@ -229,18 +230,34 @@ If a 10-year cost is required, run all 10 years via `run_horizon(policy_id, base
 
 ## Process — Local path
 
-Load the `policyengine-microsimulation` skill for current import patterns.
+Load the `policyengine` skill for current import patterns and certified dataset names. The canonical local entry point is the top-level `policyengine` package pinned to the certified Populace bundle — **never** `from policyengine_us import Microsimulation` (unmanaged) or a bare `from policyengine import Microsimulation` (that class does not exist).
+
+Baseline-vs-reform economy analysis (budget, poverty, deciles, inequality in one pass):
 
 ```python
-from policyengine import Microsimulation
-sim_baseline = Microsimulation()
-sim_reform = Microsimulation(reform=reform_dict)
-cost = (sim_baseline.calculate("household_net_income", year).sum() -
-        sim_reform.calculate("household_net_income", year).sum())
-# ...
+import policyengine as pe
+from policyengine.core import Simulation
+
+datasets = pe.us.ensure_datasets(years=[year], data_folder="./data")
+dataset = next(iter(datasets.values()))
+baseline = Simulation(dataset=dataset, tax_benefit_model_version=pe.us.model)
+reform = Simulation(dataset=dataset, tax_benefit_model_version=pe.us.model, policy=reform_dict)
+analysis = pe.us.economic_impact_analysis(baseline, reform)  # deciles, poverty, inequality
+budget = pe.us.calculate_budgetary_impact(baseline, reform)  # total / federal / state split
 ```
 
-For state-only impacts, subset by `state_code_str`. For district-level, load the `policyengine-district-analysis` skill.
+`Simulation(policy=reform_dict)` takes the same flat reform dict as the API path. Call `economic_impact_analysis` before any manual `ensure()` — it configures the output variables both simulations need.
+
+For the analyst MicroSeries surface (weighted `.calc()` on the certified default `populace_us_2024`):
+
+```python
+import policyengine as pe
+
+sim = pe.us.managed_microsimulation()                       # certified default dataset
+sim.calc("household_net_income", period=year).sum()         # US: .calc(); UK: .calculate()
+```
+
+For state- or district-level impacts, load `populace_us_2024_acs_local` **by name** and scope a `Simulation` with `RowFilterStrategy(variable_name="state_fips", ...)` from `policyengine.core.scoping_strategy` — never a per-state or per-district H5 file (those are gone; `policyengine-us-data` is archived). See the `policyengine` skill's regional-analysis section.
 
 ## Output
 

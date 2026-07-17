@@ -37,10 +37,6 @@ Mode B additionally needs:
 5. `Skill: policyengine-aggregation-skill`
 6. `Skill: policyengine-period-patterns-skill`
 
-## Lessons from past sessions
-
-Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
-
 ## Not in scope (either mode)
 
 Owned by other agents or other `/review-program` validators:
@@ -50,7 +46,7 @@ Owned by other agents or other `/review-program` validators:
 | Wrapper variable detection | rules-engineer Step 5 + `/review-program` program-reviewer |
 | Regulatory accuracy (formula matches law?) | `/review-program` program-reviewer (Validator 1) |
 | Reference quality (every value traces to a source) | `/review-program` reference-validator (Validator 2) |
-| Test coverage (important scenarios tested?) | `/review-program` edge-case-checker (Validator 4) |
+| Test coverage (important scenarios tested?) | `/review-program` edge-case-generator (Validator 4) |
 | PDF audit (values match source PDF?) | `/review-program` Phase 4 PDF agents |
 | Running tests (pytest, ci-fix loop) | ci-fixer |
 

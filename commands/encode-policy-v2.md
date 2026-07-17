@@ -70,14 +70,8 @@ Derive:
 - `PREFIX` = `{BRANCH}` (used for all /tmp/ files)
 - `DPI` = 600 if `--600dpi`, else 300
 
-**Resolve LESSONS_PATH** (used in all implementation agent prompts):
-```bash
-LESSONS_PATH=$(ls -d ~/.claude/projects/*/memory 2>/dev/null | head -1)/agent-lessons.md
-```
-
 ## Standard agent boilerplate
 
-- **Lessons** — each spawn prompt below contains a literal `LESSONS_PATH: {LESSONS_PATH}` line. Each agent file's "Lessons from past sessions" section tells the agent to read it (plus `lessons/agent-lessons.md` repo-relative). Don't strip the line — it's load-bearing.
 - **Do not commit** — every implementation agent's definition already says "DO NOT commit; pr-pusher handles all commits." Don't restate in prompts.
 
 ### Step 0B: Clean Up & Create Team
@@ -388,7 +382,6 @@ name: "create-parameters"
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Study the reference implementation listed in the impl spec.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-parameter-patterns, /policyengine-variable-patterns,
   /policyengine-code-organization.
@@ -425,7 +418,6 @@ name: "create-variables"
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Study the reference implementation listed in the impl spec.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-vectorization, /policyengine-aggregation, /policyengine-period-patterns,
@@ -459,7 +451,6 @@ name: "create-tests"
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Read sources/working_references.md for calculation examples.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
   /policyengine-aggregation, /policyengine-variable-patterns, /policyengine-code-organization.
@@ -490,7 +481,6 @@ name: "create-edge-cases"
 "Generate edge case tests for {STATE} {PROGRAM}.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Analyze variables and parameters in the program folder.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns.
 
@@ -579,7 +569,6 @@ Read the coverage report at /tmp/{PREFIX}-coverage-report.md.
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
 Study existing variables and parameters already created for this program.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-code-style, /policyengine-code-organization.
@@ -619,7 +608,6 @@ Scope (3 phases only):
 - Phase 3: Federal/State jurisdiction placement (federal-sourced values in /gov/{agency}/,
   state-sourced in /gov/states/{state}/, defined_for present on state variables)
 
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-parameter-patterns, /policyengine-variable-patterns,
   /policyengine-code-organization.
@@ -659,7 +647,6 @@ Read the validator report at /tmp/{PREFIX}-validator-report.md.
 Focus ONLY on items under the ESCALATED section.
 Read the implementation spec at /tmp/{PREFIX}-impl-spec.md for policy context.
 Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-code-organization.
@@ -684,7 +671,6 @@ both mechanical fixes (test syntax, entity mismatch, period format) AND policy /
 calculation fixes (wrong formula, wrong test expectation, missing parameter). There is
 no downstream specialist dispatch step; do not classify-and-escalate.
 
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-code-style,
@@ -903,7 +889,6 @@ run_in_background: true
 "Fix CRITICAL parameter/variable issues from the /review-program review (round 1).
 Read /tmp/review-program-full-report.md. Focus ONLY on items in parameter (.yaml)
 or variable (.py) files. SKIP test-file items — test-creator handles those in parallel.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
@@ -930,7 +915,6 @@ Common critical test issues: missing unit tests for formula variables; non-funct
 tests (e.g., absolute_error_margin >= 1 on boolean outputs); wrong period format (not
 YYYY-01 or YYYY); wrong test expectations.
 
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
   /policyengine-variable-patterns.
@@ -1024,7 +1008,6 @@ run_in_background: true
 
 "Fix CRITICAL parameter/variable issues from the /review-program review (round 2).
 Read /tmp/review-program-full-report.md. SKIP test-file items.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
@@ -1044,7 +1027,6 @@ run_in_background: true
 
 "Fix CRITICAL test-file issues from the /review-program review (round 2).
 Read /tmp/review-program-full-report.md. SKIP parameter/variable items.
-LESSONS_PATH: {LESSONS_PATH}
 
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
   /policyengine-variable-patterns.
@@ -1103,93 +1085,15 @@ Read `/tmp/review-program-summary.md` (max 20 lines).
 
 ---
 
-## Phase 7: Lessons Learned
+## Phase 7: Final summary
 
 **This phase runs even if the review-fix loop was skipped.**
-
-### Step 7A: Extract Lessons
-
-```
-subagent_type: "general-purpose"
-team_name: "{PREFIX}-encode"
-name: "lesson-extractor"
-
-"Distill lessons learned from the {STATE} {PROGRAM} implementation session.
-
-READ these files (skip any that don't exist):
-- /tmp/{PREFIX}-checklist.md (review-fix checklist)
-- /tmp/{PREFIX}-checkpoint.md (validation checkpoint)
-- /tmp/{PREFIX}-coverage-report.md (requirements coverage)
-- /tmp/review-program-summary.md (last review summary)
-
-ALSO READ the persistent lessons file (if it exists):
-- {LESSONS_PATH}
-
-TASK:
-1. Extract every issue that was found and fixed during this session
-2. Generalize each fix into a one-line rule (remove file names, line numbers, state names)
-3. Categorize each rule:
-   - PARAMETER: structure, metadata, references, dates, descriptions
-   - VARIABLE: hard-coding, periods, entities, formulas, branching
-   - TEST: coverage, boundaries, periods, naming
-   - REFERENCE: URLs, page numbers, specificity, liveness
-   - FORMULA: deduction order, unused params, zero-sentinels, logic
-   - WORKFLOW: agent coordination, scope gaps, missing requirements
-4. Deduplicate against existing persistent lessons — only keep genuinely NEW rules
-5. If no new lessons: write 'NO NEW LESSONS' to /tmp/{PREFIX}-new-lessons.md
-6. If new lessons exist, write to /tmp/{PREFIX}-new-lessons.md (max 15 entries):
-
-   ## New Lessons from {STATE} {PROGRAM} ({date})
-
-   ### PARAMETER
-   - {generalized rule}
-
-   ### WORKFLOW
-   - {generalized rule}
-
-   (Only include categories that have new lessons.)"
-```
-
-### Step 7B: Persist Lessons
-
-Read `/tmp/{PREFIX}-new-lessons.md`.
-
-**If 'NO NEW LESSONS'**: Skip to final summary.
-
-**If new lessons exist**: Persist to BOTH locations (local memory + repo):
-
-```bash
-# 1. Persist to local memory (survives across sessions even without repo)
-LESSONS_FILE="$LESSONS_PATH"
-if [ ! -f "$LESSONS_FILE" ]; then
-    echo "# Agent Lessons Learned (Local)" > "$LESSONS_FILE"
-    echo "" >> "$LESSONS_FILE"
-fi
-cat /tmp/${PREFIX}-new-lessons.md >> "$LESSONS_FILE"
-
-# 2. Persist to repo (shared across all contributors)
-LESSONS_PLUGIN="$(pwd)/lessons/agent-lessons.md"
-if [ ! -f "$LESSONS_PLUGIN" ]; then
-    echo "# Agent Lessons Learned" > "$LESSONS_PLUGIN"
-    echo "" >> "$LESSONS_PLUGIN"
-    echo "Accumulated from /encode-policy-v2 and /backdate-program runs across all contributors." >> "$LESSONS_PLUGIN"
-    echo "Loaded by implementation agents on future runs." >> "$LESSONS_PLUGIN"
-    echo "" >> "$LESSONS_PLUGIN"
-fi
-cat /tmp/${PREFIX}-new-lessons.md >> "$LESSONS_PLUGIN"
-git add lessons/agent-lessons.md
-git commit -m "Add lessons from ${STATE} ${PROGRAM} implementation"
-git push
-```
-
-### Step 7C: Final Summary
 
 Present to user:
 - Total requirements implemented vs excluded
 - Files created (parameters, variables, tests)
 - Requirements coverage percentage
 - Review-fix loop results (if ran)
-- New lessons extracted (if any)
 - Issue and PR links
 - **Keep PR as draft** — user will mark ready when they choose
 - **WORKFLOW COMPLETE**
@@ -1210,7 +1114,6 @@ Present to user:
 | `/tmp/{PREFIX}-checkpoint.md` | quick-auditor | Main Claude | Short (15 lines) |
 | `/tmp/{PREFIX}-pr-description.md` | reporter | gh pr edit | Full |
 | `/tmp/{PREFIX}-final-report.md` | reporter | Main Claude | Short (25 lines) |
-| `/tmp/{PREFIX}-new-lessons.md` | lesson-extractor | Main Claude | Short |
 | `/tmp/{PREFIX}-checklist-{vars,tests}-r{N}.md` | per-fixer (write) | orchestrator (merge) | One per fixer per round |
 | `/tmp/{PREFIX}-checklist.md` | orchestrator (cat-merge) | review-fixer round 2+ (read) | Growing |
 

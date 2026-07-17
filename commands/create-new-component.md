@@ -34,17 +34,14 @@ Before building from scratch, search `PolicyEngine/policyengine-app-v2` for simi
 # Search app-v2 for components with similar names or purposes
 find /path/to/policyengine-app-v2/app/src -name "*.tsx" | xargs grep -li "COMPONENT_NAME_PATTERN"
 
-# Also check the design-system package
-find /path/to/policyengine-app-v2/packages/design-system -name "*.tsx" | xargs grep -li "COMPONENT_NAME_PATTERN"
-
-# Check Mantine usage patterns for the same component type
-grep -r "Mantine.*COMPONENT_TYPE" /path/to/policyengine-app-v2/app/src --include="*.tsx" -l
+# Check how app-v2 composes the same component type (radix-ui + Tailwind + CVA)
+grep -r "COMPONENT_TYPE" /path/to/policyengine-app-v2/app/src --include="*.tsx" -l
+grep -r "COMPONENT_TYPE" /path/to/policyengine-app-v2/website/src --include="*.tsx" -l
 ```
 
 If similar components exist in app-v2:
 - Study their props interface, variant patterns, and behavior
-- Adapt the design and UX, but rebuild using the ui-kit's Tailwind v4 + CVA stack
-- Do NOT copy Mantine-dependent code — translate it to Tailwind utility classes
+- Adapt the design and UX, rebuilt on the ui-kit's Tailwind v4 + CVA stack
 
 If nothing similar exists in app-v2:
 - Research common patterns for that component type
@@ -118,7 +115,7 @@ ComponentName.displayName = 'ComponentName';
 
 ## Step 4: Design token validation agent
 
-Launch the **Design Token Validator Agent** (`agents/app/design-token-validator.md`) to audit every component file created in Step 3.
+Launch the **Dashboard Design Validator Agent** (`agents/dashboard/dashboard-design-validator.md`) to audit every component file created in Step 3.
 
 The agent will:
 1. Scan all new component files for hardcoded values
@@ -237,7 +234,7 @@ gh pr create --repo PolicyEngine/policyengine-ui-kit \
 - All colors reference design tokens (no hardcoded hex)
 - All spacing uses standard Tailwind classes
 - All typography uses token scale
-- Validated by design-token-validator agent
+- Validated by dashboard-design-validator agent
 
 ## Test plan
 - [ ] Run `bun run dev:demo` and verify components render correctly
@@ -256,5 +253,5 @@ Report the PR URL to the user.
 See these skills and agents for detailed guidance:
 - `policyengine-design-skill` — Design token values and usage
 - `policyengine-app-skill` — app-v2 component patterns to reference
-- `agents/app/design-token-validator.md` — Automated design token compliance
+- `agents/dashboard/dashboard-design-validator.md` — Automated design token compliance
 - `agents/app/component-test-writer.md` — Automated test writing

@@ -43,19 +43,18 @@ statute: backlog issues can be materially wrong (HI SB3125's issue said
 "append one bracket"; the act replaced the whole rate table). For complex
 multi-variable changes it may in turn use the country-models agents:
 
-1. `parameter-architect` — the parameter-schema change: exact YAML edits,
-   statutory references on every value (bill section + effective date),
-   inert defaults for periods before the effective date (a new bracket's
-   pre-effective threshold is `.inf` or its rate matches the bracket below —
-   whichever the surrounding schema convention uses).
-2. `rules-engineer` — only when variables/formulas change too (a pure
-   bracket append usually needs no formula edit; verify the rate scale is
-   consumed generically before assuming).
-3. `test-creator` — boundary tests proving: (a) pre-effective years are
+1. `rules-engineer` — the parameter-schema change (exact YAML edits,
+   statutory references on every value: bill section + effective date, and
+   inert defaults for periods before the effective date — a new bracket's
+   pre-effective threshold is `.inf` or its rate matches the bracket below,
+   whichever the surrounding schema convention uses) AND any variable/formula
+   changes. A pure bracket append usually needs no formula edit; verify the
+   rate scale is consumed generically before assuming.
+2. `test-creator` — boundary tests proving: (a) pre-effective years are
    bit-identical to the old schema (the inertness test), (b) the new
    structure binds correctly in the effective year at, just below, and
    above each new threshold, per filing status.
-4. Load `policyengine-standards`: changelog entry, formatting (`make
+3. Load `policyengine-standards`: changelog entry, formatting (`make
    format`), naming conventions.
 
 ## Phase 3 — PR and CI

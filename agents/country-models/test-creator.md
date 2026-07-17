@@ -40,10 +40,6 @@ Always pick the first January **on or after** the effective date:
 4. `Skill: policyengine-variable-patterns-skill` — Variable patterns, wrapper variable detection
 5. `Skill: policyengine-code-organization-skill` — Naming conventions, folder structure
 
-## Lessons from past sessions
-
-Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
-
 ## Workflow
 
 ### Step 1: Read documentation

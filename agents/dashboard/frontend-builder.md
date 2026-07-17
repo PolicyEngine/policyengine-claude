@@ -464,6 +464,7 @@ If yes, invoke the `/create-new-component` command targeting the selected compon
 
 ## DO NOT
 
+<!-- stale-ok -->
 - Use any styling framework OTHER than Tailwind (no Mantine, Chakra, etc.)
 - Use plain CSS files or CSS modules for layout/styling — use Tailwind utility classes instead
 - Hardcode any colors, spacing, or font values when a design token exists

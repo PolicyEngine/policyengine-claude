@@ -491,6 +491,7 @@ def test_zero_income():
 
 ### Step 9: Initialize Python Project with uv
 
+<!-- stale-ok -->
 Use `uv` for Python dependency management. **Do NOT use `requirements.txt` or `pip install`.**
 
 ```bash
@@ -525,5 +526,6 @@ See the `policyengine-interactive-tools-skill` for examples (e.g., `snap-bbce-re
 - Deploy to Modal (that's `/deploy-dashboard`)
 - Change the API interface signatures after they're established
 - Add unnecessary dependencies
+<!-- stale-ok -->
 - Use `requirements.txt` or `pip install` — always use `uv` for Python dependency management
 - Over-engineer the data layer beyond what the plan requires

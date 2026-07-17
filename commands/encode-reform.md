@@ -36,7 +36,6 @@ Coordinate a multi-agent workflow to implement a contributed policy reform (prop
 ST          = state code from $ARGUMENTS (e.g., "mt", "ct", "ky") or org name for federal (e.g., "crfb")
 BILL_ID     = bill identifier (e.g., "hb268", "sb100", "h4216", "agi_surtax")
 PREFIX      = /tmp/{ST}-{BILL_ID}
-LESSONS_PATH = ~/.claude/projects/-Users-ziminghua-vscode-policyengine-us/memory/agent-lessons.md
 ```
 
 ---
@@ -101,8 +100,6 @@ If there's a bill URL in $ARGUMENTS, also download the PDF:
 - curl -sL {url} -o {PREFIX}-bill.pdf
 - Verify with `file {PREFIX}-bill.pdf` that it's actually a PDF
 
-LEARN FROM PAST SESSIONS (read if exists, skip if not):
-- {LESSONS_PATH}
 ```
 
 ### Step 0B: Issue and PR setup (concurrent with 0A)
@@ -214,7 +211,6 @@ Also create {PREFIX}-impl-summary.md (≤20 lines) with:
 - Key filing status variations
 - Effective date
 
-LEARN FROM PAST SESSIONS: {LESSONS_PATH}
 ```
 
 ### After Phase 1
@@ -249,7 +245,6 @@ Reform-specific rules:
 - Use 0000-01-01 for in_effect, actual effective dates for policy params
 
 GLOBAL RULE: Every PDF reference href MUST end with #page=XX.
-LEARN FROM PAST SESSIONS: {LESSONS_PATH}
 ```
 
 ### Step 2B: Create Reform Code
@@ -285,7 +280,6 @@ CRITICAL RULES:
 - Use where() for dual calculation patterns
 - Follow existing reform code style (study 2-3 existing reforms first)
 
-LEARN FROM PAST SESSIONS: {LESSONS_PATH}
 ```
 
 ### Step 2C: Create Tests
@@ -313,7 +307,6 @@ Coverage requirements:
 5. Edge cases (zero income, exactly at threshold, maximum benefit)
 6. If applicable: nonrefundable cap, multiple qualifying members
 
-LEARN FROM PAST SESSIONS: {LESSONS_PATH}
 ```
 
 ### Step 2D: Validate
@@ -347,7 +340,6 @@ Write {PREFIX}-checkpoint.md (≤15 lines):
 - List of any issues found
 - List of files created/modified
 
-LEARN FROM PAST SESSIONS: {LESSONS_PATH}
 ```
 
 ### After Phase 2
@@ -413,7 +405,6 @@ Write {PREFIX}-audit-checkpoint.md (≤15 lines):
 - Brief description of each issue
 - CLEAN or ISSUES_FOUND overall
 
-LEARN FROM PAST SESSIONS: {LESSONS_PATH}
 ```
 
 ### Step 3C: Format and push

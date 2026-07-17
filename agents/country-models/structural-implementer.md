@@ -52,6 +52,7 @@ bracket") into a reviewed-ready draft PR against `policyengine-{country}`.
 2. Clone `policyengine-{country}` (depth 50), study the target parameter
    files and the repo's current conventions — check recent merged PRs for
    the changelog convention (`changelog.d/` fragments vs
+<!-- stale-ok -->
    `changelog_entry.yaml`), test file format, and formatting tooling.
 3. Make the parameter edits with statutory references on every value
    (act + section + URL + effective date).
@@ -60,7 +61,7 @@ bracket") into a reviewed-ready draft PR against `policyengine-{country}`.
      values shown in comments
    - boundary: below / at / above each new threshold, per filing status,
      per effective year
-5. Environment: venv + `pip install -e .` (slow — run long commands
+5. Environment: `uv venv` + `uv pip install -e .` (slow — run long commands
    piped through `tee` or in chunks so output keeps streaming). Run the
    targeted tests, then the full state/program baseline suite, then the
    related contrib suite. All green before PR.

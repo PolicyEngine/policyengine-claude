@@ -95,10 +95,6 @@ If any fails, move the page info to `href:`.
 
 Optional (load when relevant): `Skill: policyengine-healthcare`.
 
-## Lessons from past sessions
-
-Before starting, read `lessons/agent-lessons.md` (repo-relative) if it exists, AND read any path given on a `LESSONS_PATH:` line in your invocation prompt. Skip silently if either is missing.
-
 ## Workflow
 
 ### Step 1: Study reference implementations

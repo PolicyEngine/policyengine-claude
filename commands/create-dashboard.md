@@ -106,7 +106,7 @@ step in both modes.
 DASHBOARD_NAME = derived from description or user input
 REPO_PATH      = absolute path to the dashboard repository
 PREFIX         = /tmp/dashboard-{DASHBOARD_NAME}
-PLUGIN_ROOT    = directory containing this plugin (use: dirname of agents/dashboard/*.md)
+PLUGIN_ROOT    = ${CLAUDE_PLUGIN_ROOT} (plugin root dir Claude Code injects for this plugin)
 ```
 
 ---
@@ -143,7 +143,6 @@ PLUGIN_ROOT    = directory containing this plugin (use: dirname of agents/dashbo
 |------|--------|--------|------|
 | `{REPO_PATH}/plan.yaml` | planner agent | All subsequent agents | Full |
 | `{PREFIX}-plan-summary.md` | planner agent | Orchestrator | Short ≤20 |
-| `{PREFIX}-build-report.md` | build-validator | Orchestrator | Short ≤15 |
 | `{PREFIX}-design-report.md` | design-validator | Orchestrator | Short ≤15 |
 | `{PREFIX}-arch-report.md` | arch-validator | Orchestrator | Short ≤15 |
 | `{PREFIX}-plan-report.md` | plan-validator | Orchestrator | Short ≤15 |
@@ -165,10 +164,9 @@ Clean up leftover files from previous runs:
 rm -f /tmp/dashboard-*-plan-summary.md /tmp/dashboard-*-build-report.md /tmp/dashboard-*-design-report.md /tmp/dashboard-*-arch-report.md /tmp/dashboard-*-plan-report.md
 ```
 
-Resolve `PLUGIN_ROOT` — find the directory containing this plugin:
+Resolve `PLUGIN_ROOT` from the environment variable Claude Code injects for the running plugin:
 ```bash
-# Find the agents directory to determine plugin root
-find ~ -maxdepth 6 -path '*/policyengine-claude/agents/dashboard/dashboard-planner.md' -not -path '*/node_modules/*' 2>/dev/null | head -1 | xargs dirname | xargs dirname | xargs dirname
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}"
 ```
 
 ### Step 0B: Determine Repository Path
@@ -425,7 +423,7 @@ The approved plan.yaml is at: {REPO_PATH}/plan.yaml"
 
 ---
 
-## Phase 5: Validation (4 Parallel Validators + Fix Routing)
+## Phase 5: Validation (3 Parallel Validators + Fix Routing)
 
 **Skip this phase if `--skip-validate` flag is set.**
 
@@ -434,7 +432,7 @@ The approved plan.yaml is at: {REPO_PATH}/plan.yaml"
 ```
 ROUND = 1
 MAX_ROUNDS = 3
-PENDING_VALIDATORS = [build, design, architecture, plan]  # all 4 initially
+PENDING_VALIDATORS = [design, architecture, plan]  # all 3 initially (build/tests gated directly)
 ```
 
 ### Step 5A: Run validators
@@ -461,11 +459,10 @@ The plan.yaml is at: {REPO_PATH}/plan.yaml
 ADDITIONAL: Write your report to {PREFIX}-{REPORT_FILE} in addition to returning it."
 ```
 
-Validator details:
+Validator details (build and tests are gated directly by the orchestrator via `bun run build` + `bunx vitest run` — see Phase 3 and Error Handling — not by a subagent):
 
 | Validator | Agent file | Report file |
 |-----------|-----------|-------------|
-| build | `dashboard-build-validator.md` | `build-report.md` |
 | design | `dashboard-design-validator.md` | `design-report.md` |
 | architecture | `dashboard-architecture-validator.md` | `arch-report.md` |
 | plan | `dashboard-plan-validator.md` | `plan-report.md` |
@@ -486,7 +483,6 @@ Use this routing table to determine which builder agent should fix each failure:
 
 | Failed Validator | Failure contains | Route to builder |
 |------------------|-----------------|-----------------|
-| build | (any failure) | `dashboard-scaffold.md` |
 | design | (any failure) | `frontend-builder.md` |
 | architecture | "tailwind", "next.js", "package manager" | `dashboard-scaffold.md` |
 | architecture | "ui-kit", or other | `frontend-builder.md` |
@@ -580,21 +576,6 @@ cd {REPO_PATH} && git add -A && git commit -m "Implement dashboard from plan" &&
 Report the result to the user with the repo URL.
 
 **If "Stop"**: Report that code is ready locally at `{REPO_PATH}` and the user can commit when ready.
-
----
-
-## Phase 7: Overview Update (Silent)
-
-Spawn the overview updater in the background — no need to wait:
-
-```
-subagent_type: "general-purpose"
-run_in_background: true
-
-"You are the dashboard-overview-updater agent.
-
-Read and follow: {PLUGIN_ROOT}/agents/dashboard/dashboard-overview-updater.md"
-```
 
 ---
 

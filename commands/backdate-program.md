@@ -81,13 +81,6 @@ Parse $ARGUMENTS:
 - DPI: 600 if --600dpi, else 300
 ```
 
-**Resolve LESSONS_PATH** (used in Phase 3 agent prompts):
-```bash
-# The auto-memory directory for this project — resolve the concrete path
-LESSONS_PATH=$(ls -d ~/.claude/projects/*/memory 2>/dev/null | head -1)/agent-lessons.md
-```
-Pass `{LESSONS_PATH}` to all implementation agent prompts (Phase 3, Phase 6C).
-
 ### Step 0B: Issue + Inventory (SPAWN BOTH IN ONE MESSAGE)
 
 These two agents have no dependency on each other. Spawn them in a **single message** so they run concurrently:
@@ -440,10 +433,6 @@ The `reference-validator` agent is purpose-built for this — it validates that 
 ```
 "Also check these backdate-specific reference issues:
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
-These contain real mistakes from past runs. Do NOT repeat them.
 
 1. URL LIVENESS: Test every href with curl -sI. Record broken/redirected URLs.
 2. STATUTE SPECIFICITY: Must cite specific subsection, not parent section.
@@ -559,10 +548,6 @@ Load skills: /policyengine-parameter-patterns, /policyengine-period-patterns.
 Read impl spec at /tmp/{st}-{prog}-impl-spec.md (parameter values to add).
 Read ref audit at /tmp/{st}-{prog}-ref-audit.md (reference fixes to apply).
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
-These contain real mistakes from past runs. Do NOT repeat them.
 
 RULES:
 - Preserve existing YAML structure EXACTLY (indentation, key ordering, metadata)
@@ -637,10 +622,6 @@ Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
 Read formula audit at /tmp/{st}-{prog}-formula-audit.md.
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
-These contain real mistakes from past runs. Do NOT repeat them.
 
 REUSE EXISTING VARIABLES AND PARAMETERS:
 PolicyEngine-US has hundreds of existing variables for common concepts (fpg, smi,
@@ -725,10 +706,6 @@ Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 Read impl spec at /tmp/{st}-{prog}-impl-spec.md.
 Read existing test files listed in /tmp/{st}-{prog}-inventory.md.
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
-These contain real mistakes from past runs. Do NOT repeat them.
 
 COVERAGE REQUIREMENTS:
 1. Existing untested features: test EVERY parameter, not just newly backdated ones
@@ -757,10 +734,6 @@ The `edge-case-generator` analyzes the variables and parameters to automatically
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
 Analyze variables and parameters in the program folder.
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
-These contain real mistakes from past runs. Do NOT repeat them.
 
 Focus on:
 - Income just above/below thresholds
@@ -929,10 +902,6 @@ Apply fixes. Run make format.
 REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
 codebase first. PolicyEngine-US likely already has it (fpg, smi, tanf_fpg, ssi, etc.).
 
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
-These contain real mistakes from past runs. Do NOT repeat them.
 
 LEARN FROM PREVIOUS ROUNDS:
 If /tmp/{st}-{prog}-checklist.md exists, read it FIRST. It contains issues
@@ -1002,6 +971,7 @@ The `pr-pusher` agent ensures PRs are properly formatted with changelog, linting
 echo "Description of change." > changelog.d/<branch-name>.<type>.md
 ```
 Types: `added` (minor bump), `changed` (patch), `fixed` (patch), `removed` (minor), `breaking` (major).
+<!-- stale-ok -->
 **DO NOT** edit `CHANGELOG.md` directly or use `changelog_entry.yaml` (deprecated).
 
 ### Step 7B: Final Report + PR Description (DELEGATED)
@@ -1076,185 +1046,7 @@ Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
 
 ---
 
-## Phase 8: Lessons Learned
-
-After the workflow completes, distill session lessons into persistent storage and propose them to the plugin repo. **This phase runs even if the review-fix loop was skipped** — the implementation and validation phases may also have produced lessons.
-
-### Step 8A: Extract Lessons (DELEGATED)
-
-Spawn a `general-purpose` agent to distill session-specific fixes into generalized rules:
-
-```
-subagent_type: "general-purpose",
-  team_name: "{st}-{prog}-backdate", name: "lesson-extractor"
-
-"Distill lessons learned from the {STATE} {PROGRAM} backdating session.
-
-READ these files:
-- /tmp/{st}-{prog}-checklist.md (session checklist from review-fix loop, if exists)
-- /tmp/{st}-{prog}-checkpoint.md (validation checkpoint, if exists)
-- /tmp/{PREFIX}-review-summary.md (last review summary, if exists)
-
-ALSO READ the persistent lessons file (if it exists):
-- {persistent_lessons_path}
-
-TASK:
-1. Extract every issue that was found and fixed during this session
-2. Generalize each fix into a one-line rule (remove file names, line numbers, state names)
-3. Categorize each rule:
-   - PARAMETER: structure, metadata, references, dates, descriptions
-   - VARIABLE: hard-coding, periods, entities, formulas, branching
-   - TEST: coverage, boundaries, periods, naming
-   - REFERENCE: URLs, page numbers, specificity, liveness
-   - FORMULA: deduction order, unused params, zero-sentinels, logic
-4. Deduplicate against existing persistent lessons — only keep genuinely NEW rules
-5. If no new lessons: write 'NO NEW LESSONS' to /tmp/{st}-{prog}-new-lessons.md
-6. If new lessons exist, write to /tmp/{st}-{prog}-new-lessons.md:
-
-   ## New Lessons from {STATE} {PROGRAM} ({date})
-
-   ### PARAMETER
-   - {generalized rule}
-
-   ### VARIABLE
-   - {generalized rule}
-
-   ### TEST
-   - {generalized rule}
-
-   (Only include categories that have new lessons. Max 15 entries total.)
-
-RULES FOR GENERALIZATION:
-- Remove state names: 'ct_tfa.py hard-coded 0.75' → 'Never hard-code numeric values in formulas'
-- Remove file paths: 'payment/amount.yaml missing #page=' → 'All PDF references must include #page=XX'
-- Keep the principle: 'Used period instead of period.this_year' → 'Use period.this_year for annual variables like household size'
-- Be specific enough to be actionable, general enough to apply across programs"
-```
-
-Where `{persistent_lessons_path}` is `{LESSONS_PATH}` (resolved in Phase 0A — same directory as MEMORY.md, persists across conversations).
-
-### Step 8B: Persist Locally
-
-After the lesson-extractor completes, read `/tmp/{st}-{prog}-new-lessons.md`.
-
-**If 'NO NEW LESSONS'**: Skip to Step 8D.
-
-**If new lessons exist**: Append them to the persistent local file:
-
-```bash
-# Create the file if it doesn't exist
-LESSONS_FILE="$LESSONS_PATH"
-if [ ! -f "$LESSONS_FILE" ]; then
-    echo "# Agent Lessons Learned" > "$LESSONS_FILE"
-    echo "" >> "$LESSONS_FILE"
-    echo "Accumulated from /backdate-program runs. Loaded by implementation agents on future runs." >> "$LESSONS_FILE"
-    echo "Max 50 entries — oldest get pruned when exceeded." >> "$LESSONS_FILE"
-    echo "" >> "$LESSONS_FILE"
-fi
-cat /tmp/{st}-{prog}-new-lessons.md >> "$LESSONS_FILE"
-```
-
-**Pruning**: If the file exceeds 50 lesson entries (grep -c "^- " "$LESSONS_FILE"), remove the oldest entries (earliest section) to stay under the cap.
-
-### Step 8C: Propose to Plugin Repo (PR)
-
-Share lessons with all plugin users by proposing them to the policyengine-claude repo.
-
-This uses a **temporary clone** to avoid assumptions about how the plugin is installed (marketplace download, git clone, etc.) and to avoid modifying the user's working directory.
-
-**Step 8C-1: Clone and check for existing open lessons PR:**
-
-```bash
-WORK_DIR=/tmp/{st}-{prog}-lessons-pr
-rm -rf "$WORK_DIR"
-gh repo clone PolicyEngine/policyengine-claude "$WORK_DIR" -- --depth=1
-cd "$WORK_DIR"
-
-# Check for an open lessons PR
-OPEN_PR=$(gh pr list --repo PolicyEngine/policyengine-claude \
-  --search "Agent lessons" --state open --json number,headRefName \
-  --jq '.[0]')
-```
-
-**If clone fails** (no `gh` auth, network issues): Skip Step 8C entirely. Lessons are already saved locally in Step 8B. Report: "Lessons saved locally. Plugin PR skipped (could not clone repo)."
-
-**Step 8C-2: Create or update the lessons file:**
-
-```bash
-if [ -n "$OPEN_PR" ]; then
-    # Existing open PR — checkout its branch and append
-    BRANCH=$(echo "$OPEN_PR" | jq -r '.headRefName')
-    git fetch origin "$BRANCH"
-    git checkout "$BRANCH"
-else
-    # No open PR — create a new branch
-    BRANCH="lessons/update-$(date +%Y%m%d)-{st}-{prog}"
-    git checkout -b "$BRANCH"
-fi
-
-mkdir -p lessons
-LESSONS_PLUGIN="$WORK_DIR/lessons/agent-lessons.md"
-if [ ! -f "$LESSONS_PLUGIN" ]; then
-    echo "# Agent Lessons Learned" > "$LESSONS_PLUGIN"
-    echo "" >> "$LESSONS_PLUGIN"
-    echo "Accumulated from /backdate-program runs across all contributors." >> "$LESSONS_PLUGIN"
-    echo "Loaded by implementation agents on future runs." >> "$LESSONS_PLUGIN"
-    echo "" >> "$LESSONS_PLUGIN"
-fi
-
-# Append new lessons (the file was already deduplicated in Step 8A)
-cat /tmp/{st}-{prog}-new-lessons.md >> "$LESSONS_PLUGIN"
-```
-
-**Step 8C-3: Commit and push:**
-
-```bash
-git add lessons/agent-lessons.md
-git commit -m "Add lessons from {STATE} {PROGRAM} backdate session"
-git push -u origin "$BRANCH"
-```
-
-**If push fails** (no write access): Try fork-based workflow:
-```bash
-gh repo fork PolicyEngine/policyengine-claude --clone=false
-git remote add fork "$(gh repo view --json sshUrl --jq '.sshUrl' -- "$(gh api user --jq '.login')/policyengine-claude")"
-git push -u fork "$BRANCH"
-```
-If fork also fails, skip PR creation. Lessons are already saved locally.
-
-**Step 8C-4: Create PR if none exists:**
-
-```bash
-if [ -z "$OPEN_PR" ]; then
-    gh pr create \
-      --repo PolicyEngine/policyengine-claude \
-      --title "Agent lessons update" \
-      --body "$(cat <<'EOF'
-## Summary
-Accumulated lessons learned from /backdate-program runs.
-
-These are generalized rules distilled from real agent mistakes caught
-during review-fix loops. Each entry has been verified (the issue was
-real and the fix was confirmed).
-
-## How to review
-- Check that each rule is genuinely useful and not too specific
-- Promote particularly good rules to skill files if warranted
-- Remove any that are too obvious or already covered by skills
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
-fi
-```
-
-**Step 8C-5: Clean up temporary clone:**
-
-```bash
-rm -rf "$WORK_DIR"
-```
-
-### Step 8D: Shutdown Team & Report
+## Phase 8: Shutdown & report
 
 ```
 TeamDelete()
@@ -1262,33 +1054,6 @@ TeamDelete()
 
 Present to user:
 - **WORKFLOW COMPLETE**
-- New lessons learned: {count} (or "none — all patterns already known")
-- Lessons PR: {link to open PR on policyengine-claude, if created/updated}
-
----
-
-## Future Runs: Loading Lessons
-
-On future `/backdate-program` runs, the `LEARN FROM PAST SESSIONS` block is already embedded in these agent prompts:
-
-| Phase | Agent | Has Lessons Block |
-|-------|-------|-------------------|
-| 2 | ref-auditor (reference-validator) | Yes |
-| 3 | impl-parameters (rules-engineer) | Yes |
-| 3 | impl-formulas (rules-engineer) | Yes |
-| 4A | test-creator | Yes |
-| 4B | edge-case-gen | Yes |
-| 6C | review-fixer (rules-engineer) | Yes |
-
-All use the same pattern:
-```
-LEARN FROM PAST SESSIONS (read if they exist — skip if not found):
-- {LESSONS_PATH}
-- ~/.claude/plugins/marketplaces/policyengine-claude/lessons/agent-lessons.md
-These contain real mistakes from past runs. Do NOT repeat them.
-```
-
-Prevention is better than fixing — lessons are loaded by all agents that write or validate code/tests/references.
 
 ---
 
@@ -1315,9 +1080,8 @@ Prevention is better than fixing — lessons are loaded by all agents that write
 | 6 | ci-fixer-{N} x1-3 | `complete:country-models:ci-fixer` | Verify fixes don't break tests after each round |
 | 7A | pusher | `complete:country-models:pr-pusher` | Purpose-built for changelog + format + push |
 | 7B | reporter | `general-purpose` | Final report + PR description with unresolved items |
-| 8A | lesson-extractor | `general-purpose` | Distills session fixes into generalized rules |
 
-**11 plugin agents + 1 skill invoked + 7 general-purpose agents** (only where no plugin agent fits).
+**11 plugin agents + 1 skill invoked + 6 general-purpose agents** (only where no plugin agent fits).
 
 ---
 
@@ -1337,10 +1101,7 @@ Prevention is better than fixing — lessons are loaded by all agents that write
 | `/tmp/{st}-{prog}-final-report.md` | Reporter (Phase 7) | Main Claude | Short |
 | `/tmp/{st}-{prog}-pr-description.md` | Reporter (Phase 7) | gh pr edit --body-file | Full |
 | `/tmp/{st}-{prog}-full-audit.md` | Reporter (Phase 7) | Archival only | Full |
-| `/tmp/{st}-{prog}-checklist.md` | review-fixer (Phase 6) | Fix agents (next round), lesson-extractor | Full |
-| `/tmp/{st}-{prog}-new-lessons.md` | lesson-extractor (Phase 8) | Main Claude (read first line only) | Short |
-| `~/.claude/projects/.../memory/agent-lessons.md` | Phase 8B | Phase 2/3/4/6 agents (future runs) | Short (≤50 entries) |
-| `policyengine-claude/lessons/agent-lessons.md` | Phase 8C (PR) | All plugin users (future runs) | Short (≤50 entries) |
+| `/tmp/{st}-{prog}-checklist.md` | review-fixer (Phase 6) | Fix agents (next round) | Full |
 
 **Main Claude reads ONLY "Short" files. Never read "Full" files.**
 

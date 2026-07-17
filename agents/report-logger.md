@@ -1,6 +1,6 @@
 ---
 name: report-logger
-description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Country-aware routing (INVESTIGATE → policyengine-{country}-data issue; structural → policyengine-{country} issue; everything → archive).
+description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Country-aware routing (INVESTIGATE → country data repo issue, us → PolicyEngine/populace; structural → policyengine-{country} issue; everything → archive).
 tools: Read, Write, Bash
 model: sonnet
 ---
@@ -33,11 +33,11 @@ Run these checks in parallel (cheap):
 
 ```bash
 # Current repo
-git rev-parse --show-toplevel 2>/dev/null      # e.g., /Users/pavel/policyengine-app
-gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null  # e.g., PolicyEngine/policyengine-app
+git rev-parse --show-toplevel 2>/dev/null      # e.g., /Users/pavel/policyengine-app-v2
+gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null  # e.g., PolicyEngine/policyengine-app-v2
 
-# Is there a posts/articles directory? (policyengine-app shape)
-test -d src/posts/articles && echo "HAS_POSTS_DIR"
+# Is there a posts/articles directory? (policyengine-app-v2 shape)
+test -d app/src/data/posts/articles && echo "HAS_POSTS_DIR"
 
 # Is there an analyses/ directory? (this repo's shape)
 test -d analyses && echo "HAS_ANALYSES_DIR"
@@ -56,11 +56,11 @@ Append context-specific options:
 
 | Context | Add this option |
 |---|---|
-| Inside `policyengine-app` repo (HAS_POSTS_DIR) | "Save as draft research post: `src/posts/articles/{slug}.md` + update `posts.json`" |
+| Inside `policyengine-app-v2` repo (HAS_POSTS_DIR) | "Save as draft research post: `app/src/data/posts/articles/{slug}.md` + update `app/src/data/posts/posts.json`" |
 | Inside `policyengine-skills` or any repo with `analyses/` | "Just the archive in `analyses/`" (already covered by local archive but make the path explicit) |
-| Verdict is `INVESTIGATE` | "Open GitHub issue in `PolicyEngine/policyengine-{country}-data` (calibration hypothesis)" |
+| Verdict is `INVESTIGATE` | "Open GitHub issue in the country's data repo (`us` → `PolicyEngine/populace`; other countries → `policyengine-{country}-data`) — calibration hypothesis" |
 | Verdict is `structural` | "Open GitHub issue in `PolicyEngine/policyengine-{country}` (model-change estimate)" |
-| Verdict is `PASS*` AND inside `policyengine-app` | "Open draft PR to policyengine-app with the post body" |
+| Verdict is `PASS*` AND inside `policyengine-app-v2` | "Open draft PR to policyengine-app-v2 with the post body" |
 | Always | "Custom path / repo — type a destination spec" |
 
 The country is derived from the reform's jurisdiction (`us`, `uk`, `ca`), so the issue repo names are fully qualified.
@@ -75,8 +75,8 @@ Example prompt rendering:
 Where should this analysis go?
 
 [x] Local archive: /Users/pavel/policyengine-skills/analyses/2026-06-29-us-salt-cap-plus-100k.md  (default)
-[ ] GitHub issue: PolicyEngine/policyengine-{country}-data  (verdict: INVESTIGATE → calibration)
-[ ] Draft PR: PolicyEngine/policyengine-app → src/posts/articles/salt-cap-plus-100k.md
+[ ] GitHub issue: PolicyEngine/populace  (verdict: INVESTIGATE → calibration; us data repo)
+[ ] Draft PR: PolicyEngine/policyengine-app-v2 → app/src/data/posts/articles/salt-cap-plus-100k.md
 [ ] Custom: --log-to <spec>
 [ ] Skip / no-log
 
@@ -96,7 +96,7 @@ If the analyst picks `edit`, drop them into `$EDITOR` (or open the file path if 
 | Verdict | Pre-selected |
 |---|---|
 | `PASS` / `PASS-WITH-NOTES` / `PASS-WITH-CORROBORATION` | local archive only |
-| `INVESTIGATE` | local archive + GH issue in `policyengine-{country}-data` |
+| `INVESTIGATE` | local archive + GH issue in the country data repo (`us` → `populace`) |
 | `structural` | local archive + GH issue in `policyengine-{country}` |
 | `not-possible` / `deployed-model-lag` | local archive only |
 
@@ -197,10 +197,10 @@ Always print the resolved path to the agent's output so the user can find the fi
 
 ### Repo selection (auto-routed)
 
-- `INVESTIGATE` → `PolicyEngine/policyengine-{country}-data` (where `{country}` is derived from the reform's jurisdiction: `us` → `policyengine-us-data`, `uk` → `policyengine-uk-data`, `ca` → `policyengine-canada-data`)
-- `structural` → `PolicyEngine/policyengine-{country}` (same country mapping)
+- `INVESTIGATE` → the country's data repo. **US calibration/data work moved to `PolicyEngine/populace`** (the `policyengine-us-data` successor — us-data is archived). Other countries still map to `policyengine-{country}-data`: `uk` → `policyengine-uk-data`, `ca` → `policyengine-canada-data`.
+- `structural` → `PolicyEngine/policyengine-{country}` (the live model repo — `us` → `policyengine-us`, `uk` → `policyengine-uk`, etc.)
 
-**CRITICAL:** never hardcode `policyengine-us-data` or `policyengine-us`. Always parameterize by the reform's country. A UK CDCC-equivalent reform's calibration issue does not belong in the US data repo.
+**CRITICAL:** never hardcode a single data repo. Parameterize by the reform's country — `us` routes to `PolicyEngine/populace`, non-US to `policyengine-{country}-data`. A UK reform's calibration issue does not belong in the US data repo (and vice versa).
 - Explicit `issue:<repo>` → use that repo
 
 ### Issue body shape per verdict
@@ -269,8 +269,16 @@ See archived report.
 ### Open issue mechanics
 
 ```bash
+# US data issues go to PolicyEngine/populace (the archived us-data successor);
+# non-US countries still use policyengine-{country}-data.
+if [ "$country" = "us" ]; then
+  DATA_REPO="PolicyEngine/populace"
+else
+  DATA_REPO="PolicyEngine/policyengine-${country}-data"
+fi
+
 gh issue create \
-  --repo PolicyEngine/policyengine-${country}-data \  # ${country} from jurisdiction: us / uk / canada
+  --repo "$DATA_REPO" \
   --title "{title}" \
   --body "$(cat <<'EOF'
 {body}
@@ -291,7 +299,7 @@ Skip this destination unless `--log-to tracker` is explicitly passed AND credent
 
 ## Destination: draft (research PR)
 
-`--log-to draft:<repo>/<path>` opens a PR with the report rendered as a blog-post-style markdown file.
+`--log-to draft:<repo>/<path>` opens a PR with the report rendered as a blog-post-style markdown file. The canonical PolicyEngine research-post target is `policyengine-app-v2` at `app/src/data/posts/articles/{slug}.md` (also register the slug in `app/src/data/posts/posts.json`). Note: `policyengine-app` v1 is archived — never target it.
 
 1. Use the `policyengine-writing` skill for tone polish (the raw report uses neutral-mechanical language; a draft needs lead, sub-heads, and a TL;DR).
 2. `gh pr create --draft` against the target repo, branch named `analyze-policy/{policy_id}`.
@@ -303,7 +311,7 @@ Skip this destination unless `--log-to tracker` is explicitly passed AND credent
 {
   "destinations_written": [
     {"type": "archive", "path": "~/.policyengine/analyses/2026-06-19-us-arpa-ctc-restoration.md"},
-    {"type": "issue", "repo": "PolicyEngine/policyengine-{country}-data", "url": "https://github.com/.../issues/4823"}
+    {"type": "issue", "repo": "PolicyEngine/populace", "url": "https://github.com/.../issues/4823"}
   ],
   "skipped": [],
   "errors": []
