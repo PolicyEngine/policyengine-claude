@@ -60,7 +60,7 @@ Pages live under `website/src/app/[countryId]/<slug>/`. The convention is a **se
 component:
 
 ```tsx
-// website/src/app/[countryId]/claude-plugin/page.tsx  (server)
+// website/src/app/[countryId]/ai-agents/page.tsx  (server)
 import type { Metadata } from "next";
 import ClaudePluginClient from "./ClaudePluginClient";
 export const metadata: Metadata = { title: "Claude plugin", description: "..." };
