@@ -33,16 +33,14 @@ mkdir -p "$RUN_ROOT"
 Never read or write process-global `/tmp/{PREFIX}-...` files. Linked worktrees share a Git
 common directory, so the worktree root—not `.git` or the branch name—is the isolation key.
 
-## Load these skills first
+## Load the consolidated skill first
 
-1. `Skill: policyengine-testing-patterns-skill` — Test structure, period format, common failure patterns
-2. `Skill: policyengine-variable-patterns-skill` — Variable patterns, wrapper variable detection
-3. `Skill: policyengine-parameter-patterns-skill` — Parameter YAML rules, references
-4. `Skill: policyengine-period-patterns-skill` — Period handling (common failure source)
-5. `Skill: policyengine-code-style-skill` — Keep fixes clean and consistent
-6. `Skill: policyengine-aggregation-skill` — `adds` vs `add()` patterns
-7. `Skill: policyengine-vectorization-skill` — Vectorization fixes
-8. `Skill: policyengine-code-organization-skill` — Naming, folder structure
+Use the Skill tool to load the installed skill whose name ends in
+`policyengine-model-development` (or the exact unprefixed name when available). Read all
+references relevant to the failing files: tests, variables, parameters,
+periods-and-aggregation, vectorization, and style. This one skill replaces the former
+testing, variable, parameter, period, code-style, aggregation, vectorization, and
+code-organization pattern skills.
 
 ## CRITICAL: Test Locally, Targeted First
 
@@ -64,6 +62,23 @@ only if depth 2 does not reveal the bad intermediate variable.
 An iteration is a diagnose/edit/targeted-rerun cycle; the final broad confirmation is not
 an iteration. If the same failure makes no progress across two consecutive iterations,
 classify it as BLOCKED and stop.
+
+## Calling-contract overrides
+
+The invoking workflow's prompt may override parts of this contract; when it does, follow
+the caller:
+
+- **Status file and vocabulary** — a caller may name a different status file and result
+  set (for example, fix-pr's fix-ci role writes `{RUN_ROOT}/{PREFIX}-fix-pr-ci-result.md`
+  with PASS/FAIL). Use the caller's path and format with the same evidence rules.
+- **`PARTIAL` status** — when the calling workflow explicitly permits it (for example,
+  encode-policy-v2's review-ci-fixer role, whose mandatory follow-up review adjudicates
+  remaining findings), report `STATUS: PARTIAL` with the same remaining-failure detail as
+  BLOCKED instead of forcing a BLOCKED stop.
+- **Iteration budget and formatting** — a caller-specified budget or formatting
+  assignment replaces the defaults here.
+
+Without an explicit override, the defaults in this file apply.
 
 ## Workflow
 
@@ -97,7 +112,7 @@ For each failing test, work out the root cause from the policy docs (Step 1):
 - **Test input mismatch** (e.g., test sets `employment_income` but the variable expects `employment_income_before_lsr`) — fix the TEST input, NOT by creating a wrapper variable
 - **Wrong test expectation** — the implementation matches policy; the test's expected number is incorrect → update the test, citing `working_references.md` in your status report
 - **Wrong implementation** — the test matches policy; the variable formula or parameter value is incorrect → update the implementation, citing the regulation
-- **Missing variable or parameter** — policy clearly requires it and the test exercises it → create the missing file using `policyengine-variable-patterns` / `policyengine-parameter-patterns` patterns. Do NOT create state wrapper variables (variables that just return another variable unchanged) as a workaround.
+- **Missing variable or parameter** — policy clearly requires it and the test exercises it → create the missing file using the relevant `policyengine-model-development` reference. Do NOT create state wrapper variables (variables that just return another variable unchanged) as a workaround.
 - **Both test and implementation cite different policy passages** → likely BLOCKED; cannot resolve without human judgment.
 - **Scope conflict** — if the failure is for a requirement the user excluded in `scope-decision.md`, do NOT fix; note it in the status report and move on.
 
@@ -133,7 +148,9 @@ workflows normally format once after all validation passes.
 
 ## When You Stop
 
-Write a status report to `{RUN_ROOT}/{PREFIX}-ci-fixer-status.md`. There are only TWO statuses — PASS or BLOCKED.
+Write a status report to `{RUN_ROOT}/{PREFIX}-ci-fixer-status.md` (or the caller's named
+status file). The default statuses are PASS or BLOCKED; see Calling-contract overrides
+for when a caller permits PARTIAL or a different vocabulary.
 
 ### PASS — all in-scope tests pass
 
@@ -178,7 +195,9 @@ STATUS: BLOCKED
 
 After writing your status file, your task is COMPLETE. Final message:
 
-`DONE — wrote {RUN_ROOT}/{PREFIX}-ci-fixer-status.md (STATUS: PASS/BLOCKED, X/N tests passing)`
+`DONE — wrote {status file} (STATUS: {status}, X/N tests passing)` — with the caller's
+status file and vocabulary when overridden, otherwise
+`{RUN_ROOT}/{PREFIX}-ci-fixer-status.md` and PASS/BLOCKED.
 
 Do NOT continue, mark PR ready, push, or clean up `sources/`. The orchestrator handles those.
 

@@ -104,11 +104,27 @@ If there's a bill URL in $ARGUMENTS, also download the PDF:
 
 ### Step 0B: Issue and PR setup (concurrent with 0A)
 
-Invoke @complete:country-models:issue-manager agent to:
-- Search for existing issue or create new one for `$ARGUMENTS`
-- Create branch: `{st}-{bill_id}` (e.g., `mt-hb268`, `crfb-agi-surtax`)
-- Push to fork, then create draft PR to upstream using `--repo PolicyEngine/policyengine-us`
-- Return issue number, PR URL, and branch name
+Derive the repository targets first — the issue-manager agent requires caller-supplied
+values and returns `BLOCKED` when a new-PR write is requested without them:
+
+```bash
+PUSH_REPO_URL=$(git remote get-url --push origin)
+PUSH_REPO=$(gh repo view "$PUSH_REPO_URL" --json nameWithOwner --jq .nameWithOwner)
+```
+
+Invoke @complete:country-models:issue-manager with `MODE=discover`,
+`BASE_REPO=PolicyEngine/policyengine-us`,
+`BASE_REPO_URL=https://github.com/PolicyEngine/policyengine-us.git`, the derived
+`PUSH_REPO`/`PUSH_REPO_URL`, the concrete `WORKTREE_ROOT`/`RUN_ROOT`/`PREFIX`, proposed
+branch `{st}-{bill_id}` (e.g., `mt-hb268`, `crfb-agi-surtax`), and a one-line setup
+summary for `$ARGUMENTS`. Discovery makes no writes:
+- On `DECISION_NEEDED`, ask the issue and PR reuse/create choices; on `NO_CANDIDATES`,
+  use `create_new` for both.
+- Re-invoke with `MODE=execute` and both explicit decisions. For a new PR it creates the
+  issue, the branch, one `--allow-empty` initialization commit pushed to
+  `PUSH_REPO_URL`, and a draft PR into `BASE_REPO`.
+- Store the returned issue number, PR number/URL, branch, head repository URL, and head
+  SHA. Continue only on `SETUP_COMPLETE`.
 
 ### After Phase 0
 

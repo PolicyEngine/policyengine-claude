@@ -7,36 +7,46 @@ metadata:
 
 # review-program
 
-This is the Codex equivalent of the Claude `/review-program` command.
+Thin launcher. The canonical workflow — phases, roles, gates, severity rules, artifact
+contracts — lives in [references/workflow.md](references/workflow.md). Read it completely
+before acting and follow it exactly; this file only adapts it to this surface. Do not
+redefine flags, phases, severity rules, file ownership, or completion gates here.
 
-Use this skill for PolicyEngine-specific PR reviews even when the user starts from Codex's built-in `/review`. The built-in review flow is generic; this skill adds PolicyEngine source, reference, regulatory, PDF, and test-review rules.
+Use this skill for PolicyEngine-specific PR reviews even when the user starts from a
+generic built-in review command (such as Codex `/review`): the canonical workflow adds
+PolicyEngine source, reference, regulatory, PDF, and test-review rules a generic review
+lacks.
 
-Treat the text after `$review-program` or `/review` as the command arguments when available:
+Treat the text after `$review-program` or `/review` as the raw workflow arguments:
 
 ```text
 $review-program [PR_NUMBER_OR_SEARCH] [PDF_URL] [--local] [--local-diff] [--full]
-  [--skip-pdf] [--600dpi] [--resume] [--incremental REPORT]
-/review [PR_NUMBER_OR_SEARCH] [PDF_URL] [--local] [--local-diff] [--full]
-  [--skip-pdf] [--600dpi] [--resume] [--incremental REPORT]
+  [--skip-pdf] [--600dpi] [--resume] [--incremental REPORT] [--prefix NAME]
 ```
-
-Before starting, read [workflow.md](references/workflow.md) and [subagents.md](references/subagents.md). Follow them as the source of truth for phases, handoff files, severity rules, and Codex subagent delegation.
 
 Mandatory completion gate:
 
 - Do not stop after individual validators or PDF audits.
-- The review is incomplete until `{RUN_ROOT}/{PREFIX}-review-full-report.md` and `{RUN_ROOT}/{PREFIX}-review-summary.md` both exist.
+- The review is incomplete until `{RUN_ROOT}/{PREFIX}-review-full-report.md` and
+  `{RUN_ROOT}/{PREFIX}-review-summary.md` both exist.
 - Phase 6 consolidation is required before displaying or posting findings.
 
-Operational rules:
+Surface adapters:
 
-- Resolve the target PR first. If no PR number or search text was supplied, ask the user
-  for a PR number or title. Do not ask which program to review; infer program context from
-  the selected PR's diff.
-- Read-only mode: do not edit source files or change the user's branch.
-- Derive the worktree-scoped `RUN_ROOT` exactly as specified in `workflow.md`. Never use
-  process-global `/tmp/{PREFIX}-...` paths.
-- Save large diffs, PDF text, screenshots, and detailed findings to `{RUN_ROOT}/{PREFIX}-review-...` files.
-- During analysis, read only short summary files in the main context.
-- Use PolicyEngine skills explicitly for validation: `$policyengine-parameter-patterns`, `$policyengine-variable-patterns`, `$policyengine-testing-patterns`, `$policyengine-code-style`, `$policyengine-code-organization`, `$policyengine-aggregation`, and `$policyengine-period-patterns`.
-- This workflow is designed for Codex subagents. When subagent use is available and authorized, delegate independent validators to `worker` or `explorer` agents using [subagents.md](references/subagents.md); otherwise run the validators directly with the same file handoff contract.
+- **Claude Code**: also read
+  [references/claude-launcher.md](references/claude-launcher.md) — it maps canonical
+  roles to this plugin's agent types and the workflow's abstract operations to Claude
+  Code mechanics.
+- **Codex**: use the delegation mapping below.
+
+Delegation mapping (when subagent use is available and authorized):
+
+- Map every role in the canonical Roles table to a `worker` when it writes report or
+  artifact files, or an `explorer` for read-only codebase questions.
+- Pass concrete `RUN_ROOT`, `WORKTREE_ID`, and `PREFIX` values and the role's task spec
+  from the canonical workflow to every subagent; name the role's skills explicitly in the
+  subagent prompt — do not assume a worker infers them from parent context.
+- Every subagent finishes by writing its assigned file and returning the one-line DONE
+  message from the canonical completion contract.
+- If subagents are unavailable or not authorized, execute the roles directly in phase
+  order, preserving the same handoff files and read-only contract.

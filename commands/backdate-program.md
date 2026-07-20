@@ -10,6 +10,11 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
 
 **GLOBAL RULE — PDF Page Numbers**: Every PDF reference href MUST end with `#page=XX` (the file page number, NOT the printed page number). The ONLY exception is single-page PDFs. This rule applies to ALL agents in ALL phases — research, implementation, audit, and finalize. Include this instruction in every agent prompt that touches parameter YAML files.
 
+**GLOBAL RULE — Plugin Namespacing**: Agent and skill names below are logical,
+unprefixed names. Resolve each against the session's installed components by suffix before
+invocation; never assume `complete:` or another bundle prefix. For example,
+`country-models:issue-manager` means the available agent whose name ends with that suffix.
+
 ## Arguments
 
 `$ARGUMENTS` should contain:
@@ -61,14 +66,29 @@ Coordinate a multi-agent workflow to add historical date entries, fix reference 
 
 ### Step 0A: Parse Arguments & Clean Up
 
+**Derive the worktree-safe runtime root first** — all runtime files live under it, never
+under process-global `/tmp` paths, so concurrent worktrees cannot collide:
+```bash
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_ID=$(printf '%s' "$WORKTREE_ROOT" | git hash-object --stdin | cut -c1-12)
+RUN_ROOT="/tmp/policyengine-command-runs/$WORKTREE_ID"
+mkdir -p "$RUN_ROOT"
+```
+
+Substitute the concrete `{RUN_ROOT}` value into every agent prompt. Before any branch
+operation, inspect `git worktree list --porcelain`; if the working branch is checked out
+in another worktree, stop and report that path — never use `--ignore-other-worktrees`.
+
 **Clean up leftover files from previous runs** (prevents stale data from confusing agents):
 ```bash
 # Clean /backdate-program files (use {st}-{prog} prefix after parsing)
-rm -f /tmp/{st}-{prog}-*.md
-# Derive PREFIX for reading /review-program output files (Phase 6)
-PREFIX=$(git branch --show-current | tr '/' '-')
-PREFIX=${PREFIX:-review-program}
-# Note: /review-program's own Step 0A handles its file cleanup
+rm -f "$RUN_ROOT"/{st}-{prog}-*.md
+# Artifact prefix for the Phase 6 /review-program invocations. Pass it explicitly with
+# --prefix so review-program writes its {PREFIX}-review-*.md files at the paths this
+# orchestrator reads (Steps 6B, 6C, 7B), regardless of which branch is checked out when
+# a review round runs
+PREFIX={st}-{prog}-backdate
+# Note: review-program's own Phase 0 handles its file cleanup
 ```
 
 ```
@@ -87,20 +107,28 @@ These two agents have no dependency on each other. Spawn them in a **single mess
 
 **Agent 1: issue-manager** — searches GitHub (network calls)
 
+Derive the push target first — the issue-manager agent requires caller-supplied values
+for any new-PR write and returns `BLOCKED` when they are missing:
+
+```bash
+PUSH_REPO_URL=$(git remote get-url --push origin)
+PUSH_REPO=$(gh repo view "$PUSH_REPO_URL" --json nameWithOwner --jq .nameWithOwner)
 ```
-subagent_type: "complete:country-models:issue-manager"
+
+```
+subagent_type: "country-models:issue-manager"  # resolve installed name by suffix
 name: "issue-manager"
 run_in_background: true
 
-"Find or create a GitHub issue and draft PR for backdating {STATE_FULL} {PROGRAM} parameters.
+"Run issue/PR setup for backdating {STATE_FULL} {PROGRAM} parameters.
 
-1. Search for existing issues related to '{STATE_FULL} {PROGRAM}' backdating.
-   If none found, create one with title: 'Backdate {STATE_FULL} {PROGRAM} parameters to {TARGET_YEAR}'.
-2. Search for existing PRs related to '{STATE_FULL} {PROGRAM}'.
-   If none found, create a new branch and a draft PR. To create the initial commit:
-   - Preferred: create a changelog fragment (echo 'Backdate {STATE_FULL} {PROGRAM} parameters.' > changelog.d/{branch}.added.md)
-   - Fallback: if the repo rejects that, use --allow-empty for the commit
-3. Return both the issue number and PR number."
+MODE=discover. BASE_REPO=PolicyEngine/policyengine-us and
+BASE_REPO_URL=https://github.com/PolicyEngine/policyengine-us.git.
+PUSH_REPO={PUSH_REPO} and PUSH_REPO_URL={PUSH_REPO_URL} (derived by the orchestrator;
+verify before any later write). Pass WORKTREE_ROOT={WORKTREE_ROOT}, RUN_ROOT={RUN_ROOT},
+PREFIX={PREFIX}, BRANCH={st}-{prog}-backdate, and setup summary 'Backdate {STATE_FULL}
+{PROGRAM} parameters to {TARGET_YEAR}'. Search for BOTH existing issues and PRs and stop
+without writing: return DECISION_NEEDED with the candidates, or NO_CANDIDATES."
 ```
 
 **Agent 2: inventory** — scans local files (disk reads)
@@ -114,7 +142,7 @@ run_in_background: true
 
 "Inventory {STATE} {PROGRAM} parameter and variable files. Write TWO files:
 
-1. FULL inventory for agents: /tmp/{st}-{prog}-inventory.md
+1. FULL inventory for agents: {RUN_ROOT}/{st}-{prog}-inventory.md
    - List of parameter YAML files (full paths)
    - Earliest date entry in each file
    - YAML structure pattern (family-size breakdown vs scalar vs scale)
@@ -122,7 +150,7 @@ run_in_background: true
    - List of test .yaml files (full paths)
    No line limit — agents need the complete picture.
 
-2. SHORT summary for orchestrator: /tmp/{st}-{prog}-inventory-summary.md (MAX 10 LINES)
+2. SHORT summary for orchestrator: {RUN_ROOT}/{st}-{prog}-inventory-summary.md (MAX 10 LINES)
    - Parameter files: {count}
    - Variable files: {count}
    - Test files: {count}
@@ -133,15 +161,23 @@ run_in_background: true
 
 **After both agents complete**:
 
-- Read ONLY `/tmp/{st}-{prog}-inventory-summary.md` (max 10 lines) — just counts and the program path
+- Read ONLY `{RUN_ROOT}/{st}-{prog}-inventory-summary.md` (max 10 lines) — just counts and the program path
+- issue-manager (`MODE=discover`) returns `DECISION_NEEDED` or `NO_CANDIDATES` without
+  writing. On `DECISION_NEEDED`, ask the issue and PR reuse/create choices one at a time
+  with `AskUserQuestion`; on `NO_CANDIDATES`, use `create_new` for both. Then spawn a new
+  issue-manager with `MODE=execute`, both explicit decisions, and the same verified
+  repository/worktree inputs. Continue only when it returns `SETUP_COMPLETE`; treat
+  `BLOCKED` or a partial result as a blocking gate.
 - Store from issue-manager:
   - **ISSUE_NUMBER** — referenced in commit messages, changelog, and final report
   - **PR_NUMBER** — used by `/review-program` in Phase 6, and by `pr-pusher` in Phase 7
   - **BRANCH** — the working branch for all implementation
+  - **HEAD_REPO_URL** — the guarded push target for Steps 5C and 6D-2 (the branch has no
+    configured upstream; every push names this URL and BRANCH explicitly)
 
 These are used throughout the workflow:
 - Review-fix loop commits: `"Review-fix round {N}: address critical issues (ref #{ISSUE_NUMBER})"`
-- Phase 6: `/review-program {PR_NUMBER} --local --full`
+- Phase 6: `/review-program {PR_NUMBER} --local --full --prefix {PREFIX}`
 - Phase 7: `pr-pusher` pushes to the branch, reporter writes PR description
 - Final report: links to issue and PR
 
@@ -185,7 +221,7 @@ Spawn ALL research agents in a **single message** for maximum parallelism:
 
 | Agent Name | Type | Starts On |
 |------------|------|-----------|
-| **discovery** | `complete:country-models:document-collector` | `discover-sources` (immediate) |
+| **discovery** | `country-models:document-collector` | `discover-sources` (immediate) |
 | **secondary-validator** | `general-purpose` | `secondary-validation` (immediate) |
 | **prep-1** | `general-purpose` | Waits for discovery message |
 | **prep-2** | `general-purpose` | Waits for discovery message |
@@ -208,7 +244,7 @@ research agents → self-map sections in their page range → extract values →
 ```
 
 **Agent prompts must include:**
-- The inventory file path: `/tmp/{st}-{prog}-inventory.md`
+- The inventory file path: `{RUN_ROOT}/{st}-{prog}-inventory.md`
 - PDF rendering DPI: `{DPI}` (pass `pdftoppm -png -r {DPI}` to prep agents)
 - HISTORICAL ERA AWARENESS: check for predecessor program values (AFDC→TANF, FSP→SNAP)
 - Use Wayback Machine for archived sources
@@ -232,21 +268,21 @@ research agents → self-map sections in their page range → extract values →
 When you receive a message from the discovery agent with a PDF URL:
 
 1. Download:
-   curl -L -o /tmp/{st}-{prog}-{doc_id}.pdf '[URL]'
+   curl -L -o {RUN_ROOT}/{st}-{prog}-{doc_id}.pdf '[URL]'
 
 2. Get page count:
-   pdfinfo /tmp/{st}-{prog}-{doc_id}.pdf | grep Pages
+   pdfinfo {RUN_ROOT}/{st}-{prog}-{doc_id}.pdf | grep Pages
 
 3. Render at {DPI} DPI:
-   pdftoppm -png -r {DPI} /tmp/{st}-{prog}-{doc_id}.pdf /tmp/{st}-{prog}-{doc_id}-page
+   pdftoppm -png -r {DPI} {RUN_ROOT}/{st}-{prog}-{doc_id}.pdf {RUN_ROOT}/{st}-{prog}-{doc_id}-page
 
 4. Quick TOC hint (ONLY first 5 pages — do NOT read more):
-   pdftotext -f 1 -l 5 /tmp/{st}-{prog}-{doc_id}.pdf - | head -80
+   pdftotext -f 1 -l 5 {RUN_ROOT}/{st}-{prog}-{doc_id}.pdf - | head -80
 
 5. Message Main Claude (NOT research agents) with:
    - PDF file path
    - Total page count
-   - Screenshot path pattern (e.g., /tmp/{st}-{prog}-{doc_id}-page-*.png)
+   - Screenshot path pattern (e.g., {RUN_ROOT}/{st}-{prog}-{doc_id}-page-*.png)
    - TOC hint (the first ~80 lines of text, if a table of contents was found)
    - Page offset if obvious from the first few pages (e.g., cover page before page 1)
 
@@ -285,7 +321,7 @@ Main Claude will decide how many research agents to spawn based on page count."
 ```
 "You are extracting {PROGRAM} parameter values from a PDF for {STATE}.
 
-Your assigned page range: pages {START}-{END} of /tmp/{st}-{prog}-{doc_id}-page-*.png
+Your assigned page range: pages {START}-{END} of {RUN_ROOT}/{st}-{prog}-{doc_id}-page-*.png
 TOC hint from prep agent (first 5 pages only): {TOC_HINT_OR_'None available'}
 
 STEP 1 — SELF-MAP (do this first):
@@ -308,7 +344,7 @@ For EVERY parameter value you find, record:
 - Exact quote or table header that confirms the value
 
 STEP 3 — CROSS-REFERENCE:
-Read the existing repo parameter files listed in /tmp/{st}-{prog}-inventory.md.
+Read the existing repo parameter files listed in {RUN_ROOT}/{st}-{prog}-inventory.md.
 For each repo parameter, note whether you found a corresponding value in your pages.
 If not found, note 'NOT FOUND IN MY PAGE RANGE' (another agent may have it).
 
@@ -345,21 +381,21 @@ subagent_type: "general-purpose", team_name: "{st}-{prog}-backdate", name: "cons
 
 "Merge all research findings for {STATE} {PROGRAM} backdating.
 1. Read ALL task findings from task list (TaskList + TaskGet)
-2. Read inventory at /tmp/{st}-{prog}-inventory.md
+2. Read inventory at {RUN_ROOT}/{st}-{prog}-inventory.md
 3. Read existing parameter YAML files listed in inventory
 4. Read sources/working_references.md from document-collector
-5. Merge into FINAL IMPLEMENTATION SPEC: /tmp/{st}-{prog}-impl-spec.md
+5. Merge into FINAL IMPLEMENTATION SPEC: {RUN_ROOT}/{st}-{prog}-impl-spec.md
    - For EACH parameter file: exact date entries to add, with values + PDF citations
    - Reconcile conflicts (later documents supersede earlier)
    - Reconcile secondary source discrepancies (primary sources win)
    - Categorize: Tier A (YAML backdating), Tier B (new params), Tier C (formula changes)
    - Flag duplicate values (same value at multiple dates — only keep earliest)
-5. Write SHORT summary (max 20 lines): /tmp/{st}-{prog}-impl-summary.md"
+5. Write SHORT summary (max 20 lines): {RUN_ROOT}/{st}-{prog}-impl-summary.md"
 ```
 
 ### Regulatory Checkpoint 1
 
-Read ONLY `/tmp/{st}-{prog}-impl-summary.md`. Present a brief overview:
+Read ONLY `{RUN_ROOT}/{st}-{prog}-impl-summary.md`. Present a brief overview:
 
 ```
 ## {STATE_FULL} {PROGRAM} — Research Complete
@@ -423,7 +459,7 @@ Spawn two agents in parallel:
 ### Reference Auditor
 
 ```
-subagent_type: "complete:reference-validator",
+subagent_type: "reference-validator",
   team_name: "{st}-{prog}-backdate", name: "ref-auditor"
 ```
 
@@ -444,13 +480,13 @@ The `reference-validator` agent is purpose-built for this — it validates that 
 5. INSTRUCTION PAGE vs PDF PAGE: Verify #page=XX is the file page, not the printed
    page number. Render the page and confirm content matches.
 6. HISTORICAL PLAN COVERAGE: Check for refs to ALL relevant plan periods.
-Write findings to /tmp/{st}-{prog}-ref-audit.md."
+Write findings to {RUN_ROOT}/{st}-{prog}-ref-audit.md."
 ```
 
 ### Formula Reviewer
 
 ```
-subagent_type: "complete:country-models:program-reviewer",
+subagent_type: "country-models:program-reviewer",
   team_name: "{st}-{prog}-backdate", name: "formula-reviewer"
 ```
 
@@ -466,14 +502,14 @@ The `program-reviewer` agent is purpose-built for this — it researches regulat
 3. REDUNDANT LOGIC: Flag mathematically unnecessary operations.
 4. HARDCODED COMMENTS: Flag comments with specific numbers (e.g., '92%', '171% FPG').
 5. ERA HANDLING: Verify formula uses parameter-driven branching, NOT year-checks.
-Read impl spec at /tmp/{st}-{prog}-impl-spec.md for regulatory context.
-Write findings to /tmp/{st}-{prog}-formula-audit.md.
-Write SHORT summary (max 15 lines) to /tmp/{st}-{prog}-phase2-summary.md."
+Read impl spec at {RUN_ROOT}/{st}-{prog}-impl-spec.md for regulatory context.
+Write findings to {RUN_ROOT}/{st}-{prog}-formula-audit.md.
+Write SHORT summary (max 15 lines) to {RUN_ROOT}/{st}-{prog}-phase2-summary.md."
 ```
 
 ### Regulatory Checkpoint 2
 
-Read ONLY `/tmp/{st}-{prog}-phase2-summary.md`. Present a brief overview:
+Read ONLY `{RUN_ROOT}/{st}-{prog}-phase2-summary.md`. Present a brief overview:
 
 ```
 ## Audit Results
@@ -535,7 +571,7 @@ Spawn implementation agents in parallel. Each reads specs from disk — NOT from
 ### Tier A: Parameter Backdating (most common)
 
 ```
-subagent_type: "complete:country-models:rules-engineer",
+subagent_type: "country-models:rules-engineer",
   team_name: "{st}-{prog}-backdate", name: "impl-parameters"
 ```
 
@@ -544,9 +580,10 @@ The `rules-engineer` agent designs and modifies parameter structures with proper
 **Instructions:**
 ```
 "Add historical date entries to {STATE} {PROGRAM} parameter files AND apply reference fixes.
-Load skills: /policyengine-parameter-patterns, /policyengine-period-patterns.
-Read impl spec at /tmp/{st}-{prog}-impl-spec.md (parameter values to add).
-Read ref audit at /tmp/{st}-{prog}-ref-audit.md (reference fixes to apply).
+Load the consolidated policyengine-model-development skill (resolve its installed name
+by suffix) and read its parameters and periods-and-aggregation references.
+Read impl spec at {RUN_ROOT}/{st}-{prog}-impl-spec.md (parameter values to add).
+Read ref audit at {RUN_ROOT}/{st}-{prog}-ref-audit.md (reference fixes to apply).
 
 
 RULES:
@@ -609,7 +646,7 @@ Pattern 2 — regional in_effect (provision that varies by region, then stops):
 ### Tier B/C: New Parameters & Formula Changes (if user-approved)
 
 ```
-subagent_type: "complete:country-models:rules-engineer",
+subagent_type: "country-models:rules-engineer",
   team_name: "{st}-{prog}-backdate", name: "impl-formulas"
 ```
 
@@ -618,9 +655,10 @@ The `rules-engineer` agent implements government benefit program rules with zero
 **Instructions:**
 ```
 "Apply formula fixes for {STATE} {PROGRAM} identified in the formula audit.
-Load skills: /policyengine-variable-patterns, /policyengine-code-style,
-  /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
-Read formula audit at /tmp/{st}-{prog}-formula-audit.md.
+Load the consolidated policyengine-model-development skill (resolve its installed name
+by suffix) and read its variables, style, parameters, periods-and-aggregation, and
+vectorization references.
+Read formula audit at {RUN_ROOT}/{st}-{prog}-formula-audit.md.
 
 
 REUSE EXISTING VARIABLES AND PARAMETERS:
@@ -693,7 +731,7 @@ After implementation agents complete, spawn TWO test agents in sequence:
 ### Step 4A: Test Creator
 
 ```
-subagent_type: "complete:country-models:test-creator",
+subagent_type: "country-models:test-creator",
   team_name: "{st}-{prog}-backdate", name: "test-creator"
 ```
 
@@ -702,9 +740,10 @@ The `test-creator` agent creates comprehensive integration tests ensuring realis
 **Instructions:**
 ```
 "Add tests for {STATE} {PROGRAM} backdating.
-Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
-Read impl spec at /tmp/{st}-{prog}-impl-spec.md.
-Read existing test files listed in /tmp/{st}-{prog}-inventory.md.
+Load the consolidated policyengine-model-development skill (resolve its installed name
+by suffix) and read its tests and periods-and-aggregation references.
+Read impl spec at {RUN_ROOT}/{st}-{prog}-impl-spec.md.
+Read existing test files listed in {RUN_ROOT}/{st}-{prog}-inventory.md.
 
 
 COVERAGE REQUIREMENTS:
@@ -722,7 +761,7 @@ GOTCHAS:
 ### Step 4B: Edge Case Generator
 
 ```
-subagent_type: "complete:country-models:edge-case-generator",
+subagent_type: "country-models:edge-case-generator",
   team_name: "{st}-{prog}-backdate", name: "edge-case-gen"
 ```
 
@@ -731,7 +770,8 @@ The `edge-case-generator` analyzes the variables and parameters to automatically
 **Instructions:**
 ```
 "Generate edge case tests for {STATE} {PROGRAM}.
-Load skills: /policyengine-testing-patterns, /policyengine-period-patterns.
+Load the consolidated policyengine-model-development skill (resolve its installed name
+by suffix) and read its tests and periods-and-aggregation references.
 Analyze variables and parameters in the program folder.
 
 
@@ -749,11 +789,12 @@ Focus on:
 ### Step 5A: Implementation Validator
 
 ```
-subagent_type: "complete:country-models:implementation-validator"
+subagent_type: "country-models:implementation-validator"
 
 "Validate {STATE} {PROGRAM} implementation for PolicyEngine standards compliance.
-Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
-  /policyengine-code-style, /policyengine-period-patterns.
+Load the consolidated policyengine-model-development skill (resolve its installed name
+by suffix) and read its variables, parameters, style, and periods-and-aggregation
+references.
 Check naming conventions, folder structure, parameter formatting, variable code style.
 Boolean toggle date alignment: when a boolean parameter (in_effect, regional_in_effect,
 flat_applies) changes value at date D, verify that ALL parameters it gates have entries
@@ -762,14 +803,14 @@ may be incorrect. Flag as CRITICAL.
 Duplicate variable detection: if any new variable was created for a common concept (FPG,
 SMI, gross income, enrollment status), Grep the codebase to check if an existing variable
 already covers it. PolicyEngine-US has hundreds of reusable variables. Flag duplicates.
-Files to validate: parameter and variable files listed in /tmp/{st}-{prog}-inventory.md
-Write findings to /tmp/{st}-{prog}-impl-validation.md."
+Files to validate: parameter and variable files listed in {RUN_ROOT}/{st}-{prog}-inventory.md
+Write findings to {RUN_ROOT}/{st}-{prog}-impl-validation.md."
 ```
 
 ### Step 5B: CI Fixer
 
 ```
-subagent_type: "complete:country-models:ci-fixer"
+subagent_type: "country-models:ci-fixer"
 "Run tests for {STATE} {PROGRAM}, fix failures, iterate until all pass.
 After tests pass, run make format as a final step."
 ```
@@ -784,20 +825,24 @@ name: "quick-auditor"
 
 "Review git diff of changes. Check for: hard-coded values to pass tests,
 year-check conditionals (period.start.year), altered parameter values.
-Write SHORT report (max 15 lines) to /tmp/{st}-{prog}-checkpoint.md: PASS/FAIL + issues."
+Write SHORT report (max 15 lines) to {RUN_ROOT}/{st}-{prog}-checkpoint.md: PASS/FAIL + issues."
 ```
 
 Read ONLY the checkpoint file.
 
 ### Step 5C: Push to Remote
 
-**Phase 6 requires code on the remote.** `/review-program` reads the PR via `gh pr diff $PR_NUMBER` (GitHub remote API), so local-only commits are invisible. Push all Phase 3-5 work before entering the review-fix loop:
+**Phase 6 requires code on the remote.** `/review-program` never reads local worktree
+state for a remote PR — it fetches the PR head ref (`pull/N/head`) from the base
+repository on GitHub, so local-only commits are invisible to it. Push all Phase 3-5 work
+before entering the review-fix loop:
 
 ```bash
 # Stage only the program's directories — avoid staging unintended files
 git add policyengine_us/parameters/gov/states/{st}/ policyengine_us/variables/gov/states/{st}/ policyengine_us/tests/policy/baseline/gov/states/{st}/
 git commit -m "Backdate {STATE} {PROGRAM} parameters to {TARGET_YEAR} (ref #{ISSUE_NUMBER})"
-git push
+# Guarded push — the branch has no configured upstream; name the target explicitly
+git push "$HEAD_REPO_URL" HEAD:"$BRANCH"
 ```
 
 **Skip this step if `--skip-review`** (Phase 6 won't run).
@@ -817,47 +862,58 @@ ROUND = 1
 MAX_ROUNDS = 3
 
 while ROUND <= MAX_ROUNDS:
-    1. Run /review-program --local --full
+    1. Run /review-program {PR_NUMBER} --local --full --prefix {PREFIX}
+       (add --600dpi when DPI is 600; round 2+ may use --incremental per Step 6A)
     2. Read summary → count critical issues
     3. If critical == 0 → EXIT LOOP (success)
     4. If ROUND == MAX_ROUNDS → EXIT LOOP (escalate to user)
     5. If ROUND == 2 → ask user before attempting round 3
     6. Fix critical issues
     7. Run make format + tests
-    8. Commit + push fixes (so next round's gh pr diff sees them)
+    8. Commit + push fixes (so next round's review fetch sees them)
     9. ROUND += 1
 ```
 
 ### Why commit + push is required between rounds
 
-`/review-program` reads the PR code via `gh pr diff $PR_NUMBER`, which fetches the diff from the **GitHub remote API**. Local-only commits are invisible to `gh pr diff`. Step 5C pushes the initial implementation, and each fix round must also **commit AND push** so the next review round sees the updated code.
+`/review-program` reviews the PR head it fetches from **GitHub** (`pull/N/head` from the
+base repository, diffed against the merge-base). Local-only commits are invisible to
+that fetch. Step 5C pushes the initial implementation, and each fix round must also
+**commit AND push** so the next review round sees the updated code.
 
 ```
 Step 5C push   → implementation commits on remote (commit A)
-Round 1 review → gh pr diff sees commit A → reviews implementation
+Round 1 review → fetched PR head is commit A → reviews implementation
 Round 1 fix    → commit B + push (fixes from round 1)
-Round 2 review → gh pr diff now includes commit B → reviews the fixed code
+Round 2 review → fetched PR head includes commit B → reviews the fixed code
 Round 2 fix    → commit C + push (fixes from round 2, if any)
-Round 3 review → gh pr diff includes commits B+C → final check
+Round 3 review → fetched PR head includes commits B+C → final check
 Phase 7        → final push (changelog, any remaining changes)
 ```
 
 ### Step 6A: Run /review-program --local --full (Round N)
 
-Invoke the `review-program` skill in local-only mode with `--full`. On **round 1**, this runs the full review:
-- **PDF acquisition** (always on): `complete:country-models:document-collector` discovers and renders source PDFs
-- **Regulatory accuracy**: `complete:country-models:program-reviewer` researches regulations independently, compares to code
-- **Reference quality**: `complete:reference-validator` checks reference completeness and corroboration
-- **Code patterns**: `complete:country-models:implementation-validator` checks code patterns
-- **Test coverage**: `complete:country-models:edge-case-generator` identifies untested scenarios
+Invoke the `review-program` skill in local-only mode with `--full`, passing
+`--prefix {PREFIX}` (so its artifacts land at the paths Steps 6B, 6C, and 7B read) and
+`--600dpi` when DPI is 600. On **round 1**, this runs the full review:
+- **PDF acquisition** (always on): `country-models:document-collector` discovers and renders source PDFs
+- **Regulatory accuracy**: `country-models:program-reviewer` researches regulations independently, compares to code
+- **Reference quality**: `reference-validator` checks reference completeness and corroboration
+- **Code patterns**: `country-models:implementation-validator` checks code patterns
+- **Test coverage**: `country-models:edge-case-generator` identifies untested scenarios
 - **PDF audit**: 2-5 `general-purpose` agents audit parameter values against PDF screenshots
 - **Mismatch verification**: 600 DPI re-render + text cross-reference for every reported mismatch
 
-**Note on round 2+**: The `/review-program` command always runs a full review — it has no "incremental" mode. This is by design: fixes can introduce new issues, and PDF audit agents need to re-verify values that may have changed. The cost of a redundant re-check is low compared to missing a regression.
+**Note on round 2+**: when a fix round changed only tests or mechanical code, run
+`/review-program {PR_NUMBER} --local --prefix {PREFIX} --incremental {RUN_ROOT}/{PREFIX}-review-full-report.md`
+so unchanged source/PDF evidence is reused. When a fix changed policy semantics,
+parameter values, references, or sources, run the full review again
+(`--full --resume --prefix {PREFIX}`). Fixes can introduce new issues — the follow-up
+review is mandatory either way.
 
 ### Step 6B: Check Results
 
-Read `/tmp/{PREFIX}-review-summary.md` (max 20 lines). Check:
+Read `{RUN_ROOT}/{PREFIX}-review-summary.md` (max 20 lines). Check:
 - **Critical issue count** — the number that matters
 - **Recommended severity** — APPROVE means zero critical issues
 
@@ -889,14 +945,15 @@ These will be noted in the final report for manual resolution."
 Spawn a fixer agent to address the critical issues found in this round:
 
 ```
-subagent_type: "complete:country-models:rules-engineer",
+subagent_type: "country-models:rules-engineer",
   team_name: "{st}-{prog}-backdate", name: "review-fixer-{ROUND}"
 
 "Fix the critical issues from the /review-program review (round {ROUND}).
-Read the full review report at /tmp/{PREFIX}-review-full-report.md.
+Read the full review report at {RUN_ROOT}/{PREFIX}-review-full-report.md.
 Focus ONLY on items marked CRITICAL — do not change anything else.
-Load skills: /policyengine-variable-patterns, /policyengine-code-style,
-  /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
+Load the consolidated policyengine-model-development skill (resolve its installed name
+by suffix) and read its variables, style, parameters, periods-and-aggregation, and
+vectorization references.
 Apply fixes. Run make format.
 
 REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
@@ -904,10 +961,10 @@ codebase first. PolicyEngine-US likely already has it (fpg, smi, tanf_fpg, ssi, 
 
 
 LEARN FROM PREVIOUS ROUNDS:
-If /tmp/{st}-{prog}-checklist.md exists, read it FIRST. It contains issues
+If {RUN_ROOT}/{st}-{prog}-checklist.md exists, read it FIRST. It contains issues
 found and fixed in previous rounds. Do NOT reintroduce any of those patterns.
 
-AFTER fixing, APPEND your fixes to /tmp/{st}-{prog}-checklist.md:
+AFTER fixing, APPEND your fixes to {RUN_ROOT}/{st}-{prog}-checklist.md:
 Format each line as:
 - [ROUND {ROUND}] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}
 
@@ -920,7 +977,7 @@ UNUSED-PARAM, WRONG-ENTITY, NAMING, FORMULA-LOGIC, TEST-GAP, OTHER"
 **6D-1: Run tests and fix failures:**
 
 ```
-subagent_type: "complete:country-models:ci-fixer",
+subagent_type: "country-models:ci-fixer",
   team_name: "{st}-{prog}-backdate", name: "ci-fixer-{ROUND}"
 
 "Run tests for {STATE} {PROGRAM} after review-fix round {ROUND}.
@@ -929,13 +986,15 @@ Fix any test failures introduced by the fixes. Run make format."
 
 **6D-2: Commit and push fixes:**
 
-After ci-fixer completes, Main Claude commits and pushes so the next round's `/review-program` (which uses `gh pr diff` from the remote) sees the updated code:
+After ci-fixer completes, Main Claude commits and pushes so the next round's
+`/review-program` (which fetches the PR head from GitHub) sees the updated code:
 
 ```bash
 # Stage only the program's directories — avoid staging unintended files
 git add policyengine_us/parameters/gov/states/{st}/ policyengine_us/variables/gov/states/{st}/ policyengine_us/tests/policy/baseline/gov/states/{st}/
 git commit -m "Review-fix round {ROUND}: address critical issues from /review-program"
-git push
+# Guarded push — the branch has no configured upstream; name the target explicitly
+git push "$HEAD_REPO_URL" HEAD:"$BRANCH"
 ```
 
 **6D-3: Increment ROUND and go back to Step 6A.**
@@ -957,8 +1016,12 @@ git push
 ### Step 7A: Push & Changelog
 
 ```
-subagent_type: "complete:country-models:pr-pusher",
+subagent_type: "country-models:pr-pusher",
   team_name: "{st}-{prog}-backdate", name: "pusher"
+
+"Finalize and push PR {PR_NUMBER}. Resolve its actual head repository and branch and
+capture EXPECTED_HEAD_SHA before formatting or committing. Push only with the agent's
+explicit guarded-lease contract; never infer origin."
 ```
 
 The `pr-pusher` agent ensures PRs are properly formatted with changelog, linting, and tests before pushing. It handles:
@@ -984,15 +1047,15 @@ subagent_type: "general-purpose",
 
 "Finalize {STATE} {PROGRAM} backdating report.
 1. Read all findings from task list
-2. Read the last /review-program summary at /tmp/{PREFIX}-review-summary.md
-3. Read the impl spec summary at /tmp/{st}-{prog}-impl-summary.md
-4. Write SHORT final report (max 25 lines) to /tmp/{st}-{prog}-final-report.md:
+2. Read the last /review-program summary at {RUN_ROOT}/{PREFIX}-review-summary.md
+3. Read the impl spec summary at {RUN_ROOT}/{st}-{prog}-impl-summary.md
+4. Write SHORT final report (max 25 lines) to {RUN_ROOT}/{st}-{prog}-final-report.md:
    - Total parameters verified, date entries added
    - Reference fixes applied, formula improvements made
    - Review-fix loop rounds completed, remaining issues (if any)
    - Issue #{ISSUE_NUMBER}, PR #{PR_NUMBER}
-5. Write FULL detailed report to /tmp/{st}-{prog}-full-audit.md (archival)
-6. Write PR description to /tmp/{st}-{prog}-pr-description.md using this format:
+5. Write FULL detailed report to {RUN_ROOT}/{st}-{prog}-full-audit.md (archival)
+6. Write PR description to {RUN_ROOT}/{st}-{prog}-pr-description.md using this format:
 
    ## Summary
    Backdates {STATE_FULL} {PROGRAM} parameters to {TARGET_YEAR} and improves code quality.
@@ -1032,12 +1095,12 @@ subagent_type: "general-purpose",
 After the reporter completes, Main Claude updates the PR description using `--body-file` (no need to read the file into context):
 
 ```bash
-gh pr edit $PR_NUMBER --body-file /tmp/{st}-{prog}-pr-description.md
+gh pr edit $PR_NUMBER --body-file {RUN_ROOT}/{st}-{prog}-pr-description.md
 ```
 
 ### Step 7D: Present Summary
 
-Read ONLY `/tmp/{st}-{prog}-final-report.md`. Present to user:
+Read ONLY `{RUN_ROOT}/{st}-{prog}-final-report.md`. Present to user:
 - Total parameters verified
 - Date entries added
 - Reference fixes applied
@@ -1061,24 +1124,24 @@ Present to user:
 
 | Phase | Agent | Plugin Type | Why This Agent |
 |-------|-------|-------------|----------------|
-| 0B | issue-manager | `complete:country-models:issue-manager` | Finds/creates tracking issue + draft PR |
-| 0E | discovery | `complete:country-models:document-collector` | Purpose-built for finding regulatory sources |
+| 0B | issue-manager | `country-models:issue-manager` | Finds/creates tracking issue + draft PR |
+| 0E | discovery | `country-models:document-collector` | Purpose-built for finding regulatory sources |
 | 0E | secondary-validator | `general-purpose` | Custom WRDTP/CBPP web research |
 | 0E | prep-1, prep-2 | `general-purpose` | Slim: Bash for curl/pdftoppm/pdfinfo only — no page mapping |
 | 0E | research-{N}-{a,b,...} (1-5 per PDF) | `general-purpose` | Self-map sections + Read PNG screenshots + YAML cross-ref |
 | 1 | consolidator | `general-purpose` | Custom merge logic across all findings |
-| 2 | ref-auditor | `complete:reference-validator` | Purpose-built for reference validation |
-| 2 | formula-reviewer | `complete:country-models:program-reviewer` | Purpose-built for regulation-vs-code comparison |
-| 3 | impl-parameters | `complete:country-models:rules-engineer` | Purpose-built for parameter YAML design |
-| 3 | impl-formulas | `complete:country-models:rules-engineer` | Purpose-built for formula implementation |
-| 4 | test-creator | `complete:country-models:test-creator` | Purpose-built for integration tests |
-| 4 | edge-case-gen | `complete:country-models:edge-case-generator` | Purpose-built for boundary condition tests |
-| 5A | validator | `complete:country-models:implementation-validator` | Purpose-built for code pattern checks |
-| 5B | ci-fixer | `complete:country-models:ci-fixer` | Purpose-built for test fix iteration |
+| 2 | ref-auditor | `reference-validator` | Purpose-built for reference validation |
+| 2 | formula-reviewer | `country-models:program-reviewer` | Purpose-built for regulation-vs-code comparison |
+| 3 | impl-parameters | `country-models:rules-engineer` | Purpose-built for parameter YAML design |
+| 3 | impl-formulas | `country-models:rules-engineer` | Purpose-built for formula implementation |
+| 4 | test-creator | `country-models:test-creator` | Purpose-built for integration tests |
+| 4 | edge-case-gen | `country-models:edge-case-generator` | Purpose-built for boundary condition tests |
+| 5A | validator | `country-models:implementation-validator` | Purpose-built for code pattern checks |
+| 5B | ci-fixer | `country-models:ci-fixer` | Purpose-built for test fix iteration |
 | 6 | review-program x1-3 | (invokes /review-program skill) | Review-fix loop: runs until 0 critical issues or max 3 rounds |
-| 6 | review-fixer-{N} x1-3 | `complete:country-models:rules-engineer` | Fix critical issues from each review round |
-| 6 | ci-fixer-{N} x1-3 | `complete:country-models:ci-fixer` | Verify fixes don't break tests after each round |
-| 7A | pusher | `complete:country-models:pr-pusher` | Purpose-built for changelog + format + push |
+| 6 | review-fixer-{N} x1-3 | `country-models:rules-engineer` | Fix critical issues from each review round |
+| 6 | ci-fixer-{N} x1-3 | `country-models:ci-fixer` | Verify fixes don't break tests after each round |
+| 7A | pusher | `country-models:pr-pusher` | Purpose-built for changelog + format + push |
 | 7B | reporter | `general-purpose` | Final report + PR description with unresolved items |
 
 **11 plugin agents + 1 skill invoked + 6 general-purpose agents** (only where no plugin agent fits).
@@ -1089,19 +1152,19 @@ Present to user:
 
 | File | Written By | Read By | Size |
 |------|-----------|---------|------|
-| `/tmp/{st}-{prog}-inventory.md` | inventory (Phase 0) | Agents only | Full |
-| `/tmp/{st}-{prog}-inventory-summary.md` | inventory (Phase 0) | Main Claude | Short (≤10 lines) |
+| `{RUN_ROOT}/{st}-{prog}-inventory.md` | inventory (Phase 0) | Agents only | Full |
+| `{RUN_ROOT}/{st}-{prog}-inventory-summary.md` | inventory (Phase 0) | Main Claude | Short (≤10 lines) |
 | `sources/working_references.md` | document-collector (Phase 0E) | Consolidator | Full |
-| `/tmp/{st}-{prog}-impl-spec.md` | Consolidator (Phase 1) | Impl agents, test agents | Full |
-| `/tmp/{st}-{prog}-impl-summary.md` | Consolidator (Phase 1) | Main Claude | Short |
-| `/tmp/{st}-{prog}-ref-audit.md` | reference-validator (Phase 2) | rules-engineer | Full |
-| `/tmp/{st}-{prog}-formula-audit.md` | program-reviewer (Phase 2) | rules-engineer | Full |
-| `/tmp/{st}-{prog}-phase2-summary.md` | program-reviewer (Phase 2) | Main Claude | Short |
-| `/tmp/{st}-{prog}-checkpoint.md` | quick-auditor (Phase 5) | Main Claude | Short |
-| `/tmp/{st}-{prog}-final-report.md` | Reporter (Phase 7) | Main Claude | Short |
-| `/tmp/{st}-{prog}-pr-description.md` | Reporter (Phase 7) | gh pr edit --body-file | Full |
-| `/tmp/{st}-{prog}-full-audit.md` | Reporter (Phase 7) | Archival only | Full |
-| `/tmp/{st}-{prog}-checklist.md` | review-fixer (Phase 6) | Fix agents (next round) | Full |
+| `{RUN_ROOT}/{st}-{prog}-impl-spec.md` | Consolidator (Phase 1) | Impl agents, test agents | Full |
+| `{RUN_ROOT}/{st}-{prog}-impl-summary.md` | Consolidator (Phase 1) | Main Claude | Short |
+| `{RUN_ROOT}/{st}-{prog}-ref-audit.md` | reference-validator (Phase 2) | rules-engineer | Full |
+| `{RUN_ROOT}/{st}-{prog}-formula-audit.md` | program-reviewer (Phase 2) | rules-engineer | Full |
+| `{RUN_ROOT}/{st}-{prog}-phase2-summary.md` | program-reviewer (Phase 2) | Main Claude | Short |
+| `{RUN_ROOT}/{st}-{prog}-checkpoint.md` | quick-auditor (Phase 5) | Main Claude | Short |
+| `{RUN_ROOT}/{st}-{prog}-final-report.md` | Reporter (Phase 7) | Main Claude | Short |
+| `{RUN_ROOT}/{st}-{prog}-pr-description.md` | Reporter (Phase 7) | gh pr edit --body-file | Full |
+| `{RUN_ROOT}/{st}-{prog}-full-audit.md` | Reporter (Phase 7) | Archival only | Full |
+| `{RUN_ROOT}/{st}-{prog}-checklist.md` | review-fixer (Phase 6) | Fix agents (next round) | Full |
 
 **Main Claude reads ONLY "Short" files. Never read "Full" files.**
 

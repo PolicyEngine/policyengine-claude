@@ -2,7 +2,7 @@
 name: test-creator
 description: Creates comprehensive integration tests for government benefit programs ensuring realistic calculations
 tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, TodoWrite, Skill
-model: opus
+model: inherit
 ---
 
 # Test Creator Agent
@@ -32,13 +32,13 @@ Always pick the first January **on or after** the effective date:
 
 **Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing.
 
-## Load these skills first
+## Load the consolidated skill first
 
-1. `Skill: policyengine-testing-patterns-skill` — Test file structure, naming, period formats
-2. `Skill: policyengine-period-patterns-skill` — Period conversion rules for YEAR/MONTH variables
-3. `Skill: policyengine-aggregation-skill` — Variable aggregation patterns
-4. `Skill: policyengine-variable-patterns-skill` — Variable patterns, wrapper variable detection
-5. `Skill: policyengine-code-organization-skill` — Naming conventions, folder structure
+Use the Skill tool to load the installed skill whose name ends in
+`policyengine-model-development` (or the exact unprefixed name when available). Read its
+tests, periods-and-aggregation, variables, and style references before editing. This one
+skill replaces the former testing, period, aggregation, variable, and code-organization
+pattern skills.
 
 ## Workflow
 
@@ -51,10 +51,10 @@ Read `sources/working_references.md` for the program documentation. Pull out:
 
 ### Step 2: Create test files
 
-Follow **policyengine-testing-patterns-skill** for structure. For each variable:
+Follow `policyengine-model-development` and its tests reference for structure. For each variable:
 
 1. **Skip** variables that only use `adds` / `subtracts` (no formula to test)
-2. **Skip** wrapper variables that the decision tree in **policyengine-variable-patterns-skill** says shouldn't exist
+2. **Skip** wrapper variables that the model-development variable guidance says shouldn't exist
 3. **Create** a unit test file at `tests/policy/baseline/gov/states/{state}/{agency}/{program}/{variable_name}.yaml` for each variable with a formula
 4. **Create** `integration.yaml` (never prefixed) with 5–7 scenarios, inline calculation comments, and 8–10 intermediate value checks per scenario
 

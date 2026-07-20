@@ -99,13 +99,20 @@
         "./skills/policyengine-uk",
         "./skills/policyengine-design",
         "./skills/policyengine-standards",
-        "./skills/policyengine-writing"
+        "./skills/policyengine-writing",
+        "./skills/fix-pr"
       ],
       "commands": [
         "./commands/create-pr.md",
         "./commands/fix-pr.md"
       ],
-      "agents": [],
+      "agents": [
+        "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/edge-case-generator.md",
+        "./agents/country-models/implementation-validator.md",
+        "./agents/country-models/pr-pusher.md",
+        "./agents/country-models/rules-engineer.md"
+      ],
       "source": "./"
     },
     {
@@ -130,11 +137,13 @@
       "skills": [
         "./skills/policyengine-app",
         "./skills/policyengine-tools",
+        "./skills/policyengine-model-development",
         "./skills/policyengine-us",
         "./skills/policyengine-uk",
         "./skills/policyengine-design",
         "./skills/policyengine-standards",
-        "./skills/policyengine-writing"
+        "./skills/policyengine-writing",
+        "./skills/fix-pr"
       ],
       "commands": [
         "./commands/create-new-component.md",
@@ -147,7 +156,13 @@
       ],
       "agents": [
         "./agents/app/component-test-writer.md",
-        "./agents/app/multizone-validator.md"
+        "./agents/app/multizone-validator.md",
+        "./agents/country-models/ci-fixer.md",
+        "./agents/country-models/edge-case-generator.md",
+        "./agents/country-models/implementation-validator.md",
+        "./agents/country-models/pr-pusher.md",
+        "./agents/country-models/rules-engineer.md",
+        "./agents/country-models/test-creator.md"
       ],
       "source": "./"
     },
@@ -282,7 +297,10 @@
         "./skills/policyengine-model-development",
         "./skills/policyengine-data",
         "./skills/policyengine-standards",
-        "./skills/policyengine-writing"
+        "./skills/policyengine-writing",
+        "./skills/encode-policy-v2",
+        "./skills/review-program",
+        "./skills/fix-pr"
       ],
       "commands": [
         "./commands/backdate-program.md",
@@ -303,7 +321,8 @@
         "./agents/country-models/program-reviewer.md",
         "./agents/country-models/rules-engineer.md",
         "./agents/country-models/structural-implementer.md",
-        "./agents/country-models/test-creator.md"
+        "./agents/country-models/test-creator.md",
+        "./agents/reference-validator.md"
       ],
       "source": "./"
     },

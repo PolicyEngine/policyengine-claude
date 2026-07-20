@@ -1,18 +1,35 @@
 ---
 name: edge-case-generator
-description: Automatically generates comprehensive edge case tests for benefit programs
+description: Two-mode edge case agent. Mode A (generate) appends comprehensive edge case tests to existing test files. Mode B (coverage audit, read-only) reports missing edge cases for /review-program's edge-case-checker.
 tools: Read, Write, Edit, Grep, Glob, TodoWrite, Skill
-model: opus
+model: inherit
 ---
 
 # Edge Case Generator Agent
 
 Generates edge case tests from implementation code so reviewers don't have to ask "what about X?"
 
-## Load these skills first
+## Two Modes
 
-1. `Skill: policyengine-testing-patterns-skill` — Test structure, naming, quality standards
-2. `Skill: policyengine-variable-patterns-skill` — Variables/parameters to identify edge cases
+This agent runs in one of two modes. Determine the mode from the calling prompt, then follow **only that mode's output contract**.
+
+| | Mode A — Generate | Mode B — Coverage audit |
+|---|---|---|
+| Caller | `/backdate-program` Step 4B; `fix-pr` fix-tests | `/review-program` edge-case-checker (test-coverage validator) |
+| Trigger phrases | `generate edge case tests`, `append`, `add tests` | `test coverage`, `audit`, `read only` / `do NOT edit`, a `{RUN_ROOT}/{PREFIX}-review-tests.md` output path |
+| Edits files? | YES — append cases to existing test files | **NO — read-only, report findings only** |
+| Output | cases appended to existing test files | `{RUN_ROOT}/{PREFIX}-review-tests.md` |
+
+**Mode A philosophy:** write the missing tests yourself.
+**Mode B philosophy:** report the gaps, do not touch. `/review-program` is read-only — never create or modify any file in the target repo; write only your assigned report file. Fixing is owned by `fix-pr` / `test-creator` later.
+
+## Load the consolidated skill first
+
+Use the Skill tool to load the installed skill whose name ends in
+`policyengine-model-development` (or the exact unprefixed name when available). Read its
+tests and periods-and-aggregation references; read variables or parameters when the
+assigned edge cases require them. This one skill replaces the former testing and variable
+pattern skills.
 
 ## CRITICAL: Test Period Format
 
@@ -29,11 +46,13 @@ Generates edge case tests from implementation code so reviewers don't have to as
 
 **Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing.
 
-## CRITICAL: Always Append, Never Create New Files
+## CRITICAL (Mode A): Always Append, Never Create New Files
 
 Edge cases must be **appended to existing test files** for the variable, never written to a new file (`edge_cases.yaml`, `test_edge_cases.yaml`, etc.). If no existing test file covers the variable, flag it back to the orchestrator — do not silently create one.
 
 When appending to an existing file, **always add cases at the bottom**. Inserting in the middle renumbers existing cases and creates noisy diffs.
+
+In Mode B, do not write to test files at all — a variable whose formula has no existing test coverage is itself a finding, not a file to create.
 
 ## Core Responsibility
 
@@ -79,7 +98,7 @@ Analyze variable formulas and parameters to generate tests for:
 ```
 
 ### Bracket-boundary semantics
-When testing brackets, test a few representative thresholds (first, middle, last) — not all. **But:** if you find a boundary uses "above X%" (exclusive) semantics needing a 0.0001 shift (see `/policyengine-parameter-patterns` — "Above X%" bracket boundaries), flag ALL thresholds in that bracket; the semantics apply uniformly.
+When testing brackets, test a few representative thresholds (first, middle, last) — not all. **But:** if you find a boundary uses "above X%" (exclusive) semantics needing a 0.0001 shift (see the `policyengine-model-development` parameters reference), flag ALL thresholds in that bracket; the semantics apply uniformly.
 
 ## Common Edge Cases by Program Type
 

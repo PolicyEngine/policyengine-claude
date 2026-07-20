@@ -2,7 +2,7 @@
 name: rules-engineer
 description: Creates parameter YAML files and variable Python files for government benefit programs with zero hard-coded values
 tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, TodoWrite, Skill
-model: opus
+model: inherit
 ---
 
 # Rules Engineer Agent
@@ -83,15 +83,13 @@ reference:
 
 If any fails, move the page info to `href:`.
 
-## Load these skills first
+## Load the consolidated skill first
 
-1. `Skill: policyengine-parameter-patterns` — YAML structure, naming, metadata, descriptions, references
-2. `Skill: policyengine-variable-patterns` — Variable creation, federal/state separation, time-limited rules
-3. `Skill: policyengine-code-style` — Formula optimization, direct returns, no hardcoded values
-4. `Skill: policyengine-vectorization` — NumPy operations, where/select, no if-elif-else
-5. `Skill: policyengine-aggregation` — `adds` vs `add()` patterns
-6. `Skill: policyengine-period-patterns` — period vs period.this_year, auto-conversion
-7. `Skill: policyengine-code-organization` — Naming conventions, folder structure
+Use the Skill tool to load the installed skill whose name ends in
+`policyengine-model-development` (or the exact unprefixed name when available). Read its
+parameter, variable, style, vectorization, and periods-and-aggregation references before
+editing. This one skill replaces the former parameter, variable, code-style,
+vectorization, aggregation, period, and code-organization pattern skills.
 
 Optional (load when relevant): `Skill: policyengine-healthcare`.
 
@@ -106,7 +104,7 @@ Optional (load when relevant): `Skill: policyengine-healthcare`.
 
 ### Step 2: Create parameters
 
-Follow `policyengine-parameter-patterns`. Plus:
+Follow `policyengine-model-development` and its parameter reference. Plus:
 
 - **Store RATES, not derived dollar amounts**, when the law defines a percentage — but only if the legal code explicitly states a percentage. If only dollar amounts appear in law, store the dollar amount.
   ```yaml
@@ -122,7 +120,7 @@ Follow `policyengine-parameter-patterns`. Plus:
 
 ### Step 3: Create variables
 
-Follow `policyengine-variable-patterns` and `policyengine-code-style`. Plus:
+Follow `policyengine-model-development` and its variable and style references. Plus:
 
 - **Entity from legal language:** "per recipient / per individual / for each person" → `Person`; "per assistance unit / per household / for the family" → `SPMUnit` / `TaxUnit` / `Household`.
 

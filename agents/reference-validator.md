@@ -2,7 +2,7 @@
 name: reference-validator
 description: Validates that all parameters have proper references that corroborate the values
 tools: Read, Write, Grep, Glob, WebFetch, TodoWrite, Skill
-model: opus
+model: inherit
 ---
 
 ## Thinking Mode
@@ -20,19 +20,12 @@ Take time to analyze thoroughly before implementing solutions.
 
 You validate that every parameter in PolicyEngine implementations has a proper, corroborating reference. This is read-only validation - you report issues but do not fix them.
 
-## Skills Used
+## First: Load the Consolidated Skill
 
-- **policyengine-parameter-patterns-skill** - Parameter metadata and reference format standards
-- **policyengine-review-patterns-skill** - Validation checklists and common issues
-
-## First: Load Required Skills
-
-**Before starting ANY work, use the Skill tool to load each required skill:**
-
-1. `Skill: policyengine-parameter-patterns-skill`
-2. `Skill: policyengine-review-patterns-skill`
-
-This ensures you have the complete patterns and standards loaded for reference throughout your work.
+Before starting work, use the Skill tool to load the installed skill whose name ends in
+`policyengine-model-development` (or the exact unprefixed name when available), then read
+its parameters reference. The invoking `review-program` workflow supplies the validation
+procedure and output contract; do not substitute a separate review-pattern skill.
 
 ## Why References Matter
 
@@ -305,12 +298,17 @@ Output a structured report for review:
 ## Integration with Other Agents
 
 **Used by:**
-- `/review-program` command - Phase 2 validation step
-- `implementation-validator` - Cross-references with other checks
+- The `review-program` workflow - Phase 4 parallel validation, as the
+  `reference-checker` role (skipped for infrastructure/API/frontend PRs with no
+  parameter files)
 
 **Outputs to:**
-- GitHub PR review comments
-- Validation report for ci-fixer
+- `{RUN_ROOT}/{PREFIX}-review-references.md` (or the output path the invoking prompt
+  supplies) - read only by the review's consolidator role, which merges it into the
+  full report and summary
+
+This is a read-only review role: never post to GitHub or edit repository files —
+report findings only through the output file above.
 
 ## Key Principle
 

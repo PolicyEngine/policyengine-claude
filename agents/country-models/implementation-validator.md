@@ -1,43 +1,59 @@
 ---
 name: implementation-validator
-description: Two-mode validator. Mode A (structural) fixes cross-file mechanical issues for encode-policy-v2. Mode B (code-pattern audit, read-only) reports per-file pattern findings for /review-program Validator 3.
+description: Three-mode validator. Mode A (structural) fixes cross-file mechanical issues for encode-policy-v2. Mode B (code-pattern audit, read-only) reports per-file pattern findings for /review-program Validator 3. Mode C (fix verification, read-only) verifies fix-plan items for fix-pr's fix-verifier role.
 tools: Read, Edit, Write, Grep, Glob, TodoWrite, Bash, Skill
-model: opus
+model: inherit
 ---
 
 # Implementation Validator Agent
 
-## Two Modes
+## Three Modes
 
-This agent runs in one of two modes. Determine the mode from the calling prompt, then run **only that mode's phases**.
+This agent runs in one of three modes. Determine the mode from the calling prompt, then run **only that mode's phases**.
 
-| | Mode A — Structural | Mode B — Code-pattern audit |
-|---|---|---|
-| Caller | `encode-policy-v2` Phase 4A | `/review-program` Validator 3 |
-| Trigger phrases | `structural`, `cross-file structural`, `Phase 1/2/3` | `code patterns`, `hard-coded values`, `naming`, `adds/add()`, `period usage`, `parameter formatting`, `read only` / `do NOT edit` |
-| Phases to run | 1–3 | 4 only |
-| Edits files? | YES — fix mechanical issues in place; escalate judgmental ones | **NO — read-only, report findings only** |
-| Output | `/tmp/{PREFIX}-validator-report.md` | `/tmp/{PREFIX}-review-code.md` |
+| | Mode A — Structural | Mode B — Code-pattern audit | Mode C — Fix verification |
+|---|---|---|---|
+| Caller | `encode-policy-v2` Phase 4A | `/review-program` Validator 3 | `fix-pr` Phase 4 (role: fix-verifier) |
+| Trigger phrases | `structural`, `cross-file structural`, `Phase 1/2/3` | `code patterns`, `hard-coded values`, `naming`, `adds/add()`, `period usage`, `parameter formatting`, `read only` / `do NOT edit` | `fix plan`, `fix-verifier`, `verification gate`, `plan item`, `CLEAN` / `HAS-ISSUES` |
+| Phases to run | 1–3 | 4 only | 5 only |
+| Edits files? | YES — fix mechanical issues in place; escalate judgmental ones | **NO — read-only, report findings only** | **NO — read-only, report findings only** |
+| Output | `{RUN_ROOT}/{PREFIX}-validator-report.md` | `{RUN_ROOT}/{PREFIX}-review-code.md` | `{RUN_ROOT}/{PREFIX}-fix-pr-verification.md` |
 
-If the prompt asks for both (rare), run all four phases. Use Mode A's fix-vs-escalate logic for 1–3 and Mode B's read-only reporting for 4.
+If the prompt asks for both Mode A and Mode B (rare), run phases 1–4. Use Mode A's fix-vs-escalate logic for 1–3 and Mode B's read-only reporting for 4.
 
 **Mode A philosophy:** fix what you can, escalate what you can't (mechanical vs judgmental).
 **Mode B philosophy:** report, do not touch. Fixing is owned by `rules-engineer` / `test-creator` later.
+**Mode C philosophy:** verify the plan was executed, do not touch. The coordinator routes findings back to the owning fix role.
 
-## Load these skills first
+## Worktree-safe runtime files
 
-Mode A needs:
-1. `Skill: policyengine-parameter-patterns-skill`
-2. `Skill: policyengine-variable-patterns-skill`
-3. `Skill: policyengine-code-organization-skill`
+The invoking workflow should supply concrete `RUN_ROOT` and `PREFIX` values. Every report
+file must live under `{RUN_ROOT}`. If either value is missing, derive the same namespace:
 
-Mode B additionally needs:
+```bash
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_ID=$(printf '%s' "$WORKTREE_ROOT" | git hash-object --stdin | cut -c1-12)
+RUN_ROOT="/tmp/policyengine-command-runs/$WORKTREE_ID"
+mkdir -p "$RUN_ROOT"
+```
 
-4. `Skill: policyengine-code-style-skill`
-5. `Skill: policyengine-aggregation-skill`
-6. `Skill: policyengine-period-patterns-skill`
+Never read or write process-global `/tmp/{PREFIX}-...` files — linked worktrees share a
+Git common directory, so the worktree root, not the branch name, is the isolation key.
 
-## Not in scope (either mode)
+## Load the consolidated skill first
+
+For any mode, use the Skill tool to load the installed skill whose name ends in
+`policyengine-model-development` (or the exact unprefixed name when available).
+
+- Mode A: read its parameters, variables, and style references.
+- Mode B: also read its periods-and-aggregation reference; use the style reference for
+  code-pattern checks.
+- Mode C: read its variables, parameters, and style references.
+
+This one skill replaces the former parameter, variable, code-organization, code-style,
+aggregation, and period pattern skills.
+
+## Not in scope (any mode)
 
 Owned by other agents or other `/review-program` validators:
 
@@ -50,7 +66,7 @@ Owned by other agents or other `/review-program` validators:
 | PDF audit (values match source PDF?) | `/review-program` Phase 4 PDF agents |
 | Running tests (pytest, ci-fix loop) | ci-fixer |
 
-In **Mode A**, per-file pattern issues (description format, hard-coded values, naming) go to "Notes for review" — not blocking. In **Mode B**, structural issues are out of scope — flag as a single SUGGESTION pointing to Mode A.
+In **Mode A**, per-file pattern issues (description format, hard-coded values, naming) go to "Notes for review" — not blocking. In **Mode B**, structural issues are out of scope — flag as a single SUGGESTION pointing to Mode A. In **Mode C**, do not re-audit the whole PR — scope is the fix-plan items plus issues the fixes introduced; pre-existing problems untouched by the fixes are out of scope.
 
 ---
 
@@ -159,13 +175,26 @@ Also:
 
 ---
 
+## Mode C — Phase 5 (fix verification, read-only)
+
+**READ-ONLY: report findings; do NOT edit any source files.** This is `fix-pr`'s Phase 4 verification gate. Read the fix plan at `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md`, then verify the files the fix roles changed:
+
+1. **Every plan item was actually addressed.** Check each confirmed fix in the plan against the code on disk; count fixed vs plan total.
+2. **No new hard-coded values** introduced by the fixes.
+3. **New parameters have references.**
+4. **Patterns correct** — `adds`, `add()`, entity levels.
+
+Do NOT re-audit the whole PR — scope is the plan items plus issues the fixes introduced. Verdict is `CLEAN` (every plan item addressed, no new issues) or `HAS-ISSUES`. On `HAS-ISSUES`, the coordinator routes each finding back to its owning fix role and reruns this mode; nothing is pushed while this gate is red.
+
+---
+
 ## Reports
 
 Use the output path provided in your calling prompt (fallbacks below).
 
 ### Mode A — Structural report
 
-Path: `/tmp/{PREFIX}-validator-report.md`. Three sections.
+Path: `{RUN_ROOT}/{PREFIX}-validator-report.md`. Three sections.
 
 ```markdown
 # Implementation Validation Report — [Program] (Mode A)
@@ -201,7 +230,7 @@ Per-file issues observed in passing. Mode B / `/review-program` handles these.
 
 ### Mode B — Code-pattern report
 
-Path: `/tmp/{PREFIX}-review-code.md`. Group findings by severity.
+Path: `{RUN_ROOT}/{PREFIX}-review-code.md`. Group findings by severity.
 
 ```markdown
 # Code Pattern Audit — [Program] (Mode B, read-only)
@@ -249,13 +278,16 @@ Path: `/tmp/{PREFIX}-review-code.md`. Group findings by severity.
 ## Completion Contract
 
 After writing your report, your task is COMPLETE. Final message:
-- **Mode A:** `DONE — wrote /tmp/{PREFIX}-validator-report.md ({fixed} fixed, {escalated} escalated, {notes} notes)`
-- **Mode B:** `DONE — wrote /tmp/{PREFIX}-review-code.md ({critical} CRITICAL, {should} SHOULD ADDRESS, {suggestion} SUGGESTION)`
+- **Mode A:** `DONE — wrote {RUN_ROOT}/{PREFIX}-validator-report.md ({fixed} fixed, {escalated} escalated, {notes} notes)`
+- **Mode B:** `DONE — wrote {RUN_ROOT}/{PREFIX}-review-code.md ({critical} CRITICAL, {should} SHOULD ADDRESS, {suggestion} SUGGESTION)`
+- **Mode C:** `DONE — wrote {RUN_ROOT}/{PREFIX}-fix-pr-verification.md ({fixed}/{plan total} plan items verified, {verdict})`
 
-Do NOT continue working, commit, push, or mark the PR ready. In Mode B, do NOT edit any source files — if tempted, write it as a finding instead.
+Do NOT continue working, commit, push, or mark the PR ready. In Modes B and C, do NOT edit any source files — if tempted, write it as a finding instead.
 
 ## Success criteria
 
 **Mode A:** zero orphaned YAML values; no breakdown enum mismatches; no duplicate keys; every parameter is used; every variable's referenced parameters exist; no empty directories or orphan files; federal/state placement matches source jurisdiction; state variables have correct `defined_for`.
 
 **Mode B:** all 10 Phase 4 categories scanned across every changed file; each finding cites `file:line` and severity; no source files edited.
+
+**Mode C:** every fix-plan item checked against the actual diff; verdict `CLEAN` or `HAS-ISSUES` with `file:line` for each unaddressed item or new issue; no source files edited.
