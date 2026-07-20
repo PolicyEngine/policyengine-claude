@@ -9,12 +9,13 @@ Coordinate a multi-agent workflow to implement $ARGUMENTS as a complete, product
 **Design Principles:**
 1. Pure orchestration — Main Claude never reads full files, only short summaries
 2. Agent teams — TeamCreate/TaskCreate with dependencies
-3. Branch-name prefix — all /tmp/ files use {PREFIX}- prefix
+3. Worktree-safe artifacts — all runtime files live under a worktree-identity directory
 4. No orchestrator scoping — user approves scope at checkpoint
 5. No orchestrator implementation guidance — agents read specs from disk + reference implementations
 6. Independent regulatory verification — review-fix loop, not self-evaluation
-7. Lessons learned — extract and persist after every run
-8. Completeness tracking — every documented requirement tracked through to implementation
+7. Completeness tracking — every documented requirement tracked through to implementation
+8. Resumable execution — preserve completed phase artifacts and reuse them when inputs are unchanged
+9. Validation funnel — exact changed tests first, diagnostic traces only on failure, one final broad confirmation
 
 **GLOBAL RULE — PDF Page Numbers**: Every PDF reference href MUST end with `#page=XX` (the file page number, NOT the printed page number). The ONLY exception is single-page PDFs. This rule applies to ALL agents in ALL phases. Include this instruction in every agent prompt that touches parameter YAML files.
 
@@ -60,61 +61,110 @@ Parse $ARGUMENTS:
 - OPTIONS:
   - --skip-review — skip Phase 6 (review-fix loop)
   - --research-only — stop after Phase 2 (scope review), produce spec but don't implement
-  - --600dpi — render all PDFs at 600 DPI instead of 300 DPI
+  - --600dpi — render all PDF pages at 600 DPI instead of 300 DPI
+  - --resume — reuse valid artifacts from an interrupted run
+  - --from-phase N — resume at phase N after verifying prerequisites (implies --resume)
+  - --full-validation — after the program suite passes, also run the broader state/package suite
 ```
 
 Derive:
 - `ST` = state abbreviation lowercase (e.g., `ri`, `or`)
 - `PROG` = program abbreviation lowercase (e.g., `ccap`, `tanf`)
 - `BRANCH` = `{ST}-{PROG}` (e.g., `ri-ccap`)
-- `PREFIX` = `{BRANCH}` (used for all /tmp/ files)
+- `PREFIX` = `{BRANCH}` (used inside this worktree's `RUN_ROOT`)
 - `DPI` = 600 if `--600dpi`, else 300
+- `RESUME` = true if `--resume` or `--from-phase` is present
+- `FROM_PHASE` = requested phase, otherwise the first incomplete phase in the run-state file
+- `FULL_VALIDATION` = true if `--full-validation`
+
+Derive the worktree namespace before reading, writing, or deleting runtime artifacts:
+
+```bash
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_ID=$(printf '%s' "$WORKTREE_ROOT" | git hash-object --stdin | cut -c1-12)
+RUN_ROOT="/tmp/policyengine-command-runs/$WORKTREE_ID"
+mkdir -p "$RUN_ROOT"
+```
+
+`WORKTREE_ROOT`, not the shared Git common directory or branch name, is the isolation
+boundary. Two linked worktrees may share the same repository and commit without sharing
+runtime files. Substitute `{RUN_ROOT}` and `{WORKTREE_ID}` in every agent prompt. Agents
+must never fall back to process-global `/tmp/{PREFIX}-...` paths.
+
+Before any branch operation, inspect `git worktree list --porcelain`. Never use
+`--ignore-other-worktrees`, never force-checkout a branch owned by another worktree, and
+never edit outside `WORKTREE_ROOT`. If `{BRANCH}` is already checked out elsewhere, stop
+and report that worktree path instead of mutating it.
 
 ## Standard agent boilerplate
 
 - **Do not commit** — every implementation agent's definition already says "DO NOT commit; pr-pusher handles all commits." Don't restate in prompts.
 
-### Step 0B: Clean Up & Create Team
+### Step 0B: Initialize or Resume Run & Create Team
+
+Use `{RUN_ROOT}/{PREFIX}-encode-run-state.md` as the phase ledger. It records
+`WORKTREE_ROOT`, `WORKTREE_ID`, arguments, branch, current HEAD, completed phases, artifact
+paths, test manifest, elapsed time per phase, and any blocked item.
+
+- Fresh run: remove only artifacts owned by this command, then create the ledger.
+- `--resume`: preserve artifacts. Verify that STATE, PROGRAM, branch, and source/spec hashes
+  match the ledger before reusing them. Refuse reuse if `WORKTREE_ROOT` or `WORKTREE_ID`
+  differs. Resume at the first incomplete phase.
+- `--from-phase N`: verify every prerequisite artifact for phase N. If an input changed,
+  invalidate that phase and all dependent phases instead of trusting stale output.
+- Never delete downloaded sources or rendered pages that still match their URL/checksum.
 
 ```bash
-rm -f /tmp/${PREFIX}-*.md
+if [ "$RESUME" != "true" ]; then
+  rm -f \
+    "$RUN_ROOT/${PREFIX}-research-summary.md" \
+    "$RUN_ROOT/${PREFIX}-impl-spec.md" \
+    "$RUN_ROOT/${PREFIX}-requirements-checklist.md" \
+    "$RUN_ROOT/${PREFIX}-scope-summary.md" \
+    "$RUN_ROOT/${PREFIX}-scope-decision.md" \
+    "$RUN_ROOT/${PREFIX}-implementation-manifest.md" \
+    "$RUN_ROOT/${PREFIX}-test-manifest.md" \
+    "$RUN_ROOT/${PREFIX}-coverage-report.md" \
+    "$RUN_ROOT/${PREFIX}-validator-report.md" \
+    "$RUN_ROOT/${PREFIX}-ci-fixer-status.md" \
+    "$RUN_ROOT/${PREFIX}-checkpoint.md" \
+    "$RUN_ROOT/${PREFIX}-pr-description.md" \
+    "$RUN_ROOT/${PREFIX}-final-report.md" \
+    "$RUN_ROOT/${PREFIX}-encode-run-state.md"
+  rm -f "$RUN_ROOT/${PREFIX}-checklist"*.md
+fi
 ```
 
-TeamCreate(`{PREFIX}-encode`)
+TeamCreate(`{WORKTREE_ID}-{PREFIX}-encode`)
 
-### Step 0C: Spawn Setup Agents (Parallel)
+### Step 0C: Gather Documentation
 
-Spawn both in parallel — they work on independent tasks:
+Keep setup read-only until the user approves scope. Do not create an issue, branch, or
+empty draft PR during research, especially for `--research-only` runs.
 
-**Agent 1: Issue Manager**
-
-```
-subagent_type: "complete:country-models:issue-manager"
-team_name: "{PREFIX}-encode"
-name: "issue-manager"
-run_in_background: true
-
-"Find or create a GitHub issue and draft PR for {STATE} {PROGRAM}.
-- Search for existing issues/PRs first
-- Create branch: {BRANCH}
-- Push to fork, create draft PR to upstream using --repo PolicyEngine/policyengine-us
-- Return: ISSUE_NUMBER, PR_NUMBER, PR_URL, BRANCH"
-```
-
-**Agent 2: Document Collector**
+**Document Collector**
 
 ```
 subagent_type: "complete:country-models:document-collector"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "document-collector"
 run_in_background: true
 
-"Research {STATE} {PROGRAM} and gather all official documentation.
+"Research {STATE} {PROGRAM} and gather sufficient official documentation for every
+in-scope requirement.
 - Discover the state's official program name
-- Download and extract PDFs with curl + pdftotext
-- Render PDF screenshots at {DPI} DPI: pdftoppm -png -r {DPI} /tmp/doc.pdf /tmp/doc-page
+- Download each PDF to {RUN_ROOT}/{PREFIX}-source-{N}.pdf with curl and extract text to
+  {RUN_ROOT}/{PREFIX}-source-{N}.txt with pdftotext
+- Render every page of every collected PDF at {DPI} DPI:
+  pdftoppm -png -r {DPI} {RUN_ROOT}/{PREFIX}-source-{N}.pdf {RUN_ROOT}/{PREFIX}-source-{N}-page
+  Full rendering is required so later agents can verify any rule, table, cross-reference,
+  or page citation visually without reopening the acquisition phase.
+- Extracted text may guide research, but it does not replace full-page rendering.
+- Reuse a cached download when its URL/checksum matches the run-state ledger
+- Reuse rendered pages only when the PDF checksum and DPI both match and the complete
+  expected page sequence exists; otherwise rerender the full PDF.
 - Save all documentation to sources/working_references.md
-- Write SHORT research summary (max 20 lines) to /tmp/{PREFIX}-research-summary.md:
+- Write SHORT research summary (max 20 lines) to {RUN_ROOT}/{PREFIX}-research-summary.md:
   - Official program name
   - Key sources found (with URLs)
   - Number of eligibility tests identified
@@ -130,9 +180,8 @@ RULES:
 
 ### Step 0D: Collect Setup Results
 
-After both agents complete:
-- Store ISSUE_NUMBER, PR_NUMBER, BRANCH from issue-manager
-- Read ONLY `/tmp/{PREFIX}-research-summary.md` (max 20 lines)
+After the document collector completes:
+- Read ONLY `{RUN_ROOT}/{PREFIX}-research-summary.md` (max 20 lines)
 - Report brief status to user
 
 **Stop here if document-collector failed** — cannot proceed without documentation.
@@ -160,9 +209,9 @@ AskUserQuestion:
 - Provider enrollment/billing pages
 
 **If user provides files**, process them before proceeding:
-1. Copy to `/tmp/{PREFIX}-user-doc-{N}.pdf`
-2. Extract text: `pdftotext /tmp/{PREFIX}-user-doc-{N}.pdf /tmp/{PREFIX}-user-doc-{N}.txt`
-3. Render screenshots: `pdftoppm -png -r {DPI} /tmp/{PREFIX}-user-doc-{N}.pdf /tmp/{PREFIX}-user-doc-{N}-page`
+1. Copy to `{RUN_ROOT}/{PREFIX}-user-doc-{N}.pdf`
+2. Extract text: `pdftotext {RUN_ROOT}/{PREFIX}-user-doc-{N}.pdf {RUN_ROOT}/{PREFIX}-user-doc-{N}.txt`
+3. Render screenshots: `pdftoppm -png -r {DPI} {RUN_ROOT}/{PREFIX}-user-doc-{N}.pdf {RUN_ROOT}/{PREFIX}-user-doc-{N}-page`
 4. Have a general-purpose agent append the new content to `sources/working_references.md`
 
 **If no unreachable references**, skip this step and proceed to Phase 1.
@@ -175,7 +224,7 @@ Spawn a consolidator agent to read the full documentation and produce structured
 
 ```
 subagent_type: "general-purpose"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "consolidator"
 
 "Read sources/working_references.md and produce structured implementation specs for {STATE} {PROGRAM}.
@@ -212,7 +261,7 @@ correct it NOW — downstream agents will copy these citations verbatim into par
 
 STEP 4: Write THREE files:
 
-FILE 1: /tmp/{PREFIX}-impl-spec.md (FULL — for implementation agents)
+FILE 1: {RUN_ROOT}/{PREFIX}-impl-spec.md (FULL — for implementation agents)
 - Every requirement from documentation, numbered (REQ-001, REQ-002, ...)
 - Each requirement tagged: ELIGIBILITY, INCOME, BENEFIT, EXEMPTION, DEMOGRAPHIC, IMMIGRATION, RESOURCE, etc.
 - Suggested variable and parameter structure (based on reference impl patterns)
@@ -222,14 +271,14 @@ FILE 1: /tmp/{PREFIX}-impl-spec.md (FULL — for implementation agents)
 - For TANF: note simplified vs full approach recommendation
 - For each requirement: cite the source (statute, manual section, page) — verified against PDF text in Step 2
 
-FILE 2: /tmp/{PREFIX}-requirements-checklist.md (SHORT — for orchestrator, max 40 lines)
+FILE 2: {RUN_ROOT}/{PREFIX}-requirements-checklist.md (SHORT — for orchestrator, max 40 lines)
 - One line per requirement:
   REQ-001: [TAG] Description (source)
   REQ-002: [TAG] Description (source)
   ...
 - Total count at top
 
-FILE 3: /tmp/{PREFIX}-scope-summary.md (SHORT — for user checkpoint, max 15 lines)
+FILE 3: {RUN_ROOT}/{PREFIX}-scope-summary.md (SHORT — for user checkpoint, max 15 lines)
 - Program name and type
 - Total requirements found: N
 - Complexity assessment: simple (<=5 REQs) / complex (>5 REQs)
@@ -248,8 +297,8 @@ RULES:
 ```
 
 After consolidator completes, read ONLY:
-- `/tmp/{PREFIX}-requirements-checklist.md` (max 40 lines)
-- `/tmp/{PREFIX}-scope-summary.md` (max 15 lines)
+- `{RUN_ROOT}/{PREFIX}-requirements-checklist.md` (max 40 lines)
+- `{RUN_ROOT}/{PREFIX}-scope-summary.md` (max 15 lines)
 
 ---
 
@@ -341,7 +390,7 @@ Examples of program-specific decisions:
 
 ### Step 2C: Write Scope Decision
 
-After all questions are answered, write the decision to `/tmp/{PREFIX}-scope-decision.md`:
+After all questions are answered, write the decision to `{RUN_ROOT}/{PREFIX}-scope-decision.md`:
 
 ```markdown
 ## Scope Decision for {STATE} {PROGRAM}
@@ -363,6 +412,27 @@ REQ-010: [BENEFIT] Provider payment rates — Reason: user deferred
 {any additional guidance from user}
 ```
 
+### Step 2D: Create Implementation Branch and Draft PR
+
+**Skip for `--research-only`.** After scope approval, spawn the issue manager:
+
+```
+subagent_type: "complete:country-models:issue-manager"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
+name: "issue-manager"
+
+"Find or create a GitHub issue and draft PR for the approved {STATE} {PROGRAM} scope.
+- Search for existing issues/PRs first
+- Verify the current root is {WORKTREE_ROOT} and inspect `git worktree list --porcelain`
+- Create/use branch {BRANCH} only in this worktree; if another worktree owns it, stop and
+  return that path. Never use --ignore-other-worktrees.
+- Push to fork, create draft PR to upstream using --repo PolicyEngine/policyengine-us
+- Return: ISSUE_NUMBER, PR_NUMBER, PR_URL, BRANCH"
+```
+
+Record the identifiers in the run-state ledger. This is the first GitHub write in the
+workflow.
+
 **Stop here if `--research-only`.**
 
 ---
@@ -375,12 +445,12 @@ Create tasks with dependencies. Agents read specs from disk — orchestrator doe
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "create-parameters"
 
 "Create parameters for {STATE} {PROGRAM}.
-Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
-Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
+Read the implementation spec at {RUN_ROOT}/{PREFIX}-impl-spec.md.
+Read the scope decision at {RUN_ROOT}/{PREFIX}-scope-decision.md.
 Study the reference implementation listed in the impl spec.
 
 Load skills: /policyengine-parameter-patterns, /policyengine-variable-patterns,
@@ -401,22 +471,21 @@ RULES:
 "
 ```
 
-### Step 3B: Create Variables and Tests (Parallel)
+### Step 3B: Create Variables and Implementation Manifest
 
-**ORCHESTRATOR RULE: Always spawn BOTH agents below (variables + tests), even if a previous agent created files outside its scope.** Each agent is specialized for its task. If a previous agent went out of scope and created files that aren't its responsibility, the specialized agent will overwrite or improve them. Never skip an agent because "the files already exist."
+Tests depend on the final variable names, entities, periods, and inputs. Create variables
+first so the test agent does not guess an interface that is still changing.
 
-After parameters are complete, spawn both in parallel — they work on different folders.
-
-**Agent: Rules Engineer**
+**Rules Engineer**
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "create-variables"
 
 "Create variables for {STATE} {PROGRAM}.
-Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
-Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
+Read the implementation spec at {RUN_ROOT}/{PREFIX}-impl-spec.md.
+Read the scope decision at {RUN_ROOT}/{PREFIX}-scope-decision.md.
 Study the reference implementation listed in the impl spec.
 
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
@@ -437,19 +506,36 @@ RULES:
 - Verify person vs group entity level from the legal code
 - Follow patterns from the reference implementation
 - DO NOT skip any in-scope requirement (check against scope decision)
+
+After implementation, write `{RUN_ROOT}/{PREFIX}-implementation-manifest.md` (max 60 lines).
+For every implemented formula variable record:
+- exact variable name and file path
+- entity and definition period
+- required inputs and parameters
+- requirements covered
+- test file that should exercise it
+
+Verify every listed variable exists before returning.
 "
 ```
 
-**Agent: Test Creator**
+### Step 3C: Create Tests, Including Edge Cases
+
+Only start after the variable manifest is complete. One agent owns the test files so
+ordinary, integration, and edge-case cases are designed together instead of repeatedly
+rewriting the same files.
+
+**Test Creator**
 
 ```
 subagent_type: "complete:country-models:test-creator"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "create-tests"
 
 "Create tests for {STATE} {PROGRAM}.
-Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
-Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
+Read the implementation spec at {RUN_ROOT}/{PREFIX}-impl-spec.md.
+Read the scope decision at {RUN_ROOT}/{PREFIX}-scope-decision.md.
+Read {RUN_ROOT}/{PREFIX}-implementation-manifest.md and use its exact variable contract.
 Read sources/working_references.md for calculation examples.
 
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
@@ -462,42 +548,16 @@ for test inputs. Grep the codebase to verify variable names before using them in
 RULES:
 - Create UNIT tests for each variable that will have a formula
 - Create INTEGRATION tests (5-7 scenarios) with inline calculation comments
+- Include threshold-1/threshold/threshold+1 boundaries, zero and maximum income,
+  family-size boundaries, rounding/capping behavior, and missing/negative input behavior
+  where relevant
 - Use only existing PolicyEngine variables
 - Period format: 2024-01 or 2024 only
 - Test realistic values from documentation
 - DO NOT skip any in-scope requirement (check against scope decision)
-"
-```
-
-### Step 3C: Generate Edge Case Tests
-
-After both variables and tests are complete:
-
-```
-subagent_type: "complete:country-models:edge-case-generator"
-team_name: "{PREFIX}-encode"
-name: "create-edge-cases"
-
-"Generate edge case tests for {STATE} {PROGRAM}.
-Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
-Analyze variables and parameters in the program folder.
-
-Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns.
-
-OUTPUT LOCATION — IMPORTANT:
-- Edge case scenarios MUST be APPENDED to the existing test files created in Step 3B,
-  located at policyengine_us/tests/policy/baseline/gov/states/{ST}/...
-- Find the existing unit test file for each variable and add edge case scenarios to it.
-- Find the existing integration test file and add edge case scenarios to it.
-- DO NOT create new files (no separate edge_cases.yaml, no test_edge_cases.yaml, etc.).
-- If no existing test file covers the variable in question, flag it — do not silently
-  create a new file.
-
-Focus on:
-- Income at threshold boundaries (threshold-1, threshold, threshold+1)
-- Zero income, maximum income
-- Family size at min/max
-- Negative income with zero deductions
+- Write `{RUN_ROOT}/{PREFIX}-test-manifest.md` listing the exact test files and case names
+  created or changed. Later CI phases MUST consume this manifest rather than guessing a
+  directory or using an ellipsis placeholder.
 "
 ```
 
@@ -519,13 +579,13 @@ After all implementation agents complete, spawn a requirements-tracker:
 
 ```
 subagent_type: "general-purpose"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "requirements-tracker"
 
 "Cross-reference the scope decision against the implemented code for {STATE} {PROGRAM}.
 
 READ:
-- /tmp/{PREFIX}-scope-decision.md (what should be implemented)
+- {RUN_ROOT}/{PREFIX}-scope-decision.md (what should be implemented)
 - All parameter YAML files in the program folder
 - All variable .py files in the program folder
 - All test files in the program folder
@@ -535,7 +595,7 @@ FOR EACH in-scope requirement, verify it has:
 - A variable (if logic-based)
 - A test case
 
-Write /tmp/{PREFIX}-coverage-report.md (max 40 lines):
+Write {RUN_ROOT}/{PREFIX}-coverage-report.md (max 40 lines):
 
 ## Requirements Coverage Report
 
@@ -555,26 +615,28 @@ Write /tmp/{PREFIX}-coverage-report.md (max 40 lines):
 - Missing: Y"
 ```
 
-Read ONLY `/tmp/{PREFIX}-coverage-report.md` (max 40 lines).
+Read ONLY `{RUN_ROOT}/{PREFIX}-coverage-report.md` (max 40 lines).
 
 **If missing requirements > 0**: Spawn a gap-fixer to implement the missing requirements, then re-run the requirements-tracker:
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "gap-fixer"
 
 "Implement MISSING requirements for {STATE} {PROGRAM}.
-Read the coverage report at /tmp/{PREFIX}-coverage-report.md.
-Read the implementation spec at /tmp/{PREFIX}-impl-spec.md.
-Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
+Read the coverage report at {RUN_ROOT}/{PREFIX}-coverage-report.md.
+Read the implementation spec at {RUN_ROOT}/{PREFIX}-impl-spec.md.
+Read the scope decision at {RUN_ROOT}/{PREFIX}-scope-decision.md.
 Study existing variables and parameters already created for this program.
 
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-code-style, /policyengine-code-organization.
 
 TASK: Implement ONLY the requirements listed under 'MISSING' in the coverage report.
-Do not modify existing variables or parameters — only add what's missing.
+Make the smallest scoped edit required. A missing requirement may require updating an
+existing formula or parameter; do not create a duplicate component merely to avoid
+editing an existing one.
 
 REUSE EXISTING VARIABLES: Before creating any non-program-specific variable, Grep the
 codebase first. PolicyEngine-US likely already has it.
@@ -591,7 +653,7 @@ After gap-fixer completes, re-run the requirements-tracker (same prompt as above
 
 ```
 subagent_type: "complete:country-models:implementation-validator"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "implementation-validator"
 
 "Validate {STATE} {PROGRAM} for cross-file structural issues, fix mechanical issues yourself,
@@ -621,7 +683,7 @@ Fix MECHANICAL issues yourself (orphan dirs, breakdown enum renames, YAML block 
 git mv for placement, adding defined_for). Escalate JUDGMENTAL issues (orphan parameter
 needing variable, missing param ref with no obvious typo) to rules-engineer.
 
-Write your report to /tmp/{PREFIX}-validator-report.md with three sections:
+Write your report to {RUN_ROOT}/{PREFIX}-validator-report.md with three sections:
 1. FIXED — what you fixed and where
 2. ESCALATED — issues for rules-engineer with proposed fix, OR 'NONE' if no escalations
 3. Notes for review — per-file issues observed in passing (description format, naming,
@@ -631,7 +693,7 @@ Write your report to /tmp/{PREFIX}-validator-report.md with three sections:
 
 ### Step 4A-fix: Handle Validator Escalations
 
-After implementation-validator completes, read `/tmp/{PREFIX}-validator-report.md`.
+After implementation-validator completes, read `{RUN_ROOT}/{PREFIX}-validator-report.md`.
 
 **If the ESCALATED section is 'NONE'**: proceed to Step 4B.
 
@@ -639,106 +701,129 @@ After implementation-validator completes, read `/tmp/{PREFIX}-validator-report.m
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "validator-escalation-fixer"
 
 "Fix the judgmental issues escalated by implementation-validator for {STATE} {PROGRAM}.
-Read the validator report at /tmp/{PREFIX}-validator-report.md.
+Read the validator report at {RUN_ROOT}/{PREFIX}-validator-report.md.
 Focus ONLY on items under the ESCALATED section.
-Read the implementation spec at /tmp/{PREFIX}-impl-spec.md for policy context.
-Read the scope decision at /tmp/{PREFIX}-scope-decision.md.
+Read the implementation spec at {RUN_ROOT}/{PREFIX}-impl-spec.md for policy context.
+Read the scope decision at {RUN_ROOT}/{PREFIX}-scope-decision.md.
 
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-code-organization.
 
-After fixing, append a 'POST-FIX' section to /tmp/{PREFIX}-validator-report.md
+After fixing, append a 'POST-FIX' section to {RUN_ROOT}/{PREFIX}-validator-report.md
 listing what you changed.
 "
 ```
 
-After validator-escalation-fixer completes, proceed to Step 4B. (No re-run of the validator
-unless you specifically suspect the fixer introduced new structural issues.)
+After validator-escalation-fixer completes, rerun the validator in a cheap targeted mode
+against the files changed by the fixer. Do not proceed until the ESCALATED section is
+`NONE`, or report a BLOCKED gate to the user.
 
-### Step 4B: CI Fixer (owns the full test-passing loop)
+### Step 4B: CI Fixer (targeted validation funnel)
 
 ```
 subagent_type: "complete:country-models:ci-fixer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "ci-fixer"
 
-"Run tests locally for {STATE} {PROGRAM} and make them pass. You OWN the full loop —
-both mechanical fixes (test syntax, entity mismatch, period format) AND policy /
-calculation fixes (wrong formula, wrong test expectation, missing parameter). There is
-no downstream specialist dispatch step; do not classify-and-escalate.
+"Run tests locally for {STATE} {PROGRAM} using a targeted-first validation funnel.
 
 
 Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-code-style,
   /policyengine-aggregation, /policyengine-vectorization, /policyengine-code-organization.
 
-Read these for policy context:
-- sources/working_references.md (primary policy source)
-- /tmp/{PREFIX}-impl-spec.md (structured implementation spec)
-- /tmp/{PREFIX}-scope-decision.md (user's scope choices — don't fix excluded items)
+Read `{RUN_ROOT}/{PREFIX}-impl-spec.md`, `{RUN_ROOT}/{PREFIX}-scope-decision.md`, and
+`{RUN_ROOT}/{PREFIX}-test-manifest.md`. Open `sources/working_references.md` only when a
+failure requires policy-evidence adjudication.
 
-Run: policyengine-core test policyengine_us/tests/policy/baseline/gov/states/{ST}/... -c policyengine_us -v
+FUNNEL:
+1. Run every exact changed test file from the manifest in one command, without `-v`.
+2. Classify all failures from that run before editing: mechanical, implementation defect,
+   test defect, or policy ambiguity. Batch independent mechanical fixes.
+3. Rerun only failed files/cases. Use `-n <case>` when available.
+4. Add `-v -d 2` only for a still-unresolved numeric/formula failure. Increase trace depth
+   only when depth 2 does not expose the bad intermediate variable.
+5. After targeted tests pass, run the exact program test directory once without `-v`.
+6. If `--full-validation`, run the broader state/package suite once after the program
+   directory passes. Do not repeat that broad suite inside the repair loop.
 
-Iterate up to the 8-iteration budget. If two consecutive iterations don't move a failure,
-classify it BLOCKED. Apply make format when done.
+Use at most 4 targeted repair cycles. If the same failure survives two consecutive cycles,
+mark it BLOCKED instead of repeating the same command. Fix mechanical failures directly.
+For a policy/calculation disagreement, use the approved implementation spec and cited
+source to decide which side is wrong; never change an expected result merely to make the
+suite green. Escalate genuine ambiguity in the status report.
 
-Write status to /tmp/{PREFIX}-ci-fixer-status.md with STATUS: PASS or BLOCKED only
-(no PARTIAL). For BLOCKED, list each remaining failure with root cause and why it's
-blocked.
+Do not run `make format`; formatting is performed once in Phase 5.
+
+Write `{RUN_ROOT}/{PREFIX}-ci-fixer-status.md` with STATUS: PASS or BLOCKED, the commands run,
+test counts, rerun count, elapsed time, and each remaining failure/root cause.
 "
 ```
 
-After ci-fixer completes, read `/tmp/{PREFIX}-ci-fixer-status.md`. **Proceed to Step 4C
-regardless of STATUS** — BLOCKED failures continue downstream (they'll surface in CI,
-and the PR description will note them). No user prompt, no halt.
+After ci-fixer completes, read `{RUN_ROOT}/{PREFIX}-ci-fixer-status.md`.
 
-If STATUS = BLOCKED, note the remaining-failure count for the PR description (Step 5B
-reads the same status file and includes a "Known failing tests" section).
+- PASS: proceed to Step 4C.
+- BLOCKED: stop at a user checkpoint. Show the remaining failures and root causes from
+  the status file, then ask:
+
+```
+AskUserQuestion:
+  Question: "ci-fixer is BLOCKED: {N} failing tests remain. How should we proceed?"
+  Options:
+    - "Pause — I'll fix or advise manually" — wait for user guidance, then re-run ci-fixer
+      on the affected cases
+    - "Proceed anyway" — continue to Step 4C; the PR description MUST include the
+      'Known failing tests' section from the status file
+    - "Abort the run" — stop; artifacts are preserved for --resume
+```
+
+Never push a knowingly failing implementation silently — the proceed path exists only
+with this explicit user consent.
 
 ### Step 4C: Quick Audit
 
 ```
 subagent_type: "general-purpose"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "quick-auditor"
 
 "Review git diff of changes for {STATE} {PROGRAM}. Check for:
 - Hard-coded values added to pass tests
 - Year-check conditionals (period.start.year)
 - Altered parameter values
-- Missing coverage from /tmp/{PREFIX}-coverage-report.md
-Write SHORT report (max 15 lines) to /tmp/{PREFIX}-checkpoint.md: PASS/FAIL + issues."
+- Missing coverage from {RUN_ROOT}/{PREFIX}-coverage-report.md
+Write SHORT report (max 15 lines) to {RUN_ROOT}/{PREFIX}-checkpoint.md: PASS/FAIL + issues."
 ```
 
-Read ONLY `/tmp/{PREFIX}-checkpoint.md`.
+Read ONLY `{RUN_ROOT}/{PREFIX}-checkpoint.md`.
 
-### Step 4D: Push to Remote
-
-```bash
-git add policyengine_us/parameters/gov/states/{ST}/ policyengine_us/variables/gov/states/{ST}/ policyengine_us/tests/policy/baseline/gov/states/{ST}/
-git commit -m "Implement {STATE} {PROGRAM} (ref #{ISSUE_NUMBER})"
-git push
-```
+Gate behavior:
+- PASS: proceed to Phase 5.
+- FAIL: route each finding to its owning implementation/test agent, then rerun the quick
+  audit. If the second audit fails, stop and report BLOCKED.
 
 ---
 
-## Phase 5: Format, Push & PR Description
+## Phase 5: Finalize, Push & PR Description
 
 ### Step 5A: Push & Changelog
 
 ```
 subagent_type: "complete:country-models:pr-pusher"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "pr-pusher"
 
 "Prepare {STATE} {PROGRAM} PR for review (but keep it as a draft):
 - Create changelog fragment in changelog.d/ (towncrier format)
-- Run make format
-- Push branch
+- Run make format once
+- Rerun only the exact test files changed by formatting, if any executable files changed
+- Stage only the program parameters, variables, tests, and changelog fragment
+- Commit once: 'Implement {STATE} {PROGRAM} (ref #{ISSUE_NUMBER})'
+- Push branch once
 
 CRITICAL: The PR MUST remain a draft. Do NOT run `gh pr ready` or any flag that converts
 the draft. The orchestrator (or user) marks ready later — never this agent."
@@ -748,22 +833,24 @@ the draft. The orchestrator (or user) marks ready later — never this agent."
 
 ```
 subagent_type: "general-purpose"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "reporter"
 
 "Write PR description for {STATE} {PROGRAM}.
 
 READ:
-- /tmp/{PREFIX}-scope-decision.md (scope)
-- /tmp/{PREFIX}-coverage-report.md (requirements coverage)
-- /tmp/{PREFIX}-research-summary.md (sources)
-- /tmp/{PREFIX}-impl-spec.md (regulatory details)
-- /tmp/{PREFIX}-ci-fixer-status.md (test status — if STATUS = BLOCKED, list the
+- {RUN_ROOT}/{PREFIX}-scope-decision.md (scope)
+- {RUN_ROOT}/{PREFIX}-coverage-report.md (requirements coverage)
+- {RUN_ROOT}/{PREFIX}-research-summary.md (sources)
+- {RUN_ROOT}/{PREFIX}-impl-spec.md (regulatory details)
+- {RUN_ROOT}/{PREFIX}-ci-fixer-status.md (test status — if STATUS = BLOCKED, list the
   remaining failures in a 'Known failing tests' section near the bottom of the PR
-  description so reviewers see what didn't pass and why)
+  description so reviewers see what didn't pass and why. Reaching this step with
+  STATUS: BLOCKED means the user explicitly chose 'Proceed anyway' at the Step 4B
+  checkpoint.)
 - sources/working_references.md (references)
 
-Write /tmp/{PREFIX}-pr-description.md:
+Write {RUN_ROOT}/{PREFIX}-pr-description.md:
 
 ## Summary
 Implements {STATE_FULL} {PROGRAM_FULL} in PolicyEngine.
@@ -798,7 +885,7 @@ Closes #{ISSUE_NUMBER}
 {Excluded requirements with reasons}
 
 ## Known Failing Tests
-{If /tmp/{PREFIX}-ci-fixer-status.md has STATUS: BLOCKED, list each remaining failure
+{If {RUN_ROOT}/{PREFIX}-ci-fixer-status.md has STATUS: BLOCKED, list each remaining failure
 with its root cause and why ci-fixer couldn't resolve it. Omit this section entirely
 if STATUS: PASS.}
 
@@ -810,7 +897,7 @@ source links. This helps reviewers understand why parameters only start at a rec
 ## Files Added
 {Tree structure of new files}
 
-Also write SHORT final report (max 25 lines) to /tmp/{PREFIX}-final-report.md:
+Also write SHORT final report (max 25 lines) to {RUN_ROOT}/{PREFIX}-final-report.md:
 - Total requirements: N implemented, M excluded
 - Files: X parameters, Y variables, Z tests
 - Coverage: XX%
@@ -820,18 +907,22 @@ Also write SHORT final report (max 25 lines) to /tmp/{PREFIX}-final-report.md:
 After reporter completes:
 
 ```bash
-gh pr edit $PR_NUMBER --body-file /tmp/{PREFIX}-pr-description.md
+gh pr edit $PR_NUMBER --body-file {RUN_ROOT}/{PREFIX}-pr-description.md
 ```
 
-Read ONLY `/tmp/{PREFIX}-final-report.md`.
+Read ONLY `{RUN_ROOT}/{PREFIX}-final-report.md`.
 
 ---
 
-## Phase 6: Review-Fix (3 Mandatory Rounds)
+## Phase 6: Review-Fix (One Full Review, Up to Two Incremental Reviews)
 
 **Skip if `--skip-review`.**
 
-This phase runs 3 independent review rounds. Each review is done by a fresh `/review-program` invocation. After any fix, the next review is a **mandatory step** — the orchestrator has NO discretion to skip it. Only an actual review confirming critical == 0 can end the phase early.
+Round 1 is a full independent review. After fixes, review only the changed files and
+unresolved findings while reusing the source/PDF evidence from the previous report. A
+follow-up review is mandatory after a fix, but repeating unchanged full-program and PDF
+work is not. Run a new full review only if a fix changed policy semantics, parameter
+values, references, or the source set.
 
 ---
 
@@ -846,7 +937,7 @@ Arguments: $PR_NUMBER --local --full [--600dpi if DPI == 600]
 
 #### Step 6.1B: Check Results
 
-Read `/tmp/review-program-summary.md` (max 20 lines).
+Read `{RUN_ROOT}/{PREFIX}-review-summary.md` (max 20 lines).
 
 **If critical == 0**: Report to user. **Phase 6 complete — skip remaining rounds.**
 
@@ -857,15 +948,16 @@ Read `/tmp/review-program-summary.md` (max 20 lines).
 Every review-fix spawn below references these rules. Include the section name in each prompt body; do not restate the rules per prompt.
 
 **[REVIEW-FIX RULES]**
-- Read `/tmp/{PREFIX}-scope-decision.md` first. For each review item, check whether the scope decision intentionally excluded it or chose a non-default value (e.g., "use 200% FPL because state has transitional rate"). If yes, do NOT fix — append `[SKIPPED-PER-SCOPE]` to your checklist line and move on.
-- Read `/tmp/{PREFIX}-impl-spec.md` ONLY when the fix touches a parameter VALUE or a variable FORMULA. For formatting, references, hard-coded value swaps, naming, or structural fixes — skip it to save context.
-- For round 2+: read `/tmp/{PREFIX}-checklist.md` first to see prior rounds' fixes; do not reintroduce earlier patterns. (Round 1 fixers do NOT read this file — it doesn't exist yet.)
+- Read `{RUN_ROOT}/{PREFIX}-scope-decision.md` first. For each review item, check whether the scope decision intentionally excluded it or chose a non-default value (e.g., "use 200% FPL because state has transitional rate"). If yes, do NOT fix — append `[SKIPPED-PER-SCOPE]` to your checklist line and move on.
+- Read `{RUN_ROOT}/{PREFIX}-impl-spec.md` ONLY when the fix touches a parameter VALUE or a variable FORMULA. For formatting, references, hard-coded value swaps, naming, or structural fixes — skip it to save context.
+- For round 2+: read `{RUN_ROOT}/{PREFIX}-checklist.md` first to see prior rounds' fixes; do not reintroduce earlier patterns. (Round 1 fixers do NOT read this file — it doesn't exist yet.)
 - **REUSE EXISTING VARIABLES**: before creating any non-program-specific variable, Grep the codebase. PolicyEngine-US likely already has it (`fpg`, `smi`, `tanf_fpg`, `ssi`, etc.).
-- Apply fixes via Edit/MultiEdit, then run `make format`.
+- Apply fixes via Edit/MultiEdit. Do not format in parallel fixers; the CI step formats
+  once after both fixers complete.
 - **WRITE your fix log to a PER-FIXER FILE** (not the shared checklist). The path is in your invocation prompt; it will be one of:
-  - `/tmp/{PREFIX}-checklist-vars-r{N}.md` (rules-engineer)
-  - `/tmp/{PREFIX}-checklist-tests-r{N}.md` (test-creator)
-  Writing to your own file avoids race conditions with the parallel fixer. The orchestrator concatenates both files into the shared `/tmp/{PREFIX}-checklist.md` after you both complete.
+  - `{RUN_ROOT}/{PREFIX}-checklist-vars-r{N}.md` (rules-engineer)
+  - `{RUN_ROOT}/{PREFIX}-checklist-tests-r{N}.md` (test-creator)
+  Writing to your own file avoids race conditions with the parallel fixer. The orchestrator concatenates both files into the shared `{RUN_ROOT}/{PREFIX}-checklist.md` after you both complete.
 - Format each line as:
   `- [ROUND N] [SCOPE] [{CATEGORY}] {file}:{line} — {what was wrong} → {what you changed}`
   - SCOPE = `VARS` (rules-engineer) or `TESTS` (test-creator)
@@ -882,19 +974,19 @@ in its own scope. If a fixer's scope has zero items, it returns DONE with 0 fixe
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "review-fixer-1-vars"
 run_in_background: true
 
 "Fix CRITICAL parameter/variable issues from the /review-program review (round 1).
-Read /tmp/review-program-full-report.md. Focus ONLY on items in parameter (.yaml)
+Read {RUN_ROOT}/{PREFIX}-review-full-report.md. Focus ONLY on items in parameter (.yaml)
 or variable (.py) files. SKIP test-file items — test-creator handles those in parallel.
 
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
 
 Follow [REVIEW-FIX RULES] (see section above this step). Tag checklist lines with
-SCOPE=VARS, ROUND=1. Write your fix log to /tmp/{PREFIX}-checklist-vars-r1.md
+SCOPE=VARS, ROUND=1. Write your fix log to {RUN_ROOT}/{PREFIX}-checklist-vars-r1.md
 (NOT the shared checklist — that file is merged by the orchestrator after both
 parallel fixers finish)."
 ```
@@ -903,12 +995,12 @@ parallel fixers finish)."
 
 ```
 subagent_type: "complete:country-models:test-creator"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "review-fixer-1-tests"
 run_in_background: true
 
 "Fix CRITICAL test-file issues from the /review-program review (round 1).
-Read /tmp/review-program-full-report.md. Focus ONLY on items in test (.yaml under tests/)
+Read {RUN_ROOT}/{PREFIX}-review-full-report.md. Focus ONLY on items in test (.yaml under tests/)
 files. SKIP items in parameter or variable files — rules-engineer handles those in parallel.
 
 Common critical test issues: missing unit tests for formula variables; non-functional
@@ -920,7 +1012,7 @@ Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
   /policyengine-variable-patterns.
 
 Follow [REVIEW-FIX RULES] (see section above this step). Tag checklist lines with
-SCOPE=TESTS, ROUND=1. Write your fix log to /tmp/{PREFIX}-checklist-tests-r1.md
+SCOPE=TESTS, ROUND=1. Write your fix log to {RUN_ROOT}/{PREFIX}-checklist-tests-r1.md
 (NOT the shared checklist — that file is merged by the orchestrator after both
 parallel fixers finish)."
 ```
@@ -930,8 +1022,8 @@ Wait for both fixers to complete, then **merge their per-fixer files into the sh
 ```bash
 # Concatenate round-1 per-fixer files into the canonical checklist.
 # Use >> so round 2's merge later appends to (not overwrites) round 1's contents.
-cat /tmp/{PREFIX}-checklist-vars-r1.md /tmp/{PREFIX}-checklist-tests-r1.md \
-  >> /tmp/{PREFIX}-checklist.md 2>/dev/null
+cat {RUN_ROOT}/{PREFIX}-checklist-vars-r1.md {RUN_ROOT}/{PREFIX}-checklist-tests-r1.md \
+  >> {RUN_ROOT}/{PREFIX}-checklist.md 2>/dev/null
 ```
 
 Then proceed to 6.1D.
@@ -940,18 +1032,19 @@ Then proceed to 6.1D.
 
 ```
 subagent_type: "complete:country-models:ci-fixer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "ci-fixer-1"
 
 "Run tests locally for {STATE} {PROGRAM} after review-fix round 1.
-Apply your 5-iteration budget. Fix mechanical test failures directly; classify and
-escalate policy/calculation issues in your status report.
-Run make format after tests pass (or budget exhausted).
+Use the Step 4B funnel: changed/failing cases without `-v`, targeted `-v -d 2` only for
+unresolved formula failures, then one program-directory confirmation. Apply a maximum
+3 targeted-repair cycles. Fix mechanical failures directly; classify and escalate
+policy/calculation issues in your status report. Run make format once after tests.
 
-Write status to /tmp/{PREFIX}-ci-fixer-status.md with STATUS: PASS / PARTIAL / BLOCKED.
+Write status to {RUN_ROOT}/{PREFIX}-ci-fixer-status.md with STATUS: PASS / PARTIAL / BLOCKED.
 
 NOTE: PARTIAL status is acceptable here — round 2 will re-run /review-program and pick
-up any remaining issues. Do NOT loop beyond your 5-iteration budget."
+up any remaining issues. Do NOT loop beyond the targeted-repair budget."
 ```
 
 ```bash
@@ -970,12 +1063,16 @@ git push
 
 ```
 Skill: review-program
-Arguments: $PR_NUMBER --local --full [--600dpi if DPI == 600]
+Arguments for mechanical/test-only fixes:
+  $PR_NUMBER --local --incremental {RUN_ROOT}/{PREFIX}-review-full-report.md
+  [--600dpi if DPI == 600]
+Arguments if fixes changed policy semantics, parameter values, references, or sources:
+  $PR_NUMBER --local --full --resume [--600dpi if DPI == 600]
 ```
 
 #### Step 6.2B: Check Results
 
-Read `/tmp/review-program-summary.md` (max 20 lines).
+Read `{RUN_ROOT}/{PREFIX}-review-summary.md` (max 20 lines).
 
 **If critical == 0**: Report to user. **Phase 6 complete — skip Round 3.**
 
@@ -1002,18 +1099,18 @@ fixes, `test-creator` for test-file fixes. If either has zero items, it returns 
 
 ```
 subagent_type: "complete:country-models:rules-engineer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "review-fixer-2-vars"
 run_in_background: true
 
 "Fix CRITICAL parameter/variable issues from the /review-program review (round 2).
-Read /tmp/review-program-full-report.md. SKIP test-file items.
+Read {RUN_ROOT}/{PREFIX}-review-full-report.md. SKIP test-file items.
 
 Load skills: /policyengine-variable-patterns, /policyengine-code-style,
   /policyengine-parameter-patterns, /policyengine-period-patterns, /policyengine-vectorization.
 
 Follow [REVIEW-FIX RULES] (see section above 6.1C). Tag checklist lines with SCOPE=VARS,
-ROUND=2. Write your fix log to /tmp/{PREFIX}-checklist-vars-r2.md (NOT the shared
+ROUND=2. Write your fix log to {RUN_ROOT}/{PREFIX}-checklist-vars-r2.md (NOT the shared
 checklist — orchestrator merges after both fixers complete)."
 ```
 
@@ -1021,26 +1118,26 @@ checklist — orchestrator merges after both fixers complete)."
 
 ```
 subagent_type: "complete:country-models:test-creator"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "review-fixer-2-tests"
 run_in_background: true
 
 "Fix CRITICAL test-file issues from the /review-program review (round 2).
-Read /tmp/review-program-full-report.md. SKIP parameter/variable items.
+Read {RUN_ROOT}/{PREFIX}-review-full-report.md. SKIP parameter/variable items.
 
 Load skills: /policyengine-testing-patterns, /policyengine-period-patterns,
   /policyengine-variable-patterns.
 
 Follow [REVIEW-FIX RULES] (see section above 6.1C). Tag checklist lines with SCOPE=TESTS,
-ROUND=2. Write your fix log to /tmp/{PREFIX}-checklist-tests-r2.md (NOT the shared
+ROUND=2. Write your fix log to {RUN_ROOT}/{PREFIX}-checklist-tests-r2.md (NOT the shared
 checklist — orchestrator merges after both fixers complete)."
 ```
 
 Wait for both fixers to complete, then **merge their per-fixer files into the shared checklist**:
 
 ```bash
-cat /tmp/{PREFIX}-checklist-vars-r2.md /tmp/{PREFIX}-checklist-tests-r2.md \
-  >> /tmp/{PREFIX}-checklist.md 2>/dev/null
+cat {RUN_ROOT}/{PREFIX}-checklist-vars-r2.md {RUN_ROOT}/{PREFIX}-checklist-tests-r2.md \
+  >> {RUN_ROOT}/{PREFIX}-checklist.md 2>/dev/null
 ```
 
 Wait for both fixers to complete before 6.2D.
@@ -1049,11 +1146,12 @@ Wait for both fixers to complete before 6.2D.
 
 ```
 subagent_type: "complete:country-models:ci-fixer"
-team_name: "{PREFIX}-encode"
+team_name: "{WORKTREE_ID}-{PREFIX}-encode"
 name: "ci-fixer-2"
 
-"Run tests for {STATE} {PROGRAM} after review-fix round 2.
-Fix any test failures introduced by the fixes. Run make format."
+"Run tests for {STATE} {PROGRAM} after review-fix round 2. Use the Step 4B funnel:
+changed/failing cases first, diagnostic verbosity only on unresolved failures, then one
+program-directory confirmation. Fix failures introduced by the fixes. Run make format."
 ```
 
 ```bash
@@ -1072,12 +1170,16 @@ git push
 
 ```
 Skill: review-program
-Arguments: $PR_NUMBER --local --full [--600dpi if DPI == 600]
+Arguments for mechanical/test-only fixes:
+  $PR_NUMBER --local --incremental {RUN_ROOT}/{PREFIX}-review-full-report.md
+  [--600dpi if DPI == 600]
+Arguments if fixes changed policy semantics, parameter values, references, or sources:
+  $PR_NUMBER --local --full --resume [--600dpi if DPI == 600]
 ```
 
 #### Step 6.3B: Check Results
 
-Read `/tmp/review-program-summary.md` (max 20 lines).
+Read `{RUN_ROOT}/{PREFIX}-review-summary.md` (max 20 lines).
 
 **If critical == 0**: Report to user. **Phase 6 complete.**
 
@@ -1105,17 +1207,17 @@ Present to user:
 | File | Written By | Read By | Size |
 |------|-----------|---------|------|
 | `sources/working_references.md` | document-collector | consolidator | Full |
-| `/tmp/{PREFIX}-research-summary.md` | document-collector | Main Claude | Short (20 lines) |
-| `/tmp/{PREFIX}-impl-spec.md` | consolidator | all impl agents | Full |
-| `/tmp/{PREFIX}-requirements-checklist.md` | consolidator | Main Claude | Short (40 lines) |
-| `/tmp/{PREFIX}-scope-summary.md` | consolidator | Main Claude | Short (15 lines) |
-| `/tmp/{PREFIX}-scope-decision.md` | Main Claude | all impl agents | Short |
-| `/tmp/{PREFIX}-coverage-report.md` | requirements-tracker | Main Claude, reporter | Short (40 lines) |
-| `/tmp/{PREFIX}-checkpoint.md` | quick-auditor | Main Claude | Short (15 lines) |
-| `/tmp/{PREFIX}-pr-description.md` | reporter | gh pr edit | Full |
-| `/tmp/{PREFIX}-final-report.md` | reporter | Main Claude | Short (25 lines) |
-| `/tmp/{PREFIX}-checklist-{vars,tests}-r{N}.md` | per-fixer (write) | orchestrator (merge) | One per fixer per round |
-| `/tmp/{PREFIX}-checklist.md` | orchestrator (cat-merge) | review-fixer round 2+ (read) | Growing |
+| `{RUN_ROOT}/{PREFIX}-research-summary.md` | document-collector | Main Claude | Short (20 lines) |
+| `{RUN_ROOT}/{PREFIX}-impl-spec.md` | consolidator | all impl agents | Full |
+| `{RUN_ROOT}/{PREFIX}-requirements-checklist.md` | consolidator | Main Claude | Short (40 lines) |
+| `{RUN_ROOT}/{PREFIX}-scope-summary.md` | consolidator | Main Claude | Short (15 lines) |
+| `{RUN_ROOT}/{PREFIX}-scope-decision.md` | Main Claude | all impl agents | Short |
+| `{RUN_ROOT}/{PREFIX}-coverage-report.md` | requirements-tracker | Main Claude, reporter | Short (40 lines) |
+| `{RUN_ROOT}/{PREFIX}-checkpoint.md` | quick-auditor | Main Claude | Short (15 lines) |
+| `{RUN_ROOT}/{PREFIX}-pr-description.md` | reporter | gh pr edit | Full |
+| `{RUN_ROOT}/{PREFIX}-final-report.md` | reporter | Main Claude | Short (25 lines) |
+| `{RUN_ROOT}/{PREFIX}-checklist-{vars,tests}-r{N}.md` | per-fixer (write) | orchestrator (merge) | One per fixer per round |
+| `{RUN_ROOT}/{PREFIX}-checklist.md` | orchestrator (cat-merge) | review-fixer round 2+ (read) | Growing |
 
 ---
 
@@ -1126,26 +1228,29 @@ Present to user:
 | Category | Example | Action |
 |----------|---------|--------|
 | **Recoverable** | Test failure, lint error | ci-fixer handles automatically |
-| **Delegation** | Policy logic wrong | ci-fixer delegates to specialist agent |
+| **Policy ambiguity** | Test and implementation cite conflicting policy passages | ci-fixer resolves against the impl spec and cited sources, or reports BLOCKED |
 | **Missing coverage** | Requirement not implemented | Spawn rules-engineer to fill gap |
-| **Blocking** | GitHub API down, branch conflict | Stop and report to user |
+| **Blocking** | GitHub API down, branch owned by another worktree | Stop and report to user |
 
 ### Error Handling by Phase
 
 - **Phase 0 (Setup):** If agent fails, report error and STOP.
 - **Phase 1 (Consolidation):** If consolidator fails, report and STOP.
-- **Phase 2 (Scope):** User-driven — no error possible.
+- **Phase 2 (Scope):** Scope questions are user-driven. If issue/branch/draft-PR creation
+  (Step 2D) fails, report and STOP.
 - **Phase 3 (Implementation):** If agent fails, report which agent failed and wait for user.
 - **Phase 3E (Coverage):** If missing requirements, fix automatically then re-check.
-- **Phase 4 (Validation):** ci-fixer handles fixes. If ci-fixer fails 3 times, report and STOP.
+- **Phase 4 (Validation):** ci-fixer owns the targeted funnel (max 4 repair cycles). On
+  BLOCKED, stop at the Step 4B user checkpoint. A second quick-audit failure is also a
+  BLOCKED gate.
 - **Phase 5-7:** Continue unless blocking error.
 
 ### Escalation Path
 
-1. Agent encounters error — Log and attempt fix if recoverable
-2. Fix fails — ci-fixer delegates to specialist agent
-3. Delegation fails — Report to user and STOP
-4. Never proceed to next phase with unresolved blocking errors
+1. Agent encounters error — log and attempt fix if recoverable
+2. Fix fails or evidence is ambiguous — classify BLOCKED with root cause
+3. BLOCKED gate — stop at the user checkpoint; proceed only with explicit user consent
+4. Never proceed to the next phase with an unresolved blocking error
 
 ---
 
@@ -1167,14 +1272,14 @@ Present to user:
 
 **Execution Flow (CONTINUOUS except at Phase 2 checkpoint):**
 
-0. **Phase 0**: Parse, clean up, spawn issue-manager + document-collector in parallel
+0. **Phase 0**: Parse, initialize or resume the run, spawn document-collector (research only — no GitHub writes)
 1. **Phase 1**: Spawn consolidator to produce impl-spec, requirements-checklist, scope-summary
-2. **Phase 2**: **USER CHECKPOINT** — present requirements, wait for scope approval
-3. **Phase 3**: Implementation (parameters → variables+tests in parallel → edge cases → coverage check)
-4. **Phase 4**: Validation (validator → ci-fixer → quick-audit → push)
-5. **Phase 5**: Format, push, PR description
-6. **Phase 6**: Review-fix loop (up to 3 rounds of /review-program → fix → re-review)
-7. **Phase 7**: Lessons learned, final summary, **WORKFLOW COMPLETE**
+2. **Phase 2**: **USER CHECKPOINT** — present requirements, wait for scope approval; then create issue, branch, and draft PR (Step 2D)
+3. **Phase 3**: Implementation (parameters → variables + implementation manifest → tests incl. edge cases → coverage check)
+4. **Phase 4**: Validation gates (validator → ci-fixer targeted funnel → quick audit)
+5. **Phase 5**: Format, changelog, single commit/push, PR description
+6. **Phase 6**: Review-fix loop (one full /review-program, then incremental re-reviews; max 3 rounds)
+7. **Phase 7**: Final summary, **WORKFLOW COMPLETE**
 
 **CRITICAL RULES:**
 - Run all phases continuously without waiting for user input (EXCEPT Phase 2)

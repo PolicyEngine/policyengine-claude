@@ -13,6 +13,9 @@ Parse the text after `$encode-policy-v2`:
 - `--skip-review`: skip the final review/fix loop
 - `--research-only`: stop after scope review
 - `--600dpi`: render PDFs at 600 DPI instead of 300 DPI
+- `--resume`: reuse valid artifacts from an interrupted run
+- `--from-phase N`: resume from a phase after validating prerequisites
+- `--full-validation`: run the broader state/package suite once after program tests pass
 
 Derive:
 
@@ -21,25 +24,45 @@ Derive:
 - `BRANCH`: `{ST}-{PROG}`
 - `PREFIX`: `{BRANCH}`
 - `DPI`: `600` if requested, otherwise `300`
+- `RESUME`: true for `--resume` or `--from-phase`
+
+Derive a worktree-safe runtime root before any artifact operation:
+
+```bash
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_ID=$(printf '%s' "$WORKTREE_ROOT" | git hash-object --stdin | cut -c1-12)
+RUN_ROOT="/tmp/policyengine-command-runs/$WORKTREE_ID"
+mkdir -p "$RUN_ROOT"
+```
+
+Record `WORKTREE_ROOT` and `WORKTREE_ID` in
+`{RUN_ROOT}/{PREFIX}-encode-run-state.md`. The absolute worktree root—not the Git common
+directory or branch name—is the isolation boundary. Refuse to resume artifacts recorded
+by another worktree.
+
+Before creating or checking out `{BRANCH}`, inspect `git worktree list --porcelain`.
+Never use `--ignore-other-worktrees` or edit another worktree. If the branch is already
+owned elsewhere, stop and report that path.
 
 ## Phase 0: Setup
 
-Clean stale handoff files:
+On a fresh run, clean only encode artifacts inside `RUN_ROOT`. With `--resume`, preserve
+and validate phase artifacts, invalidating dependent phases when their inputs changed.
 
-```bash
-rm -f /tmp/${PREFIX}-*.md
-```
-
-Find or create the GitHub issue and draft PR. Search existing issues and PRs before creating new ones. Create or use branch `{BRANCH}`.
+Keep setup read-only. Defer the GitHub issue, branch, and draft PR until after the user
+approves scope; skip those writes entirely for `--research-only`.
 
 Collect official documentation:
 
 - Discover the official program name.
-- Download official PDFs and pages.
-- Extract text with `pdftotext` where possible.
-- Render PDFs with `pdftoppm -png -r {DPI}`.
+- Download each PDF to `{RUN_ROOT}/{PREFIX}-source-{N}.pdf`.
+- Extract text to `{RUN_ROOT}/{PREFIX}-source-{N}.txt` with `pdftotext` where possible.
+- Render every page of every collected PDF with
+  `pdftoppm -png -r {DPI} {RUN_ROOT}/{PREFIX}-source-{N}.pdf {RUN_ROOT}/{PREFIX}-source-{N}-page`.
+  Extracted text helps search but does not replace visual rendering. Reuse pages only
+  when the PDF checksum and DPI match and the complete expected page sequence exists.
 - Save research detail to `sources/working_references.md`.
-- Write `/tmp/{PREFIX}-research-summary.md` in 20 lines or fewer with sources found, failed fetches, major eligibility tests, income deductions, and benefit calculation type.
+- Write `{RUN_ROOT}/{PREFIX}-research-summary.md` in 20 lines or fewer with sources found, failed fetches, major eligibility tests, income deductions, and benefit calculation type.
 
 If important agency references failed to fetch, ask the user to provide downloaded files or confirm proceeding with available sources.
 
@@ -47,9 +70,9 @@ If important agency references failed to fetch, ask the user to provide download
 
 Read `sources/working_references.md` and write three handoff files:
 
-- `/tmp/{PREFIX}-impl-spec.md`: full implementation spec
-- `/tmp/{PREFIX}-requirements-checklist.md`: one line per requirement, max 40 lines
-- `/tmp/{PREFIX}-scope-summary.md`: user-facing scope summary, max 15 lines
+- `{RUN_ROOT}/{PREFIX}-impl-spec.md`: full implementation spec
+- `{RUN_ROOT}/{PREFIX}-requirements-checklist.md`: one line per requirement, max 40 lines
+- `{RUN_ROOT}/{PREFIX}-scope-summary.md`: user-facing scope summary, max 15 lines
 
 The implementation spec must include:
 
@@ -72,9 +95,12 @@ Show the user the short scope summary and grouped requirements. Ask decisions on
 - choose simplified or full approach for TANF-like programs
 - decide how to map income types with no exact PolicyEngine variable
 
-Write `/tmp/{PREFIX}-scope-decision.md` with in-scope requirements, excluded requirements, key decisions, and user notes.
+Write `{RUN_ROOT}/{PREFIX}-scope-decision.md` with in-scope requirements, excluded requirements, key decisions, and user notes.
 
 If `--research-only` is set, stop after writing the scope decision and summarize the outputs.
+
+Otherwise, search for an existing issue/PR, create or use branch `{BRANCH}`, and create a
+draft PR for the approved scope.
 
 ## Phase 3: Implementation
 
@@ -92,14 +118,18 @@ Implement in dependency order.
    - Reuse existing variables before creating new ones.
    - Use parameters for all legal values.
    - Verify person, tax unit, SPM unit, and household entity levels.
+   - Write `{RUN_ROOT}/{PREFIX}-implementation-manifest.md` with exact variable names,
+     paths, entities, periods, inputs, parameters, and requirements covered.
 
 3. Tests
+   - Start only after the implementation manifest exists.
    - Use `$policyengine-testing-patterns` and `$policyengine-period-patterns`.
    - Add unit tests for formula variables.
    - Add 5 to 7 integration scenarios with calculation comments.
    - Include edge cases at thresholds, zero income, family-size boundaries, and negative income/deduction cases.
+   - Write `{RUN_ROOT}/{PREFIX}-test-manifest.md` with exact changed test files and cases.
 
-After implementation, write `/tmp/{PREFIX}-coverage-report.md` showing each in-scope requirement and its parameter, variable, and test coverage.
+After implementation, write `{RUN_ROOT}/{PREFIX}-coverage-report.md` showing each in-scope requirement and its parameter, variable, and test coverage.
 
 If requirements are missing, fix them once and rerun the coverage check.
 
@@ -108,23 +138,27 @@ If requirements are missing, fix them once and rerun the coverage check.
 Run local validation before pushing:
 
 - structural check for YAML integrity, parameter references, orphan directories, jurisdiction placement, and `defined_for`
-- focused tests for the program path. The CI fixer owns the full loop: mechanical fixes, formula fixes, test expectation fixes, and missing parameter fixes. It should use `$policyengine-testing-patterns`, `$policyengine-variable-patterns`, `$policyengine-parameter-patterns`, `$policyengine-period-patterns`, `$policyengine-code-style`, `$policyengine-aggregation`, `$policyengine-vectorization`, and `$policyengine-code-organization`.
+- focused tests driven by the exact test manifest. The CI fixer should use `$policyengine-testing-patterns`, `$policyengine-variable-patterns`, `$policyengine-parameter-patterns`, `$policyengine-period-patterns`, `$policyengine-code-style`, `$policyengine-aggregation`, `$policyengine-vectorization`, and `$policyengine-code-organization`.
 
-```bash
-policyengine-core test policyengine_us/tests/policy/baseline/gov/states/{ST}/... -c policyengine_us -v
-```
-
-- iterate up to 8 times
-- write `/tmp/{PREFIX}-ci-fixer-status.md` with `STATUS: PASS` or `STATUS: BLOCKED`
+- run affected test files together without `-v`
+- classify all failures before editing and batch independent mechanical fixes
+- rerun only failed files/cases; use `-v -d 2` only for unresolved formula failures
+- use at most four targeted repair cycles
+- run the program directory once after targeted tests pass
+- run a broader suite once only with `--full-validation`
+- write `{RUN_ROOT}/{PREFIX}-ci-fixer-status.md` with `STATUS: PASS` or `STATUS: BLOCKED`
 - if blocked, list each remaining failure, root cause, and why it is blocked
-- `make format`
 - quick diff audit for hard-coded values, year conditionals, altered parameters, and missing coverage
 
-Continue to PR preparation even if CI is blocked, but the PR description must include a "Known failing tests" section from `/tmp/{PREFIX}-ci-fixer-status.md`.
+If CI is blocked, stop and ask the user whether to pause for manual fixes, proceed to the
+draft PR with a "Known failing tests" section, or abort (artifacts stay resumable). Never
+push a knowingly failing implementation without that explicit consent. Enforce quick-audit
+failures through one targeted fix/recheck and do not push if the gate remains red.
 
 ## Phase 5: Draft PR Preparation
 
-Create a changelog fragment, push the branch, and keep the PR as draft. Write a PR body from actual handoff files:
+Format once, create a changelog fragment, commit once, push once, and keep the PR as draft.
+Write a PR body from actual handoff files:
 
 - summary and issue link
 - regulatory authority
@@ -135,12 +169,15 @@ Create a changelog fragment, push the branch, and keep the PR as draft. Write a 
 - not-modeled requirements
 - files added
 
-Write `/tmp/{PREFIX}-final-report.md` in 25 lines or fewer and show it to the user.
+Write `{RUN_ROOT}/{PREFIX}-final-report.md` in 25 lines or fewer and show it to the user.
 
 ## Phase 6: Review-Fix Loop
 
 Skip this phase only with `--skip-review`.
 
-Run `$review-program {PR_NUMBER} --local --full`, inspect the short summary, and fix critical issues. Run up to three review/fix rounds. Stop early only when the review reports zero critical issues.
+Run `$review-program {PR_NUMBER} --local --full` once, inspect the short summary, and fix
+critical issues. Follow with `$review-program --incremental REPORT` for mechanical/test
+fixes. Run another full review only when fixes changed policy semantics, parameter values,
+references, or sources. Use at most three total review rounds.
 
-When review-fix rounds spawn parallel parameter/variable and test fixers, each fixer writes its own checklist file, such as `/tmp/{PREFIX}-checklist-vars-r1.md` and `/tmp/{PREFIX}-checklist-tests-r1.md`. The orchestrator concatenates those files into `/tmp/{PREFIX}-checklist.md` after both finish. Do not let parallel fixers append to the same checklist file directly.
+When review-fix rounds spawn parallel parameter/variable and test fixers, each fixer writes its own checklist file, such as `{RUN_ROOT}/{PREFIX}-checklist-vars-r1.md` and `{RUN_ROOT}/{PREFIX}-checklist-tests-r1.md`. The orchestrator concatenates those files into `{RUN_ROOT}/{PREFIX}-checklist.md` after both finish. Do not let parallel fixers append to the same checklist file directly.

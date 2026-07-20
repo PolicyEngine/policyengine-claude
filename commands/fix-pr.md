@@ -12,6 +12,8 @@ Apply fixes to PR issues identified by `/review-program` or GitHub review commen
 - **PR number or title** (optional) — e.g., `6390` or `"Arkansas TANF"`. If omitted, prompts.
 - **Options**:
   - `--local` — apply fixes locally only, skip GitHub posting and pushing
+  - `--resume` — reuse valid context, plan, and evidence artifacts from an interrupted run
+  - `--full-validation` — run a broader package suite after targeted PR tests pass
 
 **Examples:**
 ```bash
@@ -20,6 +22,7 @@ Apply fixes to PR issues identified by `/review-program` or GitHub review commen
 /fix-pr "Arkansas"   # Search for PR by title
 /fix-pr --local      # Fix current branch's PR, keep changes local
 /fix-pr 6390 --local # Fix PR #6390, keep changes local
+/fix-pr 6390 --resume
 ```
 
 ---
@@ -33,7 +36,7 @@ Apply fixes to PR issues identified by `/review-program` or GitHub review commen
 - ALL data flows through files on disk. Agent prompts reference file paths, never paste content.
 
 **You MUST NOT:**
-- Read the PR diff (`/tmp/fix-pr-diff.txt`)
+- Read the PR diff (`{RUN_ROOT}/{PREFIX}-fix-pr-diff.txt`)
 - Read parameter YAML files or variable .py files
 - Read full review reports directly
 - Use Edit/Write directly — agents handle all code changes
@@ -50,23 +53,38 @@ Apply fixes to PR issues identified by `/review-program` or GitHub review commen
 
 ## Phase 0: Parse Arguments & Setup
 
-### Step 0A: Parse Arguments & Clean Up
+### Step 0A: Parse Arguments & Resolve Worktree Root
 
-**Clean up leftover files from previous runs:**
+**Derive the worktree namespace first** so concurrent worktrees cannot read, delete, or
+overwrite each other's files:
 ```bash
-rm -f /tmp/fix-pr-*.md /tmp/fix-pr-diff.txt
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_ID=$(printf '%s' "$WORKTREE_ROOT" | git hash-object --stdin | cut -c1-12)
+RUN_ROOT="/tmp/policyengine-command-runs/$WORKTREE_ID"
+mkdir -p "$RUN_ROOT"
 ```
+
+`WORKTREE_ROOT`, not the shared Git common directory or branch name, is the isolation
+boundary. Substitute `{RUN_ROOT}` in every agent prompt and never use process-global
+`/tmp/fix-pr-*` or `/tmp/{PREFIX}-...` files.
+
+Before checkout, inspect `git worktree list --porcelain` and the PR's `headRefName`:
+
+- If the PR branch is the current branch, continue in this worktree.
+- If it is checked out in another worktree, stop and report that worktree path; do not
+  mutate it from here and do not use `--ignore-other-worktrees`.
+- Otherwise, `gh pr checkout $PR_NUMBER` in the current worktree, recompute `PREFIX` from
+  the checked-out branch, and continue.
+
+All edits, tests, staging, commits, and pushes must run from `WORKTREE_ROOT`. Never stage
+or edit files through another worktree path.
 
 ```
 Parse $ARGUMENTS:
 - PR_ARG: first non-flag argument (number or search text)
 - LOCAL_ONLY: true if --local flag present
-```
-
-**Derive PREFIX** (for reading local /review-program files):
-```bash
-PREFIX=$(git branch --show-current | tr '/' '-')
-PREFIX=${PREFIX:-fix-pr}
+- RESUME: true if --resume
+- FULL_VALIDATION: true if --full-validation
 ```
 
 ### Step 0B: Determine Which PR to Fix
@@ -93,11 +111,22 @@ AskUserQuestion:
     - "Enter PR name/title (e.g., 'Arkansas TANF')"
 ```
 
-Then resolve the PR number and checkout:
+After resolving the PR, follow the worktree check above. Check it out here only when no
+other worktree owns the head branch. Then derive the final prefix and initialize state:
 
 ```bash
-gh pr checkout $PR_NUMBER
+PREFIX=$(git branch --show-current | tr '/' '-')
+PREFIX=${PREFIX:-fix-pr}
+if [ "$RESUME" != "true" ]; then
+  rm -f "$RUN_ROOT/${PREFIX}-fix-pr-"*.md "$RUN_ROOT/${PREFIX}-fix-pr-diff.txt"
+fi
 ```
+
+Use `{RUN_ROOT}/{PREFIX}-fix-pr-run-state.md` to record `WORKTREE_ROOT`, `WORKTREE_ID`, the
+PR/head SHA, arguments, completed phases, artifact paths, test commands, and elapsed time.
+A resume may reuse an artifact only when its PR number/head SHA and input hashes still
+match. Invalidate dependent artifacts when the diff or selected fix scope changed. Refuse
+artifacts recorded by a different worktree.
 
 ### Step 0C: Determine Posting Mode
 
@@ -122,7 +151,7 @@ Main Claude runs small structured commands only:
 ```bash
 gh pr view $PR_NUMBER --json title,body,author,baseRefName,headRefName
 gh pr checks $PR_NUMBER
-gh pr diff $PR_NUMBER > /tmp/fix-pr-diff.txt
+gh pr diff $PR_NUMBER > {RUN_ROOT}/{PREFIX}-fix-pr-diff.txt
 ```
 
 **Main Claude does NOT read the diff file.** It saves it to disk for the context agent.
@@ -130,8 +159,11 @@ gh pr diff $PR_NUMBER > /tmp/fix-pr-diff.txt
 Check for local `/review-program` files from a previous run:
 
 ```bash
-ls /tmp/${PREFIX}-review-full-report.md 2>/dev/null && echo "LOCAL_REVIEW=true" || echo "LOCAL_REVIEW=false"
+ls $RUN_ROOT/${PREFIX}-review-full-report.md 2>/dev/null && echo "LOCAL_REVIEW=true" || echo "LOCAL_REVIEW=false"
 ```
+
+Reuse a local review only when its `Reviewed head SHA` matches the PR head. Otherwise,
+treat it as historical context and use current review comments/diff as authoritative.
 
 ### Step 1A: Delegate context gathering
 
@@ -142,13 +174,13 @@ name: "context-gatherer"
 "Analyze PR #{PR_NUMBER} to identify issues that need fixing.
 
 READ:
-- /tmp/fix-pr-diff.txt (the PR diff)
+- {RUN_ROOT}/{PREFIX}-fix-pr-diff.txt (the PR diff)
 
 SOURCES — check both, use whichever has findings (or both):
 
 1. LOCAL REVIEW FILES (from a /review-program run in this session):
-   - /tmp/{PREFIX}-review-full-report.md (if it exists)
-   - /tmp/{PREFIX}-review-summary.md (if it exists)
+   - {RUN_ROOT}/{PREFIX}-review-full-report.md (if it exists)
+   - {RUN_ROOT}/{PREFIX}-review-summary.md (if it exists)
 
 2. PR COMMENTS AND REVIEWS (from GitHub):
    Run these commands to get review data:
@@ -180,7 +212,7 @@ TASK:
      value discrepancy, unusual pattern choice)
    - RESEARCH-NEEDED: requires checking the review report evidence before deciding
 
-3. Write /tmp/fix-pr-issues.md (max 50 lines):
+3. Write {RUN_ROOT}/{PREFIX}-fix-pr-issues.md (max 50 lines):
 
    ## Issues for PR #{PR_NUMBER}
 
@@ -211,7 +243,7 @@ TASK:
    - Possibly already fixed: {count}"
 ```
 
-Read ONLY `/tmp/fix-pr-issues.md` (max 50 lines).
+Read ONLY `{RUN_ROOT}/{PREFIX}-fix-pr-issues.md` (max 50 lines).
 
 ---
 
@@ -310,7 +342,7 @@ ISSUE: {description} in {file}
 QUESTION: {what needs to be determined}
 
 READ (check both, use whichever exists):
-- /tmp/{PREFIX}-review-full-report.md (local review-program output)
+- {RUN_ROOT}/{PREFIX}-review-full-report.md (local review-program output)
 - PR comments via: gh pr view {PR_NUMBER} --comments
 
 Find the section(s) related to this issue and extract:
@@ -319,14 +351,14 @@ Find the section(s) related to this issue and extract:
 - The visual verification result (if any)
 - The reviewer's assessment
 
-Write to /tmp/fix-pr-research-{N}.md (max 15 lines):
+Write to {RUN_ROOT}/{PREFIX}-fix-pr-research-{N}.md (max 15 lines):
 - Source: {regulation citation}
 - Evidence from review: {what the report found}
 - Verdict: CONFIRMED BUG / BY DESIGN / AMBIGUOUS
 - Recommended action: fix (describe how) / leave as-is / needs human judgment"
 ```
 
-After all extractors complete, read each `/tmp/fix-pr-research-{N}.md` and re-ask:
+After all extractors complete, read each `{RUN_ROOT}/{PREFIX}-fix-pr-research-{N}.md` and re-ask:
 
 ```
 AskUserQuestion:
@@ -340,7 +372,7 @@ AskUserQuestion:
 
 ### Step 2E: Write fix plan to disk
 
-After all decisions are made, write `/tmp/fix-pr-plan.md`:
+After all decisions are made, write `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md`:
 
 ```markdown
 ## Fix Plan for PR #{PR_NUMBER}
@@ -366,7 +398,7 @@ After all decisions are made, write `/tmp/fix-pr-plan.md`:
 
 ## Phase 3: Apply Fixes
 
-**Only fix issues listed in `/tmp/fix-pr-plan.md`.** Skip anything excluded.
+**Only fix issues listed in `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md`.** Skip anything excluded.
 
 **Fix in dependency order**: Parameters → Variables → Tests → CI.
 
@@ -379,7 +411,7 @@ subagent_type: "complete:country-models:rules-engineer"
 name: "fix-parameters"
 
 "Fix parameter issues for PR #{PR_NUMBER}.
-Read the fix plan at /tmp/fix-pr-plan.md — fix ONLY the issues assigned to you.
+Read the fix plan at {RUN_ROOT}/{PREFIX}-fix-pr-plan.md — fix ONLY the issues assigned to you.
 
 Load skills: /policyengine-parameter-patterns.
 
@@ -403,7 +435,7 @@ subagent_type: "complete:country-models:rules-engineer"
 name: "fix-variables"
 
 "Fix variable issues for PR #{PR_NUMBER}.
-Read the fix plan at /tmp/fix-pr-plan.md — fix ONLY the issues assigned to you.
+Read the fix plan at {RUN_ROOT}/{PREFIX}-fix-pr-plan.md — fix ONLY the issues assigned to you.
 
 Load skills: /policyengine-variable-patterns, /policyengine-code-style.
 
@@ -422,7 +454,7 @@ subagent_type: "complete:country-models:edge-case-generator"
 name: "fix-tests"
 
 "Add missing tests for PR #{PR_NUMBER}.
-Read the fix plan at /tmp/fix-pr-plan.md — fix ONLY the issues assigned to you.
+Read the fix plan at {RUN_ROOT}/{PREFIX}-fix-pr-plan.md — fix ONLY the issues assigned to you.
 
 Load skills: /policyengine-testing-patterns.
 
@@ -443,16 +475,30 @@ name: "fix-ci"
 "Run tests for PR #{PR_NUMBER} and fix any failures.
 Load skills: /policyengine-testing-patterns, /policyengine-variable-patterns.
 
-Run: policyengine-core test {test path} -c policyengine_us -v
-Fix failures. Iterate until pass. Run make format.
+Build a test manifest from the files changed by this PR and the files touched in Steps
+3A-3C. Then use this funnel:
+1. Run all exact affected test files together without `-v`.
+2. Classify all failures before editing; batch independent mechanical fixes.
+3. Rerun only failed files/cases, using `-n <case>` when available.
+4. Use `-v -d 2` only for an unresolved numeric/formula failure; deepen the trace only
+   if depth 2 does not expose the bad intermediate variable.
+5. After targeted tests pass, run the program directory once without `-v`.
+6. If `--full-validation`, run the broader package suite once. Never repeat it inside
+   the repair loop.
 
-Write SHORT result to /tmp/fix-pr-ci-result.md (max 10 lines):
+Use at most 3 targeted repair cycles. Never change a policy expectation merely to make a
+test pass; resolve semantic disagreements against the cited evidence and approved fix
+plan. Do not run `make format` here; Phase 4 formats once.
+
+Write SHORT result to {RUN_ROOT}/{PREFIX}-fix-pr-ci-result.md (max 15 lines):
 - Tests: PASS / FAIL (N failures)
 - Fixes applied: {list}
-- Format: done"
+- Commands/test counts: {summary}
+- Targeted reruns: {count}
+- Elapsed: {duration}"
 ```
 
-Read ONLY `/tmp/fix-pr-ci-result.md` (max 10 lines).
+Read ONLY `{RUN_ROOT}/{PREFIX}-fix-pr-ci-result.md` (max 15 lines).
 
 **If ci-fixer fails after 3 iterations**: Stop and report to user.
 
@@ -469,7 +515,7 @@ subagent_type: "complete:country-models:implementation-validator"
 name: "fix-verifier"
 
 "Verify fixes for PR #{PR_NUMBER} were applied correctly.
-Read the fix plan at /tmp/fix-pr-plan.md.
+Read the fix plan at {RUN_ROOT}/{PREFIX}-fix-pr-plan.md.
 Load skills: /policyengine-variable-patterns, /policyengine-parameter-patterns,
   /policyengine-code-style.
 
@@ -479,43 +525,44 @@ Check:
 - All new parameters have references
 - Patterns are correct (adds, add(), entity levels)
 
-Write SHORT report to /tmp/fix-pr-verification.md (max 15 lines):
+Write SHORT report to {RUN_ROOT}/{PREFIX}-fix-pr-verification.md (max 15 lines):
 - Issues fixed: {count} / {total in plan}
 - New issues introduced: {count, if any}
 - Verdict: CLEAN / HAS-ISSUES"
 ```
 
-Read ONLY `/tmp/fix-pr-verification.md` (max 15 lines).
+Read ONLY `{RUN_ROOT}/{PREFIX}-fix-pr-verification.md` (max 15 lines).
 
-**If HAS-ISSUES**: Spawn ci-fixer to address. If still failing after 1 round, report to user and proceed.
+**If HAS-ISSUES**: Route each finding to the owning parameter, variable, or test fixer,
+then rerun the verifier. If it still fails after one targeted round, stop and report the
+blocked gate; do not push known-bad fixes.
 
 ### Step 4B: Cleanup & Push
 
-**Cleanup** (always, regardless of local/push mode):
+**Local-source safety** (always, regardless of local/push mode):
 
 ```bash
-# Remove working_references.md — useful during development but should not be committed
-rm -f sources/working_references.md
+# sources/ contains local research. Never delete or stage it.
+git status --short -- sources/working_references.md
 ```
 
 **If user chose local-only mode**: Run `make format`, then skip to Phase 5.
 
 **If user chose to push to GitHub**:
 
-```bash
-# Rebase on upstream before pushing to avoid merge conflicts
-git pull --rebase origin main || git pull --rebase origin master
-```
-
 ```
 subagent_type: "complete:country-models:pr-pusher"
 name: "fix-pusher"
 
 "Push fixes for PR #{PR_NUMBER}:
-- Run make format (skip if ci-fixer already ran it — check /tmp/fix-pr-ci-result.md)
-- git add changed files
-- Ensure sources/working_references.md is NOT staged (it was deleted as cleanup)
+- Run make format once
+- If formatting changes executable files, rerun only their affected tests
+- git add only files in the approved fix plan plus formatting/changelog changes
+- Ensure sources/working_references.md and other local research are NOT staged
 - git commit -m 'Fix issues from review: {brief summary of what was fixed}'
+- Resolve the actual base branch with gh pr view, fetch it from upstream, and rebase the
+  new commit on upstream/{base}. Never guess main/master. If the rebase changes program
+  files or has conflicts, rerun the targeted test manifest after resolving.
 - git push"
 ```
 
@@ -532,11 +579,11 @@ name: "comment-writer"
 "Write a GitHub PR comment summarizing fixes applied to PR #{PR_NUMBER}.
 
 READ:
-- /tmp/fix-pr-plan.md (what was planned)
-- /tmp/fix-pr-ci-result.md (test results)
-- /tmp/fix-pr-verification.md (verification results)
+- {RUN_ROOT}/{PREFIX}-fix-pr-plan.md (what was planned)
+- {RUN_ROOT}/{PREFIX}-fix-pr-ci-result.md (test results)
+- {RUN_ROOT}/{PREFIX}-fix-pr-verification.md (verification results)
 
-Write /tmp/fix-pr-comment.md:
+Write {RUN_ROOT}/{PREFIX}-fix-pr-comment.md:
 
 ## Fixes Applied
 
@@ -560,7 +607,7 @@ Only include sections that have entries."
 Then post:
 
 ```bash
-gh pr comment $PR_NUMBER --body-file /tmp/fix-pr-comment.md
+gh pr comment $PR_NUMBER --body-file {RUN_ROOT}/{PREFIX}-fix-pr-comment.md
 ```
 
 ---
@@ -602,14 +649,15 @@ Present to user:
 
 | File | Written By | Read By | Size |
 |------|-----------|---------|------|
-| `/tmp/fix-pr-diff.txt` | Main Claude (gh pr diff) | context-gatherer | Full |
-| `/tmp/fix-pr-issues.md` | context-gatherer | Main Claude | Short (50 lines) |
-| `/tmp/fix-pr-plan.md` | Main Claude | all fix agents, verifier | Short |
-| `/tmp/fix-pr-research-{N}.md` | evidence-extractor-{N} | Main Claude | Short (15 lines) |
-| `/tmp/fix-pr-ci-result.md` | ci-fixer | Main Claude, comment-writer | Short (10 lines) |
-| `/tmp/fix-pr-verification.md` | fix-verifier | Main Claude, comment-writer | Short (15 lines) |
-| `/tmp/fix-pr-comment.md` | comment-writer | gh pr comment --body-file | Full |
-| `/tmp/{PREFIX}-review-full-report.md` | /review-program (prior run) | context-gatherer, evidence-extractor | Full |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-diff.txt` | Main Claude (gh pr diff) | context-gatherer | Full |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-issues.md` | context-gatherer | Main Claude | Short (50 lines) |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md` | Main Claude | all fix agents, verifier | Short |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-research-{N}.md` | evidence-extractor-{N} | Main Claude | Short (15 lines) |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-ci-result.md` | ci-fixer | Main Claude, comment-writer | Short (15 lines) |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-verification.md` | fix-verifier | Main Claude, comment-writer | Short (15 lines) |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-comment.md` | comment-writer | gh pr comment --body-file | Full |
+| `{RUN_ROOT}/{PREFIX}-fix-pr-run-state.md` | orchestrator | orchestrator | Short (30 lines) |
+| `{RUN_ROOT}/{PREFIX}-review-full-report.md` | /review-program (prior run) | context-gatherer, evidence-extractor | Full |
 
 **Main Claude reads ONLY "Short" files. Never read "Full" files.**
 
@@ -631,7 +679,7 @@ Present to user:
 
 Before starting:
 - [ ] I will determine which PR FIRST, then ask posting mode
-- [ ] I will clean up /tmp/fix-pr-* files before starting
+- [ ] I will preserve matching artifacts with --resume; otherwise clean only this PREFIX
 - [ ] I will delegate ALL context gathering to agents
 - [ ] I will read ONLY short summary files
 - [ ] I will present issues to user via AskUserQuestion before fixing
@@ -640,5 +688,6 @@ Before starting:
 - [ ] I will fix in dependency order (params → vars → tests → CI)
 - [ ] I will verify fixes with implementation-validator after applying
 - [ ] I will generate the PR comment from actual results, not a template
+- [ ] I will record test counts, reruns, and elapsed time in the run-state file
 
 Start by parsing arguments (Phase 0), then proceed through all phases.

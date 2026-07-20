@@ -10,15 +10,15 @@ Subagents can use PolicyEngine skills, but the orchestrator should name them exp
 
 | Claude role | Codex role | Responsibility | Output |
 |---|---|---|---|
-| context-gatherer | worker | Merge local review files, PR comments, review freshness, and CI status | `/tmp/fix-pr-issues.md` |
-| evidence-extractor | worker | Extract evidence for ambiguous issues | `/tmp/fix-pr-research-{N}.md` |
+| context-gatherer | worker | Merge local review files, PR comments, review freshness, and CI status | `{RUN_ROOT}/{PREFIX}-fix-pr-issues.md` |
+| evidence-extractor | worker | Extract evidence for ambiguous issues | `{RUN_ROOT}/{PREFIX}-fix-pr-research-{N}.md` |
 | fix-parameters | worker | Fix parameter/reference/legal value issues | parameter files |
 | fix-variables | worker | Fix formula, naming, entity, aggregation, and hard-coded value issues | variable files |
 | fix-tests | worker | Add or repair tests | test files |
-| fix-ci | worker | Run tests, fix failures, format | `/tmp/fix-pr-ci-result.md` |
-| fix-verifier | worker | Verify the fix plan was fully applied | `/tmp/fix-pr-verification.md` |
+| fix-ci | worker | Run targeted tests and fix evidenced failures | `{RUN_ROOT}/{PREFIX}-fix-pr-ci-result.md` |
+| fix-verifier | worker | Verify the fix plan was fully applied | `{RUN_ROOT}/{PREFIX}-fix-pr-verification.md` |
 | fix-pusher | worker | Stage, commit, and push intended fixes | commit/push |
-| comment-writer | worker | Summarize actual fixes for GitHub | `/tmp/fix-pr-comment.md` |
+| comment-writer | worker | Summarize actual fixes for GitHub | `{RUN_ROOT}/{PREFIX}-fix-pr-comment.md` |
 
 ## Skills to Pass to Workers
 
@@ -32,9 +32,10 @@ Include these lines in subagent prompts as relevant:
 
 ## Delegation Pattern
 
-1. Do blocking setup locally: parse arguments, resolve PR, determine local/push mode, check out the PR, save the diff.
-2. Spawn context-gatherer. Read only `/tmp/fix-pr-issues.md`.
-3. Ask user fix-scope questions locally and write `/tmp/fix-pr-plan.md`.
+1. Do blocking setup locally: derive the worktree-safe `RUN_ROOT`, parse arguments,
+   resolve PR, determine local/push mode, check out the PR, and save the diff.
+2. Spawn context-gatherer. Read only `{RUN_ROOT}/{PREFIX}-fix-pr-issues.md`.
+3. Ask user fix-scope questions locally and write `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md`.
 4. Spawn evidence-extractor workers in parallel for research-needed issues; read their short outputs and ask follow-up decisions.
 5. Apply fixes in dependency order:
    - parameter worker
@@ -44,10 +45,14 @@ Include these lines in subagent prompts as relevant:
 6. Spawn verifier. If it reports issues, run one targeted fixer round and recheck.
 7. If not local-only, spawn pusher and comment-writer after verification.
 
+Pass concrete `RUN_ROOT`, `WORKTREE_ID`, and `PREFIX` values to every worker. No worker may
+read or write process-global `/tmp/fix-pr-*` or `/tmp/{PREFIX}-...` paths.
+
 ## Ownership
 
-- Parameter fixer owns parameter YAML files identified in `/tmp/fix-pr-plan.md`.
-- Variable fixer owns variable Python files identified in `/tmp/fix-pr-plan.md`.
-- Test fixer owns test files identified in `/tmp/fix-pr-plan.md`, including YAML tests and any Python test files.
+- Parameter fixer owns parameter YAML files identified in `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md`.
+- Variable fixer owns variable Python files identified in `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md`.
+- Test fixer owns test files identified in `{RUN_ROOT}/{PREFIX}-fix-pr-plan.md`, including YAML tests and any Python test files.
 - CI fixer may edit files only to resolve failures from the planned fixes.
-- Pusher owns only git staging, commit, push, and cleanup of `sources/working_references.md`.
+- Pusher owns only formatting, intended staging, commit, rebase, and push. It must not
+  delete or stage local research under `sources/`.

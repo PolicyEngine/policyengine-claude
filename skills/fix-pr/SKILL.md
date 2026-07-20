@@ -12,7 +12,7 @@ This is the Codex equivalent of the Claude `/fix-pr` command.
 Treat the text after `$fix-pr` as the command arguments:
 
 ```text
-$fix-pr [PR_NUMBER_OR_SEARCH] [--local]
+$fix-pr [PR_NUMBER_OR_SEARCH] [--local] [--resume] [--full-validation]
 ```
 
 Before starting, read [workflow.md](references/workflow.md) and [subagents.md](references/subagents.md). Follow them as the source of truth for phases, checkpoints, handoff files, verification, and Codex subagent delegation.
@@ -20,6 +20,8 @@ Before starting, read [workflow.md](references/workflow.md) and [subagents.md](r
 Operational rules:
 
 - Determine the PR first, then ask whether to push and post unless `--local` is set.
+- Derive the worktree-scoped `RUN_ROOT` exactly as specified in `workflow.md`. Never use
+  process-global `/tmp/fix-pr-*` or `/tmp/{PREFIX}-...` paths.
 - Do not read full review reports into the main context until the final display step. Use short handoff files.
 - Write a fix plan before editing.
 - Apply only fixes listed in the fix plan.

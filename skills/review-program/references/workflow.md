@@ -15,29 +15,61 @@ Parse the text after `$review-program`:
 - `--full`: audit the full program path, not just changed files
 - `--skip-pdf`: skip PDF acquisition and audit
 - `--600dpi`: render PDFs at 600 DPI
+- `--resume`: reuse valid artifacts from an interrupted review
+- `--incremental REPORT`: review changes and unresolved findings since a prior report
 
 If posting mode is not specified, ask whether to post findings to GitHub.
 
-## Phase 0: Prefix and Cleanup
+## Phase 0: Worktree Namespace, Prefix, and Run State
 
 Derive:
 
 ```bash
+WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_ID=$(printf '%s' "$WORKTREE_ROOT" | git hash-object --stdin | cut -c1-12)
+RUN_ROOT="/tmp/policyengine-command-runs/$WORKTREE_ID"
+mkdir -p "$RUN_ROOT"
 PREFIX=$(git branch --show-current | tr '/' '-')
 PREFIX=${PREFIX:-review-program}
 ```
 
-Clean stale files:
+Record the root/ID, arguments, PR/head SHA, source checksums, phase completion, and timings
+in `{RUN_ROOT}/{PREFIX}-review-run-state.md`. The absolute worktree root—not `.git` or the
+branch name—is the isolation boundary. Refuse artifacts recorded by another worktree.
+Never switch/detach any worktree or read another worktree's uncommitted files. Standard
+mode reviews fetched SHAs; `--local-diff` is scoped to `WORKTREE_ROOT`.
+
+On a fresh review, clean only review artifacts inside `RUN_ROOT`. With `--resume`, preserve
+and validate artifacts. With `--incremental`, first copy the supplied report to
+`{RUN_ROOT}/{PREFIX}-review-prior-report.md` so the canonical report can be replaced.
+
+`--resume` is also valid after a completed run whose PR head has since changed: the head
+change invalidates analysis artifacts (diff, context, findings), which re-run in full,
+while checksum-valid PDF downloads and rendered pages are reused.
 
 ```bash
-rm -f /tmp/${PREFIX}-review-*.md /tmp/${PREFIX}-review-pdf-*.{pdf,txt,png} /tmp/${PREFIX}-600dpi-*.png /tmp/${PREFIX}-ext-*.{pdf,txt,png,md}
+if [ "$RESUME" != "true" ] && [ -z "$INCREMENTAL_REPORT" ]; then
+  rm -f "$RUN_ROOT/${PREFIX}-review-"*.md \
+    "$RUN_ROOT/${PREFIX}-review-pdf-"*.{pdf,txt,png} \
+    "$RUN_ROOT/${PREFIX}-600dpi-"*.png \
+    "$RUN_ROOT/${PREFIX}-ext-"*.{pdf,txt,png,md}
+fi
 ```
 
-Resolve the PR number directly if numeric, otherwise with:
+Resolve the target PR before gathering context:
+
+- if `PR_ARG` is numeric, use it directly
+- if `PR_ARG` contains search text, resolve it with:
 
 ```bash
 gh pr list --search "$PR_ARG" --json number,title --jq '.[0].number'
 ```
+
+- if `PR_ARG` is omitted, ask the user for a PR number or title and wait for the answer
+
+Ask for the PR, not the program. Infer the state and program from the selected PR's diff in
+Phase 1. If search text returns no PR, report that clearly and ask the user for another PR
+number or title.
 
 ## Phase 1: PR Context
 
@@ -59,12 +91,16 @@ PR_HEAD=$(git rev-parse FETCH_HEAD)
 MERGE_BASE=$(git merge-base "$BASE_SHA" "$PR_HEAD")
 BEHIND=$(git rev-list --count "$PR_HEAD..$BASE_SHA")
 AHEAD=$(git rev-list --count "$BASE_SHA..$PR_HEAD")
-git diff "$MERGE_BASE".."$PR_HEAD" > /tmp/${PREFIX}-review-diff.txt
+git diff "$MERGE_BASE".."$PR_HEAD" > $RUN_ROOT/${PREFIX}-review-diff.txt
 ```
 
 For `--local-diff`, use `HEAD` as `PR_HEAD` after fetching the base branch.
 
-Write `/tmp/{PREFIX}-review-context.md` in 25 lines or fewer with:
+For `--incremental`, read the prior reviewed head SHA, prove it is an ancestor of
+`PR_HEAD`, and diff `PRIOR_HEAD..PR_HEAD`. Fall back to the full merge-base diff when the
+baseline or ancestry cannot be proven. Keep unresolved prior findings in scope.
+
+Write `{RUN_ROOT}/{PREFIX}-review-context.md` in 25 lines or fewer with:
 
 - PR scope and type
 - state, program, and year when applicable
@@ -80,17 +116,26 @@ Skip when `--skip-pdf` is set or the PR is clearly code-only. Otherwise:
 - use the user-provided PDF or discover source PDFs from PR body, YAML references, and official sites
 - download up to five official PDFs
 - extract text with `pdftotext`
-- render pages with `pdftoppm -png -r {DPI}`
+- render every PDF page with `pdftoppm -png -r {DPI}`
+- verify the rendered page count matches the PDF page count
+- reuse rendering only when PDF checksum + DPI match and the full page sequence exists
 - determine page offsets
-- write `/tmp/{PREFIX}-review-pdf-manifest.md` in 30 lines or fewer
+- write `{RUN_ROOT}/{PREFIX}-review-pdf-manifest.md` in 30 lines or fewer
 
 If no PDF is found, continue with code-only validators.
 
+For incremental reviews, reuse cached sources and verified PDF findings only when changed
+files do not alter parameter values, formulas, references, or sources and the checksums
+still match. Otherwise reacquire only affected sources.
+
 ## Phase 3: Review Scope
 
-If `--full`, list all files under the relevant state/program path and write `/tmp/{PREFIX}-review-full-filelist.md` in 30 lines or fewer.
+If `--full`, list all files under the relevant state/program path and write `{RUN_ROOT}/{PREFIX}-review-full-filelist.md` in 30 lines or fewer.
 
-Otherwise use the changed files from `/tmp/{PREFIX}-review-context.md`.
+Otherwise use the changed files from `{RUN_ROOT}/{PREFIX}-review-context.md`.
+
+In incremental mode, include unresolved prior findings and run PDF auditors only for
+changed semantic topics.
 
 Map files and PDFs to topics such as:
 
@@ -124,11 +169,11 @@ Infrastructure, API, or frontend PRs:
 
 Validator outputs:
 
-- `/tmp/{PREFIX}-review-regulatory.md`
-- `/tmp/{PREFIX}-review-references.md`
-- `/tmp/{PREFIX}-review-code.md`
-- `/tmp/{PREFIX}-review-tests.md`
-- `/tmp/{PREFIX}-review-pdf-{topic}.md`
+- `{RUN_ROOT}/{PREFIX}-review-regulatory.md`
+- `{RUN_ROOT}/{PREFIX}-review-references.md`
+- `{RUN_ROOT}/{PREFIX}-review-code.md`
+- `{RUN_ROOT}/{PREFIX}-review-tests.md`
+- `{RUN_ROOT}/{PREFIX}-review-pdf-{topic}.md`
 
 ## Phase 5: Verification
 
@@ -142,14 +187,20 @@ For each mismatch:
 4. Cross-check extracted text.
 5. Verify `#page=XX` references use file page numbers.
 
-Write verification files under `/tmp/{PREFIX}-review-codepath-*`, `/tmp/{PREFIX}-review-mismatch-*`, and `/tmp/{PREFIX}-review-pages.md`.
+Write verification files under `{RUN_ROOT}/{PREFIX}-review-codepath-*`, `{RUN_ROOT}/{PREFIX}-review-mismatch-*`, and `{RUN_ROOT}/{PREFIX}-review-pages.md`.
 
 ## Phase 6: Consolidation
 
 Write:
 
-- `/tmp/{PREFIX}-review-full-report.md`
-- `/tmp/{PREFIX}-review-summary.md` in 20 lines or fewer
+- `{RUN_ROOT}/{PREFIX}-review-full-report.md`
+- `{RUN_ROOT}/{PREFIX}-review-summary.md` in 20 lines or fewer
+
+Every full report must include the reviewed head SHA and `full` or `incremental from
+{PRIOR_HEAD}` mode. Assign each finding a stable ID (C1/C2… Critical, A1… Should Address,
+S1… Suggestions); incremental reviews carry prior IDs unchanged and mark each prior
+finding resolved or still open. The summary includes elapsed time, agent count, rendered
+pages, and cache hits, read from the run-state ledger.
 
 Severity rules:
 
@@ -170,7 +221,7 @@ If `--local`, show the full report in the conversation.
 Otherwise post without loading the full report into context:
 
 ```bash
-gh pr comment $PR_NUMBER --body-file /tmp/${PREFIX}-review-full-report.md
+gh pr comment $PR_NUMBER --body-file $RUN_ROOT/${PREFIX}-review-full-report.md
 ```
 
 End with a short summary and mention that fixes can be applied with `$fix-pr {PR_NUMBER}`.
