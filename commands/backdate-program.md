@@ -163,8 +163,8 @@ run_in_background: true
 
 - Read ONLY `{RUN_ROOT}/{st}-{prog}-inventory-summary.md` (max 10 lines) — just counts and the program path
 - issue-manager (`MODE=discover`) returns `DECISION_NEEDED` or `NO_CANDIDATES` without
-  writing. On `DECISION_NEEDED`, ask the issue and PR reuse/create choices one at a time
-  with `AskUserQuestion`; on `NO_CANDIDATES`, use `create_new` for both. Then spawn a new
+  writing. On `DECISION_NEEDED`, ask the issue and PR reuse/create choices together in
+  one `AskUserQuestion` call (two questions); on `NO_CANDIDATES`, use `create_new` for both. Then spawn a new
   issue-manager with `MODE=execute`, both explicit decisions, and the same verified
   repository/worktree inputs. Continue only when it returns `SETUP_COMPLETE`; treat
   `BLOCKED` or a partial result as a blocking gate.
@@ -405,7 +405,9 @@ Read ONLY `{RUN_ROOT}/{st}-{prog}-impl-summary.md`. Present a brief overview:
 **Source gaps**: {count, if any}
 ```
 
-Then walk through decisions one at a time using `AskUserQuestion`:
+Then ask ALL applicable decisions below in a single `AskUserQuestion` call — up to 4
+questions per call; add a second call only when more than 4 questions apply or a
+follow-up depends on an answer. NEVER one call per decision:
 
 **Decision 1: Proceed with implementation?**
 
@@ -420,7 +422,8 @@ AskUserQuestion:
 
 **Decision 2: Tier B/C items** (only if impl-summary lists any)
 
-For each Tier B/C item, ask separately:
+Add one question per Tier B/C item to the same batched call (questions beyond 4 total
+overflow into a following call):
 
 ```
 AskUserQuestion:
@@ -432,7 +435,7 @@ AskUserQuestion:
     - "Need more info"
 ```
 
-**Decision 3: Source gaps** (only if impl-summary lists any)
+**Decision 3: Source gaps** (only if impl-summary lists any — same batched call)
 
 ```
 AskUserQuestion:
@@ -518,7 +521,9 @@ Read ONLY `{RUN_ROOT}/{st}-{prog}-phase2-summary.md`. Present a brief overview:
 **Formulas**: {X} unused params, {Y} zero-sentinels, {Z} missing provisions
 ```
 
-Then walk through decisions using `AskUserQuestion`:
+Then ask all applicable decisions below in a single `AskUserQuestion` call — Decision 1
+plus the three formula-fix categories fit the 4-question-per-call maximum exactly. NEVER
+one call per decision:
 
 **Decision 1: Reference fixes**
 
@@ -533,7 +538,7 @@ AskUserQuestion:
 
 **Decision 2: Formula fixes** (only if audit found formula issues)
 
-Ask for each formula fix category separately:
+Include one question per formula-fix category in the same batched call:
 
 ```
 AskUserQuestion:

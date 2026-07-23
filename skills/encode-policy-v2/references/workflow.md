@@ -216,15 +216,19 @@ requirements artifact blocks Phase 2.
 
 ### 2A. Present and decide scope
 
-Show the short overview and requirements grouped by tag. Ask one decision at a time:
+Show the short overview and requirements grouped by tag. Gather every scope decision
+first, then present them together as one batch — never one prompt per decision (the
+launcher defines the batching mechanics). Ask a follow-up only when a prior answer
+requires it:
 
 1. **Overall scope**: implement every simulatable requirement (recommended), or review
    groups/items to exclude. `NOT-MODELED` requirements remain tracked but excluded.
-2. For each questionable group: include all (recommended unless the evidence suggests
-   otherwise), skip all, or decide individually.
-3. Ask each program-specific decision separately, such as provider-rate tables now versus
-   follow-up, simplified versus full TANF, or mapping versus creating/skipping income
-   concepts without an exact existing variable.
+2. Only if the user chooses to review exclusions, follow up per questionable group:
+   include all (recommended unless the evidence suggests otherwise), skip all, or decide
+   individually.
+3. Include each program-specific decision as its own question in the initial batch, such
+   as provider-rate tables now versus follow-up, simplified versus full TANF, or mapping
+   versus creating/skipping income concepts without an exact existing variable.
 
 Do not make these modeling decisions for the user. Write the answers to
 `{RUN_ROOT}/{PREFIX}-scope-decision.md` (**Short**) with:
@@ -250,7 +254,8 @@ proposed `BRANCH`, to issue-manager in every delegation.
 Delegate issue-manager in discovery mode (`MODE=discover`), which makes no GitHub or Git
 writes. It searches for **both** an existing issue and PR before either is created. If
 it returns `DECISION_NEEDED`, show all candidate numbers, titles, status, activity, and
-short scope; ask the issue and PR reuse/create decisions one at a time. Do not select
+short scope; ask the issue and PR reuse/create decisions together in one batched
+prompt. Do not select
 among competing existing work automatically. If it returns `NO_CANDIDATES`, treat both
 decisions as create-new without asking. Then re-delegate issue-manager in execution mode
 (`MODE=execute`) with both explicit decisions.

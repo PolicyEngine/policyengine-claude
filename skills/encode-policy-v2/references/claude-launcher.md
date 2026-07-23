@@ -10,10 +10,15 @@ Claude Code mechanics and adds no workflow behavior.
   specifies.
 - **Ask the user** → use `AskUserQuestion` for a missing argument, the existing-program
   route, unreachable references, every scope choice, blocked CI, and the optional final
-  review-fix round. Ask one scope decision at a time and use the canonical option order.
+  review-fix round. Batch related decisions into as few calls as possible: one
+  `AskUserQuestion` call carries up to 4 questions, so N simultaneous decisions take
+  ceil(N/4) calls — never one call per decision. In Phase 2A, gather the overall-scope
+  question and every program-specific decision first, then ask them together; reserve a
+  later call only for a question that depends on a prior answer. Keep the canonical
+  option order within each question.
 - **Issue/PR discovery** → run `issue-manager` once with `MODE=discover` (read-only; it
-  stops after searching). On `DECISION_NEEDED`, ask the issue and PR choices one at a
-  time; on `NO_CANDIDATES`, use create-new for both. Then invoke a new `issue-manager`
+  stops after searching). On `DECISION_NEEDED`, ask the issue and PR choices together in
+  one `AskUserQuestion` call (two questions); on `NO_CANDIDATES`, use create-new for both. Then invoke a new `issue-manager`
   with `MODE=execute`, both explicit decisions, and the canonical repository values
   (`BASE_REPO`, `BASE_REPO_URL`, `PUSH_REPO`, `PUSH_REPO_URL`). Continue only on
   `SETUP_COMPLETE`; treat `BLOCKED` or a partial result as a blocking gate.
