@@ -11,13 +11,13 @@ Checks that the dashboard uses the correct framework, styling infrastructure, an
 
 ## Skills Used
 
-- **policyengine-frontend-builder-spec-skill** — Authoritative spec to validate against
-- **policyengine-parameter-patterns-skill** — Bracket path syntax for parameter path verification (custom-modal only)
+- **policyengine-tools** — Authoritative stack and multizone spec to validate against
+- **policyengine** — Bracket path syntax for parameter path verification (custom-modal only)
 
 ## First: Load Required Skills
 
-1. `Skill: policyengine-frontend-builder-spec-skill`
-2. `Skill: policyengine-parameter-patterns-skill` (if `data_pattern: custom-modal`)
+1. `Skill: policyengine-tools`
+2. `Skill: policyengine` (if `data_pattern: custom-modal`)
 
 After loading the skill, extract every MUST / MUST NOT statement and validate each one.
 
@@ -167,7 +167,7 @@ grep -n 'policyengine' backend/modal_app.py
 
 ### 7. Multi-zone configuration
 
-Dashboards mount as Next.js multi-zones behind policyengine.org. The scaffold must produce a compliant `next.config.mjs` and `vercel.json`. See `policyengine-interactive-tools-skill` → "Multi-zone integration (preferred)" for the full rules.
+Dashboards mount as Next.js multi-zones behind policyengine.org. The scaffold must produce a compliant `next.config.mjs` and `vercel.json`. See the `policyengine-tools` skill → "Multizone integration" for the full rules.
 
 **Required: `next.config.mjs` exists and uses the phase-gated function form**
 
@@ -263,7 +263,7 @@ grep -rnE '<Link[^>]+href=["'"'"']/(us|uk)/' app/ components/ --include='*.tsx' 
 
 This validates that all parameter paths used in `Reform.from_dict()` or reform dictionaries in `backend/simulation.py` resolve to real parameters in the policyengine parameter tree.
 
-**Load required skill first:** `Skill: policyengine-parameter-patterns-skill` — see section 6.5 for bracket path syntax rules.
+**Load required skill first:** `Skill: policyengine` — see its "Reform dictionaries and parameter paths" section for bracket path syntax rules.
 
 **Step 1: Extract all parameter paths from simulation.py:**
 ```bash

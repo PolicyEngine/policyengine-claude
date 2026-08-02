@@ -123,8 +123,7 @@ If the user says yes, draft edits but do NOT apply them without confirmation —
 
 ## Skills referenced
 
-- `policyengine-interactive-tools-skill` — Authoritative multi-zone rules
-- `policyengine-vercel-deployment-skill` — Vercel-side implications
+- `policyengine-tools` — Authoritative multi-zone rules and Vercel-side implications
 
 ## Related commands
 

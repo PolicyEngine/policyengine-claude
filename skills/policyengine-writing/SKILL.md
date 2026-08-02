@@ -593,7 +593,7 @@ of agents and skills for PolicyEngine development.
 
 - Access to 15 specialized agents
 - 3 slash commands (/encode-policy-v2, /review-program, /fix-pr)
-- 2 skills (policyengine-us-skill, policyengine-standards-skill)
+- 2 skills (policyengine-us, policyengine-standards)
 
 ## Testing
 

@@ -21,21 +21,21 @@ Produces a structured YAML implementation plan from a natural-language dashboard
 
 ## Skills Used
 
-- **policyengine-interactive-tools-skill** - Architecture patterns, data patterns, embedding
-- **policyengine-design-skill** - Design tokens, visual identity, color palette
-- **policyengine-us-skill** - US tax/benefit variables and programs
-- **policyengine-uk-skill** - UK tax/benefit variables and programs
-- **policyengine-api-v2-skill** - API v2 endpoint catalog and design hierarchy
+- **policyengine-tools** - Architecture patterns, data patterns, embedding
+- **policyengine-design** - Design tokens, visual identity, color palette
+- **policyengine-us** - US tax/benefit variables and programs
+- **policyengine-uk** - UK tax/benefit variables and programs
+- **policyengine-api** - REST API endpoint catalog (v1 production, v2 alpha status)
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
-1. `Skill: policyengine-interactive-tools-skill`
-2. `Skill: policyengine-design-skill`
-3. `Skill: policyengine-us-skill` (if US dashboard)
-4. `Skill: policyengine-uk-skill` (if UK dashboard)
-5. `Skill: policyengine-api-v2-skill`
+1. `Skill: policyengine-tools`
+2. `Skill: policyengine-design`
+3. `Skill: policyengine-us` (if US dashboard)
+4. `Skill: policyengine-uk` (if UK dashboard)
+5. `Skill: policyengine-api`
 
 ## Input
 
@@ -228,7 +228,7 @@ Based on the description, identify:
 
 ### Step 4: Determine Data Pattern
 
-Choose from the data patterns defined in the `policyengine-interactive-tools-skill` (loaded in the First step). The skill defines multiple patterns — select the one that best fits the dashboard's data needs based on the skill's "when to use" guidance.
+Choose from the data patterns defined in the `policyengine-tools` skill (loaded in the First step). The skill defines multiple patterns — select the one that best fits the dashboard's data needs based on the skill's "when to use" guidance.
 
 **Decision hierarchy (most preferred first):**
 
@@ -241,9 +241,9 @@ Write the chosen pattern into `data_pattern` in plan.yaml using these identifier
 | Skill pattern | `data_pattern` value |
 |---------------|----------------------|
 | Pattern A: Precomputed JSON | `precomputed` |
+| Pattern A: Precomputed CSV | `precomputed-csv` |
 | Pattern B: PolicyEngine API | `policyengine-api` |
-| Pattern C: Custom API on Modal (gateway + polling) | `custom-modal` |
-| Pattern D: Precomputed CSV | `precomputed-csv` |
+| Pattern C: Custom Modal backend (gateway + polling) | `custom-modal` |
 
 If the chosen pattern is `custom-modal`, the plan **must document why** the simpler patterns are insufficient. The plan must also specify which endpoints need long-running computation (microsimulation) vs. fast computation (household), as this determines worker timeout and memory allocation.
 
@@ -283,7 +283,7 @@ For each component and endpoint, define what "working correctly" means:
 
 ### Step 7: Decide zone path
 
-Dashboards mount as Next.js multi-zones behind `policyengine.org`. The zone path determines where the dashboard appears on the host site. Follow the conventions in `policyengine-interactive-tools-skill` → "Multi-zone integration (preferred)":
+Dashboards mount as Next.js multi-zones behind `policyengine.org`. The zone path determines where the dashboard appears on the host site. Follow the conventions in the `policyengine-tools` skill → "Multizone integration":
 
 - `/us/<kebab-name>` — US-specific dashboard
 - `/uk/<kebab-name>` — UK-specific dashboard
@@ -305,8 +305,8 @@ dashboard:
   description: "<One-paragraph description>"
   country: us  # us, uk, or both
   audience: public  # public, researchers, legislators, internal
-  # Multi-zone mount path on policyengine.org. REQUIRED — see policyengine-interactive-tools-skill
-  # "Multi-zone integration (preferred)" for conventions:
+  # Multi-zone mount path on policyengine.org. REQUIRED — see the policyengine-tools
+  # skill's "Multizone integration" section for conventions:
   #   /us/<kebab-name>, /uk/<kebab-name>, or /<kebab-name> for cross-country
   zone_path: "/us/<kebab-case-name>"
 
@@ -519,5 +519,5 @@ Before presenting the plan:
 ## Error Handling
 
 - If the description is too vague to produce a plan, ask the user for clarification
-- If no PolicyEngine variables match the described needs, flag this and suggest the custom-backend pattern
+- If no PolicyEngine variables match the described needs, flag this and suggest the custom-modal pattern
 - If the description asks for something PolicyEngine cannot model (e.g., time-series data, historical tracking), note this limitation

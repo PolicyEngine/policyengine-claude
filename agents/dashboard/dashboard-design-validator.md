@@ -11,11 +11,11 @@ Checks that the dashboard uses design tokens correctly, follows typography rules
 
 ## Skills Used
 
-- **policyengine-design-skill** — Token reference
+- **policyengine-design** — Token reference
 
 ## First: Load Required Skills
 
-1. `Skill: policyengine-design-skill`
+1. `Skill: policyengine-design`
 
 ## Checks
 

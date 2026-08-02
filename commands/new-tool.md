@@ -413,6 +413,5 @@ if jq -e '.scripts.test' package.json >/dev/null; then bun run test; fi
 ## Reference
 
 See these skills for detailed guidance:
-- `policyengine-interactive-tools-skill` — Embedding, hash sync, country detection
-- `policyengine-design-skill` — Token reference
-- `policyengine-vercel-deployment-skill` — Deployment patterns
+- `policyengine-tools` — Embedding, hash sync, country detection, Vercel deployment patterns
+- `policyengine-design` — Token reference

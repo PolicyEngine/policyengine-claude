@@ -18,13 +18,15 @@ Wires the frontend components to the backend API client and ensures the full dat
 
 ## Skills Used
 
-- **policyengine-interactive-tools-skill** - Data flow patterns
-- **policyengine-design-skill** - Loading/error state styling
+- **policyengine-tools** - Data flow patterns
+- **policyengine-design** - Loading/error state styling
+- **policyengine-api** - v1 API household payload structure (policyengine-api pattern only)
 
 ## First: Load Required Skills
 
-1. `Skill: policyengine-interactive-tools-skill`
-2. `Skill: policyengine-design-skill`
+1. `Skill: policyengine-tools`
+2. `Skill: policyengine-design`
+3. `Skill: policyengine-api` (if `data_pattern: policyengine-api`)
 
 ## Input
 
@@ -82,7 +84,7 @@ export function buildHouseholdRequest(
 
 function buildHouseholdDict(values: FormValues): Record<string, unknown> {
   // Map form fields to PolicyEngine household structure
-  // Following the structure from policyengine-interactive-tools-skill
+  // Following the v1 API household structure from the policyengine-api skill
   return {
     people: {
       head: {

@@ -20,23 +20,19 @@ Implements React components for a PolicyEngine dashboard following the app-v2 de
 
 ## Skills Used
 
-- **policyengine-frontend-builder-spec-skill** - Mandatory framework and styling requirements (Tailwind v4, Next.js, design tokens, ui-kit)
-- **policyengine-interactive-tools-skill** - Embedding, hash sync, country detection
-- **policyengine-design-skill** - Design tokens, visual identity, colors, spacing
-- **policyengine-recharts-skill** - Recharts chart component patterns
-- **policyengine-app-skill** - app-v2 component architecture
+- **policyengine-tools** - Mandatory framework and styling requirements (Tailwind v4, Next.js, ui-kit), embedding, hash sync, country detection, Recharts chart patterns
+- **policyengine-design** - Design tokens, visual identity, colors, spacing
+- **policyengine-app** - app-v2 component architecture
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
-0. `Skill: policyengine-frontend-builder-spec-skill`
-1. `Skill: policyengine-interactive-tools-skill`
-2. `Skill: policyengine-design-skill`
-3. `Skill: policyengine-recharts-skill`
-4. `Skill: policyengine-app-skill`
+1. `Skill: policyengine-tools`
+2. `Skill: policyengine-design`
+3. `Skill: policyengine-app`
 
-**CRITICAL: The `policyengine-frontend-builder-spec-skill` defines mandatory technology requirements. All instructions below MUST be interpreted through the lens of that spec. Where this document conflicts with the spec, THE SPEC WINS.**
+**CRITICAL: The `policyengine-tools` skill's "Required stack" defines mandatory technology requirements. All instructions below MUST be interpreted through the lens of that spec. Where this document conflicts with the spec, THE SPEC WINS.**
 
 ## Input
 

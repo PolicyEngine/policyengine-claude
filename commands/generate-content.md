@@ -57,5 +57,5 @@ The command will prompt for any missing information:
 
 ## Customization
 
-Edit the template in `skills/content/content-generation-skill/templates/`:
+Edit the template in `skills/policyengine-content/templates/`:
 - `social-image.html` - Social media image template

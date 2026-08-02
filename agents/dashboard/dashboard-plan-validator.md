@@ -11,13 +11,13 @@ Checks that the dashboard implementation matches everything specified in `plan.y
 
 ## Skills Used
 
-- **policyengine-interactive-tools-skill** — Embedding compliance
-- **policyengine-recharts-skill** — Chart implementation quality
+- **policyengine-tools** — Embedding compliance and chart patterns
+- **policyengine-design** — Chart color tokens
 
 ## First: Load Required Skills
 
-1. `Skill: policyengine-interactive-tools-skill`
-2. `Skill: policyengine-recharts-skill`
+1. `Skill: policyengine-tools`
+2. `Skill: policyengine-design`
 
 ## Workflow
 

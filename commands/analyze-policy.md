@@ -522,12 +522,12 @@ The state-legislative-tracker's `/encode-bill` command is a superset of `/analyz
 ## Skills loaded
 
 This command loads (with their plugin paths for clarity):
-- `policyengine-{country}` (US/UK/CA) at `skills/domain-knowledge/policyengine-{country}-skill/` — country model knowledge
-- `policyengine-prior-scores` at `skills/domain-knowledge/policyengine-prior-scores-skill/` — anchor index
-- `policyengine-calibration-diagnostics` at `skills/domain-knowledge/policyengine-calibration-diagnostics-skill/` — sensitivity registry
-- `policyengine-microsimulation` at `skills/tools-and-apis/policyengine-microsimulation-skill/` — execution patterns
-- `policyengine-research-lookup` at `skills/documentation/policyengine-research-lookup-skill/` — broader research discovery
-- `policyengine-writing` at `skills/documentation/policyengine-writing-skill/` — style for the final report
+- the country model skill, mapped from `--country`: `us` loads `policyengine-us` at `skills/policyengine-us/`, `uk` loads `policyengine-uk` at `skills/policyengine-uk/`, `ca` loads `policyengine-canada` at `skills/policyengine-canada/`
+- `policyengine-prior-scores` at `skills/policyengine-prior-scores/` — anchor index
+- `policyengine-calibration-diagnostics` at `skills/policyengine-calibration-diagnostics/` — sensitivity registry
+- `policyengine` at `skills/policyengine/` — microsimulation execution patterns
+- `policyengine-research-lookup` at `skills/policyengine-research-lookup/` — broader research discovery
+- `policyengine-writing` at `skills/policyengine-writing/` — style for the final report
 
 ## Agents invoked
 

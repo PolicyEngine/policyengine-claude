@@ -251,7 +251,7 @@ Report the PR URL to the user.
 ## Reference
 
 See these skills and agents for detailed guidance:
-- `policyengine-design-skill` — Design token values and usage
-- `policyengine-app-skill` — app-v2 component patterns to reference
+- `policyengine-design` — Design token values and usage
+- `policyengine-app` — app-v2 component patterns to reference
 - `agents/dashboard/dashboard-design-validator.md` — Automated design token compliance
 - `agents/app/component-test-writer.md` — Automated test writing

@@ -19,23 +19,19 @@ Generates complete project structure from an approved `plan.yaml` into the curre
 
 ## Skills Used
 
-- **policyengine-frontend-builder-spec-skill** - Mandatory framework and styling requirements (Next.js, Tailwind v4, design tokens, ui-kit)
-- **policyengine-interactive-tools-skill** - Project scaffolding patterns, embedding boilerplate
-- **policyengine-design-skill** - Design tokens, CSS setup
-- **policyengine-vercel-deployment-skill** - Vercel configuration
-- **policyengine-standards-skill** - CI/CD, Git workflow
+- **policyengine-tools** - Mandatory framework and styling requirements (Next.js, Tailwind v4, ui-kit), scaffolding patterns, embedding boilerplate, Vercel configuration
+- **policyengine-design** - Design tokens, CSS setup
+- **policyengine-standards** - CI/CD, Git workflow
 
 ## First: Load Required Skills
 
 **Before starting ANY work, use the Skill tool to load each required skill:**
 
-0. `Skill: policyengine-frontend-builder-spec-skill`
-1. `Skill: policyengine-interactive-tools-skill`
-2. `Skill: policyengine-design-skill`
-3. `Skill: policyengine-vercel-deployment-skill`
-4. `Skill: policyengine-standards-skill`
+1. `Skill: policyengine-tools`
+2. `Skill: policyengine-design`
+3. `Skill: policyengine-standards`
 
-**CRITICAL: The `policyengine-frontend-builder-spec-skill` defines the project structure, framework, and styling approach. Follow its specifications for project scaffolding. Where this document conflicts with the spec, THE SPEC WINS.**
+**CRITICAL: The `policyengine-tools` skill's "Required stack" defines the project structure, framework, and styling approach. Follow its specifications for project scaffolding. Where this document conflicts with the spec, THE SPEC WINS.**
 
 ## Input
 
@@ -193,7 +189,7 @@ Generate from the fixed tech stack, including:
 
 #### next.config.mjs (static export with multi-zone)
 
-Dashboards use `output: 'export'` AND mount as multi-zones behind policyengine.org. This requires the three-piece static-export pattern (phase-gated `assetPrefix` + `vercel.json` self-rewrite + host asset rewrite) — see `policyengine-interactive-tools-skill` → "Canonical zone config — static export" for full rationale.
+Dashboards use `output: 'export'` AND mount as multi-zones behind policyengine.org. This requires the three-piece static-export pattern (phase-gated `assetPrefix` + `vercel.json` self-rewrite + host asset rewrite) — see the `policyengine-tools` skill → "Multizone integration" (static-export zones) for full rationale.
 
 The scaffolded `next.config.mjs` MUST:
 1. Export a **function** that takes `phase` (so we can detect `next dev`)
