@@ -75,7 +75,7 @@ policyengine venv first, watch it assert, then add the marker.
 ### Anti-rot lint — `tests/test_no_stale_references.py`
 
 Scans `skills/`, `targets/`, `docs/`, `bundles/`, and `presets/` (`.md`, `.json`, `.yaml`,
-`.yml`, `.py`, `.sh`, `.html`) for a table of regexes that each name a dead API, path, dataset,
+`.yml`, `.py`, `.sh`, `.html`, `.ipynb`) for a table of regexes that each name a dead API, path, dataset,
 or package the pre-rebuild catalog leaked: the archived us-data Hugging Face URI, per-state and
 per-district H5 filenames, the retired enhanced-CPS/FRS dataset names, the deprecated per-entry
 changelog YAML, v1 app source paths, legacy UI libraries app-v2 no longer uses, deleted
