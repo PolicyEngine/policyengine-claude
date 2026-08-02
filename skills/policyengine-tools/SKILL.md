@@ -150,7 +150,7 @@ image, not at import time):
 | File | Module-level imports | Role |
 |---|---|---|
 | `backend/_image_setup.py` | none (imports inside the fn body) | `snapshot_models()` run at image build for fast cold starts |
-| `backend/simulation.py` | `policyengine_us`/`_uk` (captured in the snapshot) | pure business logic, no Modal |
+| `backend/simulation.py` | top-level `policyengine` (population) + `policyengine_us`/`_uk` `Simulation` (household) — captured in the snapshot | pure business logic, no Modal |
 | `backend/app.py` | only `modal` | worker functions |
 | `backend/modal_app.py` | `modal`, `fastapi`, `pydantic` | lightweight gateway |
 
@@ -163,7 +163,7 @@ import modal
 from _image_setup import snapshot_models
 app = modal.App("my-tool-workers")
 image = (modal.Image.debian_slim(python_version="3.11")
-         .pip_install("policyengine-us==X.Y.Z", "pydantic")   # pin to the current PyPI release
+         .pip_install("policyengine[us]==X.Y.Z", "pydantic")   # top-level release (>=5.0.1): pins matched country model + certified data bundle
          .run_function(snapshot_models)
          .add_local_file("backend/simulation.py", remote_path="/root/simulation.py"))
 
@@ -172,6 +172,15 @@ def compute_statewide(params: dict) -> dict:
     from simulation import run_statewide
     return run_statewide(params)
 ```
+
+Society-wide endpoints in `simulation.py` compute through the managed path — `import
+policyengine as pe; sim = pe.us.managed_microsimulation(reform=...)` (same weighted
+MicroSeries surface: `.calc()` US / `.calculate()` UK; provenance on
+`sim.policyengine_bundle`) — never a directly-imported country-package `Microsimulation`,
+whose default dataset can lag the certified bundle.
+Household-level endpoints may use `from policyengine_us import Simulation`. Pre-cache the
+certified dataset by constructing the managed microsim inside `snapshot_models()` (UK builds
+need `HUGGING_FACE_TOKEN` — private dataset repo). Details: the `policyengine` skill.
 
 ```python
 # backend/modal_app.py — gateway (spawn + poll)

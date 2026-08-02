@@ -80,10 +80,12 @@ or package the pre-rebuild catalog leaked: the archived us-data Hugging Face URI
 per-district H5 filenames, the retired enhanced-CPS/FRS dataset names, the deprecated per-entry
 changelog YAML, v1 app source paths, legacy UI libraries app-v2 no longer uses, deleted
 household-impact functions from policyengine.py, the old design-system package as an install
-target, and non-uv pip installs. The authoritative pattern-and-reason list
+target, non-uv pip installs, and direct country-package `Microsimulation` loading for
+analysis. The authoritative pattern-and-reason list
 lives in the test's `FORBIDDEN` table — read it there rather than duplicating it. Any hit fails
 CI. A line opts out when the marker `<!-- stale-ok -->` sits on it or on the line directly above,
-reserved for a deliberate "this is the superseded thing" history or migration note.
+reserved for a deliberate "this is the superseded thing" history/migration note or an
+explicitly-scoped engine-development example of a pattern banned only for analysis.
 
 ### The rule behind both
 

@@ -147,7 +147,7 @@ in addition to whatever the description asks for:
      so their charts render instantly; CUSTOM household inputs go to a
      Modal spawn-and-poll backend (`scripts/modal_household_endpoint.py`,
      `POST /household/start` → poll `/household/status/{id}`, per
-     nj-ctc-increase / CPID) that pins its own policyengine-us — so the
+     nj-ctc-increase / CPID) that pins its own `policyengine[us]` stack — so the
      calculator neither depends on the deployed API's version nor requires
      precomputing every control combination. Plan a full precomputed grid
      ONLY when the description forbids a backend; grid precompute burns
@@ -326,7 +326,7 @@ precomputed:  # for precomputed / precomputed-csv patterns
 
 custom_modal:  # for custom-modal pattern
   reason: "Needs microsimulation with custom CTC phase-out parameter"
-  policyengine_package: policyengine-us
+  policyengine_package: "policyengine[us]"  # top-level extra (>=5.0.1) — pins matched country model + certified bundle; microsim endpoints use pe.us.managed_microsimulation()
   architecture: gateway-polling  # Always use this — mirrors API v2 simulation service
   backend_files:  # Three-file structure (avoids module-level import crash-loop)
     image_setup: backend/_image_setup.py    # Standalone snapshot function

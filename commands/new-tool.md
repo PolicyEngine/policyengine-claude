@@ -19,7 +19,7 @@ Ask the user for:
 3. **Data pattern** — how the tool gets model results:
    - **A) Precomputed** — Static JSON or CSV shipped with the app (best for finite parameter spaces)
    - **B) PolicyEngine API** — Direct calls to `api.policyengine.org/us/calculate` (best for household calculators)
-   - **C) Custom Modal API** — Python serverless function with policyengine-us/uk (best when main API doesn't support needed variables/reforms)
+   - **C) Custom Modal API** — Python serverless function with the top-level `policyengine[us]` / `policyengine[uk]` package (best when main API doesn't support needed variables/reforms)
 4. **Brief description** of what the tool calculates
 
 ## Step 2: Create the project
@@ -182,12 +182,13 @@ export async function calculate(countryId, household) {
 
 Pattern C uses a **three-file backend structure** mirroring policyengine-api-v2's simulation service: a standalone image setup, a worker app, and pure simulation logic. A lightweight gateway manages job submission/polling. This avoids Modal's ~150s gateway timeout and a common crash-loop where module-level imports fail.
 
-First, look up the latest package version from PyPI. Do NOT guess or use a version from memory:
+First, look up the latest version of the top-level `policyengine` package from PyPI (must be `>=5.0.1`). Do NOT guess or use a version from memory:
 
 ```bash
-pip index versions policyengine-us 2>/dev/null | head -1
-# or for UK: pip index versions policyengine-uk 2>/dev/null | head -1
+pip index versions policyengine 2>/dev/null | head -1
 ```
+
+Install `policyengine[us]` (or `policyengine[uk]`) rather than a bare country package — the extra pins an exactly-matched country model and carries the certified data-bundle manifest.
 
 Create `backend/_image_setup.py` (standalone snapshot function, no package imports at module level):
 
@@ -200,18 +201,28 @@ def snapshot_models():
     logger.info("Pre-loading tax-benefit system...")
     from policyengine_us import CountryTaxBenefitSystem  # or policyengine_uk
     CountryTaxBenefitSystem()
+    # Tools with population/microsimulation endpoints: also run
+    # `import policyengine as pe; pe.us.managed_microsimulation()` here so the
+    # certified dataset is cached in the image (adds GBs — skip for household-only).
     logger.info("Models pre-loaded into image snapshot")
 ```
 
 Create `backend/simulation.py` (pure logic, policyengine at module level — captured in snapshot):
 
 ```python
-from policyengine_us import Simulation  # Snapshotted at build time
+from policyengine_us import Simulation  # household-level; snapshotted at build time
 
 def run_compute(params: dict) -> dict:
     sim = Simulation(situation=params["household"])
     return {"result": float(sim.calculate("variable_name", 2025).sum())}
 ```
+
+If the tool needs **population-scale** results (statewide/national impacts), compute them
+through policyengine.py's managed path — `import policyengine as pe;
+sim = pe.us.managed_microsimulation(reform=...)` (policyengine>=5.0.1) — never a
+directly-imported country-package `Microsimulation`, whose default dataset can lag the
+certified bundle. The managed constructor returns the same MicroSeries `.calc()` surface and
+records provenance on `sim.policyengine_bundle`; see the `policyengine` skill.
 
 Create `backend/app.py` (worker app, only `modal` at module level):
 
@@ -224,7 +235,7 @@ _BACKEND_DIR = Path(__file__).parent
 app = modal.App("TOOL_NAME-workers")
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("policyengine-us==LATEST_VERSION", "pydantic")
+    .pip_install("policyengine[us]==LATEST_VERSION", "pydantic")  # pins country model + certified data bundle
     .run_function(snapshot_models)
     .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )

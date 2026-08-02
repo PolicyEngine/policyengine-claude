@@ -21,7 +21,8 @@ The `policyengine` package (repo: PolicyEngine/policyengine.py) is the canonical
 interface for both single-household calculations and population microsimulation. It pins a
 certified model + data bundle, so results are reproducible and the data provenance is known.
 
-Verified against policyengine 4.21.0 (2026-07). Re-verify the bundle when precision matters
+Originally verified against policyengine 4.21.0 (2026-07); the marked examples re-run in CI
+against the latest release (5.0.1 at 2026-08). Re-verify the bundle when precision matters
 (see "Checking what you're running" below).
 
 ## Setup
@@ -33,6 +34,12 @@ uv pip install "policyengine[us]"   # US model + certified US data bundle
 uv pip install "policyengine[uk]"   # UK model (population data needs HUGGING_FACE_TOKEN)
 uv pip install "policyengine"       # both countries
 ```
+
+Analysis always runs on the **latest released** `policyengine` (`>=5.0.1`; resolve "latest"
+from PyPI as described in "Checking what you're running"). Each release pins exactly-matched
+country-model versions and the certified data bundle, which is what makes results
+reproducible. Directly-imported country packages (`policyengine_us` / `policyengine_uk`) are
+for model development and tests, not for analysis compute.
 
 ## Household calculations (fast, ~2 GB RAM)
 
@@ -192,12 +199,15 @@ ca_snap.result
 ### The managed country-package surface (MicroSeries)
 
 `managed_microsimulation` returns a country-package `Microsimulation` pinned to the certified
-bundle — useful when you want the familiar `.calc()` / MicroSeries analyst surface:
+bundle — the required route whenever you want the familiar `.calc()` / MicroSeries analyst
+surface (`pe.uk.managed_microsimulation()` is the UK twin; kwargs such as `reform=` forward
+to the country package's constructor):
 
 ```python
 import policyengine as pe
 
 sim = pe.us.managed_microsimulation()               # certified default dataset
+sim.policyengine_bundle                             # provenance: model + data release pins
 income = sim.calc("household_net_income", period=2026, map_to="person")
 income.mean()          # weighted mean
 income.median()        # weighted median
@@ -220,9 +230,12 @@ embeds survey weights in every operation. Discipline:
 - Arbitrary dataset URIs require `allow_unmanaged=True` — if you reach for that, you are
   leaving the certified bundle and should say so in your results.
 
+<!-- stale-ok -->
 Direct `from policyengine_us import Microsimulation` (unmanaged, whatever data it defaults
-to) is for country-model development inside the model repos — not for analysis results you
-plan to report.
+to) is **deprecated for analysis** — its default dataset can lag the certified bundle, so
+results are not provenance-known. It remains fine for country-model development and tests
+inside the model repos. Any population number you report must come through the managed
+surface above.
 
 ## Datasets
 
@@ -288,7 +301,8 @@ Three reform formats exist — match the surface you're using:
 
 1. `calculate_household(reform={...})` and `Simulation(policy={...})`: **flat**
    `{"gov.path.to.param": value}`.
-2. Country-package `Microsimulation(reform=...)` (managed or direct): date-ranged dicts —
+2. Country-package `Microsimulation(reform=...)` — reached in analysis via
+   `managed_microsimulation(reform=...)`, which forwards the kwarg: date-ranged dicts —
    `{"gov.path": {"2026-01-01.2100-12-31": value}}` — passed directly, or wrapped with
    `Reform.from_dict(..., "policyengine_us")`. The UK package also accepts plain dicts and
    converts internally (its reform surface is `Scenario` — see the policyengine-uk skill).

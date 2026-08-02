@@ -114,7 +114,7 @@ assert "hf://datasets/policyengine/populace-us" in DEFAULT_DATASET
 - **The pe.py managed default** (what `pe.us.calculate_household`, `managed_microsimulation`, and
   `ensure_datasets` resolve): `populace_us_2024` at the **bundle-manifest** build —
   `populace-us-2024-buildj-sparse-...-20260710` (Build J, 2026-07-10).
-- **The country-package `DEFAULT_DATASET`** (what a bare
+- **The country-package `DEFAULT_DATASET`** (what a bare <!-- stale-ok -->
   `from policyengine_us import Microsimulation; Microsimulation()` uses, verified 1.764.6 at
   `policyengine_us/system.py`): the *same dataset family* `populace_us_2024` on
   `hf://datasets/policyengine/populace-us`, but pinned to an **earlier build**

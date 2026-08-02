@@ -11,7 +11,7 @@ Runs a single reform through PolicyEngine and returns structured impact results.
 
 **Two execution paths** — pick based on environment:
 1. **API path (default, no install required):** call `api.policyengine.org`.
-2. **Local path (heavy, more flexible):** install the `policyengine` package and run via `Microsimulation`.
+2. **Local path (heavy, more flexible):** install the `policyengine` package (latest, `>=5.0.1`) and run through its managed `pe.{us,uk}` surfaces (see "Process — Local path").
 
 ## Inputs
 
@@ -230,7 +230,8 @@ If a 10-year cost is required, run all 10 years via `run_horizon(policy_id, base
 
 ## Process — Local path
 
-Load the `policyengine` skill for current import patterns and certified dataset names. The canonical local entry point is the top-level `policyengine` package pinned to the certified Populace bundle — **never** `from policyengine_us import Microsimulation` (unmanaged) or a bare `from policyengine import Microsimulation` (that class does not exist).
+<!-- stale-ok -->
+Load the `policyengine` skill for current import patterns and certified dataset names. The canonical local entry point is the top-level `policyengine` package (latest, `>=5.0.1`) pinned to the certified Populace bundle — **never** `from policyengine_us import Microsimulation` (unmanaged; deprecated for analysis) or a bare `from policyengine import Microsimulation` (that class does not exist).
 
 Baseline-vs-reform economy analysis (budget, poverty, deciles, inequality in one pass):
 

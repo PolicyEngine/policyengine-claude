@@ -97,5 +97,6 @@ Code versions. Edit the canonical file, never a launcher, to change behavior.
    or `<!-- verify: slow -->` (population-tier). Never mark a block you haven't run.
 5. Frontmatter: `name` (= directory name), `description` (triggers included,
    ≤1024 chars — Codex hard limit), `metadata.category`.
-6. Deliberate references to superseded things (history notes) take a
+6. Deliberate references to superseded things (history notes) — and explicitly-scoped
+   engine-development examples of patterns banned only for analysis — take a
    `<!-- stale-ok -->` marker on the preceding line to pass the anti-rot lint.

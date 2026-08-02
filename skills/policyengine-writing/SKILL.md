@@ -629,24 +629,24 @@ Should work great once merged!
 ```
 ## Installation
 
-Install PolicyEngine-US from PyPI:
+Install PolicyEngine from PyPI:
 
 ```bash
-uv pip install policyengine-us
+uv pip install "policyengine[us]"
 ```
 
-This installs version 1.103.0 or later, which includes support for 2025
-tax parameters.
+This installs version 5.0.1 or later, which pins the US model and the
+certified Populace data bundle.
 ```
 
 **❌ Wrong:**
 ```
 ## Installation
 
-Simply install PolicyEngine-US:
+Simply install PolicyEngine:
 
 ```bash
-uv pip install policyengine-us
+uv pip install "policyengine[us]"
 ```
 
 This will install the latest version with all the newest features!

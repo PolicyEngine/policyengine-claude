@@ -204,21 +204,18 @@ When `data_pattern: custom-modal`, build a two-layer architecture on Modal: a li
 |------|---------|---------------------|
 | `backend/_image_setup.py` | Standalone snapshot function — runs during image build | None (all inside function body) |
 | `backend/app.py` | Modal app + function decorators | Only `modal` |
-| `backend/simulation.py` | Pure business logic | `policyengine_us`/`_uk` (captured in image snapshot) |
+| `backend/simulation.py` | Pure business logic | top-level `policyengine` (population — managed path) + `policyengine_us`/`_uk` `Simulation` (household); captured in image snapshot |
 | `backend/modal_app.py` | Lightweight gateway (FastAPI) | `modal`, `fastapi`, `pydantic` |
 
-### Step 1: Look Up the Latest Country Package Version
+### Step 1: Look Up the Latest policyengine Version
 
-**Before writing any code**, look up the latest version from PyPI. Do NOT guess or use a version from memory — these packages release frequently and stale versions will have bugs.
+**Before writing any code**, look up the latest version of the top-level `policyengine` package from PyPI. Do NOT guess or use a version from memory — it releases frequently and stale versions will have bugs.
 
 ```bash
-# For US dashboards:
-pip index versions policyengine-us 2>/dev/null | head -1
-# For UK dashboards:
-pip index versions policyengine-uk 2>/dev/null | head -1
+pip index versions policyengine 2>/dev/null | head -1
 ```
 
-Use the version number returned (e.g., `1.592.4`) in the `pip_install()` call below.
+Use the version number returned (must be `>=5.0.1`) in the `pip_install()` call below. Install `policyengine[us]` (or `policyengine[uk]`) rather than a bare country package: the extra pins an exactly-matched `policyengine-us`/`policyengine-uk` + `policyengine-core` and carries the certified data-bundle manifest, so population results are reproducible and their provenance is known.
 
 ### Step 2: Create Image Setup
 
@@ -226,23 +223,35 @@ Generate `backend/_image_setup.py`. This is a **standalone function with no pack
 
 ```python
 def snapshot_models():
-    """Pre-load models at image build time for fast cold starts."""
+    """Pre-load models (and certified data) at image build time for fast cold starts."""
     import logging
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.info("Pre-loading tax-benefit system...")
     from policyengine_us import CountryTaxBenefitSystem  # or policyengine_uk
     CountryTaxBenefitSystem()
+    # Microsimulation endpoints only: also construct the managed microsim once so the
+    # certified dataset lands in the image's Hugging Face cache — cold starts then skip
+    # the download. Omit for household-only dashboards (it adds GBs to the image).
+    import policyengine as pe
+    pe.us.managed_microsimulation()
     logger.info("Models pre-loaded into image snapshot")
 ```
+
+UK microsimulation dashboards: the certified UK dataset lives in a **private** Hugging Face
+repo, so `pe.uk.managed_microsimulation()` needs `HUGGING_FACE_TOKEN` available during the
+image build (attach it as a Modal secret to the snapshot function and the worker functions).
 
 ### Step 3: Create Simulation Logic
 
 Generate `backend/simulation.py`. This is **pure business logic** — no Modal imports. policyengine imports are at module level because they are captured in the image snapshot.
 
+**Population/statewide endpoints go through policyengine.py's managed path** — `pe.us.managed_microsimulation()` (policyengine>=5.0.1), which returns a country-package `Microsimulation` pinned to the certified data bundle, with the same weighted MicroSeries interface (`.calc()` US / `.calculate()` UK) and provenance stamped on `sim.policyengine_bundle`. A directly-imported country-package `Microsimulation` is deprecated for analysis: its default dataset can lag the certified bundle, so results are not provenance-known.
+
 ```python
-from policyengine_us import Simulation, Microsimulation  # Snapshotted at build time
-from pydantic import BaseModel  # Available in image
+import policyengine as pe                # managed analysis surface — snapshotted at build time
+from policyengine_us import Simulation   # household-level calculations only
+from pydantic import BaseModel           # Available in image
 
 # Pydantic models, constants, and helper functions live here.
 # Each endpoint in plan.yaml gets a run_*() function.
@@ -253,10 +262,13 @@ def run_household(params: dict) -> dict:
     return {"net_income": float(sim.calculate("household_net_income", 2025).sum())}
 
 def run_statewide(params: dict) -> dict:
-    baseline = Microsimulation()
-    reform_sim = Microsimulation(reform=params["reform"])
-    # ... compute and return impacts
-    return {"revenue_change": ..., "winners": ..., "losers": ...}
+    baseline = pe.us.managed_microsimulation()
+    reform_sim = pe.us.managed_microsimulation(reform=params["reform"])
+    # ... compute and return impacts via weighted MicroSeries (.calc(...))
+    return {
+        "revenue_change": ..., "winners": ..., "losers": ...,
+        "provenance": baseline.policyengine_bundle,  # model + data release pins
+    }
 ```
 
 ### Step 3b: Verify All Parameter Paths
@@ -305,7 +317,7 @@ _BACKEND_DIR = Path(__file__).parent
 app = modal.App("DASHBOARD_NAME-workers")
 image = (
     modal.Image.debian_slim(python_version="3.11")
-    .pip_install("policyengine-us==LATEST_VERSION", "pydantic")  # Pinned — looked up from PyPI in Step 1
+    .pip_install("policyengine[us]==LATEST_VERSION", "pydantic")  # Pinned — looked up from PyPI in Step 1; pins the country model + certified data bundle
     .run_function(snapshot_models)
     .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )
@@ -497,7 +509,7 @@ Use `uv` for Python dependency management. **Do NOT use `requirements.txt` or `p
 ```bash
 cd backend
 uv init --no-workspace
-uv add policyengine-us  # or policyengine-uk
+uv add "policyengine[us]"  # or "policyengine[uk]" — pins the country model + certified data bundle
 uv add --dev pytest
 ```
 
