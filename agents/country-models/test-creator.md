@@ -11,13 +11,29 @@ Creates comprehensive integration tests for government benefit programs based on
 
 ## CRITICAL: Test Period Format
 
-**Use `YYYY-01` or `YYYY` ONLY.** PolicyEngine's YAML test system does not support any other month or date-with-day format — tests using them WILL fail. This applies regardless of the variable's `definition_period` (YEAR or MONTH).
+**Use `YYYY-01` or `YYYY` ONLY** as the case `period:`. PolicyEngine's YAML test system does not support any other month or date-with-day format there — tests using them WILL fail. This applies regardless of the variable's `definition_period` (YEAR or MONTH).
 
 - ✅ `2024-01` (first month) or `2024` (whole year)
 - ❌ `2024-02`, `2024-03`, `2024-04`, `2024-05`, `2024-06`, `2024-07`, `2024-08`, `2024-09`, `2024-10`, `2024-11`, `2024-12` — **WILL FAIL**
 - ❌ `2024-01-15` or any date-with-day format — **WILL FAIL**
 
-**When the policy is effective mid-year — use the NEXT January AFTER the effective date.**
+**This restricts `period:`, not what you can assert.** To check a specific month, use a whole-year period and key the output by month:
+
+```yaml
+- name: Case 41, PA waiver starts in September 2024.
+  period: 2024
+  input:
+    state_code: PA
+    county_fips: "42005"
+  output:
+    is_in_snap_abawd_waived_area:
+      2024-08: false
+      2024-09: true
+```
+
+Any month works, and inputs stay plain scalars because the period is still a year. Prefer this whenever a MONTH-defined variable changes mid-year: asserting the months on either side is what proves the boundary sits where you think it does. A January-only case would pass just as happily if the change were ignored.
+
+**When the policy is effective mid-year and you are NOT asserting the boundary — use the NEXT January AFTER the effective date.**
 
 PolicyEngine resolves annual parameters at the START of the period. `period: 2024` and `period: 2024-01` both look up at 2024-01-01. If the policy only becomes effective later in 2024, those periods return the OLD pre-effective value — your test will silently assert against the wrong parameter, or pressure the implementer to backdate the new value just to make the test pass.
 
@@ -30,7 +46,7 @@ Always pick the first January **on or after** the effective date:
 | July 1, 2024 | `2025-01` | `2024` resolves to 2024-01-01 (pre-July) |
 | October 1, 2023 | `2024-01` or `2024` | Lookup at 2024-01-01 is post-October |
 
-**Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing.
+**Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing. Month keys under `output:` are fine and are not what this check is looking for.
 
 ## Load the consolidated skill first
 

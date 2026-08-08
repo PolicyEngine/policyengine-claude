@@ -28,12 +28,44 @@ mid-file and renumber (noisy diffs).
 
 ## Period restrictions
 
-Only two period formats are supported:
+The case-level `period:` accepts only two formats:
 - `2024` — whole year
 - `2024-01` — first month **only**
 
-`2024-04`, `2024-10`, and full dates like `2024-01-01` all fail. For a mid-year policy change, test
-with the first month of a year where it's fully active (e.g. `2025-01`).
+`2024-04`, `2024-10`, and full dates like `2024-01-01` all fail **as the case period**.
+
+### Asserting a specific month
+
+That restriction applies to `period:`, not to what you can assert. To check a mid-year month, use a
+whole-year period and key the **output** by month:
+
+```yaml
+- name: Case 41, PA waiver starts in September 2024.
+  period: 2024
+  input:
+    state_code: PA
+    county_fips: "42005"
+  output:
+    is_in_snap_abawd_waived_area:
+      2024-08: false
+      2024-09: true
+```
+
+Any month works here, and inputs stay plain scalars because the period itself is still a year. This
+is the right tool whenever a MONTH-defined variable changes mid-year — a benefit standard that
+re-bases in April, a waiver that starts in September, a rate that changes on a state's own schedule.
+Asserting the months on either side of the change is what proves the boundary is where you think it
+is; a single January case would pass just as happily if the change were ignored entirely.
+
+Reach for a hand-built `Simulation` in a Python test only when you need something the YAML runner
+genuinely cannot express. A mid-year boundary is not that — writing one is a sign this pattern was
+overlooked.
+
+Failures name the month, so a broken expectation is easy to place:
+
+```
+tanf_non_cash_gross_income_limit@2026-04: [2660.] differs from 9999.0 with an absolute margin > 0.01
+```
 
 ## Error margins by output type
 
