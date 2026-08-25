@@ -3,13 +3,13 @@ name: policyengine-calibration-diagnostics
 description: |
   Sensitivity registry for PolicyEngine microsim results — maps {program x deviation signature}
   to the calibration target or imputed variable most likely driving a mismatch, and reads the
-  live per-target diagnostics for the current Populace release. The knowledge base behind the
+  live per-target diagnostics for the current Microcosm release. The knowledge base behind the
   calibration-diagnostics agent and /analyze-policy Stage 5.6.
   Load when investigating why a microsim result differs from a prior score, or when reviewing
   whether a reform classification is calibration-sensitive.
   Triggers: "why does my reform not match", "policyengine cost off", "calibration mismatch",
   "imputed variable", "takeup rate", "non-filer", "itemizer share", "small state variance",
-  "calibration target", "populace target", "calibration dashboard", "target-diagnostics",
+  "calibration target", "Microcosm (formerly Populace) target", "calibration dashboard", "target-diagnostics",
   "relative_error", "diagnose mismatch", "deviation signature".
 metadata:
   category: data
@@ -22,8 +22,8 @@ registry, and pairs it with the live per-target calibration API so hypotheses ar
 real `relative_error` numbers rather than assumptions. When an `/analyze-policy` comparison
 returns INVESTIGATE, this skill supplies the ranked candidate causes.
 
-The calibrated microdata is now a **Populace** build (see the `policyengine-data` skill for how
-targets, weights, and L0 sparsity work). Calibration targets live in the populace build's target
+The calibrated microdata is now a **Microcosm** build (see the `policyengine-data` skill for how
+targets, weights, and L0 sparsity work). Calibration targets live in the Microcosm build's target
 set — not in a hand-maintained loss file — and their fit is queryable per release from the
 dashboard API below.
 
@@ -31,7 +31,7 @@ dashboard API below.
 
 - Stage 5.6 / Stage 6 of `/analyze-policy` — invoked by the `calibration-diagnostics` agent.
 - Code review of microsim PRs where the headline number differs from priors.
-- Designing or auditing a populace calibration target.
+- Designing or auditing a Microcosm calibration target.
 - Debugging why a state-level run looks volatile.
 
 ## Top-level architecture
@@ -40,7 +40,7 @@ PolicyEngine microsim results depend on three layers:
 
 1. **Country model logic** (policyengine-us, policyengine-uk, policyengine-canada) — formulas,
    parameters.
-2. **Calibrated microdata** (Populace) — survey weights + imputations matched to administrative
+2. **Calibrated microdata** (Microcosm) — survey weights + imputations matched to administrative
    targets.
 3. **Behavioral assumptions** (takeup rates, labor-supply elasticities) — usually parameters but
    easy to overlook.
@@ -50,7 +50,7 @@ show up as outright simulation errors, not magnitude drift).
 
 ## Live calibration API (check this first)
 
-Per-target fit for the current populace release, no auth, reads the release from Hugging Face:
+Per-target fit for the current Microcosm release, no auth, reads the release from Hugging Face:
 
 ```
 BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace
@@ -164,13 +164,13 @@ imputation. If your deviation signature touches any of these, widen the confiden
 ## Sources
 
 - **`calibration-diagnostics.vercel.app`** — live per-target diagnostics API and dashboard (first
-  stop; reads the current populace release). Source: `github.com/PolicyEngine/calibration-diagnostics`.
-- **`PolicyEngine/populace`** — where calibration targets, weights, and the L0 sparsity live; the
+  stop; reads the current Microcosm release). Source: `github.com/PolicyEngine/calibration-diagnostics`.
+- **`PolicyEngine/microcosm`** — where calibration targets, weights, and the L0 sparsity live; the
   build that produces the certified dataset. See the `policyengine-data` skill.
 - `github.com/PolicyEngine/policyengine-us/issues` — known program-level model issues.
 
 ## Related skills
 
-- `policyengine-data` — how Populace builds targets, weights, and the sparse-vs-dense tradeoff.
+- `policyengine-data` — how Microcosm builds targets, weights, and the sparse-vs-dense tradeoff.
 - `policyengine-prior-scores` — what a run is being compared against.
 - `policyengine` — running the perturbation tests this skill recommends.

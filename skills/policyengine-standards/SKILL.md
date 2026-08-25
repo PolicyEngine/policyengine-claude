@@ -177,7 +177,7 @@ New standalone tools and app-v2 use **bun** (`bun install`, `bun run`, `bunx`) â
 
 **Never edit `CHANGELOG.md` by hand.** Two live conventions:
 
-- **Python repos (country models, core, policyengine.py, populace): towncrier.** Add a
+- **Python repos (country models, core, policyengine.py, microcosm): towncrier.** Add a
   fragment under `changelog.d/`, commit it with your code; CI compiles fragments and bumps
   the version on merge. In these repos the old single-file format
   <!-- stale-ok -->

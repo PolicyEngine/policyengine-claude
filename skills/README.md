@@ -20,7 +20,7 @@ lints the whole tree against the failure modes that rotted the previous catalog
 
 | Skill | What it carries |
 |---|---|
-| **policyengine** | The canonical Python interface: `pe.us/uk.calculate_household`, population `Simulation` + `economic_impact_analysis` + `calculate_budgetary_impact`, Populace datasets, regional analysis, reform formats, MicroSeries weighting discipline |
+| **policyengine** | The canonical Python interface: `pe.us/uk.calculate_household`, population `Simulation` + `economic_impact_analysis` + `calculate_budgetary_impact`, Microcosm datasets, regional analysis, reform formats, MicroSeries weighting discipline |
 | **policyengine-prior-scores** | Published reform-score anchors (JCT/CBO/TPC/PE) and the scorekeepers registry, with comparability caveats |
 
 ### Domain knowledge
@@ -42,7 +42,7 @@ lints the whole tree against the failure modes that rotted the previous catalog
 
 | Skill | What it carries |
 |---|---|
-| **policyengine-data** | The Populace stack: certified releases, dataset registry, local-area filtering philosophy, fit/calibrate/L0 concepts, where to file data work |
+| **policyengine-data** | The Microcosm stack: certified releases, dataset registry, local-area filtering philosophy, fit/calibrate/L0 concepts, where to file data work |
 | **policyengine-calibration-diagnostics** | Deviation-signature → calibration-lever sensitivity registry |
 
 ### Apps

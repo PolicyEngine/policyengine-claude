@@ -78,7 +78,7 @@ hits = search_analyses(country="us", parameter_families=["ctc", "refundability"]
 
 **How to use Tier 0 hits:**
 
-- If a prior archived analysis matches the SAME reform (identical parameter family + verdict + jurisdiction), surface a "duplicate-run detection" note to the analyst. Options: (a) return the archived result verbatim, (b) re-run for fresh numbers (dataset/model may have evolved — populace vintages change), (c) both.
+- If a prior archived analysis matches the SAME reform (identical parameter family + verdict + jurisdiction), surface a "duplicate-run detection" note to the analyst. Options: (a) return the archived result verbatim, (b) re-run for fresh numbers (dataset/model may have evolved — Microcosm vintages change), (c) both.
 - If a prior archived analysis matches a SIMILAR reform in the same family, cite it as a Tier-1-adjacent anchor. Its `benchmark_sources` block may already have the right Tier-3 externals; borrow them rather than re-searching.
 
 Do NOT skip Tiers 1-3 based on Tier-0 hits. The archive is a shortcut for prior PE work; Tier 2 (JCT/CBO) and Tier 3 (think-tanks) are still required for a PASS-eligible verdict.

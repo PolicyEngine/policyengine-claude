@@ -23,7 +23,7 @@ Flags:
 - `--skip-microsim` (process-test mode — stops at Stage 5, predicts from prior anchor)
 - `--auto-investigate` (if Stage 5 returns INVESTIGATE, auto-run top calibration hypothesis)
 - `--write-report PATH` (default `/tmp/analyze-policy-{policy_id}.md`)
-- `--log-to <dest>[,<dest>...]` (override auto-routing; see Phase 8). Examples: `--log-to archive`, `--log-to "archive,issue:policyengine-{country}-data"` (country auto-substituted from `--country`; US data issues route to `PolicyEngine/populace`), `--log-to draft:policyengine-app-v2/app/src/data/posts/articles/arpa-ctc.md`
+- `--log-to <dest>[,<dest>...]` (override auto-routing; see Phase 8). Examples: `--log-to archive`, `--log-to "archive,issue:policyengine-{country}-data"` (country auto-substituted from `--country`; US data issues route to `PolicyEngine/microcosm`), `--log-to draft:policyengine-app-v2/app/src/data/posts/articles/arpa-ctc.md`
 - `--no-log` (skip Phase 8 entirely — write the `/tmp` report only)
 - `--auto-confirm` (skip confirmation prompts before opening GitHub issues; only honor in non-interactive contexts)
 
@@ -303,7 +303,7 @@ Skipped when `--skip-microsim` is set (no original-reform microsim to anchor aga
 ## Phase 5.6 — Data calibration check (always, cheap)
 
 Every parametric run verifies that the underlying microdata is well-calibrated
-for the variables the reform touches, using the live populace calibration
+for the variables the reform touches, using the live Microcosm calibration
 dashboard API (no auth, reads the current release from Hugging Face):
 
 ```

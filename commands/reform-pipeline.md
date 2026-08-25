@@ -97,7 +97,7 @@ This covers: bill text → provisions → parameter mapping → classification �
 prior scores + **blind outcome prediction** (the independent reviewer
 predicts expected outcomes from the reform text alone, before any numbers
 exist) → microsim → comparison against external anchors → **the Phase 5.6
-data-calibration check** (is the populace release well-calibrated for this
+data-calibration check** (is the Microcosm release well-calibrated for this
 reform's variables?) → **the Phase 5.7 interrogation** (predictions vs
 results: counterintuitive-but-correct findings become publication assets;
 unexplained divergences become INVESTIGATE leads) → report + archive.
@@ -105,8 +105,8 @@ unexplained divergences become INVESTIGATE leads) → report + archive.
 Branch on the verdict:
 - **PASS / PASS-WITH-NOTES / PASS-WITH-CORROBORATION** → continue to Phase 3.
 - **INVESTIGATE** → report the calibration diagnosis and STOP — unverified
-  numbers never publish. The auto-filed policyengine-{country}-data issue is
-  the follow-up thread.
+  numbers never publish. The auto-filed country data issue (`us` →
+  `PolicyEngine/microcosm`; others → `policyengine-{country}-data`) is the follow-up thread.
 - **structural** → report why and STOP publication. Offer the unblock:
   `/implement-structural <backlog issue>` opens the policyengine-{country}
   model PR; once merged AND deployed, re-run this pipeline — the frozen

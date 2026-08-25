@@ -2,13 +2,13 @@
 name: policyengine-data
 description: |
   Load for PolicyEngine's data layer — how the microdata behind population microsimulations is
-  built, calibrated, versioned, and named. Covers the current Populace stack (Frame kernel,
-  populace-fit conditional models, populace-calibrate weights with L0 sparsity, build/release
+  built, calibrated, versioned, and named. Covers the Microcosm stack (Frame kernel,
+  microcosm-fit conditional models, microcosm-calibrate weights with L0 sparsity, build/release
   gates), the certified datasets that flow into policyengine bundles (populace_us_2024 sparse
   ~57k default, populace_us_2024_acs_local ~1.6M local-area, populace_uk_2023 private), the
   "one national dataset filtered by geography" local-area philosophy, the calibration
   diagnostics dashboard, and where data work goes now that policyengine-us-data is archived.
-  Triggers: Populace, Frame, populace-fit, populace-calibrate, calibration target, survey
+  Triggers: Microcosm (formerly Populace), Frame, microcosm-fit, microcosm-calibrate, calibration target, survey
   weights, reweighting, imputation, QRF, quantile loss, L0 sparsity, sparse 57k, local-area
   data, ACS, FRS, WAS, enhanced microdata, DEFAULT_DATASET.
   NOT for: running simulations (see policyengine) or diagnosing a specific score mismatch (see
@@ -24,26 +24,26 @@ named. For *using* datasets in a simulation, see the `policyengine` skill (this 
 where the data comes from). For diagnosing why one score disagrees with a benchmark, see
 `policyengine-calibration-diagnostics`.
 
-The current data stack is **Populace** (repo `PolicyEngine/populace`, local mirror
-`~/PolicyEngine/populace`; read its `README.md` + `DESIGN.md`). It replaced the technique-named
+The current data stack is **Microcosm** (repo `PolicyEngine/microcosm`, local mirror
+`~/PolicyEngine/microcosm`; read its `README.md` + `DESIGN.md`). It replaced the technique-named
 packages of the previous stack (microdf / microimpute / microcalibrate / L0 /
 policyengine-us-data), which shared no datatype and had their worst bugs at the seams between
 flat DataFrames.
 
-## The Populace architecture
+## The Microcosm architecture
 
-Populace is one kernel datatype — the **`Frame`** — with packages as operators on it. It is a
-PEP 420 namespace (`populace.*`) shipped as independently-installable shard distributions, so an
-analyst doing imputation never has to install torch and vice versa. A `populace` metapackage
-pins the constellation.
+Microcosm is one kernel datatype — the **`Frame`** — with packages as operators on it. It is a
+PEP 420 namespace (`microcosm.*`) shipped as independently-installable shard distributions, so an
+analyst doing imputation never has to install torch and vice versa. Microcosm releases pin the
+shards as a constellation.
 
 | Package | Import | Role | Succeeds |
 |---|---|---|---|
-| `populace-frame` | `populace.frame` | the kernel: `Frame`, typed weights, strata, links, weighted accounting, unit structure, the RulesEngine protocol | microdf, microunit |
-| `populace-fit` | `populace.fit` | conditional models (weight-aware by construction) | ad-hoc imputation scripts |
-| `populace-calibrate` | `populace.calibrate` | targets → calibrated weights (APG / L0) | microcalibrate |
-| `populace-build` | `populace.build` | build plans, donor graphs, release gates, country build stages | one-off build drivers |
-| `populace-data` | `populace.data` | published population registry + lazy engine loaders | country-specific data packages |
+| `microcosm-frame` | `microcosm.frame` | the kernel: `Frame`, typed weights, strata, links, weighted accounting, unit structure, the RulesEngine protocol | microdf, microunit |
+| `microcosm-fit` | `microcosm.fit` | conditional models (weight-aware by construction) | ad-hoc imputation scripts |
+| `microcosm-calibrate` | `microcosm.calibrate` | targets → calibrated weights (APG / L0) | microcalibrate |
+| `microcosm-build` | `microcosm.build` | build plans, donor graphs, release gates, country build stages | one-off build drivers |
+| `microcosm-data` | `microcosm.data` | published population registry + lazy engine loaders | country-specific data packages |
 
 Key design facts (from `DESIGN.md`) that change how you reason about the data:
 
@@ -55,15 +55,15 @@ Key design facts (from `DESIGN.md`) that change how you reason about the data:
   **strata** giving every record explicit provenance (`cps_passthrough`,
   `synthetic_conditional`, `tail_verbatim`, ...). Generation owns support (oversample where it
   is scarce); calibration owns representation.
-- **The rules engine is an adapter, not a dependency.** `populace.frame.rules.RulesEngine` is a
+- **The rules engine is an adapter, not a dependency.** `microcosm.frame.rules.RulesEngine` is a
   Protocol (`variable_entity`, `variable_dtype`, `entity_schema`, `materialize`,
   `export_contract`, `write_dataset`). Today's adapter is `policyengine_us`; the Axiom
   `rulespec-us` adapter is written against the same protocol so the swap is a new adapter, not a
   migration.
-- **`populace-fit` is weight-aware by construction** — fits read the frame's typed weights;
+- **`microcosm-fit` is weight-aware by construction** — fits read the frame's typed weights;
   there is no unweighted default. Canonical model: regime-gated, chained quantile forests with
   weights materialized by weighted bootstrap.
-- **`populace-calibrate` is the only place calibrated weights are produced.** Sparse
+- **`microcosm-calibrate` is the only place calibrated weights are produced.** Sparse
   target-matrix compilation + APG / L0 pruning is the core, not an option — "generate big then
   prune" is the intended design (300k → 3M → 30M candidate pools pruned to a compact frame). Its
   longitudinal rule: **one weight per trajectory** (multi-period targets stack as
@@ -78,7 +78,7 @@ The long-run goal in `DESIGN.md` ("The commons") is a communal, continuously-imp
 population where the three contribution types *are* the package decomposition — **records**
 (new strata at honest weights, `frame`), **conditional structure** (fitted `P(y|x)` models,
 `fit` — the only way private sources contribute), and **facts** (targets with standard errors,
-`calibrate` — Ledger's lane). A contribution merges iff it improves the population's score on
+`calibrate` — Chronicle's lane). A contribution merges iff it improves the population's score on
 held-out, rotated evidence without degrading a protected target family beyond tolerance.
 
 ## Certified releases → policyengine bundles
@@ -92,7 +92,7 @@ bundle/manifest.json`):
 |---|---|---|
 | `populace_us_2024` | US default. Build J, sparse, ~57k households calibrated to tens of thousands of admin targets | resolves automatically; do not pass a raw URI |
 | `populace_us_2024_acs_local` | US local-area build. Build L, ~1.6M households, ACS multispine, PUMA-assigned to CD-119 / county / state | load **by name**, never implicit |
-| `populace_uk_2023` | UK default (Populace, FRS+WAS) | private HF repo — set `HUGGING_FACE_TOKEN` |
+| `populace_uk_2023` | UK default (Microcosm, FRS+WAS) | private HF repo — set `HUGGING_FACE_TOKEN` |
 
 Verified manifest build ids (2026-07): US `populace_us_2024` @
 `populace-us-2024-buildj-sparse-rmloss100-75d5add-20260710`; UK `populace_uk_2023` @
@@ -120,8 +120,8 @@ assert "hf://datasets/policyengine/populace-us" in DEFAULT_DATASET
   `hf://datasets/policyengine/populace-us`, but pinned to an **earlier build**
   (`populace-us-2024-c86a631-...-20260619`, 2026-06-19).
 
-Both are Populace `populace_us_2024` — even the country package's own test/dev default is now
-Populace (its `test_microsim.py` asserts `"populace" in DEFAULT_DATASET`). The takeaway: the
+Both are Microcosm `populace_us_2024` — even the country package's own test/dev default is now
+Microcosm (its `test_microsim.py` asserts `"populace" in DEFAULT_DATASET`). The takeaway: the
 country-package default can lag the certified bundle by a build. For reproducible, provenance-
 known results, go through the managed `pe.*` surface (which pins the certified bundle) rather
 than a bare country-package `Microsimulation()`.
@@ -147,22 +147,22 @@ those diagnostics into hypotheses about a score.
 
 ## Where data work goes
 
-- **New data work → the `populace` repo.** Build plans, calibration targets, conditional models,
+- **New data work → the `microcosm` repo.** Build plans, calibration targets, conditional models,
   release gates, the published registry.
 <!-- stale-ok -->
 - **`policyengine-us-data` is ARCHIVED (2026-07-02).** The US enhancement path it owned (CPS +
   IRS-PUF imputation, calibration, its enhanced-CPS H5 releases, and the per-state / per-district
-  H5s) is superseded by Populace and its per-area files were removed. Treat that repo as
+  H5s) is superseded by Microcosm and its per-area files were removed. Treat that repo as
   read-only history; do not target it with PRs.
 - **`policyengine-uk-data` is still live** as the UK *input* pipeline: it produces the enhanced
   FRS (Family Resources Survey, ~20k households) with wealth and other variables imputed from the
-  Wealth and Assets Survey (WAS, ~20k households), which feeds the UK Populace build. UK
+  Wealth and Assets Survey (WAS, ~20k households), which feeds the UK Microcosm build. UK
   imputations (e.g. wealth, student-loan balances) land here.
 
 ## Institutional knowledge (archived-repo concepts, current mechanics)
 
 The previous stack's *packages* are superseded, but the *algorithms* they implemented are exactly
-what Populace's `fit` and `calibrate` operators do. These concepts remain load-bearing:
+what Microcosm's `fit` and `calibrate` operators do. These concepts remain load-bearing:
 
 **Conditional-distribution imputation (QRF).** Fill a variable missing from a recipient survey by
 learning it from a donor that has it, conditioning on shared predictors. PolicyEngine uses
@@ -171,7 +171,7 @@ estimate), so imputation preserves marginal shape, conditional relationships, an
 you sample from `P(y | x)` rather than pasting a mean. Quality is scored with **quantile loss**
 (lower is better; a distributional metric, unlike MSE). Classic US application: impute detailed
 tax-return components (capital-gains split, dividends) from the IRS PUF onto the CPS. Classic UK
-application: impute wealth from WAS onto FRS. In Populace this is `populace-fit`
+application: impute wealth from WAS onto FRS. In Microcosm this is `microcosm-fit`
 (weighted-bootstrap QRF, regime-gated), and the fit reads the frame's weights by construction.
 
 **Calibration = reweighting to hit targets.** Given estimate contributions per record and known
@@ -182,8 +182,8 @@ achieved = estimate_matrix.T @ weights     # want: achieved ≈ targets
 relative_error = abs(achieved - targets) / targets   # the diagnostic reported per target
 ```
 
-Calibration owns *representation* (imputation/generation owns *support*). In Populace this is
-`populace-calibrate`, which is uncertainty-weighted evidence combination against targets with
+Calibration owns *representation* (imputation/generation owns *support*). In Microcosm this is
+`microcosm-calibrate`, which is uncertainty-weighted evidence combination against targets with
 standard errors, not exact-hit — and the only producer of `calibrated` weights.
 
 **L0 sparsity — the sparse-57k-vs-dense story.** To keep the calibrated frame small and fast,
@@ -202,14 +202,14 @@ record whose distinctive input **no target constrains** can be pruned away, so a
 depends on an *untargeted* variable can under-read on the sparse default (a reform can even score
 near `$0` if its operative base was pruned). When a result looks suspiciously small, check whether
 the reform's base is a calibration target (see `policyengine-calibration-diagnostics`); if not, a
-denser build may be the right dataset. In Populace this pruning is `populace-calibrate`'s L0
+denser build may be the right dataset. In Microcosm this pruning is `microcosm-calibrate`'s L0
 (`target_records`) path, integral to "generate big then prune."
 
 **Fast-mode builds in CI.** Data-pipeline steps (fitting, calibration) are expensive, so builds
 honor a reduced-work mode for CI — fewer epochs / trees / a sampled frame — gated on an
 environment flag rather than a code change, so tests exercise the real pipeline at small scale.
 Reduce *hyperparameters and sample size*, never the correctness logic (don't skip validation or
-swap algorithms). Populace additionally emits pre-release **staging telemetry by default** (a
+swap algorithms). Microcosm additionally emits pre-release **staging telemetry by default** (a
 `progress.json` / `events.ndjson` run under `runs/<run_id>/`) so every candidate shows on the
 staging dashboard before it is published; disable with `--no-staging`.
 

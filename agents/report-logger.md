@@ -1,6 +1,6 @@
 ---
 name: report-logger
-description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Country-aware routing (INVESTIGATE → country data repo issue, us → PolicyEngine/populace; structural → policyengine-{country} issue; everything → archive).
+description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Country-aware routing (INVESTIGATE → country data repo issue, us → PolicyEngine/microcosm; structural → policyengine-{country} issue; everything → archive).
 tools: Read, Write, Bash
 model: sonnet
 ---
@@ -58,7 +58,7 @@ Append context-specific options:
 |---|---|
 | Inside `policyengine-app-v2` repo (HAS_POSTS_DIR) | "Save as draft research post: `app/src/data/posts/articles/{slug}.md` + update `app/src/data/posts/posts.json`" |
 | Inside `policyengine-skills` or any repo with `analyses/` | "Just the archive in `analyses/`" (already covered by local archive but make the path explicit) |
-| Verdict is `INVESTIGATE` | "Open GitHub issue in the country's data repo (`us` → `PolicyEngine/populace`; other countries → `policyengine-{country}-data`) — calibration hypothesis" |
+| Verdict is `INVESTIGATE` | "Open GitHub issue in the country's data repo (`us` → `PolicyEngine/microcosm`; other countries → `policyengine-{country}-data`) — calibration hypothesis" |
 | Verdict is `structural` | "Open GitHub issue in `PolicyEngine/policyengine-{country}` (model-change estimate)" |
 | Verdict is `PASS*` AND inside `policyengine-app-v2` | "Open draft PR to policyengine-app-v2 with the post body" |
 | Always | "Custom path / repo — type a destination spec" |
@@ -75,7 +75,7 @@ Example prompt rendering:
 Where should this analysis go?
 
 [x] Local archive: /Users/pavel/policyengine-skills/analyses/2026-06-29-us-salt-cap-plus-100k.md  (default)
-[ ] GitHub issue: PolicyEngine/populace  (verdict: INVESTIGATE → calibration; us data repo)
+[ ] GitHub issue: PolicyEngine/microcosm  (verdict: INVESTIGATE → calibration; us data repo)
 [ ] Draft PR: PolicyEngine/policyengine-app-v2 → app/src/data/posts/articles/salt-cap-plus-100k.md
 [ ] Custom: --log-to <spec>
 [ ] Skip / no-log
@@ -96,7 +96,7 @@ If the analyst picks `edit`, drop them into `$EDITOR` (or open the file path if 
 | Verdict | Pre-selected |
 |---|---|
 | `PASS` / `PASS-WITH-NOTES` / `PASS-WITH-CORROBORATION` | local archive only |
-| `INVESTIGATE` | local archive + GH issue in the country data repo (`us` → `populace`) |
+| `INVESTIGATE` | local archive + GH issue in the country data repo (`us` → `microcosm`) |
 | `structural` | local archive + GH issue in `policyengine-{country}` |
 | `not-possible` / `deployed-model-lag` | local archive only |
 
@@ -197,10 +197,10 @@ Always print the resolved path to the agent's output so the user can find the fi
 
 ### Repo selection (auto-routed)
 
-- `INVESTIGATE` → the country's data repo. **US calibration/data work moved to `PolicyEngine/populace`** (the `policyengine-us-data` successor — us-data is archived). Other countries still map to `policyengine-{country}-data`: `uk` → `policyengine-uk-data`, `ca` → `policyengine-canada-data`.
+- `INVESTIGATE` → the country's data repo. **US calibration/data work moved to `PolicyEngine/microcosm`** (the `policyengine-us-data` successor — us-data is archived). Other countries still map to `policyengine-{country}-data`: `uk` → `policyengine-uk-data`, `ca` → `policyengine-canada-data`.
 - `structural` → `PolicyEngine/policyengine-{country}` (the live model repo — `us` → `policyengine-us`, `uk` → `policyengine-uk`, etc.)
 
-**CRITICAL:** never hardcode a single data repo. Parameterize by the reform's country — `us` routes to `PolicyEngine/populace`, non-US to `policyengine-{country}-data`. A UK reform's calibration issue does not belong in the US data repo (and vice versa).
+**CRITICAL:** never hardcode a single data repo. Parameterize by the reform's country — `us` routes to `PolicyEngine/microcosm`, non-US to `policyengine-{country}-data`. A UK reform's calibration issue does not belong in the US data repo (and vice versa).
 - Explicit `issue:<repo>` → use that repo
 
 ### Issue body shape per verdict
@@ -269,10 +269,10 @@ See archived report.
 ### Open issue mechanics
 
 ```bash
-# US data issues go to PolicyEngine/populace (the archived us-data successor);
+# US data issues go to PolicyEngine/microcosm (the archived us-data successor);
 # non-US countries still use policyengine-{country}-data.
 if [ "$country" = "us" ]; then
-  DATA_REPO="PolicyEngine/populace"
+  DATA_REPO="PolicyEngine/microcosm"
 else
   DATA_REPO="PolicyEngine/policyengine-${country}-data"
 fi
@@ -311,7 +311,7 @@ Skip this destination unless `--log-to tracker` is explicitly passed AND credent
 {
   "destinations_written": [
     {"type": "archive", "path": "~/.policyengine/analyses/2026-06-19-us-arpa-ctc-restoration.md"},
-    {"type": "issue", "repo": "PolicyEngine/populace", "url": "https://github.com/.../issues/4823"}
+    {"type": "issue", "repo": "PolicyEngine/microcosm", "url": "https://github.com/.../issues/4823"}
   ],
   "skipped": [],
   "errors": []

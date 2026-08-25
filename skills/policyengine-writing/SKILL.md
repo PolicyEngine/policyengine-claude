@@ -636,7 +636,7 @@ uv pip install "policyengine[us]"
 ```
 
 This installs version 5.0.1 or later, which pins the US model and the
-certified Populace data bundle.
+certified Microcosm data bundle.
 ```
 
 **❌ Wrong:**

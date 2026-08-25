@@ -6,7 +6,7 @@ description: |
   poverty and reform analysis. Covers the person/benunit/household entity model (UK has NO
   tax_unit), pe.uk.calculate_household, BHC vs AHC poverty, ITL1 regions, populace_uk_2023
   data, and the policyengine_uk Scenario surface for country-model development.
-  Triggers: policyengine uk, pe.uk, Universal Credit, child benefit, pension credit, housing
+  Triggers: Microcosm (formerly Populace), policyengine uk, pe.uk, Universal Credit, child benefit, pension credit, housing
   benefit, council tax, income tax, national insurance, personal allowance, Scottish income
   tax, Welsh rate, benunit, hbai, in_poverty_bhc, in_poverty_ahc, ITL1 region, populace_uk,
   HUGGING_FACE_TOKEN, UK reform, Scenario.
@@ -199,7 +199,7 @@ dataset's `constituency_code_oa` column via `compute_uk_constituency_impacts` /
 
 ## Population data
 
-The UK default dataset is **`populace_uk_2023`** (a Populace build), pinned by the certified
+The UK default dataset is **`populace_uk_2023`** (a Microcosm build), pinned by the certified
 bundle in policyengine 4.21.0. It lives in a **private** Hugging Face repo, so population runs
 require a `HUGGING_FACE_TOKEN` with access:
 
@@ -208,8 +208,8 @@ export HUGGING_FACE_TOKEN=hf_...   # required for UK population data; household 
 ```
 
 Do not hardcode a raw `hf://` dataset URI — the certified default resolves by name through the
-bundle. The pre-Populace UK datasets are superseded. See the `policyengine-data` skill for how
-Populace UK is built (FRS + WAS imputation) and calibrated, and the `policyengine` skill for the
+bundle. The pre-Microcosm UK datasets are superseded. See the `policyengine-data` skill for how
+Microcosm UK is built (FRS + WAS imputation) and calibrated, and the `policyengine` skill for the
 `ensure_datasets` / `Simulation` population flow, which is identical across countries.
 
 ## Country-model development notes (policyengine_uk directly)
@@ -298,6 +298,6 @@ fixed value — cite the uprating order, not just the base Act, when a value cha
 
 - `policyengine` — the canonical `pe.*` interface, population flow, MicroSeries rules, and
   regional impacts. Read it first.
-- `policyengine-data` — how Populace UK (FRS + WAS) is built and calibrated.
+- `policyengine-data` — how Microcosm UK (FRS + WAS) is built and calibrated.
 - `policyengine-model-development` — implementing new UK variables and parameters.
 - `policyengine-us` — the US counterpart (and the source of the `tax_unit` habit to unlearn).

@@ -279,7 +279,7 @@ not for analysis results you report (see the policyengine skill).
 US population runs use the certified `populace_us_2024` bundle (and `populace_us_2024_acs_local`
 for state/district grain). The mechanics — `ensure_datasets`, `Simulation`,
 `economic_impact_analysis`, `calculate_budgetary_impact`, MicroSeries — are shared across countries
-and documented in the **policyengine** skill; how Populace is built and calibrated is in the
+and documented in the **policyengine** skill; how Microcosm is built and calibrated is in the
 **policyengine-data** skill. State and congressional-district breakdowns filter one national
 dataset by its `state_fips` / `congressional_district_geoid` columns — there are no per-state or
 per-district data files.
