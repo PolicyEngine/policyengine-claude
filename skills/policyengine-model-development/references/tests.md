@@ -116,6 +116,9 @@ Test inputs must be real PolicyEngine variables. Grep the formula for the exact 
 - At least one **positive (non-zero) benefit** case — zero-only tests hide errors that cancel out.
 - At least one **ineligible** case returning 0/false.
 - The **exact threshold** edge (income/age/resource).
+- For every `single_amount` lookup: a case at **exactly $0** of the looked-up input and one
+  **exactly at a band top** (e.g. $3,000 for a "$0–3,000" band). These are the two inputs where a
+  wrong keying convention, or `right=True` over a `0` first threshold, silently returns 0.
 - A **negative countable-income** case proving the benefit stays capped (guards
   `max - (-N) = max + N`):
   ```yaml

@@ -9,7 +9,7 @@ description: |
   value_type, definition_period, entity, SPMUnit, TaxUnit, vectorize, where/select, period vs
   period.this_year, monthly_age, YAML test, absolute_error_margin, contrib reform, in_effect,
   create_x_reform, neutralize_variable, modify_parameters, changelog.d, StateCode, TANF/SNAP
-  encoding, bracket parameter, -.inf, single_amount.
+  encoding, bracket parameter, -.inf, single_amount, right=True, band top, over X but not over Y.
   NOT for: household calculations, microsimulation, reform scoring, or distributional analysis
   (use the policyengine skill); calling the REST API (use policyengine-api).
 metadata:
@@ -69,7 +69,7 @@ This skill is the *how-to-write-it* layer. To run calculations or score reforms,
 | You are working on… | Read |
 |---|---|
 | A variable: `value_type`/`entity`/`defined_for`, `adds` vs formula, naming, gotchas (age float, `monthly_age`, `is_ssi_eligible`), federal aggregators | references/variables.md |
-| A parameter: YAML structure, brackets (`-.inf`, `.inf`, `single_amount`), breakdowns, metadata, path syntax | references/parameters.md |
+| A parameter: YAML structure, brackets (`-.inf`, `.inf`, `single_amount`, `right=True` boundary conventions), breakdowns, metadata, path syntax | references/parameters.md |
 | Periods (`period` vs `period.this_year`, ÷12) or aggregation (`adds`/`add()`, `.any()`) | references/periods-and-aggregation.md |
 | Vectorization: `where`/`select`, `max_(A-B,0)` floors, divide-by-zero, phantom values | references/vectorization.md |
 | YAML tests: structure, period restrictions, error margins, enums, the CLI | references/tests.md |

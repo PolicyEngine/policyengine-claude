@@ -61,17 +61,90 @@ brackets:
 Use `0` only where negatives are impossible (ages, counts, resource limits). (Verified: `-.inf`
 first threshold in `parameters/gov/contrib/harris/rent_relief_act/.../applicable_percentage.yaml`.)
 
-**`single_amount` brackets are "at or above" the threshold.** A value exactly at a threshold gets
-that bracket. When a regulation says "**above** X" (X belongs to the *lower* bracket), shift the
-threshold by `0.0001`, applied consistently to every threshold in the scale:
+### Scale-lookup boundary conventions
+
+`single_amount` (and `marginal_amount`) scales are looked up with `numpy.digitize`. The default
+`.calc(x)` is **lower-bound inclusive**: a value exactly at a threshold lands in the bracket that
+*starts* there. When a source table prints closed integer bands ("$0 to 3,000 → $375; 3,001 to
+5,000 → $330"), keying the thresholds at the band *tops* (`0, 3_000, 5_000`) therefore
+misclassifies the boundary dollar — income of exactly $3,000 gets the 3,001–5,000 band. (NY
+IT-214, policyengine-us PR #9313: this flipped an eligibility gate from $375 to $0.)
+
+**The source wording picks the convention** — the statute, form, or manual, never a program-wide
+"keep every table on one convention" preference. Tables keyed faithfully to their own wording
+agree at every boundary automatically.
+
+| Source says | Key thresholds at | Call | First threshold |
+|---|---|---|---|
+| Band starts: "3,001 to 5,000", "$5,001 or more", "X or above" | band starts `0, 3_001, 5_001` — digit for digit | `.calc(x)` | `0`, or `-.inf` when negatives are valid |
+| Band tops: "over 3,000 but not over 5,000", "above 100% FPL", "exceeds $X" | band tops `3_000, 5_000` — digit for digit | `.calc(x, right=True)` at **every** call site | **`-.inf`** (must be negative) |
+
+**The `right=True` trap: the first threshold must be negative.** With `right=True`, a value
+exactly equal to the first threshold falls *below* the scale and returns the zero sentinel. The
+conventional first threshold of `0` silently zeroes every household with exactly $0 of the
+looked-up income:
+
+| income | first `0` | first `-1` | first `-.inf` |
+|---|---|---|---|
+| −100 | 0 | 0 | 375 |
+| **0** | **0 (wrong)** | 375 | 375 |
+| 1 … 3,000 | 375 | 375 | 375 |
+| 3,001 | 330 | 330 | 330 |
+
+`-.inf` is the defensive choice: it also reproduces the form's "if less than zero, enter 0 → first
+band" even when a caller forgets to floor income. `-1` (NYC household credit) is equivalent only
+once income has been floored at zero. (Verified 2026-09 against policyengine-core 3.30:
+`SingleAmountTaxScale.calc` guards the scale as `[-inf] + thresholds + [inf]` and returns `0` for
+anything left of `thresholds[0]`; policyengine-us
+`parameters/gov/states/ny/tax/income/credits/real_property_tax/amount/*.yaml` use `-.inf`.)
+
 ```yaml
-# "0%: ≤100% FPL; 2%: above 100%–125%; ..."
+# Source: "over $3,000 but not over $5,000" → band tops, right=True, -.inf first.
+metadata:
+  type: single_amount
 brackets:
-  - threshold: {2024-01-01: 0}       ; amount: {2024-01-01: 0}
-  - threshold: {2024-01-01: 1.0001}  ; amount: {2024-01-01: 0.02}   # "above 100%"
-  - threshold: {2024-01-01: 1.2501}  ; amount: {2024-01-01: 0.05}   # "above 125%"
+  - threshold: {2025-01-01: -.inf}   # not 0 — see the trap above
+    amount:    {2025-01-01: 375}
+  - threshold: {2025-01-01: 3_000}   # band top, verbatim from the source
+    amount:    {2025-01-01: 330}
 ```
-No shift for "at or above X" / "X or more" (already PolicyEngine's default).
+
+**`right=True` checklist:** (1) first threshold `-.inf`; (2) `right=True` at *every* call site of
+that parameter — one default call reintroduces the band-top bug; (3) YAML tests at income exactly
+`0` and exactly at one band top; (4) `right=` exists only on `single_amount` / `marginal_amount`
+scales — `marginal_rate` scales (`MarginalRateTaxScale.calc`) reject it with a `TypeError`, and
+don't need it: a marginal rate that starts at $X applies to $0 of income when income is exactly
+$X, so band starts and band tops coincide.
+
+**Round before you look up.** The two conventions disagree on fractional inputs: 3,000.50 stays
+in the first band under band-start keying (below 3,001) but moves to the second under
+`right=True` (above 3,000). When the form mandates whole dollars ("drop amounts below 50 cents,
+increase 50 to 99 cents"), round **half up** with `np.floor(x + 0.5)` *before* the lookup —
+`np.round` is half-to-even (3,000.5 → 3,000). Older code emulates "above X" by shifting
+thresholds by `0.0001` (`1.0001` for "above 100% FPL"); prefer `right=True` with `-.inf`, which is
+exact and needs no epsilon.
+
+<!-- verify -->
+```python
+import numpy as np
+from policyengine_core.taxscales import SingleAmountTaxScale
+
+def scale(thresholds, amounts):
+    s = SingleAmountTaxScale()
+    for t, a in zip(thresholds, amounts):
+        s.add_bracket(t, a)
+    return s
+
+x = np.array([-100, 0, 3_000, 3_001])
+# Band-start keying, default calc: exactly 3,000 stays in the first band.
+assert scale([0, 3_001], [375, 330]).calc(x).tolist() == [0, 375, 375, 330]
+# Band-top keying, right=True, -.inf first: same answers, and negatives hit the first band.
+assert scale([-np.inf, 3_000], [375, 330]).calc(x, right=True).tolist() == [375, 375, 375, 330]
+# The trap: band-top keying with a first threshold of 0 zeroes income of exactly 0.
+assert scale([0, 3_000], [375, 330]).calc(x, right=True).tolist() == [0, 0, 375, 330]
+# The original bug: band-top keys with the default call push 3,000 into the next band.
+assert scale([0, 3_000], [375, 330]).calc(x).tolist() == [0, 375, 330, 330]
+```
 
 **Adding a new bracket in a later year: use `.inf` for the base year** so it's structurally present
 but functionally unreachable until it takes effect. Adding it with only the new date breaks the

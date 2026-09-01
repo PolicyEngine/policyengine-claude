@@ -107,6 +107,12 @@ places (DRY extraction).
   eligibility variable.
 - **Verify boundary operators** against the statute: `<` ("less than") vs `<=` ("at or below").
   The wrong one silently misclassifies people exactly at the threshold.
+- **Scale lookups have a boundary convention too.** `p.table.calc(x)` is lower-inclusive. A table
+  keyed at band tops ("over X but not over Y") needs `calc(x, right=True)` at *every* call site
+  and a `-.inf` first threshold, or inputs exactly at $0 and exactly at a band top silently
+  return 0. Floor and round the input the way the form does (`max_(income, 0)`, then
+  `np.floor(income + 0.5)` for whole-dollar forms) *before* the lookup. The source wording fixes
+  the convention — see references/parameters.md "Scale-lookup boundary conventions".
 - **Child status uses age, not tax dependency.** For benefit eligibility use `age < 18`, not
   `is_tax_unit_dependent` (dependents include elderly parents and exclude non-dependent minors).
 - **Exempting a recipient exempts their income.** If a program exempts SSI recipients, their
