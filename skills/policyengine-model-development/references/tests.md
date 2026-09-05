@@ -26,18 +26,32 @@ Conventions: case names are `Case N, description.` (numbered, comma, trailing pe
 (`tx_tanf: 250`, not `tx_tanf: {spm_unit: 250}`). **Append** new cases at the bottom — never insert
 mid-file and renumber (noisy diffs).
 
-## Period restrictions
+## Choosing test periods
 
-The case-level `period:` accepts only two formats:
-- `2024` — whole year
-- `2024-01` — first month **only**
+Case-level `period:` supports a year (`2024`) or any month (`2024-07`, for example).
+For a non-January month case, explicitly key YEAR-defined inputs by year. MONTH-defined
+inputs and outputs can use scalars at the case month. Match every input to its variable's
+definition period; a parsing error for an annual scalar is not a ban on monthly cases.
 
-`2024-04`, `2024-10`, and full dates like `2024-01-01` all fail **as the case period**.
+```yaml
+- name: Case 1, annual earnings expressed in a July test.
+  period: 2024-07
+  input:
+    employment_income:
+      2024: 12_000
+  output:
+    employment_income: 1_000
+```
+
+For a mid-year policy change, test the actual months before and after its effective date.
+Do not move the case to next January or backdate the parameter to accommodate the test.
+Check which period the formula uses for parameter lookup: an annual formula evaluated
+at the year's start differs from a monthly formula evaluated in July.
 
 ### Asserting a specific month
 
-That restriction applies to `period:`, not to what you can assert. To check a mid-year month, use a
-whole-year period and key the **output** by month:
+An alternative is a whole-year case with the **output** keyed by month. This can
+assert both sides of a boundary in one case:
 
 ```yaml
 - name: Case 41, PA waiver starts in September 2024.
@@ -51,8 +65,8 @@ whole-year period and key the **output** by month:
       2024-09: true
 ```
 
-Any month works here, and inputs stay plain scalars because the period itself is still a year. This
-is the right tool whenever a MONTH-defined variable changes mid-year — a benefit standard that
+Any month works here. Annual inputs can remain scalars; supply monthly inputs with
+period keys when their values vary through the year. This is useful whenever a MONTH-defined variable changes mid-year — a benefit standard that
 re-bases in April, a waiver that starts in September, a rate that changes on a state's own schedule.
 Asserting the months on either side of the change is what proves the boundary is where you think it
 is; a single January case would pass just as happily if the change were ignored entirely.

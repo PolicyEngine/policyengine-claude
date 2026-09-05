@@ -9,44 +9,13 @@ model: inherit
 
 Creates comprehensive integration tests for government benefit programs based on documentation.
 
-## CRITICAL: Test Period Format
+## Test periods
 
-**Use `YYYY-01` or `YYYY` ONLY** as the case `period:`. PolicyEngine's YAML test system does not support any other month or date-with-day format there — tests using them WILL fail. This applies regardless of the variable's `definition_period` (YEAR or MONTH).
-
-- ✅ `2024-01` (first month) or `2024` (whole year)
-- ❌ `2024-02`, `2024-03`, `2024-04`, `2024-05`, `2024-06`, `2024-07`, `2024-08`, `2024-09`, `2024-10`, `2024-11`, `2024-12` — **WILL FAIL**
-- ❌ `2024-01-15` or any date-with-day format — **WILL FAIL**
-
-**This restricts `period:`, not what you can assert.** To check a specific month, use a whole-year period and key the output by month:
-
-```yaml
-- name: Case 41, PA waiver starts in September 2024.
-  period: 2024
-  input:
-    state_code: PA
-    county_fips: "42005"
-  output:
-    is_in_snap_abawd_waived_area:
-      2024-08: false
-      2024-09: true
-```
-
-Any month works, and inputs stay plain scalars because the period is still a year. Prefer this whenever a MONTH-defined variable changes mid-year: asserting the months on either side is what proves the boundary sits where you think it does. A January-only case would pass just as happily if the change were ignored.
-
-**When the policy is effective mid-year and you are NOT asserting the boundary — use the NEXT January AFTER the effective date.**
-
-PolicyEngine resolves annual parameters at the START of the period. `period: 2024` and `period: 2024-01` both look up at 2024-01-01. If the policy only becomes effective later in 2024, those periods return the OLD pre-effective value — your test will silently assert against the wrong parameter, or pressure the implementer to backdate the new value just to make the test pass.
-
-Always pick the first January **on or after** the effective date:
-
-| Effective date | Use period | Why |
-|---|---|---|
-| January 1, 2024 | `2024-01` or `2024` | Lookup at 2024-01-01 IS the effective date |
-| April 1, 2024 | `2025-01` | `2024` resolves to 2024-01-01 (pre-April) |
-| July 1, 2024 | `2025-01` | `2024` resolves to 2024-01-01 (pre-July) |
-| October 1, 2023 | `2024-01` or `2024` | Lookup at 2024-01-01 is post-October |
-
-**Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing. Month keys under `output:` are fine and are not what this check is looking for.
+Follow `policyengine-model-development`'s tests reference. A case may use a year or
+any month. For non-January month cases, key YEAR-defined inputs by year; monthly
+inputs and outputs may be scalars. Whole-year cases with month-keyed outputs are
+another way to test both sides of an effective-date boundary. Test the actual boundary;
+do not reject valid months or move the test to next January.
 
 ## Load the consolidated skill first
 
@@ -55,6 +24,14 @@ Use the Skill tool to load the installed skill whose name ends in
 tests, periods-and-aggregation, variables, and style references before editing. This one
 skill replaces the former testing, period, aggregation, variable, and code-organization
 pattern skills.
+
+## Delegated contract
+
+Follow the caller's assigned findings, owned paths, source inputs and output contract.
+A bounded fix creates or updates only tests needed for those findings; it does not
+repeat the standalone whole-program coverage routine. Create a missing test file when
+needed, and append cases in existing files. Write the requested test/fix manifest and
+DONE line. Do not format, install dependencies or run a broad suite unless assigned.
 
 ## Workflow
 
@@ -76,7 +53,7 @@ Follow `policyengine-model-development` and its tests reference for structure. F
 
 ### Step 3: Apply standards
 
-- **Period format:** only `YYYY-01` or `YYYY` (see CRITICAL section above)
+- **Periods:** match inputs to their definition periods and test actual effective-date boundaries (see above)
 - **Variable names:** only use variables that exist in PolicyEngine
 - **Person names:** `person1`, `person2` (not descriptive)
 - **Numbers:** underscores for thousands (`50_000` not `50000`)

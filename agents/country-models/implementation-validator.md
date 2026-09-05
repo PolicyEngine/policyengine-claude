@@ -60,9 +60,9 @@ Owned by other agents or other `/review-program` validators:
 | Check | Owned by |
 |---|---|
 | Wrapper variable detection | rules-engineer Step 5 + `/review-program` program-reviewer |
-| Regulatory accuracy (formula matches law?) | `/review-program` program-reviewer (Validator 1) |
-| Reference quality (every value traces to a source) | `/review-program` reference-validator (Validator 2) |
-| Test coverage (important scenarios tested?) | `/review-program` edge-case-generator (Validator 4) |
+| Regulatory accuracy (formula matches law?) | `/review-program` policy-reviewer |
+| Reference quality (every value traces to a source) | `/review-program` policy-reviewer |
+| Test coverage (important scenarios tested?) | `/review-program` code-reviewer |
 | PDF audit (values match source PDF?) | `/review-program` Phase 4 PDF agents |
 | Running tests (pytest, ci-fix loop) | ci-fixer |
 
@@ -88,8 +88,8 @@ In **Mode A**, per-file pattern issues (description format, hard-coded values, n
 | Missing parameter ref, no obvious typo | — | ❌ Create the parameter OR correct the path |
 | **Phase 3: Federal/state placement** | | |
 | State variable in `/gov/states/{state}/` missing `defined_for = StateCode.XX` | ✅ Add the line | — |
-| Pure federal value (CFR/USC) in state folder | ✅ `git mv` to federal folder | — (flag if file is mixed federal+state) |
-| State-specific value in federal folder | ✅ `git mv` to state folder | — |
+| Pure federal value (CFR/USC) in state folder | — | Escalate relocation and dependent references to the owner |
+| State-specific value in federal folder | — | Escalate relocation and dependent references to the owner |
 
 **Default rule when in doubt:** if you can't decide in one read of the file, treat as judgmental and escalate.
 
@@ -152,8 +152,11 @@ Also:
 3. **Aggregation patterns — SHOULD ADDRESS.** Pure sum → `adds = [...]` (no formula). Sum in a formula → `add(entity, period, [...])`, not `a + b`. Boolean "any of" → `add(...) > 0`, not `entity.any(...)`.
 
 4. **Period usage.**
-   - **Test period format — always CRITICAL.** YAML tests using anything other than `YYYY-01` or `YYYY` (e.g., `2024-07`, `2024-01-15`) WILL fail. No exceptions, regardless of variable's `definition_period`.
-   - **Mid-year effective dates — CRITICAL.** Tests must use the NEXT January AFTER the effective date (July 2024 → `2025-01`, NOT `2024` — `2024` resolves at 2024-01-01, before the policy is active).
+   - **Test periods.** Follow the model-development tests reference. Any month is valid;
+     for non-January month cases, YEAR-defined inputs need year keys. Report a concrete
+     parsing/calculation error, not a non-January month as inherently CRITICAL.
+   - **Effective-date coverage.** Verify assertions on the actual sides of a change;
+     do not require the next January or backdate parameters to satisfy a fixture.
    - **In-formula period usage — CRITICAL if breaks calculation, otherwise SHOULD ADDRESS.** Verify `period` vs `period.this_year` for YEAR vs MONTH definition periods.
 
 5. **Reference format — CRITICAL.**
@@ -212,7 +215,7 @@ Path: `{RUN_ROOT}/{PREFIX}-validator-report.md`. Three sections.
 - `parameters/.../resources/` — removed empty directory
 - `variables/.../{prefix}_income_eligible.py:18` — fixed parameter path typo
 ### Phase 3
-- `parameters/gov/states/xx/.../snap_max_allotment.yaml` — `git mv` to `parameters/gov/usda/snap/`
+- `parameters/gov/states/xx/.../snap_max_allotment.yaml` — escalate proposed relocation to the federal parameter owner; do not stage a cross-scope rename
 
 ## ESCALATED (judgmental — for rules-engineer)
 (Write `NONE` if none.)

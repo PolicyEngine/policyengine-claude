@@ -1,48 +1,36 @@
 # Claude Code launcher: review-program
 
-Read this file only when executing the review-program workflow in Claude Code. The
-canonical workflow is [workflow.md](workflow.md) — read it first; this file maps its
-abstract operations onto Claude Code mechanics and adds nothing else.
+Read the canonical [workflow.md](workflow.md) first. This adapter maps its operations
+to Claude Code; it adds no review stages or completion gates.
 
-## Mechanics
-
-- **"Ask the user"** → `AskUserQuestion` (posting mode, missing PR argument, and any
-  canonical checkpoint).
-- **Run identity** → after deriving `WORKTREE_ID` and `PREFIX`, create the team:
-  `TeamCreate({WORKTREE_ID}-{PREFIX}-review)` and pass
-  `team_name: "{WORKTREE_ID}-{PREFIX}-review"` to every agent.
-- **"Delegate role X"** → spawn an agent with the type from the table below,
-  `run_in_background: true` (except the consolidator, which runs in the foreground),
-  and a prompt containing: the role's task spec from the canonical workflow, the
-  concrete `RUN_ROOT`/`WORKTREE_ID`/`PREFIX` values, the file paths it reads and
-  writes, and the canonical completion-contract DONE line. Include `Load skills:` lines
-  naming the role's skills from the canonical Roles table.
-- **Namespacing** → plugin agents and skills are namespaced by the *installed plugin*
-  (e.g. `complete:country-models:rules-engineer` under the complete bundle, but a
-  different prefix under other bundles). Resolve every agent and skill name in this
-  file against the session's available lists by suffix match — never assume a specific
-  plugin prefix. If a specialized agent is not installed, fall back to
-  `general-purpose` and put the role's full task spec and skills in the prompt.
-- **"Concurrently"** → spawn all agents of the batch in a single message. The harness
-  notifies you as each background agent completes; wait for the whole batch, never
-  poll. Apply the canonical stalled-delegate fallback.
-- **Coordinator context protection** → you are the coordinator in the canonical
-  orchestration contract: read ONLY the short summary files it lists; never read the
-  diff, code files, PDF artifacts, or individual finding files.
-
-## Role → agent type
-
-Agent names below are unprefixed; resolve them per the namespacing rule above.
-
-| Canonical role | Agent |
-|---|---|
-| context-analyzer | `general-purpose` (needs Write) |
-| pdf-collector | `document-collector` |
-| file-lister | `general-purpose` (needs Write) |
-| regulatory-reviewer | `program-reviewer` |
-| reference-checker | `reference-validator` |
-| code-validator | `implementation-validator` (Mode B — read-only code-pattern audit; do NOT run its structural-fix phases) |
-| edge-case-checker | `edge-case-generator` |
-| pdf-audit-{topic}, verifier-* | `general-purpose` (need Bash for pdftoppm + Read for PNGs) |
-| verification-planner | `general-purpose` (needs Write) |
-| consolidator | `general-purpose` (foreground) |
+- **Arguments**: preserve positional arguments and flags, including `--sources` and
+  `--source-budget`, according to the canonical grammar.
+- **Questions**: use `AskUserQuestion` for missing/ambiguous PR identity or a posting
+  decision. Honor decisions already provided; review can finish before asking to post.
+- **Delegation**: launch `general-purpose` agents for the canonical `policy-reviewer`
+  and `code-reviewer` together as soon as the snapshot exists, before writing the scope
+  brief; send the brief's questions afterwards with `SendMessage`. Use the active
+  `Agent`/delegation tool's actual schema; do not pass `run_in_background` or `team_name`
+  unless it supports them. Each prompt includes its full canonical task, exact
+  snapshot/diff/PR-body/report paths, its progress-log path, concrete `WORKTREE_ROOT`,
+  `WORKTREE_ID`, `RUN_ROOT`, `PREFIX`, `SNAPSHOT`, source budget, the context rules
+  (grep extracts, one test invocation, summary-only test output) and `Load skills:`
+  entries. Resolve installed skill names by suffix, never by assuming the `complete:`
+  namespace.
+- **Agent contracts**: use these general-purpose agents rather than specialized
+  document-collector/program-reviewer/validator agents whose standalone routines add
+  overlapping work. Reviewers do not create nested teams or delegate verification.
+  Do not require `TeamCreate`; use it only if available and required by that runtime.
+- **Completion**: wait for background completion notifications. The only file the
+  coordinator watches is each role's `{PREFIX}-review-progress-{role}.log`: check it when a
+  sibling completes, or use `Monitor` with an until-loop on its modification time for a
+  bounded wait. Silence over five minutes: `SendMessage` the role "finalize now with what
+  you have"; two more minutes: `TaskStop` it and apply the canonical recovery. Never treat
+  a partial report as finished. The coordinator reads the reports and writes both final
+  outputs.
+- **Adjudication**: only for the specific material uncertainty allowed in Phase 5,
+  launch a general-purpose agent with the remaining source budget and the disputed
+  question. No automatic verifier per finding, source, page or parameter.
+- **Coordinator reads**: the diff, code, source evidence and findings are available
+  to the coordinator as needed. There is no summary-only context restriction here. Before
+  assembly, open each CRITICAL's evidence artifact once, per the canonical Phase 5 check.

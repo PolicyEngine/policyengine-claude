@@ -26,8 +26,9 @@ operations onto Claude Code mechanics and adds nothing else.
   file against the session's available lists by suffix match — never assume a specific
   plugin prefix. If a specialized agent is not installed, fall back to
   `general-purpose` and put the role's full task spec and skills in the prompt.
-- **"Concurrently"** (evidence extractors) → spawn all in a single message with
-  `run_in_background: true`; wait for the batch.
+- **"Concurrently"** (evidence extractors) → launch the independent batch using the
+  active delegation tool's schema and wait for completion notifications. Do not pass
+  `run_in_background` unless the tool supports it.
 - **Coordinator context protection** → you are the coordinator in the canonical
   orchestration contract: read ONLY the short handoff files it lists; never read the
   diff, code files, or full review reports; never use Edit/Write on repository files
@@ -43,7 +44,7 @@ Agent names below are unprefixed; resolve them per the namespacing rule above.
 | evidence-extractor-{N} | `general-purpose` |
 | fix-parameters | `rules-engineer` |
 | fix-variables | `rules-engineer` |
-| fix-tests | `edge-case-generator` |
+| fix-tests | `test-creator` |
 | fix-code (non-country-model PRs) | `general-purpose` |
 | fix-ci | `ci-fixer` |
 | fix-verifier | `implementation-validator` |

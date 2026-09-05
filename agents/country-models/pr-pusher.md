@@ -67,6 +67,12 @@ fixes, create only the caller's commit(s), and skip the standalone
 `Apply code formatting` / `Fix linting issues` commits in Steps 2-3. Those Step 2-3
 commits are the default only when the caller specifies no commit contract.
 
+The caller also owns validation scope and formatter responsibility. Reuse its successful
+checks when tested inputs and environment are unchanged; if formatting/rebasing changes
+executable files, rerun the exact affected tests. Do not add a whole-state suite to a
+bounded encode/fix handoff. Write the caller's requested status artifact and DONE line.
+Skip standalone steps that the caller has already satisfied.
+
 ## CRITICAL: Version Sync
 
 Always use `uv run` for Python tools so versions match `uv.lock` / CI:
@@ -83,7 +89,7 @@ Always use `uv run` for Python tools so versions match `uv.lock` / CI:
 PolicyEngine country repos use towncrier: one fragment file per PR in `changelog.d/`, named `<branch>.<type>.md`. **Never** edit `CHANGELOG.md` directly and **never** use the deprecated `changelog_entry.yaml`.
 
 ```bash
-BRANCH=$(git branch --show-current)
+BRANCH=$(git branch --show-current | tr '/' '-')
 # Fragment type: added (new program/feature) | changed | fixed
 if ! ls changelog.d/"${BRANCH}".*.md >/dev/null 2>&1; then
   echo "Add <program> for <state>." > "changelog.d/${BRANCH}.added.md"
@@ -94,8 +100,11 @@ Valid fragment types: `added`, `changed`, `fixed`, `removed`, `breaking`. GitHub
 
 ### Step 2: Format
 
+Use the existing environment; sync only after a missing-dependency error. Format only
+owned changed paths with the repository's configured formatter. The standalone example
+below applies only when the caller has not supplied narrower paths or another owner.
+
 ```bash
-uv sync --extra dev
 uv run ruff format
 uv run linecheck . --fix 2>/dev/null || true
 
@@ -109,28 +118,19 @@ git diff --cached --quiet || git commit -m "Apply code formatting"
 
 ### Step 3: Lint
 
-```bash
-make lint 2>&1 | tee lint_output.txt
-if grep -q "error:" lint_output.txt; then
-  autoflake --remove-all-unused-imports --in-place -r .
-  isort . --profile ruff --line-length 79
-  # Stage the caller-named files instead of these default paths when supplied
-  git add policyengine_us/parameters/ policyengine_us/variables/ policyengine_us/tests/ \
-          changelog.d/ 2>/dev/null || true
-  # Standalone default only — skip when the caller specifies its own commit contract
-  git commit -m "Fix linting issues"
-fi
-```
+Read the repository's actual configuration/CI and run its configured checks on owned
+changed files. Do not assume a `make lint` target or introduce another formatter. Keep
+logs under the caller's `RUN_ROOT`. Treat nonzero exits as failures; do not infer success
+by searching log text for the word "error". After any fix, rerun affected checks.
 
-### Step 4: Smoke-test
+### Step 4: Targeted tests
 
-```bash
-if [ -d "policyengine_us/tests/policy/baseline/gov/states/$STATE" ]; then
-  uv run policyengine-core test \
-    policyengine_us/tests/policy/baseline/gov/states/$STATE \
-    -c policyengine_us --maxfail=5 || echo "⚠️  Some tests failing — may need @ci-fixer after push"
-fi
-```
+Use the caller's test manifest and validation evidence. If it supplies no manifest, run
+changed tests and directly affected regressions in the existing environment, using
+`uv run policyengine-core test <affected-path> -c policyengine_us` for country-model YAML
+tests. Do not expand automatically to every program in the state. A failed or unavailable
+required check blocks pushing unless the user has already explicitly authorized that
+specific exception; a warning message is not a passing check.
 
 ### Step 5: Final validation
 

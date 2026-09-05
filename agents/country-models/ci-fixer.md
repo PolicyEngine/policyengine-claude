@@ -122,8 +122,11 @@ Use Edit / MultiEdit. For policy/calculation fixes, ALWAYS include a citation in
 
 **Common patterns:**
 
-- **Period format** — YAML tests support ONLY `YYYY-01` or `YYYY` (regardless of variable's `definition_period`). `2024-07`, `2024-01-15`, etc. WILL fail.
-- **Mid-year effective date in tests** — use the NEXT January AFTER the effective date (July 2024 → `2025-01`, not `2024` — `2024` resolves at 2024-01-01, before the policy is active).
+- **Periods** — follow the model-development tests reference. Any case month is valid;
+  key YEAR-defined inputs by year for non-January month cases. Diagnose input-period
+  mismatches rather than replacing valid month periods.
+- **Effective dates** — test the actual months on either side of a change (month cases
+  or month-keyed outputs); do not shift the test to next January.
 - **Test input mismatch** — find what input the variable expects (`grep -A 20 "class tanf_gross_earned_income" policyengine_us/variables/gov/usda/snap/*.py`), then fix the test input. Never create a state wrapper for this.
 - **Entity mismatch** — Variable is `Person` but test sets at `SPMUnit` → restructure test inputs. Or vice versa.
 - **Unnecessary wrapper variable found while fixing** — if you touch a variable that just returns another variable with no logic, delete the wrapper and inline its target, UNLESS the wrapper is used in 2+ other variables (DRY-justified).

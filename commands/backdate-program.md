@@ -869,8 +869,9 @@ MAX_ROUNDS = 3
 while ROUND <= MAX_ROUNDS:
     1. Run /review-program {PR_NUMBER} --local --full --prefix {PREFIX}
        (add --600dpi when DPI is 600; round 2+ may use --incremental per Step 6A)
-    2. Read summary → count critical issues
-    3. If critical == 0 → EXIT LOOP (success)
+    2. Read summary → review status and count critical issues
+    3. If critical == 0 and review status == COMPLETE → EXIT LOOP (success)
+       If critical == 0 and status is PARTIAL/missing → EXIT LOOP (incomplete; report pending checks)
     4. If ROUND == MAX_ROUNDS → EXIT LOOP (escalate to user)
     5. If ROUND == 2 → ask user before attempting round 3
     6. Fix critical issues
@@ -900,29 +901,27 @@ Phase 7        → final push (changelog, any remaining changes)
 
 Invoke the `review-program` skill in local-only mode with `--full`, passing
 `--prefix {PREFIX}` (so its artifacts land at the paths Steps 6B, 6C, and 7B read) and
-`--600dpi` when DPI is 600. On **round 1**, this runs the full review:
-- **PDF acquisition** (always on): `country-models:document-collector` discovers and renders source PDFs
-- **Regulatory accuracy**: `country-models:program-reviewer` researches regulations independently, compares to code
-- **Reference quality**: `reference-validator` checks reference completeness and corroboration
-- **Code patterns**: `country-models:implementation-validator` checks code patterns
-- **Test coverage**: `country-models:edge-case-generator` identifies untested scenarios
-- **PDF audit**: 2-5 `general-purpose` agents audit parameter values against PDF screenshots
-- **Mismatch verification**: 600 DPI re-render + text cross-reference for every reported mismatch
+`--600dpi` when DPI is 600. The canonical skill owns reviewer selection, source reuse,
+selective PDF inspection, verification and consolidation; do not add a second set of
+validators or PDF auditors here. `--full` expands scope, not the agent count.
 
-**Note on round 2+**: when a fix round changed only tests or mechanical code, run
+**Note on round 2+**: run
 `/review-program {PR_NUMBER} --local --prefix {PREFIX} --incremental {RUN_ROOT}/{PREFIX}-review-full-report.md`
-so unchanged source/PDF evidence is reused. When a fix changed policy semantics,
-parameter values, references, or sources, run the full review again
-(`--full --resume --prefix {PREFIX}`). Fixes can introduce new issues — the follow-up
-review is mandatory either way.
+so unchanged source evidence is reused while fixes, affected dependencies and unresolved
+findings are reviewed. The canonical workflow expands scope if impact cannot be bounded.
+A follow-up review remains mandatory.
 
 ### Step 6B: Check Results
 
 Read `{RUN_ROOT}/{PREFIX}-review-summary.md` (max 20 lines). Check:
-- **Critical issue count** — the number that matters
-- **Recommended severity** — APPROVE means zero critical issues
+- **Review status** — COMPLETE or PARTIAL; missing status is unverified
+- **Critical issue count** and recommended severity
 
-**If critical == 0**: Report to user and exit loop.
+**If critical == 0 and status is COMPLETE**: Report to user and exit loop successfully.
+
+**If status is PARTIAL or missing**: Report pending checks and preserve resumable
+artifacts. If critical == 0, stop the review loop as incomplete. Zero critical findings
+is not a clean-review result; do not claim success or continue a successful-publish path.
 
 **If critical > 0 and ROUND < MAX_ROUNDS**: Proceed to Step 6C.
 
@@ -1008,9 +1007,9 @@ git push "$HEAD_REPO_URL" HEAD:"$BRANCH"
 
 | Round | What happens | Exit condition |
 |-------|-------------|---------------|
-| 1 | Full /review-program → fix criticals → run tests | 0 critical issues |
-| 2 | Full /review-program → fix criticals → run tests | 0 critical issues, or user declines round 3 |
-| 3 | Full /review-program → report remaining issues | Always exits (max reached) |
+| 1 | Full /review-program → fix criticals → run tests | 0 critical issues and COMPLETE review |
+| 2 | Incremental /review-program → fix criticals → run tests | 0 critical issues and COMPLETE review, or user declines round 3 |
+| 3 | Incremental /review-program → report remaining issues | Always exits (max reached); report incomplete if PARTIAL |
 
 **Typical outcome**: Most issues are caught and fixed in round 1. Round 2 catches regressions from round 1 fixes. Round 3 is rare — it's a safety net for complex programs with cascading dependencies.
 

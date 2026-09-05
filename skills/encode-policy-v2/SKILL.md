@@ -1,6 +1,6 @@
 ---
 name: encode-policy-v2
-description: Use when the user invokes $encode-policy-v2 or asks Codex or Claude Code to implement a new PolicyEngine-US state benefit program or a new structural program component from official rules. Covers existing-program routing, source collection and full PDF rendering, user-approved scope, implementation, tests, validation, draft PR preparation, and independent review-fix rounds.
+description: Use when the user invokes $encode-policy-v2 or asks Codex or Claude Code to implement a new PolicyEngine-US state benefit program or a new structural program component from official rules. Covers existing-program routing, source collection and selective PDF inspection, user-approved scope, implementation, tests, validation, draft PR preparation, and independent review-fix rounds.
 metadata:
   category: workflows
 ---
@@ -23,7 +23,8 @@ Mandatory gates that no surface may skip:
 
 - Route purely parametric changes to `encode-reform` unless the user chooses to continue.
 - Make no GitHub write before the user-approved scope decision exists.
-- Render every page of every collected PDF; extracted text is not a substitute.
+- Read all relevant rules and visually inspect tables, scans or ambiguous PDF evidence;
+  share validated originals and extracts with the independent review.
 - Do not push through a red structural or quick-audit gate, or silently push failing tests.
 - Keep the PR draft and complete the required follow-up review after any review-fix round.
 - Do not finish before the Phase 7 summary and canonical completion contract are satisfied.
@@ -48,5 +49,8 @@ Codex delegation mapping, when subagent use is available and authorized:
   skills to every subagent. Do not assume child agents inherit parent skill context.
 - Remind every implementation subagent that other agents may share the worktree, it must
   not revert unrelated edits, and only the canonical pusher roles may commit or push.
+- Run the nested review-program workflow in a fresh review coordinator context with
+  its own read permissions; pass the canonical arguments and source manifest. Receive
+  its summary and COMPLETE/PARTIAL status in the encoding coordinator.
 - If subagents are unavailable or not authorized, execute roles directly in phase order
   while preserving the same ownership, handoff files, user checkpoints, and gates.

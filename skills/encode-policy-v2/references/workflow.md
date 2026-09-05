@@ -67,7 +67,7 @@ and stay inside the current worktree and their owned paths.
 
 | Role | Responsibility | Owned writes / output | Skills to load |
 |---|---|---|---|
-| document-collector | Discover official sources; download, extract, and render every PDF page; record failed fetches | `sources/working_references.md`, source artifacts, `{RUN_ROOT}/{PREFIX}-research-summary.md` | policyengine-us |
+| document-collector | Discover official sources; download/extract and inspect relevant PDF pages; record failed fetches and reusable source manifest | `sources/working_references.md`, source artifacts, `{RUN_ROOT}/{PREFIX}-sources.json`, `{RUN_ROOT}/{PREFIX}-research-summary.md` | policyengine-us |
 | user-document-processor | Process user-supplied files after an unreachable-source checkpoint | user source artifacts, append-only research notes | — |
 | requirements-consolidator | Verify citations, find reference implementations/reusable variables, extract every requirement | impl spec, requirements checklist, scope summary | policyengine-us; policyengine-model-development (references/parameters.md, references/variables.md) |
 | issue-manager | Find/create the issue, create/use the worktree-safe branch, push it, and open a draft PR | issue/PR/branch identifiers; GitHub state | policyengine-standards |
@@ -98,7 +98,7 @@ single-page PDF is the only exception.
 - `PROGRAM`: program name/type, for example `CCAP`, `TANF`, or `LIHEAP`
 - `--skip-review`: skip Phase 6 only
 - `--research-only`: stop after the Phase 2 scope decision; make no GitHub writes
-- `--600dpi`: render every PDF page at 600 DPI instead of 300
+- `--600dpi`: render selected PDF pages at 600 DPI instead of 300
 - `--resume`: reuse artifacts only after validating their recorded inputs
 - `--from-phase N`: resume at phase N after validating all prerequisites; implies resume
 - `--full-validation`: run one broader state/package suite after program tests pass
@@ -139,9 +139,12 @@ Use `{RUN_ROOT}/{PREFIX}-encode-run-state.md` as a short phase ledger. Record:
 - source URL/checksum/DPI, spec/scope hashes, completed phases, artifacts, test manifest;
 - elapsed time per phase, repair/review rounds, explicit user decisions, blocked items.
 
-On a fresh run, remove only this workflow's `PREFIX`-owned encode artifacts from
+Read the existing run state and identify reusable evidence before resetting it. On a fresh
+run, remove only this workflow's `PREFIX`-owned encode artifacts from
 `RUN_ROOT`; do not delete matching downloaded sources/renderings that the ledger proves
-reusable. On resume, require matching worktree, state, program, branch, and dependency
+reusable. Exclude review artifacts and `*-pr-snapshot.*` directories; snapshot cleanup
+belongs to review-program and uses `git worktree remove` without force. On resume,
+require matching worktree, state, program, branch, and dependency
 hashes. `--from-phase N` also requires every prerequisite artifact. When any input
 changed, invalidate that phase and all dependents. Never reuse an artifact merely because
 its path exists.
@@ -157,10 +160,13 @@ Delegate document-collector. It must:
 2. Download up to the relevant complete source set to
    `{RUN_ROOT}/{PREFIX}-source-{N}.pdf`; record URL and checksum.
 3. Extract searchable text to `{RUN_ROOT}/{PREFIX}-source-{N}.txt` when possible.
-4. Render **every page of every collected PDF**:
-   `pdftoppm -png -r {DPI} ...`. Extracted text aids search but never replaces visual
-   rendering. Reuse rendering only when checksum and DPI match and the complete expected
-   page sequence exists.
+4. Read all relevant rules using extracted text with physical page boundaries. Inspect
+   relevant tables, scans, footnotes and ambiguous layouts visually, rendering selected
+   pages with `pdftoppm -f N -l N -png -r {DPI} ...`. Follow headings/cross-references
+   to cover exceptions and definitions; a keyword hit alone is not complete research.
+   Do not render unrelated pages by default. Record originals and actual derivatives
+   with their hashes in `{RUN_ROOT}/{PREFIX}-sources.json`, using the shared
+   [source-cache contract](../../review-program/references/source-cache.md).
 5. Save full research to `sources/working_references.md` and write the short research
    summary (maximum 20 lines): program name, source URLs, counts of eligibility and
    deduction/exemption rules, benefit calculation type, complexity, and every failed
@@ -175,8 +181,8 @@ If an official reference failed with a block, redirect, timeout, or connection e
 show each source and ask the user to choose:
 
 - **I will provide downloaded files**: wait for paths, then delegate
-  user-document-processor to copy each file into `RUN_ROOT`, extract text, render every
-  page at `DPI`, and append verified content to the research notes.
+  user-document-processor to copy each file into `RUN_ROOT`, extract text, inspect
+  relevant pages at `DPI`, and update the source manifest and research notes.
 - **Proceed with available sources**: record the evidence limitation and continue.
 - **Let me investigate first**: pause without invalidating artifacts.
 
@@ -193,8 +199,9 @@ implementations. It must:
 2. Search the live codebase for reusable variables and parameters for income, household
    composition, age, hours, provider/care concepts, and other inputs. Do not recreate
    generic concepts as bare inputs.
-3. Verify every statute/manual section, definition, and PDF page citation against the
-   acquired text and rendered pages before downstream roles copy it.
+3. Verify every statute/manual section, definition and PDF page citation against the
+   acquired source before downstream roles copy it. Reuse the collector's evidence;
+   inspect/render additional pages only where a citation or its meaning is uncertain.
 4. Write:
    - `{RUN_ROOT}/{PREFIX}-impl-spec.md` (**Full**): every requirement numbered
      `REQ-001...`, tagged `ELIGIBILITY`, `INCOME`, `BENEFIT`, `EXEMPTION`,
@@ -307,7 +314,8 @@ documented calculation examples that ground its scenarios, and create:
 - five to seven integration scenarios with inline calculation explanations;
 - relevant threshold-minus-one/threshold/threshold-plus-one, zero/maximum income,
   family-size, rounding/capping, and missing/negative input cases;
-- realistic periods (`YYYY` or `YYYY-01`) and values grounded in documentation.
+- realistic periods and source-grounded values; follow the model-development tests
+  reference for annual inputs in monthly cases and actual effective-date boundaries.
 
 Write `{RUN_ROOT}/{PREFIX}-test-manifest.md` with exact changed test files and case names.
 All later test commands derive from this manifest; no guessed directory or placeholder is
@@ -389,7 +397,9 @@ report. It writes `{RUN_ROOT}/{PREFIX}-checkpoint.md` (**Short**, maximum 15 lin
 `PASS` or `FAIL` and exact findings.
 
 On failure, route each item once to the appropriate audit-fixer by original ownership and
-rerun the audit. A second failure is a blocked gate; do not push.
+rerun affected tests and structural checks before rerunning the audit. Apply the Phase 4B
+failure gate to any new test failure; do not reuse pre-fix PASS results. A second audit
+failure is a blocked gate; do not push.
 
 ## Phase 5: Finalize the draft PR
 
@@ -428,18 +438,26 @@ coordinator reads only the final report.
 Skip only with `--skip-review`. Use the canonical `review-program` workflow; do not embed
 or improvise a second review methodology here.
 
-### Round 1: full review
+### Round 1: independent review of implemented behavior
 
 Run `review-program` with arguments
-`PR_NUMBER --local --full --prefix {PREFIX} [--600dpi when DPI is 600]`. Pass
-`--prefix {PREFIX}` on every review invocation: a reused PR's head branch need not equal
-`{ST}-{PROG}`, and without the override review-program derives its artifact prefix from
-the checked-out branch — writing paths other than the Handoff table entries this phase
-reads. Read only `{RUN_ROOT}/{PREFIX}-review-summary.md`.
+`PR_NUMBER --local --prefix {PREFIX} --sources {RUN_ROOT}/{PREFIX}-sources.json [--600dpi when DPI is 600]`. Pass
+`--prefix {PREFIX}` on every review invocation so reports use the encoding Handoff table's
+paths rather than review-program's default `pr-{PR_NUMBER}` prefix.
+Read only `{RUN_ROOT}/{PREFIX}-review-summary.md`.
 
-- If the count of still-open critical findings is zero, Phase 6 completes.
-- Otherwise delegate review-fixer-vars and review-fixer-tests concurrently. Each reads
-  the full report but edits only its owned file class and writes its own
+Review changed behavior and affected dependencies, including newly activated existing
+formulas/values. For a new program this includes the whole new implementation. Do not
+automatically request a full audit of unrelated existing behavior. The source manifest
+shares raw evidence, not conclusions; the reviewer independently checks the law and code.
+
+- If the count of still-open critical findings is zero and `Review status: COMPLETE`,
+  Phase 6 completes. If status is PARTIAL or missing, report the unresolved checks and
+  retain a resumable review; do not declare the workflow complete. Supplied sources,
+  an explicitly expanded source budget, or an explicit skip decision can resolve this.
+- When confirmed critical findings remain, delegate review-fixer-vars and
+  review-fixer-tests concurrently. Each reads the full report but edits only its owned
+  file class and writes its own
   `{PREFIX}-checklist-{vars|tests}-r1.md`; neither appends to the shared checklist.
 
 Every review fixer first checks the approved scope. It skips and records findings that
@@ -455,7 +473,9 @@ one `NO-ISSUES` line.
 
 After both finish, delegate review-ci-fixer to run at most three targeted repair cycles,
 one program-directory confirmation, and one format pass. `PARTIAL` is permitted because
-the mandatory follow-up review adjudicates remaining findings. Then delegate
+remaining review findings are adjudicated in follow-up, but it never authorizes pushing
+failing tests: require PASS or the explicit Phase 4B known-failure decision before the
+pusher runs, and retest executable changes after formatting. Then delegate
 review-round-pusher to merge both round files into the shared checklist, stage only the
 program paths, commit `Review-fix round 1: address critical issues from review-program`,
 and push.
@@ -464,15 +484,16 @@ A follow-up review after a fix is mandatory.
 
 ### Round 2: verification review
 
-For mechanical/test-only fixes, run with
-`PR_NUMBER --local --incremental {RUN_ROOT}/{PREFIX}-review-full-report.md --prefix {PREFIX} [--600dpi]`
-so unchanged source/PDF evidence is reused. When a fix changed policy semantics,
-parameter values, references, or sources, instead run
-`PR_NUMBER --local --full --resume --prefix {PREFIX} [--600dpi]`. Read only the new
-short summary.
+Run with
+`PR_NUMBER --local --incremental {RUN_ROOT}/{PREFIX}-review-full-report.md --prefix {PREFIX} --sources {RUN_ROOT}/{PREFIX}-review-sources.json [--600dpi]`.
+Review the fixes, their affected dependencies and unresolved prior findings. Changes to
+policy semantics, values, references or sources invalidate the affected evidence, not
+the entire program review. The reviewer expands scope when it cannot bound impact.
+Read only the new short summary, including its COMPLETE/PARTIAL status.
 
-- If still-open critical findings are zero, Phase 6 completes.
-- Otherwise ask whether to attempt one final fix round or stop and show the remaining
+- If still-open critical findings are zero and status is COMPLETE, Phase 6 completes.
+  If status is PARTIAL or missing, report pending checks as in Round 1.
+- If confirmed critical findings remain, ask whether to attempt one final fix round or stop and show the remaining
   issues. Do not choose automatically.
 
 If approved, repeat the parallel ownership split into round-2 per-fixer files. Review
@@ -482,10 +503,11 @@ review-round-pusher. A final review is mandatory.
 
 ### Round 3: final review
 
-Choose incremental versus full/resumed review by the same semantic-change rule. Do not
-perform another fix round:
+Use the same incremental invocation and impact-based scope rule. Do not perform another
+fix round:
 
-- zero still-open critical findings: report success;
+- zero still-open critical findings and COMPLETE review status: report success;
+- PARTIAL or missing review status: report pending evidence/checks, not success;
 - remaining critical findings: report them for manual resolution and keep the PR draft.
 
 There are at most three reviews and two review-fix commits.
@@ -507,6 +529,7 @@ Run even when Phase 6 was skipped. Show the user:
 | Artifact | Writer | Coordinator may read? | Size |
 |---|---|---|---|
 | `sources/working_references.md` | document-collector/user-document-processor | No | Full |
+| `{RUN_ROOT}/{PREFIX}-sources.json` | document-collector/user-document-processor | No | Original evidence and derivative checksums |
 | `{RUN_ROOT}/{PREFIX}-research-summary.md` | document-collector | Yes | Short, 20 lines |
 | `{RUN_ROOT}/{PREFIX}-impl-spec.md` | requirements-consolidator | No | Full |
 | `{RUN_ROOT}/{PREFIX}-requirements-checklist.md` | requirements-consolidator | Yes | Short, 40 lines |
@@ -522,6 +545,7 @@ Run even when Phase 6 was skipped. Show the user:
 | `{RUN_ROOT}/{PREFIX}-final-report.md` | reporter | Yes | Short, 25 lines |
 | `{RUN_ROOT}/{PREFIX}-review-full-report.md` | review-program | No | Full |
 | `{RUN_ROOT}/{PREFIX}-review-summary.md` | review-program | Yes | Short, 20 lines |
+| `{RUN_ROOT}/{PREFIX}-review-sources.json` | review-program | No | Reusable review evidence |
 | `{RUN_ROOT}/{PREFIX}-checklist-{vars,tests}-r{N}.md` | review fixers | No | Per-fixer |
 | `{RUN_ROOT}/{PREFIX}-checklist.md` | review-round-pusher | No | Growing |
 | `{RUN_ROOT}/{PREFIX}-encode-run-state.md` | coordinator | Yes | Short ledger |

@@ -221,10 +221,12 @@ metadata: { unit: currency-USD }
 2. For states with sub-regions (Alaska 6 SNAP regions, NY 3 sub-regions), verify each individually
 3. Spot-check ≥ 5 values against the source — pick from the beginning, middle, and end
 
-Then:
-```bash
-uv sync --extra dev && uv run ruff format
-```
+Follow the caller's assigned scope, owned paths, source inputs, manifest path and DONE
+format. Write the requested implementation/fix manifest before returning. A bounded fix
+does not repeat the standalone implementation routine. When the caller reserves
+formatting for ci-fixer or pr-pusher, do not format. Otherwise format only owned changed
+files using the repository's formatter. Use the existing environment; do not sync or
+install dependencies unless execution fails because a required dependency is missing.
 
 **Do not commit or push** — `pr-pusher` handles that.
 

@@ -22,14 +22,17 @@ Treat the text after `$review-program` or `/review` as the raw workflow argument
 ```text
 $review-program [PR_NUMBER_OR_SEARCH] [PDF_URL] [--local] [--local-diff] [--full]
   [--skip-pdf] [--600dpi] [--resume] [--incremental REPORT] [--prefix NAME]
+  [--sources MANIFEST] [--source-budget MINUTES]
 ```
 
 Mandatory completion gate:
 
-- Do not stop after individual validators or PDF audits.
+- Default to policy/source and code/test reviewers; consolidate their findings directly.
 - The review is incomplete until `{RUN_ROOT}/{PREFIX}-review-full-report.md` and
   `{RUN_ROOT}/{PREFIX}-review-summary.md` both exist.
 - Phase 6 consolidation is required before displaying or posting findings.
+- Report COMPLETE or PARTIAL separately from the critical count; missing material
+  evidence cannot be reported as a clean review.
 
 Surface adapters:
 
@@ -43,10 +46,13 @@ Delegation mapping (when subagent use is available and authorized):
 
 - Map every role in the canonical Roles table to a `worker` when it writes report or
   artifact files, or an `explorer` for read-only codebase questions.
-- Pass concrete `RUN_ROOT`, `WORKTREE_ID`, and `PREFIX` values and the role's task spec
-  from the canonical workflow to every subagent; name the role's skills explicitly in the
-  subagent prompt — do not assume a worker infers them from parent context.
-- Every subagent finishes by writing its assigned file and returning the one-line DONE
-  message from the canonical completion contract.
+- Pass concrete `RUN_ROOT`, `WORKTREE_ID`, `PREFIX`, and (from Phase 1) `SNAPSHOT`
+  values and the role's task spec from the canonical workflow to every subagent; name
+  the role's skills explicitly in the subagent prompt — do not assume a worker infers
+  them from parent context.
+- Every subagent appends progress lines to its canonical progress log while working and
+  finishes by writing its assigned file and returning the one-line DONE message from the
+  canonical completion contract. Dispatch reviewers before writing the scope brief when
+  the runtime can message a running worker; otherwise include a brief capped at one minute.
 - If subagents are unavailable or not authorized, execute the roles directly in phase
   order, preserving the same handoff files and read-only contract.

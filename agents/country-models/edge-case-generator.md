@@ -31,20 +31,13 @@ tests and periods-and-aggregation references; read variables or parameters when 
 assigned edge cases require them. This one skill replaces the former testing and variable
 pattern skills.
 
-## CRITICAL: Test Period Format
+## Test periods
 
-**Use `YYYY-01` or `YYYY` ONLY.** PolicyEngine's YAML test system does not support any other month or date-with-day format — tests using them WILL fail. This applies regardless of the variable's `definition_period`.
-
-- ✅ `2024-01` or `2024`
-- ❌ `2024-02` through `2024-12` — **WILL FAIL**
-- ❌ `2024-01-15` or any date-with-day format — **WILL FAIL**
-
-**When the policy is effective mid-year, use the NEXT January AFTER the effective date** — `period: 2024` resolves at 2024-01-01, so a July 2024 policy needs `2025-01`. See test-creator.md for the full reasoning + table.
-
-- April 1, 2024 effective → `2025-01`
-- October 1, 2023 effective → `2024-01`
-
-**Self-check before saving every test file:** search for any `period:` value that is not `YYYY` or `YYYY-01`. Fix before writing.
+Follow `policyengine-model-development`'s tests reference. A case may use a year or
+any month. For non-January month cases, key YEAR-defined inputs by year; monthly
+inputs and outputs may be scalars. Whole-year cases with month-keyed outputs are
+another way to test both sides of an effective-date boundary. Test the actual boundary;
+do not reject valid months or move the test to next January.
 
 ## CRITICAL (Mode A): Always Append, Never Create New Files
 

@@ -462,9 +462,12 @@ The review will analyze the reform against its regulatory sources by reading the
 
 #### Step 4B: Count critical issues
 
-Read the review output. Count issues marked as CRITICAL.
+Read the review output, including COMPLETE/PARTIAL status. Count confirmed CRITICAL
+issues. A PARTIAL or missing status requires reporting unresolved checks; it is not a
+clean review even when the critical count is zero.
 
-- If **0 critical issues** → Exit loop, proceed to Phase 5
+- If **0 critical issues and COMPLETE status** → Exit loop, proceed to Phase 5
+- If **0 critical issues and PARTIAL/missing status** → Stop as incomplete, preserve the report and state the missing checks
 - If **>0 critical issues** and round < 3 → Continue to Step 4C
 - If **>0 critical issues** and round = 3 → Log remaining issues, proceed to Phase 5 anyway (include unresolved issues in final report)
 

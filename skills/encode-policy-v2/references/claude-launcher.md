@@ -22,9 +22,9 @@ Claude Code mechanics and adds no workflow behavior.
   with `MODE=execute`, both explicit decisions, and the canonical repository values
   (`BASE_REPO`, `BASE_REPO_URL`, `PUSH_REPO`, `PUSH_REPO_URL`). Continue only on
   `SETUP_COMPLETE`; treat `BLOCKED` or a partial result as a blocking gate.
-- **Run identity** → after deriving `WORKTREE_ID` and `PREFIX`, create
-  `TeamCreate({WORKTREE_ID}-{PREFIX}-encode)` and pass
-  `team_name: "{WORKTREE_ID}-{PREFIX}-encode"` to each delegated agent.
+- **Run identity** → pass `WORKTREE_ID`, `RUN_ROOT` and `PREFIX` in every role prompt.
+  Use the active delegation tool's schema. Do not require `TeamCreate` or pass
+  `team_name`/`run_in_background` unless those capabilities are actually available.
 - **Delegate role X** → spawn the agent resolved from the table below. Its prompt contains
   the complete role contract from the canonical workflow, concrete run/worktree values,
   exact owned paths and inputs/outputs, relevant `Load skills:` entries, the PDF page rule
@@ -34,12 +34,20 @@ Claude Code mechanics and adds no workflow behavior.
   the unprefixed names below against the session's available agents/skills by suffix;
   never assume `complete:` or another fixed prefix. If a specialized agent is unavailable,
   use `general-purpose` with the full role and skill contract in its prompt.
-- **Concurrency** → use `run_in_background: true` only for independent work: initial
+- **Concurrency** → launch independent work asynchronously when supported: initial
   document collection may run in the background, and each review round spawns the vars
   and tests fixers together in one message. Wait for the whole batch; never poll. All
   dependency-ordered implementation, validation, CI, and Git roles run sequentially.
-- **Nested review** → invoke the installed `review-program` skill through the Skill tool
-  with the exact canonical arguments; that skill owns all review mechanics.
+- **Nested review** → use a fresh `general-purpose` agent to invoke the installed
+  `review-program` skill with the exact canonical arguments and worktree/run values.
+  That coordinator may read the diff and reports under review-program's contract;
+  this encoding coordinator receives its summary and COMPLETE/PARTIAL status. The
+  source manifest must be passed through unchanged. Avoid inheriting the encoding
+  coordinator's summary-only read restriction into the review context.
+- **Guarded push** → pass both pusher roles the resolved PR/base repository, head
+  repository URL, head branch and remote SHA captured before local edits. Preserve that
+  expected SHA through the role; its existing guarded-push contract must not recapture
+  a later remote head as permission to overwrite concurrent work.
 - **Coordinator context** → read only artifacts the canonical Handoff table marks
   `Coordinator may read? Yes`. Never read full research/spec/PDF/code/review files or
   implement/fix code.
