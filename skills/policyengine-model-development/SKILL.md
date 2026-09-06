@@ -27,6 +27,10 @@ This skill is the *how-to-write-it* layer. To run calculations or score reforms,
 `policyengine` skill instead. Verified against policyengine-us 1.764.x / policyengine-core 3.30.x
 (2026-07).
 
+For delegated implementation, test authoring or review, follow
+[agent-loading.md](references/agent-loading.md): every worker loads this entrypoint in
+its own context, reads its task references and reports evidence of the load before work.
+
 ## Mental model
 
 - **Parameters** are a YAML tree under `parameters/gov/...`. Each leaf is a dated value (or a

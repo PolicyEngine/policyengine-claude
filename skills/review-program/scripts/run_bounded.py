@@ -24,6 +24,7 @@ def main() -> int:
         process = subprocess.Popen(args.command, start_new_session=True)
     except OSError as error:
         print(f"Cannot start {label}: {error}", file=sys.stderr)
+        print(f"{label}: exit status 127", file=sys.stderr)
         return 127
     try:
         status = process.wait(timeout=args.seconds)
@@ -35,10 +36,12 @@ def main() -> int:
             pass
         process.wait()
         print(f"{label}: timed out after {args.seconds:g}s", file=sys.stderr)
-        return 124
+        status = 124
     finally:
         print(f"{label}: elapsed {time.monotonic() - started:.2f}s", file=sys.stderr)
-    return status if status >= 0 else 128 - status
+    exit_status = status if status >= 0 else 128 - status
+    print(f"{label}: exit status {exit_status}", file=sys.stderr)
+    return exit_status
 
 
 if __name__ == "__main__":

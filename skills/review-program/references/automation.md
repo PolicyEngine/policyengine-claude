@@ -8,7 +8,8 @@ helpers are local-only: neither changes source nor posts a review.
 After role completion and deduplication, write `{PREFIX}-review-assembly.json` under
 `RUN_ROOT`. Select exact Markdown headings from the completed role reports; the helper
 copies their bodies, including nested headings and code, without rewriting findings.
-Update a role's finding in place to include complementary evidence before selecting it.
+Use a selector's optional `addendum` for complementary evidence or an adjudication note;
+leave the original role report intact. Role-local labels avoid concurrent ID collisions.
 
 ```json
 {
@@ -30,11 +31,10 @@ Update a role's finding in place to include complementary evidence before select
   "source_manifest": "pr-9379-review-sources.json",
   "findings": [
     {
-      "id": "C1",
       "severity": "critical",
       "status": "OPEN",
       "path": "pr-9379-review-code.md",
-      "heading": "C1 — Exact existing finding title"
+      "heading": "code-1 — Exact existing finding title"
     }
   ],
   "gaps": [],
@@ -51,17 +51,32 @@ present, `timing` uses the canonical keys from workflow Phase 6 (`setup_seconds`
 include `elapsed_seconds`. `notes` is optional, renders under a Notes heading, and never
 affects status or severity. The summary begins with `Review status`, `Review severity`
 and `Still-open critical count` lines for calling workflows. Keep
-`validation` concise so the summary remains short. Paths are absolute or relative to
+`validation` concise. The helper limits the summary to five finding titles and two gaps,
+with counts and links to the full report; complete evidence and notes remain in the full
+report. Paths are absolute or relative to
 `RUN_ROOT`, including local links inside the selected Markdown. Both canonical reports
 remain in that directory. Role status is `DONE` or `PARTIAL`; a failed role must have its
 recovered report and missing checks recorded before assembly, not fabricated completion.
 
 Finding severities: `critical`, `should_address`, `suggestion`. States: `OPEN`, `STILL OPEN`,
 `RESOLVED`, `UNVERIFIED`, `WITHDRAWN`. Keep established IDs after severity changes.
+For new findings, omit `id`: the helper assigns C/A/S IDs above every explicit and
+`reserved_ids` value. On incremental runs, set `reserved_ids` to all IDs in the preserved
+baseline, including resolved/withdrawn ones. Set `prior_reports` to the preserved baseline
+paths and select unaffected findings directly from them with their existing `id` and
+explicit current `status`; no copied carry-forward section is needed in a new role report.
+The coordinator verifies baseline identity/ancestry and whether the diff affects each
+carried finding before using these selectors. The helper does not infer that validity.
 Resolved/withdrawn findings remain visible in the full report but leave the open counts.
 Gaps, partial roles, or unverified findings force PARTIAL. Confirmed open criticals require
 REQUEST_CHANGES; an unverified claim alone does not. Never infer source completeness from
 an empty gap list or a successful assembly operation.
+Use `gaps` only for unresolved required material checks. Use `notes` for optional coverage,
+reused tests and other limitations; notes do not force PARTIAL. The result JSON preserves
+total open `counts` for compatibility, but `confirmed_critical_ids` and
+`confirmed_critical_count` exclude UNVERIFIED, RESOLVED and WITHDRAWN findings. Encoding
+repair dispatch consumes those confirmed IDs. This classification reflects the reviewers'
+evidence assessment; the helper cannot certify scenario premises or legal correctness.
 
 ```bash
 python3 "$REVIEW_SKILL_ROOT/scripts/assemble_review.py" \

@@ -70,11 +70,11 @@ lints the whole tree against the failure modes that rotted the previous catalog
 
 Each workflow has one canonical behavioral definition at
 `skills/<name>/references/workflow.md` — phases, roles, gates, artifact contracts. The
-skill's `SKILL.md` is the cross-client launcher: Claude Code gives a skill precedence
-over a same-named command, so the skill is the entry point on both surfaces.
-`references/claude-launcher.md` carries the Claude-only role/agent mapping, and the
-matching file in `targets/claude/commands/` is a compatibility stub for older Claude
-Code versions. Edit the canonical file, never a launcher, to change behavior.
+skill's `SKILL.md` is the cross-client launcher and provides the namespaced slash command
+in Claude Code. These workflows have no same-named command stubs; duplicate registration
+resolved to the stub in the native benchmark. `references/claude-launcher.md` carries
+the Claude-only role/agent mapping. Edit the canonical file, never a launcher, to change
+behavior.
 
 | Skill | What it carries |
 |---|---|

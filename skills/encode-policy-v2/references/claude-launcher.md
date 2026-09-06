@@ -1,80 +1,65 @@
 # Claude Code launcher: encode-policy-v2
 
-Read this file only when executing encode-policy-v2 in Claude Code. Read the canonical
-[workflow.md](workflow.md) first. This adapter maps its semantic roles and operations to
-Claude Code mechanics and adds no workflow behavior.
+Read the canonical [workflow.md](workflow.md). This adapter maps capabilities without
+adding stages, audits, test commands or approval prompts.
 
-## Mechanics
-
-- **Raw arguments** → parse the text passed to the skill exactly as the canonical grammar
-  specifies.
-- **Ask the user** → use `AskUserQuestion` for a missing argument, the existing-program
-  route, unreachable references, every scope choice, blocked CI, and the optional final
-  review-fix round. Batch related decisions into as few calls as possible: one
-  `AskUserQuestion` call carries up to 4 questions, so N simultaneous decisions take
-  ceil(N/4) calls — never one call per decision. In Phase 2A, gather the overall-scope
-  question and every program-specific decision first, then ask them together; reserve a
-  later call only for a question that depends on a prior answer. Keep the canonical
-  option order within each question.
-- **Issue/PR discovery** → run `issue-manager` once with `MODE=discover` (read-only; it
-  stops after searching). On `DECISION_NEEDED`, ask the issue and PR choices together in
-  one `AskUserQuestion` call (two questions); on `NO_CANDIDATES`, use create-new for both. Then invoke a new `issue-manager`
-  with `MODE=execute`, both explicit decisions, and the canonical repository values
-  (`BASE_REPO`, `BASE_REPO_URL`, `PUSH_REPO`, `PUSH_REPO_URL`). Continue only on
-  `SETUP_COMPLETE`; treat `BLOCKED` or a partial result as a blocking gate.
-- **Run identity** → pass `WORKTREE_ID`, `RUN_ROOT` and `PREFIX` in every role prompt.
-  Use the active delegation tool's schema. Do not require `TeamCreate` or pass
-  `team_name`/`run_in_background` unless those capabilities are actually available.
-- **Delegate role X** → spawn the agent resolved from the table below. Its prompt contains
-  the complete role contract from the canonical workflow, concrete run/worktree values,
-  exact owned paths and inputs/outputs, relevant `Load skills:` entries, the PDF page rule
-  when parameters are touched, and the canonical DONE line. Do not recreate the phase
-  prose in this adapter.
-- **Namespacing** → plugin agents and skills use the installed plugin's namespace. Resolve
-  the unprefixed names below against the session's available agents/skills by suffix;
-  never assume `complete:` or another fixed prefix. If a specialized agent is unavailable,
-  use `general-purpose` with the full role and skill contract in its prompt.
-- **Concurrency** → launch independent work asynchronously when supported: initial
-  document collection may run in the background, and each review round spawns the vars
-  and tests fixers together in one message. Wait for the whole batch; never poll. All
-  dependency-ordered implementation, validation, CI, and Git roles run sequentially.
-- **Nested review** → use a fresh `general-purpose` agent to invoke the installed
-  `review-program` skill with the exact canonical arguments and worktree/run values.
-  That coordinator may read the diff and reports under review-program's contract;
-  this encoding coordinator receives its summary and COMPLETE/PARTIAL status. The
-  source manifest must be passed through unchanged. Avoid inheriting the encoding
-  coordinator's summary-only read restriction into the review context.
-- **Guarded push** → pass both pusher roles the resolved PR/base repository, head
-  repository URL, head branch and remote SHA captured before local edits. Preserve that
-  expected SHA through the role; its existing guarded-push contract must not recapture
-  a later remote head as permission to overwrite concurrent work.
-- **Coordinator context** → read only artifacts the canonical Handoff table marks
-  `Coordinator may read? Yes`. Never read full research/spec/PDF/code/review files or
-  implement/fix code.
-
-## Role → agent type
-
-Agent names are unprefixed; resolve them using the namespacing rule above.
-
-| Canonical role | Agent |
-|---|---|
-| document-collector | `document-collector` |
-| user-document-processor | `general-purpose` |
-| requirements-consolidator | `general-purpose` |
-| issue-manager | `issue-manager` |
-| parameter-implementer | `rules-engineer` |
-| variable-implementer | `rules-engineer` |
-| test-creator | `test-creator` |
-| requirements-tracker | `general-purpose` |
-| gap-fixer | `rules-engineer` |
-| implementation-validator | `implementation-validator` |
-| validator-escalation-fixer | `rules-engineer` |
-| ci-fixer | `ci-fixer` |
-| quick-auditor | `general-purpose` |
-| audit-fixer | `rules-engineer` or `test-creator`, by owned file |
-| initial-pusher | `pr-pusher` |
-| reporter | `general-purpose` |
-| review-fixer-vars | `rules-engineer` |
-| review-fixer-tests | `test-creator` |
-| review-ci-fixer | `ci-fixer` |
-| review-round-pusher | `pr-pusher` |
+- Parse raw arguments, including local-only mode and source reuse/budget, as specified.
+- The workflow is registered only as a skill, without a same-named command stub. Resolve
+  its installed base directory from the Skill result. Pass the installed review-program
+  directory and canonical paths to the fresh review coordinator; do not search the
+  filesystem or recursively invoke a compatibility stub. If the Skill result is an old
+  compatibility stub (a session registry that predates the stub removal), do not invoke
+  it again: take the plugin root from a sibling skill's reported base directory (for
+  example model-development's), read `skills/encode-policy-v2/SKILL.md` and its
+  references from there, and record `stub-resolved` in the run state.
+- Use the runtime's user-question tool for unresolved material scope/reuse/repair
+  decisions. Batch related questions within its actual capacity; honor prior decisions.
+- The coordinator performs research, requirements, coverage/validation, Git and reporting.
+  It may inspect code and evidence directly. Do not delegate those routine steps merely
+  to preserve a summary-only context rule.
+- For the substantive `implementer` and `test-author`, launch the installed `model-worker`
+  profile (Skill access, no delegation or web tools) with the full canonical role, exact
+  owned paths, artifact contracts, relevant skill sections, concrete `WORKTREE_ROOT`,
+  `WORKTREE_ID`, `RUN_ROOT`, `PREFIX` and local/publication mode. If that profile is not
+  installed, or cannot be spawned as a retained named worker in this runtime, use
+  `general-purpose` with an explicit no-delegation instruction and record the
+  substitution. A specialized standalone agent is not required and must not add its
+  own audits, dependency sync, formatting, test suites, commits or pushes to this role
+  contract. Give both workers the same shared contract block; do not paraphrase it per
+  worker.
+- Retain the same workers for repairs. Start test-source analysis while implementation
+  runs when independent; finalize tests only against the actual variable contract. Use
+  runtime-supported messaging, or coordinator handoffs when unavailable. Never assume
+  team, background, monitor or message parameters exist.
+- Every model worker must have access to the `Skill` tool and invoke the installed
+  `policyengine-model-development` skill by its resolved name before work, then read its
+  role references. Include the canonical loading contract in dispatch and require the
+  successful Skill result in `SKILLS_READY`; a `Load skills:` list alone does not load
+  anything. If the selected agent lacks Skill access or the skill is unavailable, apply
+  `SKILLS_BLOCKED` instead of silently using a general-purpose agent without it.
+- Wait for completion notifications with the canonical progress/recovery bounds. Watch
+  each worker's `{PREFIX}-encode-progress-{role}.log`; routine progress can also arrive
+  by message or artifact; a partial report is not DONE. If delegation is unavailable,
+  perform the roles directly, retaining independent review context.
+- Run the test runner through `run_bounded.py --seconds 540` with the Bash tool's
+  `timeout` at its 600000-millisecond maximum, so the wrapper's deadline fires first and
+  its exit-status line survives; redirect output to the log. The default two-minute Bash
+  limit kills a program suite mid-run and discards its status. Pass the same instruction
+  to workers for their single self-check.
+- Invoke review-program in a fresh `general-purpose` coordinator with its exact local or
+  published arguments, approved scope, captured head, source manifest and runtime
+  constraints. Require that coordinator to load both review-program and model-development
+  before substantive model work. The canonical review workflow supplies its reviewer
+  tasks; do not append a bespoke audit checklist. Leave sufficient capacity for its two
+  reviewers. Consume its completed decision directly for repair routing, without another
+  encoder verification pass. Time dispatch through acceptance of the returned result.
+  Tell it that nested dispatches must omit the Agent `name` parameter: a delegated
+  context cannot create named teammates, the call is rejected, and each retry costs
+  about a minute. Nested reviewers are therefore unnamed; their role identity comes from
+  the progress-log path they are given.
+- Only the encoding coordinator stages, commits, pushes and writes GitHub state. In
+  `--local`, it may make local implementation/review-fix commits but never creates an
+  issue/PR, pushes or posts comments. Otherwise use explicit verified targets and the
+  canonical pre-edit head check; don't map Git work to a standalone pusher routine.
+- Resolve skill names by the installed suffix, not an assumed plugin namespace. Load
+  only the references needed for the assigned task.

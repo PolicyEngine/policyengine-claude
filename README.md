@@ -4,6 +4,10 @@ Generated Claude Code wrapper for PolicyEngine.
 
 This repository is built from `PolicyEngine/policyengine-skills`. Do not edit it directly unless you are fixing a sync emergency.
 
+`encode-policy-v2`, `review-program` and `fix-pr` are skill entrypoints and retain their
+namespaced [slash commands](https://code.claude.com/docs/en/plugins). They have no same-named command stubs: duplicate registration
+can resolve to the stub instead of the skill. The wrapper builder rejects such collisions.
+
 ## Install
 
 ```bash

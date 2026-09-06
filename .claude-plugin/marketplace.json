@@ -103,8 +103,7 @@
         "./skills/fix-pr"
       ],
       "commands": [
-        "./commands/create-pr.md",
-        "./commands/fix-pr.md"
+        "./commands/create-pr.md"
       ],
       "agents": [
         "./agents/country-models/ci-fixer.md",
@@ -148,7 +147,6 @@
       "commands": [
         "./commands/create-new-component.md",
         "./commands/create-pr.md",
-        "./commands/fix-pr.md",
         "./commands/new-tool.md",
         "./commands/audit-seo.md",
         "./commands/audit-multizone.md",
@@ -216,9 +214,7 @@
         "./commands/create-new-component.md",
         "./commands/create-pr.md",
         "./commands/deploy-dashboard.md",
-        "./commands/encode-policy-v2.md",
         "./commands/encode-reform.md",
-        "./commands/fix-pr.md",
         "./commands/generate-content.md",
         "./commands/household-calc.md",
         "./commands/implement-structural.md",
@@ -226,7 +222,6 @@
         "./commands/prior-analysis.md",
         "./commands/prior-scores.md",
         "./commands/reform-pipeline.md",
-        "./commands/review-program.md",
         "./commands/setup-verbs.md",
         "./commands/text-to-reform.md",
         "./commands/write-tests.md"
@@ -241,8 +236,10 @@
         "./agents/country-models/edge-case-generator.md",
         "./agents/country-models/implementation-validator.md",
         "./agents/country-models/issue-manager.md",
+        "./agents/country-models/model-worker.md",
         "./agents/country-models/pr-pusher.md",
         "./agents/country-models/program-reviewer.md",
+        "./agents/country-models/review-worker.md",
         "./agents/country-models/rules-engineer.md",
         "./agents/country-models/structural-implementer.md",
         "./agents/country-models/test-creator.md",
@@ -302,10 +299,7 @@
       ],
       "commands": [
         "./commands/backdate-program.md",
-        "./commands/encode-policy-v2.md",
         "./commands/encode-reform.md",
-        "./commands/review-program.md",
-        "./commands/fix-pr.md",
         "./commands/create-pr.md",
         "./commands/write-tests.md"
       ],
@@ -315,8 +309,10 @@
         "./agents/country-models/edge-case-generator.md",
         "./agents/country-models/implementation-validator.md",
         "./agents/country-models/issue-manager.md",
+        "./agents/country-models/model-worker.md",
         "./agents/country-models/pr-pusher.md",
         "./agents/country-models/program-reviewer.md",
+        "./agents/country-models/review-worker.md",
         "./agents/country-models/rules-engineer.md",
         "./agents/country-models/structural-implementer.md",
         "./agents/country-models/test-creator.md",

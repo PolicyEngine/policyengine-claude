@@ -1,12 +1,12 @@
 {
-  "description": "PolicyEngine plugin hooks - agent auto-selection and multi-zone basePath advisory",
+  "description": "PolicyEngine plugin hooks - model skill loading and multi-zone basePath advisory",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "POLICYENGINE AGENT AUTO-SELECTION: Detect if the current working directory contains a PolicyEngine repository.\n\nCheck for these repo patterns:\n- policyengine-us (or contains policyengine_us/)\n- policyengine-uk (or contains policyengine_uk/)\n- policyengine-core\n- policyengine-api\n- policyengine-app-v2\n\nIf in a PolicyEngine country model repo (policyengine-us or policyengine-uk):\nINJECT THIS INSTRUCTION: 'IMPORTANT: When spawning subagents for implementation work in this repo, use the specialized PolicyEngine plugin agents instead of general-purpose agents:\n\n| Task | Use Agent |\n|------|----------|\n| Implement variables/parameters | complete:country-models:rules-engineer |\n| Create tests | complete:country-models:test-creator |\n| Fix CI failures | complete:country-models:ci-fixer |\n| Push PR with formatting | complete:country-models:pr-pusher |\n| Review implementation | complete:country-models:implementation-validator |\n\nThese agents automatically load PolicyEngine skills, run make format before commits, and follow PE coding standards. Do NOT use general-purpose agents for policyengine-us/uk work.'\n\nIf not in a PolicyEngine country model repo: return empty/no injection.",
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/model-development-context.py\"",
             "timeout": 5
           }
         ]
@@ -18,7 +18,18 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "MULTI-ZONE ADVISORY: If this Write|Edit targets a Next.js zone-app config file (next.config.ts, next.config.mjs, next.config.js) AND the containing repo is NOT policyengine-app-v2 (the host), check whether the written content includes `basePath`.\n\nIf the file matches and `basePath` is absent from the content, emit an ADVISORY (do NOT block):\n\n  'ADVISORY: This next.config change does not set `basePath`. That is valid only for an intentional root-served multi-zone, where host rewrites map each public path to the zone root and `assetPrefix: \"/_zones/<repo-name>\"` namespaces _next assets. Single-path PolicyEngine zones should normally be path-mounted with a literal `basePath`. See the policyengine-tools skill → \"Multizone integration\". If this app is not a zone (standalone Vercel project, legacy iframe tool, non-zone utility), disregard.'\n\nOther cases (non-next.config files, next.config in policyengine-app-v2 itself, basePath present): return 'approve' with no message.\n\nThis is a reminder, not a gate — always approve, never block.",
+            "prompt": "MULTI-ZONE ADVISORY: If this Write|Edit targets a Next.js zone-app config file (next.config.ts, next.config.mjs, next.config.js) AND the containing repo is NOT policyengine-app-v2 (the host), check whether the written content includes `basePath`.\n\nIf the file matches and `basePath` is absent from the content, emit an ADVISORY (do NOT block):\n\n  'ADVISORY: This next.config change does not set `basePath`. That is valid only for an intentional root-served multi-zone, where host rewrites map each public path to the zone root and `assetPrefix: \"/_zones/<repo-name>\"` namespaces _next assets. Single-path PolicyEngine zones should normally be path-mounted with a literal `basePath`. See the policyengine-tools skill \u2192 \"Multizone integration\". If this app is not a zone (standalone Vercel project, legacy iframe tool, non-zone utility), disregard.'\n\nOther cases (non-next.config files, next.config in policyengine-app-v2 itself, basePath present): return 'approve' with no message.\n\nThis is a reminder, not a gate \u2014 always approve, never block.",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/model-development-context.py\"",
             "timeout": 5
           }
         ]

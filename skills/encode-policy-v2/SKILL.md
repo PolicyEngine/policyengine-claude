@@ -16,17 +16,25 @@ Treat the text after `$encode-policy-v2` as raw workflow arguments:
 
 ```text
 $encode-policy-v2 STATE PROGRAM [--skip-review] [--research-only] [--600dpi]
-  [--resume] [--from-phase N] [--full-validation]
+  [--resume] [--from-phase N] [--full-validation] [--local]
+  [--sources MANIFEST] [--source-budget MINUTES]
 ```
 
 Mandatory gates that no surface may skip:
 
+- Load model-development in each model worker's own context and verify its load evidence
+  under the canonical loading contract before accepting work; missing skills block it.
 - Route purely parametric changes to `encode-reform` unless the user chooses to continue.
 - Make no GitHub write before the user-approved scope decision exists.
 - Read all relevant rules and visually inspect tables, scans or ambiguous PDF evidence;
   share validated originals and extracts with the independent review.
 - Do not push through a red structural or quick-audit gate, or silently push failing tests.
-- Keep the PR draft and complete the required follow-up review after any review-fix round.
+- Workers never delegate; brief both owners from one shared contract block, and treat the
+  coordinator's single bounded test invocation as the run of record.
+- In local mode, make no GitHub writes or pushes; preserve the implementation worktree.
+- Keep new PRs draft and complete follow-up review after any review-fix round.
+- Maximum two reviews: a second, incremental review follows repairs to confirmed
+  criticals from the first. Stop after round 2 with any remaining blockers reported.
 - Do not finish before the Phase 7 summary and canonical completion contract are satisfied.
 
 Surface adapters:
@@ -38,19 +46,24 @@ Surface adapters:
 
 Codex delegation mapping, when subagent use is available and authorized:
 
-- Use `worker` for every role that writes repository files, runtime artifacts, reports,
-  GitHub state, or Git state. Use `explorer` only for bounded read-only discovery or audit
-  questions whose result can be returned directly without writing an artifact.
-- Preserve canonical dependencies. Run independent review-fixer-vars and
-  review-fixer-tests roles concurrently; keep implementation, validation, and push roles
-  in canonical order.
-- Pass concrete `WORKTREE_ROOT`, `WORKTREE_ID`, `RUN_ROOT`, and `PREFIX` values, the role's
-  full canonical task contract, owned paths, required outputs, and named PolicyEngine
-  skills to every subagent. Do not assume child agents inherit parent skill context.
-- Remind every implementation subagent that other agents may share the worktree, it must
-  not revert unrelated edits, and only the canonical pusher roles may commit or push.
-- Run the nested review-program workflow in a fresh review coordinator context with
-  its own read permissions; pass the canonical arguments and source manifest. Receive
-  its summary and COMPLETE/PARTIAL status in the encoding coordinator.
-- If subagents are unavailable or not authorized, execute roles directly in phase order
-  while preserving the same ownership, handoff files, user checkpoints, and gates.
+- The coordinator handles research, requirements, coverage/validation, Git and reporting;
+  it may read code and full evidence directly. No summary-only read restriction.
+- Use persistent workers for the two substantive roles: implementer (parameters and
+  variables together) and test-author. Pass exact owned paths, concrete worktree/run
+  values, approved scope, artifact contracts and the needed skill references.
+- Each Codex worker resolves `policyengine-model-development` from its own available
+  skills catalog and reads that entrypoint using its catalog-specified access mechanism,
+  then its task references. Include the canonical loading contract in the prompt; a
+  repository path alone does not demonstrate runtime skill availability. Do not assume
+  the parent session's skill load supplies the worker's context.
+- Test-source analysis can overlap implementation; final tests use the published variable
+  contract. Reuse owners for repairs. Workers never stage, commit, push or independently
+  sync/format the shared environment. They do their own work without helper or nested
+  agents, run at most one bounded self-check of their owned tests, and report a
+  `CONTRACT MISMATCH` instead of relocating cases; the coordinator runs the tests of record.
+- Run review-program in a fresh review coordinator context with its canonical local or
+  published arguments, raw source manifest, captured head and scope. Require that
+  coordinator's own model-development load. Leave capacity for its reviewers and consume
+  its completed decision directly for repair routing, without a second review by the encoder.
+- Use only supported runtime capabilities. When delegation is unavailable, perform the
+  implementation roles directly while preserving independent review context and gates.

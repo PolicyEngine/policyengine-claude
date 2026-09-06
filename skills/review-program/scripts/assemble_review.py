@@ -18,6 +18,12 @@ SECTIONS = {
     "suggestion": "Suggestions",
 }
 STATES = {"OPEN", "STILL OPEN", "RESOLVED", "UNVERIFIED", "WITHDRAWN"}
+ID_PREFIX = {"critical": "C", "should_address": "A", "suggestion": "S"}
+
+
+def compact(text: str, limit: int = 240) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
 def local_path(value: str, root: Path) -> Path:
@@ -84,7 +90,8 @@ def assemble(data: dict, root: Path, prefix: str) -> dict:
             "Wait for role completion; recover or mark missing work PARTIAL"
         )
     role_paths = {local_path(role["path"], root) for role in roles}
-    for path in role_paths:
+    prior_paths = {local_path(path, root) for path in data.get("prior_reports", [])}
+    for path in role_paths | prior_paths:
         if not path.is_file():
             raise ValueError(f"Missing role report: {path}")
     gaps = list(data["gaps"])
@@ -99,10 +106,27 @@ def assemble(data: dict, root: Path, prefix: str) -> dict:
         raise ValueError(
             "Source integrity check rejected evidence; repair the manifest and re-evaluate dependent findings before assembly"
         )
+    reserved = set(data.get("reserved_ids", []))
+    reserved.update(item["id"] for item in data["findings"] if "id" in item)
+    if any(not re.fullmatch(r"[CAS][1-9][0-9]*", key) for key in reserved):
+        raise ValueError(
+            "Reserved and explicit finding IDs must be C/A/S plus a positive integer"
+        )
+    maxima = {
+        key: max((int(value[1:]) for value in reserved if value[0] == key), default=0)
+        for key in ID_PREFIX.values()
+    }
     seen = set()
     findings = []
     for item in data["findings"]:
-        finding_id, severity = item["id"], item["severity"]
+        severity = item["severity"]
+        if severity not in SECTIONS:
+            raise ValueError(f"Invalid severity: {severity}")
+        finding_id = item.get("id")
+        if finding_id is None:
+            key = ID_PREFIX[severity]
+            maxima[key] += 1
+            finding_id = f"{key}{maxima[key]}"
         state = item.get("status", "OPEN")
         if not re.fullmatch(r"[CAS][1-9][0-9]*", finding_id) or finding_id in seen:
             raise ValueError(f"Invalid or duplicate finding ID: {finding_id}")
@@ -110,11 +134,27 @@ def assemble(data: dict, root: Path, prefix: str) -> dict:
             raise ValueError(f"Invalid severity/status: {finding_id}")
         seen.add(finding_id)
         path = local_path(item["path"], root)
-        if path not in role_paths:
-            raise ValueError(f"Finding must come from a completed role report: {path}")
+        if path not in role_paths | prior_paths:
+            raise ValueError(
+                f"Finding must come from a completed role or preserved prior report: {path}"
+            )
+        if path in prior_paths and ("id" not in item or "status" not in item):
+            raise ValueError(
+                "Carried findings require their existing ID and explicit current status"
+            )
         title, body = markdown_section(path, item["heading"])
         # IDs are coordinator-owned: retain them even after severity changes or deduplication.
-        title = re.sub(r"^[CAS][0-9]+\s*(?:—|–|-|:)\s*", "", title)
+        title = re.sub(
+            r"^(?:[CAS][0-9]+|(?:policy|code)-[0-9]+)\s*(?:—|–|-|:)\s*", "", title
+        )
+        title = re.sub(
+            r"\s+\((?:OPEN|STILL OPEN|RESOLVED|UNVERIFIED|WITHDRAWN)\)$", "", title
+        )
+        addendum = item.get("addendum", "")
+        if not isinstance(addendum, str):
+            raise ValueError(f"Finding addendum must be text: {finding_id}")
+        if addendum.strip():
+            body += "\n\nCoordinator assessment: " + addendum.strip()
         findings.append(
             {
                 "id": finding_id,
@@ -122,6 +162,8 @@ def assemble(data: dict, root: Path, prefix: str) -> dict:
                 "status": state,
                 "title": title,
                 "body": body,
+                "path": str(path),
+                "heading": item["heading"],
             }
         )
     open_findings = [
@@ -147,13 +189,14 @@ def assemble(data: dict, root: Path, prefix: str) -> dict:
         or any(f["status"] == "UNVERIFIED" for f in findings)
     )
     status = "PARTIAL" if partial else "COMPLETE"
-    confirmed_criticals = any(
-        f["severity"] == "critical" and f["status"] != "UNVERIFIED"
+    confirmed_critical_ids = [
+        f["id"]
         for f in open_findings
-    )
+        if f["severity"] == "critical" and f["status"] != "UNVERIFIED"
+    ]
     severity = (
         "REQUEST_CHANGES"
-        if confirmed_criticals
+        if confirmed_critical_ids
         else ("COMMENT" if partial or counts["should_address"] else "APPROVE")
     )
     validation = data["validation"].strip()
@@ -222,22 +265,44 @@ def assemble(data: dict, root: Path, prefix: str) -> dict:
     ]
     full = root / f"{prefix}-review-full-report.md"
     summary = [
-        "# Review summary",
-        "",
         f"Review status: {status}",
         f"Review severity: {severity}",
         f"Still-open critical count: {counts['critical']}",
+        f"Confirmed critical count: {len(confirmed_critical_ids)}",
         f"PR: {metadata['repository']}#{metadata['pr_number']}; reviewed head: {metadata['head']}.",
         f"Open findings: {counts['critical']} critical, {counts['should_address']} should address, {counts['suggestion']} suggestions.",
     ]
-    summary += [f"- {f['id']} ({f['status']}): {f['title']}" for f in open_findings]
-    summary += [f"- Evidence gap: {gap}" for gap in gaps]
-    summary += [f"- Note: {note}" for note in notes]
-    summary += ["", validation, "", metrics, "", f"[Full report](<{full}>)"]
+    ranked = sorted(
+        open_findings,
+        key=lambda f: (
+            list(SECTIONS).index(f["severity"]),
+            f["status"] == "UNVERIFIED",
+        ),
+    )
+    summary += [""] + [
+        f"- {f['id']} ({f['status']}): {compact(f['title'])}" for f in ranked[:5]
+    ]
+    if len(ranked) > 5:
+        summary.append(f"- {len(ranked) - 5} more open findings in the full report.")
+    summary += [f"- Evidence gap: {compact(gap)}" for gap in gaps[:2]]
+    if len(gaps) > 2:
+        summary.append(f"- {len(gaps) - 2} more material gaps in the full report.")
+    summary += [
+        "",
+        f"Validation: {compact(validation)}",
+        f"Timing: {compact(metrics)}",
+        f"[Full report](<{full}>)",
+    ]
     result = {
         "status": status,
         "severity": severity,
         "counts": counts,
+        "confirmed_critical_ids": confirmed_critical_ids,
+        "confirmed_critical_count": len(confirmed_critical_ids),
+        "findings": [
+            {key: value for key, value in finding.items() if key != "body"}
+            for finding in findings
+        ],
         "gaps": gaps,
         "notes": notes,
         "finding_states": dict(Counter(f["status"] for f in findings)),
