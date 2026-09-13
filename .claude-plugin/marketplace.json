@@ -1,7 +1,7 @@
 {
   "$schema": "https://claude.ai/schemas/plugin-marketplace.json",
   "name": "policyengine-claude",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Complete PolicyEngine knowledge base - for users, analysts, and contributors across the entire PolicyEngine ecosystem",
   "owner": {
     "name": "PolicyEngine",
@@ -12,7 +12,7 @@
       "name": "analysis-tools",
       "description": "Policy analysis and research - impact studies, dashboards, notebooks, and visualizations",
       "category": "analysis",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "analysis",
         "research",
@@ -79,7 +79,7 @@
       "name": "api-development",
       "description": "API development - Flask endpoints, caching, services, and integration patterns",
       "category": "development",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "api",
         "flask",
@@ -118,7 +118,7 @@
       "name": "app-development",
       "description": "React app development - app-v2, standalone tools, Vercel deployment, and PolicyEngine-specific patterns",
       "category": "development",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "react",
         "frontend",
@@ -168,7 +168,7 @@
       "name": "complete",
       "description": "Complete PolicyEngine knowledge base - all agents, commands, and skills for users, analysts, and contributors",
       "category": "complete",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "complete",
         "all",
@@ -270,7 +270,7 @@
       "name": "country-models",
       "description": "Complete multi-agent workflow for implementing government benefit programs in PolicyEngine country packages",
       "category": "development",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "tax",
         "benefits",
@@ -324,7 +324,7 @@
       "name": "dashboard-builder",
       "description": "Orchestrated AI workflow for creating PolicyEngine dashboards from natural-language descriptions",
       "category": "development",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "dashboard",
         "calculator",
@@ -369,7 +369,7 @@
       "name": "data-science",
       "description": "Data analysis, survey enhancement, imputation, calibration, and microdata utilities",
       "category": "data",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "data",
         "microdata",
@@ -403,7 +403,7 @@
       "name": "essential",
       "description": "Essential PolicyEngine knowledge for all users - understanding the platform, using the web app, and basic concepts",
       "category": "getting-started",
-      "version": "4.0.1",
+      "version": "4.0.2",
       "keywords": [
         "beginner",
         "users",
