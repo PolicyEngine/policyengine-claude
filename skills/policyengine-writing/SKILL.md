@@ -31,11 +31,26 @@ Use this skill when writing blog posts, documentation, PR descriptions, research
 
 PolicyEngine's writing emphasizes clarity, precision, and objectivity.
 
-1. **Active voice** - Prefer active constructions over passive
+1. **Active voice** - Use an actor and a real verb throughout
 2. **Direct and quantitative** - Use specific numbers, avoid vague adjectives/adverbs
 3. **Sentence case** - Use sentence case for headings, not title case
 4. **Neutral tone** - Describe what policies do, not whether they're good or bad
 5. **Precise language** - Choose exact verbs over vague modifiers
+
+## Sentences
+
+These rules apply to every register: blog posts, docs, READMEs, PR descriptions, social copy, and reports back to the team.
+
+1. **Name the actor and action.** Put the person, program, or institution in the subject and a real verb in the predicate. Replace be-verb identities ("the chart is explorable") with actions ("filter the chart by state") wherever an actor can own the verb.
+2. **Describe the action, not the scenario label.** Test-case names and table headings are not prose. Write what someone does, what the program or model does next, and who experiences the result.
+3. **No glosses and no argument pointers.** Cut sentences whose subject is the text's own word ("X means…", "in other words") or the text's own reasoning ("this is why", "the point is"). Give a definition an agent and a condition where they help explain the subject. Keep formal definitions and equations. Remove narrated honesty, review credentials, and clauses about the writer's care; retain the facts those clauses manage.
+4. **Introduce a name or role the first time it appears, then keep to it.** Expand unfamiliar acronyms on first use. Introduce terms with the context the audience needs. Use consistent names for the roles the subject needs.
+5. **Mechanism claims come from the source.** Before writing what a program or model does, open the statute, parameter file, or code that does it, and write what you read.
+6. **No "X, not Y" and no "instead of Y" unless Y is real information.** State the fact. A real limit stays as its own plain sentence.
+7. **Name it or cut it.** A sentence that alludes to something the reader cannot see ("several programs interact here") carries nothing. Name the programs or delete the sentence.
+8. **One thought per sentence, varied rhythm.** Split any sentence a reader would read twice. Join clauses that share one thought. Vary sentence length within the paragraph; do not turn connected prose into a string of short declarations.
+9. **Finished work introduces itself fresh.** A published post, paper, or doc describes what the analysis shows now. It does not narrate drafts, review rounds, or fixed bugs. Keep substantive assumptions, limitations, sensitivity ranges, and uncertainty beside the claims they qualify. Preserve forecast-registration dates and evidence wherever readers need them to assess a forecast; keep full registration and review trails in supporting records. Corrections, changelogs, PR descriptions, and release notes take history as their subject: state what changed and the new numbers, and never hide a correction to a published claim.
+10. **One flagged sentence means a full pass.** When a reviewer strikes one instance of any of these, reread the whole document for the same pattern before replying.
 
 ## Active Voice
 
@@ -711,7 +726,7 @@ limitations that users should be aware of:
 
 Before publishing, verify:
 
-- [ ] Use active voice throughout
+- [ ] Use active voice throughout; apply the sentence rules to the whole draft
 - [ ] Include specific numbers for all claims
 - [ ] Use sentence case for all headings
 - [ ] No policy prescriptions disguised as findings
@@ -729,6 +744,9 @@ Before publishing, verify:
 - [ ] Specify model version and assumptions
 - [ ] Link to PolicyEngine when relevant
 - [ ] Acknowledge limitations directly
+- [ ] Introduce finished work fresh; keep development history in supporting records
+- [ ] Remove self-referential clauses, empty contrasts, and unintroduced names or roles
+- [ ] Check mechanism claims against the code, test, or primary source
 
 ## Resources
 
