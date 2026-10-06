@@ -23,6 +23,17 @@ Or install for your use case:
 /plugin install data-science@policyengine-claude      # For data work
 ```
 
+## Common Frontend Workflow
+
+If you want the "new app" flow for a standalone PolicyEngine interactive,
+use `/new-tool`.
+
+- Install `app-development@policyengine-claude`
+- Run `/new-tool`
+- Claude will use the interactive tools skill and scaffold a Next.js +
+  Tailwind + PolicyEngine design-system tool that can embed in
+  `policyengine.org`
+
 ## Plugins
 
 | Plugin | Audience | Description |
@@ -37,6 +48,9 @@ Or install for your use case:
 | **complete** | All | Everything above — all agents, commands, and skills |
 
 See [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) for the full list of agents, commands, and skills in each plugin.
+
+Notable command for app development:
+- `/new-tool` — scaffold a standalone PolicyEngine interactive tool
 
 ## Auto-Install in Repositories
 

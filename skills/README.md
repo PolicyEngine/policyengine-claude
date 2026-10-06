@@ -87,10 +87,12 @@ Knowledge about PolicyEngine's core tools, APIs, and applications.
 | **policyengine-api-skill** | PolicyEngine API | Flask REST service powering policyengine.org |
 | **policyengine-app-skill** | PolicyEngine React web application | User interface at policyengine.org |
 | **policyengine-core-skill** | PolicyEngine Core simulation engine | The foundation powering all PolicyEngine calculations |
+| **policyengine-interactive-tools-skill** | Standalone interactive tools | Next.js + Tailwind + design-system scaffold and embedding patterns for `/new-tool` |
 | **policyengine-github-agent-skill** | GitHub bot agent | Automated bot for issue/PR responses, avoiding doom loops |
 | **policyengine-microsimulation-skill** | Population-level Microsimulation | Weighted survey analysis at national, state, and congressional district level |
 | **policyengine-python-client-skill** | Python client usage | Programmatic access via Python or REST API |
 | **policyengine-simulation-mechanics-skill** | Advanced simulation patterns | ensure(), output_dataset.data, map_to_entity() |
+| **policyengine-vercel-deployment-skill** | Vercel deployment | Deploy frontend apps and standalone tools under the PolicyEngine team |
 
 ### 📊 Data Science (`data-science/`)
 
@@ -210,6 +212,7 @@ To add a new skill:
 - **Need to implement a new benefit?** → Check `technical-patterns/` skills
 - **Working with US/UK systems?** → See `domain-knowledge/` skills
 - **Building an API endpoint?** → Consult `tools-and-apis/policyengine-api-skill`
+- **Scaffolding a new standalone app/tool?** → Run `/new-tool` and consult `tools-and-apis/policyengine-interactive-tools-skill`
 - **Writing documentation?** → Review `documentation/` skills
 - **Analyzing policy impacts?** → Use `analysis/policyengine-analysis-skill`
 - **Processing survey data?** → Explore `data-science/` skills
