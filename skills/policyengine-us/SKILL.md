@@ -95,7 +95,7 @@ def odc(dependent):
     return pe.us.calculate_household(
         people=[{"age": 45, "employment_income": 40_000}, kid],
         tax_unit={"filing_status": "HEAD_OF_HOUSEHOLD"},
-        household={"state_code": "CA"},
+        household={"state_code": "CA", "county_fips": "06037"},
         year=2026,
     ).tax_unit.ctc
 
@@ -120,13 +120,13 @@ r = pe.us.calculate_household(
         {"age": 5},
     ],
     tax_unit={"filing_status": "JOINT"},
-    household={"state_code": "NY"},
+    household={"state_code": "NY", "county_fips": "36061"},
     year=2026,
 )
 assert round(r.tax_unit.ctc) == 4_400          # 2 children x $2,200 (OBBBA, 2026)
 assert round(r.tax_unit.eitc) == 7_316         # federal EITC (tax_unit)
-assert round(r.spm_unit.snap) == 7_364         # annual = sum of 12 monthly allotments
-assert round(r.household.household_net_income) == 62_681
+assert round(r.spm_unit.snap) == 8_061         # annual = sum of 12 monthly allotments
+assert round(r.household.household_net_income) == 47_929
 ```
 
 Here `income_tax` is about −$10,691 (refundable EITC + CTC exceed liability), so
@@ -144,7 +144,7 @@ import policyengine as pe
 r = pe.us.calculate_household(
     people=[{"age": 35, "employment_income": 25_000}, {"age": 8}],
     tax_unit={"filing_status": "HEAD_OF_HOUSEHOLD"},
-    household={"state_code": "NY"},
+    household={"state_code": "NY", "county_fips": "36061"},
     year=2026,
     extra_variables=["in_poverty", "person_in_poverty", "is_child"],
 )
@@ -218,12 +218,12 @@ import policyengine as pe
 r = pe.us.calculate_household(
     people=[{"age": 30, "employment_income": 20_000}, {"age": 4}],
     tax_unit={"filing_status": "HEAD_OF_HOUSEHOLD"},
-    household={"state_code": "CA"},
+    household={"state_code": "CA", "county_fips": "06037"},
     year=2026,
     extra_variables=["ca_eitc"],
 )
 assert round(r.tax_unit.eitc) == 4_427          # federal EITC
-assert round(r.tax_unit.ca_eitc, 2) == 410.16   # CalEITC (state)
+assert round(r.tax_unit.ca_eitc, 2) == 401.89   # CalEITC (state)
 assert r.tax_unit.state_income_tax < 0          # refundable CA credits exceed liability
 ```
 
@@ -236,7 +236,7 @@ SNAP is the US benefit whose timing most often surprises analysts. Everything be
 against the model source.
 
 **SNAP is monthly.** `snap` and its inputs have `definition_period = MONTH`. When
-`calculate_household` reports an annual figure (like the $7,364 above), it is the **sum of twelve
+`calculate_household` reports an annual figure (like the $8,061 above), it is the **sum of twelve
 monthly allotments** — not one annual calculation. That is why SNAP produces partial-year cliffs
 that annual-only reasoning misses.
 

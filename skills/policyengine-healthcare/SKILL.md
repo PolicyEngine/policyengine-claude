@@ -58,11 +58,11 @@ import policyengine as pe
 r = pe.us.calculate_household(
     people=[{"age": 45, "employment_income": 35_000}],
     tax_unit={"filing_status": "SINGLE"},
-    household={"state_code": "TX"},
+    household={"state_code": "TX", "county_fips": "48201"},
     year=2026,
     extra_variables=["aca_ptc", "household_net_income_including_health_benefits"],
 )
-assert round(r.tax_unit.aca_ptc, 2) == 6_250.38          # a real PTC...
+assert round(r.tax_unit.aca_ptc, 2) == 6_635.45          # a real PTC...
 # ...but it is NOT in default net income; the gap is exactly the PTC:
 gap = (r.household.household_net_income_including_health_benefits
        - r.household.household_net_income)

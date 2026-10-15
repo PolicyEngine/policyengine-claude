@@ -53,12 +53,12 @@ import policyengine as pe
 result = pe.us.calculate_household(
     people=[{"age": 40, "employment_income": 50_000}, {"age": 8}],
     tax_unit={"filing_status": "HEAD_OF_HOUSEHOLD"},
-    household={"state_code": "CA"},
+    household={"state_code": "CA", "county_fips": "06037"},
     year=2026,
     extra_variables=["income_tax"],
 )
 assert result.tax_unit.ctc == 2_200          # OBBBA CTC, 2026
-assert round(result.household.household_net_income) == 46_358
+assert round(result.household.household_net_income) == 46_369
 print(result.spm_unit.snap, result.tax_unit.eitc, result.tax_unit.income_tax)
 ```
 
@@ -81,13 +81,13 @@ import policyengine as pe
 baseline = pe.us.calculate_household(
     people=[{"age": 40, "employment_income": 50_000}, {"age": 8}],
     tax_unit={"filing_status": "HEAD_OF_HOUSEHOLD"},
-    household={"state_code": "CA"},
+    household={"state_code": "CA", "county_fips": "06037"},
     year=2026,
 )
 reformed = pe.us.calculate_household(
     people=[{"age": 40, "employment_income": 50_000}, {"age": 8}],
     tax_unit={"filing_status": "HEAD_OF_HOUSEHOLD"},
-    household={"state_code": "CA"},
+    household={"state_code": "CA", "county_fips": "06037"},
     year=2026,
     reform={"gov.irs.credits.ctc.amount.base[0].amount": 3_000},
 )
@@ -116,7 +116,7 @@ import policyengine as pe
 result = pe.us.calculate_household(
     people=[{"age": 40}],
     tax_unit={"filing_status": "SINGLE"},
-    household={"state_code": "TX"},
+    household={"state_code": "TX", "county_fips": "48201"},
     year=2026,
     axes=[[{"name": "employment_income", "min": 0, "max": 200_000, "count": 401}]],
 )
