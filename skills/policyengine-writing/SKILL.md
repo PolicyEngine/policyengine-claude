@@ -41,7 +41,7 @@ PolicyEngine's writing emphasizes clarity, precision, and objectivity.
 
 These rules apply to every register: blog posts, docs, READMEs, PR descriptions, social copy, and reports back to the team.
 
-1. **Name the actor and action.** Put the person, program, or institution in the subject and a real verb in the predicate. Replace be-verb identities ("the chart is explorable") with actions ("filter the chart by state") wherever an actor can own the verb.
+1. **Name the actor and action.** Put the person, program, or institution in the subject and a real verb in the predicate. Replace be-verb identities ("the chart is explorable") with actions ("filter the chart by state") wherever an actor can own the verb. A be-verb comparison becomes a comparing verb with "by": "our estimate exceeds the Treasury's by 11% in 2026-27 and 16% in 2027-28", not "our estimate is 11% higher than the Treasury's in 2026-27 and 16% higher in 2027-28".
 2. **Describe the action, not the scenario label.** Test-case names and table headings are not prose. Write what someone does, what the program or model does next, and who experiences the result.
 3. **No glosses and no argument pointers.** Cut sentences whose subject is the text's own word ("X means…", "in other words") or the text's own reasoning ("this is why", "the point is"). Give a definition an agent and a condition where they help explain the subject. Keep formal definitions and equations. Remove narrated honesty, review credentials, and clauses about the writer's care; retain the facts those clauses manage.
 4. **Introduce a name or role the first time it appears, then keep to it.** Expand unfamiliar acronyms on first use. Introduce terms with the context the audience needs. Use consistent names for the roles the subject needs.
@@ -64,9 +64,10 @@ PolicyEngine projects higher costs than other organizations
 We estimate the ten-year costs
 The bill lowers the state's top income tax rate
 Montana raises the EITC from 10% to 20%
+Our estimate exceeds the Treasury's by 11% in 2026-27 and 16% in 2027-28
 ```
 
-**❌ Wrong (Passive):**
+**❌ Wrong (Passive or be-verb):**
 ```
 The Earned Income Tax Credit is proposed to be expanded by Harris
 Poverty is reduced by 3.2% by the reform
@@ -74,6 +75,7 @@ Higher costs are projected by PolicyEngine
 The ten-year costs are estimated
 The state's top income tax rate is lowered by the bill
 The EITC is raised from 10% to 20% by Montana
+Our estimate is 11% higher than the Treasury's in 2026-27 and 16% higher in 2027-28
 ```
 
 ## Quantitative and Precise
