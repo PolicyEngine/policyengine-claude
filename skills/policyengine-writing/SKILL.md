@@ -7,8 +7,9 @@ description: |
   requires: no policy prescriptions dressed as findings, no speculative claims, no one-sided
   framing, and explained counterintuitive results.
   Triggers: "write a blog post", "PolicyEngine blog", "policy analysis writeup", "PR description",
-  "research report", "documentation", "social post", "changelog prose", "sounds like advocacy",
-  "is this neutral", "sentence case", "writing style", "make it quantitative".
+  "research report", "documentation", "social post", "newsletter", "video description",
+  "changelog prose", "sounds like advocacy", "is this neutral", "sentence case", "writing style",
+  "make it quantitative".
 metadata:
   category: process
 ---
@@ -25,6 +26,7 @@ Use this skill when writing blog posts, documentation, PR descriptions, research
 - Writing research reports
 - Composing social media posts
 - Creating newsletters
+- Writing video descriptions and emails to outside readers
 - Writing README files
 
 ## Core Principles
@@ -50,7 +52,14 @@ These rules apply to every register: blog posts, docs, READMEs, PR descriptions,
 7. **Name it or cut it.** A sentence that alludes to something the reader cannot see ("several programs interact here") carries nothing. Name the programs or delete the sentence.
 8. **One thought per sentence, varied rhythm.** Split any sentence a reader would read twice. Join clauses that share one thought. Vary sentence length within the paragraph; do not turn connected prose into a string of short declarations.
 9. **Finished work introduces itself fresh.** A published post, paper, or doc describes what the analysis shows now. It does not narrate drafts, review rounds, or fixed bugs. Keep substantive assumptions, limitations, sensitivity ranges, and uncertainty beside the claims they qualify. Preserve forecast-registration dates and evidence wherever readers need them to assess a forecast; keep full registration and review trails in supporting records. Corrections, changelogs, PR descriptions, and release notes take history as their subject: state what changed and the new numbers, and never hide a correction to a published claim.
-10. **One flagged sentence means a full pass.** When a reviewer strikes one instance of any of these, reread the whole document for the same pattern before replying.
+10. **Public copy describes the policy, the result, and what the reader can do.** This covers posts, newsletters, video descriptions, social posts, PDFs, and emails to outside readers. Cut clauses that only record how or why we produced the piece:
+    - production and format choices: "a silent, captioned walkthrough", "no voiceover", "recorded from production", "phone view";
+    - process and checking: "two of us checked", "independent arithmetic checks", "we reproduced it in a separate run", "files that match the checksums", "we added it as a structural reform" (rule 3 covers review credentials);
+    - work in progress: "follows with a data update", "we hold our estimate back while…", "we plan to update these results later this week", "we are rebuilding the dashboard". State the current limitation in the present tense: "Our estimates exclude the savings income tax rise." When readers need a date to act on, give it: "We will publish revised estimates after the OBR's November forecast.";
+    - our reasons for choosing one option over another, unless the reason changes how a number reads.
+
+    Keep everything that changes how a reader reads or trusts a number: assumptions ("assuming no behavioral responses"), model version and data bundle, data sources and years, known data limitations, what a count counts, scope limits, sensitivity ranges and uncertainty, comparisons with official figures and why they differ, sources for each claim, and any correction to or withdrawal of a published figure (rule 9). Describe media by what it shows and how long it runs ("a two-minute tour of the dashboard"), never by how we made it or the traits it lacks. PR descriptions, changelogs, release notes, and developer docs take process as their subject and fall outside this rule. Test each clause: if it tells the reader nothing about the policy, the result, how far to trust it, or what they can do, cut it.
+11. **One flagged sentence means a full pass.** When a reviewer strikes one instance of any of these, reread the whole document for the same pattern before replying.
 
 ## Active Voice
 
@@ -747,6 +756,7 @@ Before publishing, verify:
 - [ ] Link to PolicyEngine when relevant
 - [ ] Acknowledge limitations directly
 - [ ] Introduce finished work fresh; keep development history in supporting records
+- [ ] Public copy describes the policy, the result, and what the reader can do; cut production, process, and work-in-progress notes
 - [ ] Remove self-referential clauses, empty contrasts, and unintroduced names or roles
 - [ ] Check mechanism claims against the code, test, or primary source
 
