@@ -50,38 +50,47 @@ description: Oregon limits gross income to this amount by household size under t
 
 If any fails, rewrite from the template before saving.
 
-## CRITICAL: Parameter Reference Format — Page Numbers in `href:`, NEVER in `title:`
+## CRITICAL: Parameter Reference Format — One Page in `href:` Only; Several Pages Listed in `title:`
 
-The `title:` field is the legal section path (statute, regulation, manual section). The `href:` field is the URL. PDF page anchors (`#page=XX`) belong at the end of the URL.
+The `title:` field is the legal section path (statute, regulation, manual section). The `href:` field is the URL. PDF page anchors (`#page=XX`) belong at the end of the URL. Use one entry per source document — URLs that differ only by `#page=` are the same source.
+
+- **One cited page:** the page goes only in `href:` (`#page=23`); the title has no page number.
+- **Several cited pages:** `href:` opens the first cited page, and the title ends with `#page 72-75` for a consecutive run or `#page 29,32-33,36,41` for a nonconsecutive list (compress runs inside a list). Quote the title, because an unquoted ` #` starts a YAML comment and silently truncates it.
 
 **✅ Correct:**
 ```yaml
 reference:
   - title: OAR 461-155-0030(2)(a)(B)
     href: https://oregon.public.law/rules/oar_461-155-0030
-  - title: Oregon DHS TANF Policy Manual Section 4.3.2
+  - title: Oregon DHS TANF Policy Manual Section 4.3.2                    # one page
     href: https://oregon.gov/dhs/tanf-manual.pdf#page=23
+  - title: "Oregon DHS TANF Payment Standards, Section 2 #page 41-43"     # several pages
+    href: https://oregon.gov/dhs/tanf-payment-standards.pdf#page=41
 ```
 
-**❌ Forbidden — page info inside `title:`:**
+**❌ Forbidden:**
 ```yaml
 reference:
-  - title: Arkansas TEA Manual, page 13            # page belongs in href
+  - title: Arkansas TEA Manual, page 13            # one page belongs in href only
     href: https://humanservices.arkansas.gov/wp-content/uploads/TEA_MANUAL.pdf
-  - title: OAR 461-155-0030 (p. 5)                 # page belongs in href
+  - title: OAR 461-155-0030 (p. 5)                 # one page belongs in href only
     href: https://oregon.public.law/rules/oar_461-155-0030
+  - title: Example Manual #page 4,7                # unquoted: YAML reads the title as "Example Manual"
+    href: https://example.gov/manual.pdf#page=4,7  # href fragment must be one page
 ```
 
-**Title rules:** include the full section path with subsections (e.g., `(2)(a)(B)`); never include `page`, `p.`, `pg`, or `#page=`.
+**Title rules:** include the full section path with subsections (e.g., `(2)(a)(B)`); never include `page`, `p.`, `pg`, or `#page=`. The only page text allowed is the trailing `#page <list>` on a reference that cites several pages.
 
-**href rules:** for PDFs, append `#page=XX` where XX is the **file page number** (1-indexed), not the printed page. For HTML, use section anchors if available.
+**href rules:** for PDFs, append `#page=XX` where XX is the **file page number** (1-indexed), not the printed page — the first cited page when the reference cites several. Never a page list (`#page=1,3,5`). For HTML, use section anchors if available.
 
-**Self-check before saving each parameter file** — scan every `title:` value for:
-1. Digits that represent a page number (`page 13`, `p. 5`, `pg 23`)
-2. The substring `#page=` (belongs in `href:` only)
-3. Missing subsection path (e.g., bare `OAR 461-155` instead of `OAR 461-155-0030(2)(a)(B)`)
+**Self-check before saving each parameter file** — scan every reference for:
+1. Page text in the title of a one-page reference (`page 13`, `p. 5`, `pg 23`, `#page 13`)
+2. The substring `#page=` in a title (belongs in `href:` only)
+3. A several-page reference whose title is unquoted, lacks the trailing `#page <list>`, or whose `href:` does not open the first listed page
+4. A multi-page table split into one entry per page
+5. Missing subsection path (e.g., bare `OAR 461-155` instead of `OAR 461-155-0030(2)(a)(B)`)
 
-If any fails, move the page info to `href:`.
+Fix any failure before saving.
 
 ## Load the consolidated skill first
 

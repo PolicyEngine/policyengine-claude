@@ -17,7 +17,7 @@ metadata:
   period: year        # year | month | day | eternity
   label: Illinois TANF earned income disregard rate
   reference:
-    - title: 305 ILCS 5/4-1.6         # full section path, no page number in title
+    - title: 305 ILCS 5/4-1.6         # full section path; page numbers only when several pages are cited
       href: https://www.ilga.gov/legislation/ilcs/...   # PDFs: add #page=XX here
 ```
 
@@ -36,7 +36,13 @@ Missing any of `unit` / `period` / `label` / `reference` is a validation error.
   `[State] [verb] ... under the [Full Program Name] program.`
 - **`reference`:** prefer an online statute/reg (Cornell LII, public.law, `.gov` HTML with a
   section anchor) over a PDF; full subsection path in the title; verify PDF `#page=XX` is the file
-  page, not the printed page.
+  page, not the printed page. One entry per source document — URLs that differ only by `#page=`
+  are the same source.
+  - **One cited page:** the page goes only in the href (`#page=57`); no page number in the title.
+  - **Several cited pages:** the href opens the first cited page, and the title ends with
+    `#page 72-75` for a consecutive run or `#page 29,32-33,36,41` for a nonconsecutive list. Quote
+    titles containing `#` (`title: "Program Manual, Section 4 #page 72-75"`). Never put a page list
+    in the href (`#page=1,3,5` is not a valid destination).
 
 ## Federal / state separation for income taxes
 

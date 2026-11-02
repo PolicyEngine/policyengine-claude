@@ -161,7 +161,8 @@ Also:
 
 5. **Reference format — CRITICAL.**
    - Variables (`.py`): bare URL string, or tuple of strings. NEVER a YAML-style dict.
-   - Parameters (`.yaml`): structured `reference:` list with `title:` + `href:`. Page numbers go in `href:` (`#page=XX`), NEVER in `title:`.
+   - Parameters (`.yaml`): structured `reference:` list with `title:` + `href:`, one entry per source document. One cited page goes only in `href:` (`#page=XX`), NEVER in `title:`. Several cited pages: `href:` opens the first cited page and the quoted `title:` ends with `#page 72-75` (consecutive) or `#page 29,32-33,36,41` (nonconsecutive).
+   - Flag page text in a one-page title, `#page=` in any title, an unquoted `#page` title, a page list in `href:` (`#page=1,3,5`), and a multi-page table split into one entry per page.
 
 6. **Parameter formatting — SHOULD ADDRESS.**
    - **Description:** one sentence; ends with single period; allowed verbs only (`limits`, `provides`, `sets`, `excludes`, `deducts`, `uses`); generic placeholder (`this amount` / `this share` / `this percentage` / `this threshold`); full program name spelled out; ends with `under the [Full Program Name] program`.
@@ -251,7 +252,7 @@ Path: `{RUN_ROOT}/{PREFIX}-review-code.md`. Group findings by severity.
 - `variables/.../{prefix}_amount.py:42` — `# TODO: implement`
 ### Reference format
 - `variables/.../{prefix}_eligible.py:10` — uses YAML dict format inside Python
-- `parameters/.../income_limit.yaml:8` — page number in `title:` ("page 13"); move to `href:` as `#page=13`
+- `parameters/.../income_limit.yaml:8` — one-page reference has page number in `title:` ("page 13"); move to `href:` as `#page=13`
 ### Duplicate variable
 - `variables/.../{prefix}_fpg.py` — duplicates existing `federal_poverty_guideline`; reuse instead
 ### Boolean toggle date alignment
