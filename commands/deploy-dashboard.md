@@ -11,6 +11,7 @@ Deploy a completed PolicyEngine dashboard to production. Run this AFTER merging 
 ## Skills Used
 
 - **policyengine-tools** — Vercel frontend deployment (all dashboards) and Modal backend deployment (only if `custom-modal` pattern)
+- **policyengine-cloud-costs** — What may stay running after the deploy, and the declared exceptions to report (only if `custom-modal` pattern)
 
 ## Step 1: Verify Prerequisites
 
@@ -316,6 +317,7 @@ Present deployment summary to the user:
 > [If custom backend:]
 > - **API endpoint:** https://policyengine--DASHBOARD_NAME-calculate.modal.run
 > - **Modal environment:** SELECTED_ENV
+> - **Running while idle:** nothing, or each declared exception with its cost (from the README's "Running costs")
 > - **Host-wiring PR:** PR_URL (adds rewrites, and apps.json entry if applicable)
 >
 > ### Verify

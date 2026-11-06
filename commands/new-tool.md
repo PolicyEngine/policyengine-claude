@@ -232,7 +232,7 @@ from pathlib import Path
 from _image_setup import snapshot_models
 
 _BACKEND_DIR = Path(__file__).parent
-app = modal.App("TOOL_NAME-workers")
+app = modal.App("TOOL_NAME-workers", tags={"project": "TOOL_NAME"})  # tag every app of the tool, so its bill adds up in one query
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install("policyengine[us]==LATEST_VERSION", "pydantic")  # pins country model + certified data bundle
@@ -240,7 +240,9 @@ image = (
     .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )
 
-@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+# Household-scale default: a US household calculation peaked at 1.4 GB. For a population
+# run, size from a measured run and declare it (policyengine-cloud-costs skill, rule RS1).
+@app.function(image=image, cpu=1.0, memory=2048, timeout=600, max_containers=10, min_containers=0)
 def compute(params: dict) -> dict:
     from simulation import run_compute
     return run_compute(params)
@@ -254,7 +256,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = modal.App("TOOL_NAME")
+app = modal.App("TOOL_NAME", tags={"project": "TOOL_NAME"})
 gateway_image = modal.Image.debian_slim(python_version="3.11").pip_install("fastapi", "pydantic")
 WORKER_APP = "TOOL_NAME-workers"
 FUNCTION_MAP = {"calculate": "compute"}
@@ -330,7 +332,8 @@ vercel link --scope policy-engine
 vercel --prod --yes
 ```
 
-If using Pattern C (Modal gateway + worker):
+If using Pattern C (Modal gateway + worker), first add the "Running costs" section from the
+policyengine-cloud-costs skill's `templates/running-costs.md` to the README, then:
 ```bash
 unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
 # Deploy worker first (includes image snapshot — first build takes ~5 min)
@@ -344,7 +347,7 @@ vercel --prod --force --yes --scope policy-engine
 
 ## Step 6: Add pull-request CI
 
-Create `.github/workflows/ci.yml` so every new tool gets build validation before deploy:
+Create `.github/workflows/ci.yml` so every new tool gets build validation before deploy. Replace `CHECKER_COMMIT_SHA` with the output of `gh api repos/PolicyEngine/policyengine-skills/commits/main --jq .sha`, so the cost checker's rules change only when the tool's maintainers move that commit:
 
 ```yaml
 name: CI
@@ -364,6 +367,13 @@ jobs:
         run: |
           curl -fsSL https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/main/scripts/audit_next_migration.py -o /tmp/audit_next_migration.py
           python3 /tmp/audit_next_migration.py --root .
+      - name: Check deploy settings for cost
+        env:
+          # A policyengine-skills commit; move it forward on purpose (policyengine-cloud-costs skill, section 4)
+          CHECKER_COMMIT: CHECKER_COMMIT_SHA
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/${CHECKER_COMMIT}/skills/policyengine-cloud-costs/scripts/check_deploy_config.py" -o /tmp/check_deploy_config.py
+          python3 /tmp/check_deploy_config.py .
       - run: bun install --frozen-lockfile
       - name: Run lint
         run: |
@@ -382,7 +392,7 @@ jobs:
       - run: bun run build
 ```
 
-Every embeddable tool should have migration guardrails plus at least install + build on pull requests. If the repo has `lint` or `test` scripts, wire them into CI immediately rather than leaving the repo deploy-only.
+Every embeddable tool should have migration guardrails and the cost check, plus at least install + build on pull requests. If the repo has `lint` or `test` scripts, wire them into CI immediately rather than leaving the repo deploy-only.
 
 ## Step 7: Register in apps.json
 
@@ -405,6 +415,9 @@ bun run build
 # Run migration guardrails locally
 curl -fsSL https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/main/scripts/audit_next_migration.py | python3 - --root .
 
+# Check deploy settings for cost
+curl -fsSL https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/main/skills/policyengine-cloud-costs/scripts/check_deploy_config.py | python3 - .
+
 # Run lint/tests when the repo defines them
 if jq -e '.scripts.lint' package.json >/dev/null; then bun run lint; fi
 if jq -e '.scripts.test' package.json >/dev/null; then bun run test; fi
@@ -415,3 +428,4 @@ if jq -e '.scripts.test' package.json >/dev/null; then bun run test; fi
 See these skills for detailed guidance:
 - `policyengine-tools` — Embedding, hash sync, country detection, Vercel deployment patterns
 - `policyengine-design` — Token reference
+- `policyengine-cloud-costs` — Backend defaults, declared exceptions, the README's running costs, and the cost checks

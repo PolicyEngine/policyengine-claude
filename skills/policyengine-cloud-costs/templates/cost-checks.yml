@@ -1,0 +1,26 @@
+# Copy to .github/workflows/cost-checks.yml, or add the step to the tool's existing CI.
+# The checker reads the repository's files only: no secrets, no cloud access.
+#
+# CHECKER_COMMIT pins the checker to one policyengine-skills commit, so a rule added later
+# reaches this repository only when its maintainers move the pin. Set it to the output of
+#   gh api repos/PolicyEngine/policyengine-skills/commits/main --jq .sha
+# and move it forward on purpose.
+name: Cost checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check-deploy-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deploy settings for cost
+        env:
+          CHECKER_COMMIT: CHECKER_COMMIT_SHA
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/PolicyEngine/policyengine-skills/${CHECKER_COMMIT}/skills/policyengine-cloud-costs/scripts/check_deploy_config.py" -o /tmp/check_deploy_config.py
+          python3 /tmp/check_deploy_config.py .

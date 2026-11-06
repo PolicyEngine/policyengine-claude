@@ -22,6 +22,7 @@ Builds the data layer for a dashboard based on the approved `plan.yaml`.
 - **policyengine-tools** - Data patterns, API integration, and Modal backend architecture
 - **policyengine-us** or **policyengine-uk** - PolicyEngine variables
 - **policyengine** - Python simulation mechanics, reform dictionaries, and parameter path syntax (custom-modal only)
+- **policyengine-cloud-costs** - Modal defaults (scale to zero, `max_containers`, measured sizes) and how to declare an exception (custom-modal only)
 
 ## Backend Selection Priority
 
@@ -41,6 +42,7 @@ Pattern C is the most complex and should be the last resort. If the plan specifi
 2. `Skill: policyengine-us` (if US dashboard)
 3. `Skill: policyengine-uk` (if UK dashboard)
 4. `Skill: policyengine` (if custom-modal pattern — **required** for simulation mechanics and correct reform parameter paths)
+5. `Skill: policyengine-cloud-costs` (if custom-modal pattern)
 
 ## Input
 
@@ -312,7 +314,7 @@ from pathlib import Path
 from _image_setup import snapshot_models
 
 _BACKEND_DIR = Path(__file__).parent
-app = modal.App("DASHBOARD_NAME-workers")
+app = modal.App("DASHBOARD_NAME-workers", tags={"project": "DASHBOARD_NAME"})  # tag every app of the tool, so its bill adds up in one query
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install("policyengine[us]==LATEST_VERSION", "pydantic")  # Pinned — looked up from PyPI in Step 1; pins the country model + certified data bundle
@@ -320,18 +322,26 @@ image = (
     .add_local_file(str(_BACKEND_DIR / "simulation.py"), remote_path="/root/simulation.py")
 )
 
-@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+@app.function(image=image, cpu=1.0, memory=2048, timeout=600, max_containers=10, min_containers=0)
 def compute_household(params: dict) -> dict:
     from simulation import run_household
     return run_household(params)
 
-@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)
+# Population run: replace the TODO declaration with the measured peak before merging.
+@app.function(
+    image=image,
+    cpu=2.0,  # a simulation runs on one thread; a statewide worker has run on 2 cores
+    memory=32768,  # cost-ok: RS1 TODO measured peak memory plus a fifth
+    timeout=3600,
+    max_containers=4,
+    min_containers=0,
+)
 def compute_statewide(params: dict) -> dict:
     from simulation import run_statewide
     return run_statewide(params)
 ```
 
-Create one `@app.function` per endpoint in the plan. Set `timeout` based on the plan's `worker_timeout` values. Microsimulation endpoints need at least `timeout=3600`.
+Create one `@app.function` per endpoint in the plan. Set `timeout`, `cpu`, `memory` and `max_containers` from the plan's `worker_*` values, and keep `min_containers=0`. Microsimulation endpoints need at least `timeout=3600`. Any value the plan's `cost_plan.declared_exceptions` lists gets a `# cost-ok: <rule> <reason>` comment on its setting (see the policyengine-cloud-costs skill); a population worker keeps its memory `TODO` declaration until a measured run replaces it, and the cost checker warns until then.
 
 ### Step 5: Create Gateway
 
@@ -343,7 +353,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = modal.App("DASHBOARD_NAME")
+app = modal.App("DASHBOARD_NAME", tags={"project": "DASHBOARD_NAME"})
 
 gateway_image = modal.Image.debian_slim(python_version="3.11").pip_install(
     "fastapi", "pydantic",

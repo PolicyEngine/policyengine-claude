@@ -1,0 +1,52 @@
+# Copy to .github/workflows/stop-preview-app.yml when PRs deploy their own Modal app.
+# Replace TOOL_NAME-pr-<number> with the name the preview deploy uses.
+# Needs the repository's GitHub Actions secrets MODAL_TOKEN_ID and MODAL_TOKEN_SECRET.
+name: Stop preview app
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  stop-preview:
+    runs-on: ubuntu-latest
+    env:
+      APP_NAME: TOOL_NAME-pr-${{ github.event.pull_request.number }}
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_WORKSPACE: policyengine
+    steps:
+      - run: pip install modal
+      # Same check as templates/check-credentials.yml.
+      - name: Modal credentials work
+        run: |
+          missing=""
+          test -n "$MODAL_TOKEN_ID" || missing="$missing MODAL_TOKEN_ID"
+          test -n "$MODAL_TOKEN_SECRET" || missing="$missing MODAL_TOKEN_SECRET"
+          if [ -n "$missing" ]; then
+            echo "::error::Empty:$missing. Either the Actions secret is not set (a PolicyEngine organisation admin adds it, from a Modal token for the $MODAL_WORKSPACE workspace) or this job does not pass it in env. The preview app was not stopped."
+            exit 1
+          fi
+          if ! info=$(modal token info 2>&1); then
+            echo "::error::Modal rejected MODAL_TOKEN_ID / MODAL_TOKEN_SECRET: the token is revoked, expired or mistyped. The preview app was not stopped."
+            printf '%s\n' "$info"
+            exit 1
+          fi
+          workspace=$(printf '%s\n' "$info" | sed -n 's/^Workspace: \([^ ]*\).*/\1/p')
+          if [ "$workspace" != "$MODAL_WORKSPACE" ]; then
+            echo "::error::The Modal token is for workspace '${workspace:-unknown}', not '$MODAL_WORKSPACE'. The preview app was not stopped."
+            exit 1
+          fi
+      - name: Stop the preview app if this PR deployed one
+        run: |
+          if ! apps=$(modal app list --json); then
+            echo "::error::modal app list failed (its error is above). The preview app was not stopped."
+            exit 1
+          fi
+          deployed=$(printf '%s' "$apps" | python3 -c "import json, os, sys; print(sum(app['description'] == os.environ['APP_NAME'] and app['state'] == 'deployed' for app in json.load(sys.stdin)))")
+          if [ "$deployed" = "0" ]; then
+            echo "No deployed app named $APP_NAME"
+            exit 0
+          fi
+          # -y: without it the command waits for a confirmation and aborts in CI.
+          modal app stop -y "$APP_NAME"

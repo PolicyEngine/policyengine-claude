@@ -26,6 +26,7 @@ Produces a structured YAML implementation plan from a natural-language dashboard
 - **policyengine-us** - US tax/benefit variables and programs
 - **policyengine-uk** - UK tax/benefit variables and programs
 - **policyengine-api** - REST API endpoint catalog (v1 production, v2 alpha status)
+- **policyengine-cloud-costs** - Worker sizing, maximums and the cost plan (custom-modal only)
 
 ## First: Load Required Skills
 
@@ -36,6 +37,7 @@ Produces a structured YAML implementation plan from a natural-language dashboard
 3. `Skill: policyengine-us` (if US dashboard)
 4. `Skill: policyengine-uk` (if UK dashboard)
 5. `Skill: policyengine-api`
+6. `Skill: policyengine-cloud-costs` (if custom-modal pattern)
 
 ## Input
 
@@ -247,6 +249,12 @@ Write the chosen pattern into `data_pattern` in plan.yaml using these identifier
 
 If the chosen pattern is `custom-modal`, the plan **must document why** the simpler patterns are insufficient. The plan must also specify which endpoints need long-running computation (microsimulation) vs. fast computation (household), as this determines worker timeout and memory allocation.
 
+For `custom-modal`, size each endpoint and fill `cost_plan` using the policyengine-cloud-costs skill:
+- household endpoints start at `worker_cpu: 1.0` and `worker_memory: 2048` (a US household calculation peaked at 1.4 GB);
+- population endpoints keep `worker_memory_measured: false` until a measured run sets the size;
+- every endpoint has a `worker_max_containers`, and `cost_plan.worst_hour` is the sum of maximum containers × hourly rate;
+- anything that runs while idle, or any worker of 4 or more cores or 16 GiB or more, is listed in `cost_plan.declared_exceptions` with its reason and cost, and an end date if it is temporary.
+
 ### Step 5: Design Components
 
 For each visualization or interaction:
@@ -338,8 +346,9 @@ custom_modal:  # for custom-modal pattern
       method: POST
       long_running: false  # < 60s — household-level simulation
       worker_timeout: 600
-      worker_memory: 32768
-      worker_cpu: 8.0
+      worker_memory: 2048
+      worker_cpu: 1.0
+      worker_max_containers: 10
       inputs:
         - name: income
           type: number
@@ -355,8 +364,10 @@ custom_modal:  # for custom-modal pattern
       method: POST
       long_running: true   # 2-5+ minutes — MUST use polling
       worker_timeout: 3600
-      worker_memory: 32768
+      worker_memory: 32768  # placeholder until a measured run
+      worker_memory_measured: false
       worker_cpu: 8.0
+      worker_max_containers: 4
       inputs:
         - name: reform
           type: object
@@ -368,6 +379,14 @@ custom_modal:  # for custom-modal pattern
       policyengine_variables:
         - household_net_income
         - state_income_tax
+  cost_plan:  # copied into the README's "Running costs" section (policyengine-cloud-costs skill)
+    idle: nothing  # every minimum is 0
+    worst_hour: "household-impact 10 × $0.063 + statewide-impact 4 × $0.63 ≈ $3.17/hour"
+    copies: "PR preview apps, stopped when the PR closes (.github/workflows/stop-preview-app.yml)"
+    secrets: "Modal secret DASHBOARD_NAME; nothing in the repo"
+    owner: "@github-handle"
+    review_by: "YYYY-MM-DD"
+    declared_exceptions: []  # e.g. {setting: "min_containers=2 on household-impact", rule: MO1, why: "launch day", until: "2026-11-27", cost: "≈ $3/day"}
 
 tech_stack:
   # Fixed - not configurable
@@ -509,7 +528,8 @@ Before presenting the plan:
 - [ ] If custom-modal, the `reason` explains why `policyengine-api` is insufficient
 - [ ] If custom-modal, `architecture: gateway-polling` is set
 - [ ] If custom-modal, `backend_files` section lists all 4 files (_image_setup, app, simulation, gateway)
-- [ ] If custom-modal, each endpoint has `long_running`, `worker_timeout`, `worker_memory`, and `worker_cpu`
+- [ ] If custom-modal, each endpoint has `long_running`, `worker_timeout`, `worker_memory`, `worker_cpu` and `worker_max_containers`
+- [ ] If custom-modal, `cost_plan` answers what runs while idle, the worst hour's cost, how each copy ends, where secrets live, and the owner and review date
 - [ ] Test criteria are specific and measurable
 - [ ] Embedding configuration is complete
 - [ ] Component IDs are unique kebab-case

@@ -154,20 +154,33 @@ image, not at import time):
 | `backend/app.py` | only `modal` | worker functions |
 | `backend/modal_app.py` | `modal`, `fastapi`, `pydantic` | lightweight gateway |
 
-Worker functions get high CPU/memory but **must** scale to zero — never set `keep_warm` or
-`min_containers`; the image snapshot (`.run_function(snapshot_models)`) makes cold starts ~2 s.
+Worker functions scale to zero by default (`min_containers=0`, no `keep_warm`), set
+`max_containers`, and size `cpu`/`memory` from a measured run; the image snapshot
+(`.run_function(snapshot_models)`) makes cold starts ~2 s. A US household calculation peaked at
+1.4 GB (policyengine-us 2.18.0), so household workers start at `cpu=1.0, memory=2048`. A warm
+window, a minimum or a large worker is fine when declared with a `# cost-ok:` comment: see the
+policyengine-cloud-costs skill for the defaults, the README cost plan and the checker.
 
 ```python
 # backend/app.py — workers
 import modal
 from _image_setup import snapshot_models
-app = modal.App("my-tool-workers")
+app = modal.App("my-tool-workers", tags={"project": "my-tool"})  # tag every app of the tool, so its bill adds up in one query
 image = (modal.Image.debian_slim(python_version="3.11")
          .pip_install("policyengine[us]==X.Y.Z", "pydantic")   # top-level release (>=5.0.1): pins matched country model + certified data bundle
          .run_function(snapshot_models)
          .add_local_file("backend/simulation.py", remote_path="/root/simulation.py"))
 
-@app.function(image=image, cpu=8.0, memory=32768, timeout=3600)   # no keep_warm / min_containers
+# Population run: replace the TODO declaration with the measured peak before merging
+# (the cost checker warns until then). Modal bills the higher of request and use.
+@app.function(
+    image=image,
+    cpu=2.0,  # a simulation runs on one thread; a statewide worker has run on 2 cores
+    memory=32768,  # cost-ok: RS1 TODO measured peak memory plus a fifth
+    timeout=3600,
+    max_containers=4,
+    min_containers=0,
+)
 def compute_statewide(params: dict) -> dict:
     from simulation import run_statewide
     return run_statewide(params)
@@ -186,7 +199,7 @@ need `HUGGING_FACE_TOKEN` — private dataset repo). Details: the `policyengine`
 # backend/modal_app.py — gateway (spawn + poll)
 import modal
 from fastapi import FastAPI
-app = modal.App("my-tool")
+app = modal.App("my-tool", tags={"project": "my-tool"})
 web_app = FastAPI()
 
 @web_app.post("/submit/{endpoint}")
