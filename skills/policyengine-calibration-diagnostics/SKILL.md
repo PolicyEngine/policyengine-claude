@@ -9,7 +9,7 @@ description: |
   whether a reform classification is calibration-sensitive.
   Triggers: "why does my reform not match", "policyengine cost off", "calibration mismatch",
   "imputed variable", "takeup rate", "non-filer", "itemizer share", "small state variance",
-  "calibration target", "Microcosm (formerly Populace) target", "calibration dashboard", "target-diagnostics",
+  "calibration target", "Microcosm target", "calibration dashboard", "target-diagnostics",
   "relative_error", "diagnose mismatch", "deviation signature".
 metadata:
   category: data
@@ -53,7 +53,7 @@ show up as outright simulation errors, not magnitude drift).
 Per-target fit for the current Microcosm release, no auth, reads the release from Hugging Face:
 
 ```
-BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace
+BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/microcosm
 GET {BASE}/target-diagnostics?source=<source>     # every target for a source, with relative_error
 GET {BASE}/target-investigation?target=<id>        # full investigation packet for one target
 GET {BASE}/releases                                # release ids for pinning

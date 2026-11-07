@@ -101,7 +101,7 @@ in addition to whatever the description asks for:
    10-year). Honest-caveats section for anything dropped or assumed.
    **Include a data-calibration section**: at build time, query the live
    calibration API
-   (`https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace/target-diagnostics?source=<source>`)
+   (`https://calibration-diagnostics.vercel.app/calibration/dashboard/api/microcosm/target-diagnostics?source=<source>`)
    and present the THREE RINGS from analyze-policy Phase 5.6 — not just the
    reform's own source:
    - **Ring 1** — the primary variable's marginals (ssa, cms_*, irs_soi,

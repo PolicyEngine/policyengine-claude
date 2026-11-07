@@ -307,7 +307,7 @@ for the variables the reform touches, using the live Microcosm calibration
 dashboard API (no auth, reads the current release from Hugging Face):
 
 ```
-BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace
+BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/microcosm
 GET {BASE}/target-diagnostics?source=<source>            # per-target fit
 GET {BASE}/target-investigation?target=<id>              # drill one bad target
 ```

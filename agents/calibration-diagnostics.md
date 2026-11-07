@@ -109,7 +109,7 @@ Cross-reference the signature with the sensitivity table. Examples:
 Microcosm release, no auth, reads from Hugging Face):
 
 ```
-BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/populace
+BASE = https://calibration-diagnostics.vercel.app/calibration/dashboard/api/microcosm
 GET {BASE}/target-diagnostics?source=<ssa|cms_medicaid|cms_aca|cms_medicare|hhs_acf_tanf|irs_soi|jct|cbo|...>
 GET {BASE}/target-investigation?target=<target-id>   # full investigation packet for one target
 GET {BASE}/releases                                  # release ids for pinning
@@ -123,7 +123,7 @@ suggested repo searches for the drill-down.
 
 Also:
 - `github.com/PolicyEngine/microcosm` — the US data/calibration successor (policyengine-us-data is archived); calibration targets and loss live in the `microcosm-calibrate` package.
-- `github.com/PolicyEngine/calibration-diagnostics` — the dashboard source (UI at `/calibration/dashboard/populace`).
+- `github.com/PolicyEngine/calibration-diagnostics` — the dashboard source (UI at `/calibration/dashboard/microcosm`).
 - Open issues on `policyengine-us` and `microcosm` matching the program keyword.
 
 ## Output

@@ -7,7 +7,7 @@ description: |
   Triggers: policyengine, microsimulation, calculate_household, reform impact, budgetary impact,
   cost of a policy, revenue estimate, poverty rate, child poverty, winners and losers, decile,
   Gini, inequality, CTC, EITC, SNAP, income tax, universal credit, state-level analysis,
-  congressional district, constituency, Microcosm (formerly Populace) dataset, MicroSeries, ensure_datasets,
+  congressional district, constituency, Microcosm dataset, MicroSeries, ensure_datasets,
   economic_impact_analysis, managed_microsimulation.
   NOT for: implementing new variables/parameters inside country models (use
   policyengine-model-development) or calling the REST API from JS (use policyengine-api).
@@ -243,9 +243,9 @@ Certified defaults resolve automatically — **do not pass raw `hf://` URIs**:
 
 | Name | What | Notes |
 |---|---|---|
-| `populace_us_2024` | US default (Microcosm, ~57k households calibrated to ~30k+ admin targets) | public |
-| `populace_us_2024_acs_local` | US local-area build (~1.6M households, ACS multispine, PUMA-assigned CD-119/county/state) | load **by name** for state/district work; never selected implicitly |
-| `populace_uk_2023` | UK default (Microcosm) | private HF repo — set `HUGGING_FACE_TOKEN` |
+| `populace_us_2024` | US default (Microcosm, ~57k households calibrated to ~5.7k targets) | public |
+| `populace_us_2024_acs_local` | US local-area build (~1.6M households; ACS records draw a district and county from PUMA overlaps, donor records keep block-based geography) | load **by name**. It's the `dataset_path` of the state and congressional-district entries in `region_registry`, but `Simulation` uses whatever dataset you pass |
+| `microcosm_uk_2024_25` | UK default (Microcosm) | private HF repo — set `HUGGING_FACE_TOKEN` |
 
 The pre-2026 datasets are gone:
 <!-- stale-ok -->

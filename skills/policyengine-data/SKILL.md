@@ -5,10 +5,10 @@ description: |
   built, calibrated, versioned, and named. Covers the Microcosm stack (Frame kernel,
   microcosm-fit conditional models, microcosm-calibrate weights with L0 sparsity, build/release
   gates), the certified datasets that flow into policyengine bundles (populace_us_2024 sparse
-  ~57k default, populace_us_2024_acs_local ~1.6M local-area, populace_uk_2023 private), the
+  ~57k default, populace_us_2024_acs_local ~1.6M local-area, microcosm_uk_2024_25 private), the
   "one national dataset filtered by geography" local-area philosophy, the calibration
   diagnostics dashboard, and where data work goes now that policyengine-us-data is archived.
-  Triggers: Microcosm (formerly Populace), Frame, microcosm-fit, microcosm-calibrate, calibration target, survey
+  Triggers: Microcosm, Frame, microcosm-fit, microcosm-calibrate, calibration target, survey
   weights, reweighting, imputation, QRF, quantile loss, L0 sparsity, sparse 57k, local-area
   data, ACS, FRS, WAS, enhanced microdata, DEFAULT_DATASET.
   NOT for: running simulations (see policyengine) or diagnosing a specific score mismatch (see
@@ -85,19 +85,23 @@ held-out, rotated evidence without degrading a protected target family beyond to
 
 Builds that pass the release gates are published to Hugging Face (`policyengine/populace-us`,
 `policyengine/populace-uk-private`) and referenced by name in the certified bundle manifest that
-ships inside the `policyengine` package. Verified in policyengine 4.21.0 (`policyengine/data/
-bundle/manifest.json`):
+ships inside the `policyengine` package. `populace-*` ids name Microcosm releases. These rows match
+policyengine 6.16.0 (`policyengine/data/bundle/manifest.json`) and the Hugging Face release
+manifests it pins, as of 2026-11-06:
 
 | Dataset | What | How to load |
 |---|---|---|
-| `populace_us_2024` | US default. Build J, sparse, ~57k households calibrated to tens of thousands of admin targets | resolves automatically; do not pass a raw URI |
-| `populace_us_2024_acs_local` | US local-area build. Build L, ~1.6M households, ACS multispine, PUMA-assigned to CD-119 / county / state | load **by name**, never implicit |
-| `populace_uk_2023` | UK default (Microcosm, FRS+WAS) | private HF repo — set `HUGGING_FACE_TOKEN` |
+| `populace_us_2024` | US default. Build P (57,240 households, calibrated to 5,659 targets) plus one person-level SPM flag, `is_spm_independent_minor_role` | resolves automatically; do not pass a raw URI |
+| `populace_us_2024_acs_local` | US local-area build. Build O, 1,586,908 households: 2024 ACS records, which keep their observed state and PUMA and draw a 119th-Congress district and county from population-weighted PUMA overlaps, plus donor records that keep their block-based district and county | load **by name**. The manifest's `region_datasets` makes it the `dataset_path` of the state and congressional-district entries in policyengine.py's region registry, but `Simulation` and the district-impact functions use whatever dataset you pass |
+| `microcosm_uk_2024_25` | UK default (Microcosm) | private HF repo — set `HUGGING_FACE_TOKEN` |
+| `microcosm_uk_2024_25_dense` | UK build for constituency and local-authority runs (the manifest's `region_datasets`) | private HF repo |
 
-Verified manifest build ids (2026-07): US `populace_us_2024` @
-`populace-us-2024-buildj-sparse-rmloss100-75d5add-20260710`; UK `populace_uk_2023` @
-`populace-uk-2023-dd68c73-...`. The manifest also carries a `dataset_overlays` section (where the
-`acs_local` overlay lives) and per-region `region_datasets`.
+Manifest build ids (bundle 6.16.0, as of 2026-11-06): US `populace_us_2024` @
+`populace-us-2024-spm-20260915`; US `populace_us_2024_acs_local` @
+`populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z`; UK `microcosm_uk_2024_25` @
+`microcosm-uk-2024-25-national-20261025T091414Z-a6299504`. The manifest also carries per-region
+`region_datasets` and a `dataset_overlays` section that lists other UK builds (the FRS builds and
+the older `populace_uk_2023`).
 
 ### The two defaults, precisely
 
@@ -113,17 +117,18 @@ assert "hf://datasets/policyengine/populace-us" in DEFAULT_DATASET
 
 - **The pe.py managed default** (what `pe.us.calculate_household`, `managed_microsimulation`, and
   `ensure_datasets` resolve): `populace_us_2024` at the **bundle-manifest** build —
-  `populace-us-2024-buildj-sparse-...-20260710` (Build J, 2026-07-10).
+  `populace-us-2024-spm-20260915` (bundle 6.16.0).
 - **The country-package `DEFAULT_DATASET`** (what a bare <!-- stale-ok -->
-  `from policyengine_us import Microsimulation; Microsimulation()` uses, verified 1.764.6 at
-  `policyengine_us/system.py`): the *same dataset family* `populace_us_2024` on
-  `hf://datasets/policyengine/populace-us`, but pinned to an **earlier build**
-  (`populace-us-2024-c86a631-...-20260619`, 2026-06-19).
+  `from policyengine_us import Microsimulation; Microsimulation()` uses, in `policyengine_us/system.py`
+  on policyengine-us main as of 2026-11-06): the *same dataset family* `populace_us_2024` on
+  `hf://datasets/policyengine/populace-us`, pinned to release `populace-us-2024-spm-20260909`. That
+  release holds the same H5 bytes as the bundle's `populace-us-2024-spm-20260915` (sha256
+  `6496cc43…`, which `DEFAULT_DATASET_SHA256` also pins), so today both surfaces load identical data.
 
 Both are Microcosm `populace_us_2024` — even the country package's own test/dev default is now
-Microcosm (its `test_microsim.py` asserts `"populace" in DEFAULT_DATASET`). The takeaway: the
-country-package default can lag the certified bundle by a build. For reproducible, provenance-
-known results, go through the managed `pe.*` surface (which pins the certified bundle) rather
+Microcosm (its `test_microsim.py` asserts `"populace" in DEFAULT_DATASET`). The takeaway: the two
+pins live in separate repos, so the country-package default can drift from the certified bundle
+when a new build lands. For reproducible, provenance-known results, go through the managed `pe.*` surface (which pins the certified bundle) rather
 than a bare country-package `Microsimulation()`.
 
 ## Local-area analysis: one national dataset, filtered
@@ -140,7 +145,7 @@ dataset, and New York is a filter on it.
 
 Per-target calibration fit for the current release is browsable — no auth, reads the live release
 from Hugging Face — at **`calibration-diagnostics.vercel.app`** (JSON API under
-`/calibration/dashboard/api/populace`). Use it to see which admin targets a release hits and
+`/calibration/dashboard/api/microcosm`). Use it to see which admin targets a release hits and
 which it misses before trusting a number that depends on them. The `policyengine-calibration-
 diagnostics` skill covers the sensitivity registry and the three-ring reading method that turns
 those diagnostics into hypotheses about a score.
