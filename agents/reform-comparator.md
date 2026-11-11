@@ -157,7 +157,7 @@ Build a `benchmark_agreement` block in the output:
 
 The stage does NOT fire only when the reform has a full external cluster within ±25% (Step 2b already CORROBORATED).
 
-**Rule of thumb — replace verbal reasoning with model runs.** If the natural comparator section is written as "TCJA scored X, our reform is 1/6 the size, so linear scaling suggests Y" — that's a mirror candidate. Run TCJA's shape through our model and check we reproduce X. Verbal linear-scaling should not appear in a final report; it should either be corroborated by a mirror run or explicitly labeled as an unvalidated sanity check.
+**Rule of thumb — replace verbal reasoning with model runs.** If the natural comparator section is written as "TCJA scored X, our reform is 1/6 the size, so linear scaling suggests Y" — that's a mirror candidate. Run TCJA's shape through our model and check we reproduce X. Linear scaling must not appear in a report, labeled or not: either run the comparator's shape through the model or leave the comparison out (see "Every reported number is a model run" in the `policyengine` skill).
 
 When the trigger fires, invoke `model-corroborator` with the original reform context and the benchmark cluster. The corroborator picks 1-2 closest-shape candidates, builds mirror reform-dicts (and a baseline policy if the source uses a different baseline schedule like TCJA-extension vs OBBBA-current-law), submits them to the PE API, polls for completion, and computes per-candidate corroboration:
 

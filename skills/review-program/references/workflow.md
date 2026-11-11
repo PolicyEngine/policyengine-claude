@@ -493,7 +493,13 @@ Classify confirmed findings:
   an explicit repository completion requirement (such as source corroboration or functional
   tests). Identify that requirement and the concrete failure. A plausible output difference,
   missing optional test, unknown source or preferred implementation pattern alone is not
-  a confirmed critical.
+  a confirmed critical. A figure published as a PolicyEngine estimate (analysis, report,
+  dashboard data or blog) that was derived from other runs' output instead of a run of that
+  scenario (scaling by an index or share ratio, interpolation or extrapolation between
+  runs, a side model standing in for the model) is always critical, whatever validation
+  accompanies it: this is an explicit repository requirement; see "Every reported number
+  is a model run" in the `policyengine` skill. Hand-calculated expected values in tests are
+  not covered.
 - **SHOULD ADDRESS**: missing boundary coverage on tested behavior, maintainability or
   repo-standard issues. Missing rounding/flooring/capping is normally here unless a
   demonstrated case changes eligibility/category or materially changes results.

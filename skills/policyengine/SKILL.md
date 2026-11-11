@@ -8,7 +8,7 @@ description: |
   cost of a policy, revenue estimate, poverty rate, child poverty, winners and losers, decile,
   Gini, inequality, CTC, EITC, SNAP, income tax, universal credit, state-level analysis,
   congressional district, constituency, Microcosm dataset, MicroSeries, ensure_datasets,
-  economic_impact_analysis, managed_microsimulation.
+  economic_impact_analysis, managed_microsimulation, scenarios, uncertainty, Monte Carlo.
   NOT for: implementing new variables/parameters inside country models (use
   policyengine-model-development) or calling the REST API from JS (use policyengine-api).
 metadata:
@@ -25,6 +25,33 @@ Originally verified against policyengine 4.21.0 (2026-07); the marked examples r
 against the latest release (5.0.1 at 2026-08). Re-verify the bundle when precision matters
 (see "Checking what you're running" below).
 
+## Every reported number is a model run
+
+PolicyEngine is a microsimulation model, and its outputs are the product. Every fiscal,
+distributional, poverty or household figure an analysis presents as a PolicyEngine estimate
+must come from running the model for that scenario and year, never derived from the output of
+runs for other scenarios. None of these is allowed, however well it is validated:
+
+- scaling one run's totals by a ratio of indices, levels or shares (for example
+  `cost = spend * (index_a - index_b) / index_central` applied to thousands of Monte Carlo
+  draws, with a handful of full runs as a "check");
+- interpolating or extrapolating between runs, years or parameter values, or applying an
+  elasticity or share taken from one run to another scenario;
+- a side model (closed form, spreadsheet, regression on model output) that stands in for the
+  model on some scenarios;
+- changing one parameter in a scenario that should move the rest of the system. A macro or
+  price path goes in as model inputs, so the model's uprating carries it through (UK: see
+  "Macro scenarios" in the `policyengine-uk` skill).
+
+When the design needs more scenarios than you can run, run fewer: choose a small set you can
+explain, run each one fully, and state how many full runs stand behind each figure. A
+distribution comes from full runs over sampled scenarios, with the sampling error stated.
+Arithmetic on model *inputs* is fine (building a parameter path from an uprating rule, say),
+and so is arithmetic that combines outputs of the runs for the scenario being reported: reform
+minus baseline, sums over years, ratios, percentage changes, averages, deflation, and sampling
+error across full runs. Arithmetic that produces a figure for a scenario nobody ran is not. If
+the model cannot produce a figure, do not publish it.
+
 ## Setup
 
 Country models are extras — bare `policyengine` installs neither:
@@ -39,7 +66,8 @@ Analysis always runs on the **latest released** `policyengine` (`>=5.0.1`; resol
 from PyPI as described in "Checking what you're running"). Each release pins exactly-matched
 country-model versions and the certified data bundle, which is what makes results
 reproducible. Directly-imported country packages (`policyengine_us` / `policyengine_uk`) are
-for model development and tests, not for analysis compute.
+for model development and tests, not for analysis compute (the exception: a UK macro path needs
+`policyengine_uk`'s `Scenario`; see "Macro scenarios" in the `policyengine-uk` skill).
 
 ## Household calculations (fast, ~2 GB RAM)
 
