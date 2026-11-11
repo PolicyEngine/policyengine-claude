@@ -210,9 +210,13 @@ export HUGGING_FACE_TOKEN=hf_...   # required for UK population data; household 
 ```
 
 Do not hardcode a raw `hf://` dataset URI — the certified default resolves by name through the
-bundle. The pre-Microcosm UK datasets are superseded. See the `policyengine-data` skill for how
-Microcosm UK is built (FRS + WAS imputation) and calibrated, and the `policyengine` skill for the
-`ensure_datasets` / `Simulation` population flow, which is identical across countries.
+bundle. policyengine.py also serves the Enhanced FRS and FRS files that policyengine-uk-data
+builds (`enhanced_frs_2024_25`, `frs_2024_25`, and their 2023-24 and `_tiny` siblings), but only
+when you name one. It downloads them from the gated `policyengine/policyengine-uk-data-private`
+repo, so your token needs access there too. Say in your results when a run used one. See the
+`policyengine-data` skill for how Microcosm builds and calibrates its UK datasets (FRS + WAS
+imputation), and the `policyengine` skill for the `ensure_datasets` / `Simulation` population
+flow, which works the same way in both countries.
 
 ## Macro scenarios (a different CPI or earnings path)
 

@@ -1,6 +1,6 @@
 ---
 name: report-logger
-description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Country-aware routing (INVESTIGATE → country data repo issue, us → PolicyEngine/microcosm; structural → policyengine-{country} issue; everything → archive).
+description: Routes a completed /analyze-policy report to the right destination — local archive, GitHub issue, tracker DB, or research draft PR — based on verdict + flags. Country-aware routing (INVESTIGATE → an issue in the repo that builds the run's dataset, PolicyEngine/microcosm for us and uk, or policyengine-uk-data when a uk run named an Enhanced FRS or FRS file; structural → policyengine-{country} issue; everything → archive).
 tools: Read, Write, Bash
 model: sonnet
 ---
@@ -58,12 +58,12 @@ Append context-specific options:
 |---|---|
 | Inside `policyengine-app-v2` repo (HAS_POSTS_DIR) | "Save as draft research post: `app/src/data/posts/articles/{slug}.md` + update `app/src/data/posts/posts.json`" |
 | Inside `policyengine-skills` or any repo with `analyses/` | "Just the archive in `analyses/`" (already covered by local archive but make the path explicit) |
-| Verdict is `INVESTIGATE` | "Open GitHub issue in the country's data repo (`us` → `PolicyEngine/microcosm`; other countries → `policyengine-{country}-data`) — calibration hypothesis" |
+| Verdict is `INVESTIGATE` | "Open GitHub issue in the repo that builds the run's dataset (`us` and `uk` → `PolicyEngine/microcosm`; a `uk` run that named an Enhanced FRS or FRS file → `PolicyEngine/policyengine-uk-data`; other countries → `policyengine-{country}-data`) — calibration hypothesis" |
 | Verdict is `structural` | "Open GitHub issue in `PolicyEngine/policyengine-{country}` (model-change estimate)" |
 | Verdict is `PASS*` AND inside `policyengine-app-v2` | "Open draft PR to policyengine-app-v2 with the post body" |
 | Always | "Custom path / repo — type a destination spec" |
 
-The country is derived from the reform's jurisdiction (`us`, `uk`, `ca`), so the issue repo names are fully qualified.
+The agent takes the country from the reform's jurisdiction (`us`, `uk`, `ca`) and, for `uk`, the dataset from the frontmatter's `dataset_at_run`, so the shortlist names each issue repo in full.
 
 ### Step 3: Prompt the analyst
 
@@ -96,7 +96,7 @@ If the analyst picks `edit`, drop them into `$EDITOR` (or open the file path if 
 | Verdict | Pre-selected |
 |---|---|
 | `PASS` / `PASS-WITH-NOTES` / `PASS-WITH-CORROBORATION` | local archive only |
-| `INVESTIGATE` | local archive + GH issue in the country data repo (`us` → `microcosm`) |
+| `INVESTIGATE` | local archive + GH issue in the repo that builds the run's dataset (`us` and `uk` → `microcosm`) |
 | `structural` | local archive + GH issue in `policyengine-{country}` |
 | `not-possible` / `deployed-model-lag` | local archive only |
 
@@ -153,6 +153,7 @@ Always print the resolved path to the agent's output so the user can find the fi
    run_id: 97759
    model_version_at_run: 1.745.0
    data_version_at_run: populace-us-2024-cd-concept-budget-...
+   dataset_at_run: populace_us_2024  # routes uk data issues (see "Repo selection")
    command_args: "ARPA-style federal CTC expansion: $3,000 ages 6-17, $3,600 ages 0-5, fully refundable"
 
    # Horizon (from Phase 0 prompt)
@@ -187,7 +188,7 @@ Always print the resolved path to the agent's output so the user can find the fi
    ---
    ```
 
-   **All `model_version_at_run` and `data_version_at_run` must come from the microsim result's `model_version` and `data_version` fields.** Never hardcode "Enhanced CPS 2024" or a specific PE-US version in the frontmatter.
+   **`model_version_at_run`, `data_version_at_run` and `dataset_at_run` must come from the microsim result's `model_version`, `data_version` and `dataset` fields.** Never hardcode a dataset name or a country-model version in the frontmatter.
 
 2. **The full report body** verbatim (markdown).
 
@@ -197,11 +198,14 @@ Always print the resolved path to the agent's output so the user can find the fi
 
 ### Repo selection (auto-routed)
 
-- `INVESTIGATE` → the country's data repo. **US calibration/data work moved to `PolicyEngine/microcosm`** (the `policyengine-us-data` successor — us-data is archived). Other countries still map to `policyengine-{country}-data`: `uk` → `policyengine-uk-data`, `ca` → `policyengine-canada-data`.
+- `INVESTIGATE` → the repo that builds the dataset the run used:
+  - `us` → `PolicyEngine/microcosm`. Microcosm builds the US datasets, and PolicyEngine archived `policyengine-us-data`.
+  - `uk` → `PolicyEngine/microcosm`, unless the run named an Enhanced FRS or FRS file. policyengine.py loads Microcosm's `microcosm_uk_2024_25` whenever the caller names no dataset, and the API runs only that default. A local run can name an Enhanced FRS or FRS file instead (`enhanced_frs_2024_25`, `frs_2024_25`, and their 2023-24 and `_tiny` siblings), which policyengine.py serves as dataset overlays and policyengine-uk-data builds. That run's data issue goes to `PolicyEngine/policyengine-uk-data`.
+  - Other countries map to `policyengine-{country}-data`: `ca` → `policyengine-canada-data`.
 - `structural` → `PolicyEngine/policyengine-{country}` (the live model repo — `us` → `policyengine-us`, `uk` → `policyengine-uk`, etc.)
-
-**CRITICAL:** never hardcode a single data repo. Parameterize by the reform's country — `us` routes to `PolicyEngine/microcosm`, non-US to `policyengine-{country}-data`. A UK reform's calibration issue does not belong in the US data repo (and vice versa).
 - Explicit `issue:<repo>` → use that repo
+
+**CRITICAL:** never hardcode a single data repo. Route by the reform's country and, for `uk`, by `dataset_at_run`. Microcosm builds both the US and the UK datasets, so the issue body names the dataset and its data version.
 
 ### Issue body shape per verdict
 
@@ -212,6 +216,7 @@ Always print the resolved path to the agent's output so the user can find the fi
 
 **Reform:** {reform_title}
 **Policy ID:** {policy_id}
+**Dataset:** `{dataset_at_run}` ({data_version_at_run})
 **Deviation:** {deviation_signature_summary}
 
 ### Top hypothesis
@@ -269,13 +274,25 @@ See archived report.
 ### Open issue mechanics
 
 ```bash
-# US data issues go to PolicyEngine/microcosm (the archived us-data successor);
-# non-US countries still use policyengine-{country}-data.
-if [ "$country" = "us" ]; then
-  DATA_REPO="PolicyEngine/microcosm"
-else
-  DATA_REPO="PolicyEngine/policyengine-${country}-data"
-fi
+# Send the data issue to the repo that builds the dataset the run used.
+# `dataset` holds dataset_at_run: a dataset name or an hf:// URI. An empty
+# value routes as the bundle default. Cut at the last @ and keep the last path
+# segment, as policyengine.py's dataset_logical_name does before it drops the
+# file extension, which a prefix match never reads.
+dataset_name=${dataset%@*}
+dataset_name=${dataset_name##*/}
+case "$country" in
+  us) DATA_REPO="PolicyEngine/microcosm" ;;
+  uk)
+    # policyengine-uk-data builds the Enhanced FRS and FRS files; Microcosm
+    # builds the UK default and the bundle's other UK datasets.
+    case "$dataset_name" in
+      enhanced_frs_*|frs_*) DATA_REPO="PolicyEngine/policyengine-uk-data" ;;
+      *) DATA_REPO="PolicyEngine/microcosm" ;;
+    esac
+    ;;
+  *) DATA_REPO="PolicyEngine/policyengine-${country}-data" ;;
+esac
 
 gh issue create \
   --repo "$DATA_REPO" \

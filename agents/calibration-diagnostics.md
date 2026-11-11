@@ -7,7 +7,7 @@ model: opus
 
 # Calibration Diagnostics
 
-Triggered only when `reform-comparator` returns `INVESTIGATE`. Hypothesizes which calibration targets or imputed variables in `microcosm` (the US data successor; policyengine-us-data is archived) — and country equivalents — are driving the mismatch.
+It runs only when `reform-comparator` returns `INVESTIGATE`, and hypothesizes which calibration targets or imputed variables in the run's dataset drive the mismatch. Microcosm (`PolicyEngine/microcosm`) builds the US and UK defaults, and policyengine-uk-data builds the Enhanced FRS and FRS files a UK run can name in place of the UK default. The microsim result's `dataset` names the one the run used.
 
 Loads the `policyengine-calibration-diagnostics` skill for the full sensitivity registry.
 
@@ -17,6 +17,7 @@ Loads the `policyengine-calibration-diagnostics` skill for the full sensitivity 
 - `reform` (provisions + reform-dict)
 - `jurisdiction`
 - `anchor` (the prior-scores anchor for context)
+- `dataset` (the microsim result's `dataset`: the name of the dataset the run loaded, the certified default unless a local run named another)
 
 ## Process
 
@@ -54,7 +55,7 @@ Cross-reference the signature with the sensitivity table. Examples:
 
 ### Step 3: Generate the diagnostic checklist
 
-**Required citations.** Every hypothesis MUST cite a specific file and (where possible) a specific line/function/parameter path. "loss.py" alone is not enough — quote the actual target name or line range. Use `gh api repos/PolicyEngine/microcosm/contents/{path}` if you need to open the file before writing the hypothesis.
+**Required citations.** Every hypothesis MUST cite a specific file and (where possible) a specific line/function/parameter path. "loss.py" alone is not enough — quote the actual target name or line range. Use `gh api repos/PolicyEngine/microcosm/contents/{path}` if you need to open the file before writing the hypothesis. For a UK run on the default, cite Microcosm's UK target files in `packages/microcosm-build/src/microcosm/build/uk/` (`uk_population_targets.json` and the national `target_references.json` that Microcosm generates from it) or a build stage in `uk_runtime/` beside that folder. For a UK run on an Enhanced FRS or FRS file, open `PolicyEngine/policyengine-uk-data` instead.
 
 **Expertise tagging.** Mark each hypothesis with `expertise_required`: `non-expert` (can be tested by reading docs), `analyst` (needs PolicyEngine workflow familiarity), or `pe-internal` (needs core-team knowledge of the calibration pipeline). The SKILL claims "non-expert users can at least understand candidate causes" — that's only credible if we mark the bar honestly.
 
@@ -77,7 +78,7 @@ Cross-reference the signature with the sensitivity table. Examples:
       "file_citation": "the child_age imputation step in PolicyEngine/microcosm (microcosm-frame / microcosm-fit packages)",
       "current_value_quoted": "Read from the file — quote the target distribution by single year of age",
       "expected_direction_of_effect": "more 0-5 children → higher cost via $3,600 tier",
-      "test_to_run": "Compare ECPS age-0-5 share to ACS B01001 published 2023; if off by >5%, the imputation needs recalibration.",
+      "test_to_run": "Compare Microcosm's age-0-5 share to ACS B01001 published 2023; if off by >5%, the imputation needs recalibration.",
       "expertise_required": "analyst",
       "related_issues": []
     },
@@ -119,12 +120,13 @@ Rank hypotheses with actual `relative_error` numbers from these endpoints
 rather than assumptions — a target that is already >10% off in the release
 diagnostics is a stronger hypothesis than any prior. The
 `target-investigation` packet includes ledger metadata, artifact paths, and
-suggested repo searches for the drill-down.
+suggested repo searches for the drill-down. The API lists only Microcosm's US releases (none for the UK on 2026-11-08), so a UK hypothesis starts from the UK target files that Step 3 names.
 
 Also:
-- `github.com/PolicyEngine/microcosm` — the US data/calibration successor (policyengine-us-data is archived); calibration targets and loss live in the `microcosm-calibrate` package.
+- `github.com/PolicyEngine/microcosm` — builds and calibrates the US and UK datasets (PolicyEngine archived policyengine-us-data). The calibration code lives in the `microcosm-calibrate` package, and each country's target files and build stages live in `packages/microcosm-build/src/microcosm/build/` (`us/` and `us_runtime/`, `uk/` and `uk_runtime/`).
+- `github.com/PolicyEngine/policyengine-uk-data` — builds the Enhanced FRS and FRS files; consult it only for a UK run that named one of them.
 - `github.com/PolicyEngine/calibration-diagnostics` — the dashboard source (UI at `/calibration/dashboard/microcosm`).
-- Open issues on `policyengine-us` and `microcosm` matching the program keyword.
+- Open issues matching the program keyword on `policyengine-{country}` and on the repo that builds the run's dataset (`microcosm`, or `policyengine-uk-data` for a UK run on one of its files).
 
 ## Output
 

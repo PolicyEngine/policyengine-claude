@@ -20,10 +20,11 @@ Flags:
   - `custom:YYYY-YYYY` — year range (e.g. `custom:2026-2028`) — mapped to `budget-window` with `start_year`+`window_size`.
 - `--year YYYY` (only used with `--horizon 1`; default current year)
 - `--mode {api|local}` (default `api` for microsim execution)
+- `--dataset <name>`: run on a named dataset from policyengine.py's bundle, such as `enhanced_frs_2024_25`, in place of the certified default. The API runs only the default, so `--dataset` needs `--mode local`.
 - `--skip-microsim` (process-test mode — stops at Stage 5, predicts from prior anchor)
 - `--auto-investigate` (if Stage 5 returns INVESTIGATE, auto-run top calibration hypothesis)
 - `--write-report PATH` (default `/tmp/analyze-policy-{policy_id}.md`)
-- `--log-to <dest>[,<dest>...]` (override auto-routing; see Phase 8). Examples: `--log-to archive`, `--log-to "archive,issue:policyengine-{country}-data"` (country auto-substituted from `--country`; US data issues route to `PolicyEngine/microcosm`), `--log-to draft:policyengine-app-v2/app/src/data/posts/articles/arpa-ctc.md`
+- `--log-to <dest>[,<dest>...]` (override auto-routing; see Phase 8). Examples: `--log-to archive`, `--log-to "archive,issue:microcosm"`, `--log-to draft:policyengine-app-v2/app/src/data/posts/articles/arpa-ctc.md`. Without it, report-logger files US and UK data issues in `PolicyEngine/microcosm`, or a UK run's in `PolicyEngine/policyengine-uk-data` when the run named an Enhanced FRS or FRS file.
 - `--no-log` (skip Phase 8 entirely — write the `/tmp` report only)
 - `--auto-confirm` (skip confirmation prompts before opening GitHub issues; only honor in non-interactive contexts)
 
@@ -257,6 +258,7 @@ microsim-runner
   jurisdiction=<jurisdiction>
   year=<year>
   mode=<mode>
+  dataset=<--dataset value, or omitted for the certified default>
 ```
 
 Returns `result`. If `mode=local`, this may take 5-10 minutes per run.
@@ -408,6 +410,7 @@ calibration-diagnostics
   reform=<provisions+reform_dict>
   jurisdiction=<jurisdiction>
   anchor=<chosen anchor>
+  dataset=<microsim result's dataset>
 ```
 
 Returns ranked hypothesis list + recommended next test.
@@ -431,6 +434,8 @@ The `frontmatter` metadata must include the publication inputs `description`
 (reform-describer's 1-paragraph summary) and `reform_dict` (the exact validated
 JSON from Phase 2, omitted for structural/not-possible verdicts) — downstream
 automation (the CRM publication router) parses these from the archived report.
+It also carries `dataset_at_run`, the `dataset` from microsim-runner's result:
+report-logger reads it to pick the repo for a UK data issue.
 
 **Destination routing.** `report-logger` owns the runtime prompt, the pre-selected defaults by verdict, the context-aware shortlist (which options to surface based on which repo the analyst is in), the body preview flow, and archive path resolution. See `report-logger.md` sections "Routing — runtime prompt, context-aware" and "Path resolution" for the source of truth. This document only summarizes the outputs the analyst sees:
 
@@ -498,7 +503,7 @@ recommendation>
 ## Methodology
 - Microsim mode: api
 - Year: 2026
-- Dataset: Enhanced CPS
+- Dataset: <the microsim result's dataset and data_version>
 - Static analysis (no behavioral response)
 ```
 

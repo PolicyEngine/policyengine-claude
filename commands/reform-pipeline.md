@@ -105,8 +105,9 @@ unexplained divergences become INVESTIGATE leads) → report + archive.
 Branch on the verdict:
 - **PASS / PASS-WITH-NOTES / PASS-WITH-CORROBORATION** → continue to Phase 3.
 - **INVESTIGATE** → report the calibration diagnosis and STOP — unverified
-  numbers never publish. The auto-filed country data issue (`us` →
-  `PolicyEngine/microcosm`; others → `policyengine-{country}-data`) is the follow-up thread.
+  numbers never publish. Follow up in the data issue report-logger files (`us`
+  and `uk` → `PolicyEngine/microcosm`; a `uk` run on a named Enhanced FRS or FRS
+  file → `PolicyEngine/policyengine-uk-data`; others → `policyengine-{country}-data`).
 - **structural** → report why and STOP publication. Offer the unblock:
   `/implement-structural <backlog issue>` opens the policyengine-{country}
   model PR; once merged AND deployed, re-run this pipeline — the frozen

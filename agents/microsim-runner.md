@@ -16,9 +16,10 @@ Runs a single reform through PolicyEngine and returns structured impact results.
 ## Inputs
 
 - `reform_dict`: PolicyEngine parameter changes (from `parameter-locator`)
-- `jurisdiction`: `{country, state?}` (e.g., `{country: us, state: ri}` or `{country: us}` for federal)
+- `jurisdiction`: `{country, state?}` (e.g., `{country: us, state: ri}`, `{country: us}` for federal, or `{country: uk}`)
 - `year`: simulation year (default `2026`)
 - `mode`: `api` (default) or `local`
+- `dataset` (optional): a dataset name from policyengine.py's bundle, such as `enhanced_frs_2024_25`. Omit it to run the certified default. The API runs only the default, so pass `dataset` only with `mode=local`.
 
 ## Process — API path
 
@@ -37,14 +38,14 @@ policy_id = response.json()["result"]["policy_id"]
 
 ### Step 2: Request economy-wide impacts
 
-**Critical:** the URL is `/economy/{reform_policy_id}/over/{baseline_policy_id}`, NOT `/over/1`. The `over/{N}` segment is the **baseline policy ID** to diff against, not a year count. Common baseline IDs:
+**Critical:** the URL is `/economy/{reform_policy_id}/over/{baseline_policy_id}`, and the baseline ID must be the country's current-law ID. The `over/{N}` segment is the **baseline policy ID** to diff against, not a year count. Common baseline IDs:
 
 | Country | Current-law baseline policy_id |
 |---|---|
 | US | `2` |
-| UK | (verify per-environment; typically `1` or `2`) |
+| UK | `1` (`current_law_id` in `/uk/metadata`) |
 
-Calling `/over/1` against an arbitrary reform usually returns a misleading parse error or computes against a stale baseline. Always use the documented current-law baseline.
+A baseline ID other than the country's current-law ID usually returns a misleading parse error or computes against a stale baseline. Always use the documented current-law baseline.
 
 ```python
 region = state.lower() if state else "us"
@@ -70,6 +71,8 @@ The deployed API advertises only two dataset names at `/us/metadata/economy_opti
 
 <!-- stale-ok -->
 **Do NOT use `enhanced_cps_2024` or year-suffixed variants** — these names are NOT advertised, so the API silently falls back to its default (`cps`), producing results that look plausible but use raw CPS rather than enhanced.
+
+**For a UK run**, call the same routes under `/uk/` with `region=uk` and baseline policy `1`, and send no `dataset` parameter. policyengine-api builds every economy request with `dataset="default"` and answers HTTP 400 to any query parameter its economy routes don't define. A UK API run therefore uses the default that `/uk/metadata` lists under `economy_options.datasets`, Microcosm's `microcosm_uk_2024_25` on 2026-11-08. The US dataset notes above and the dataset-honored check below don't apply to UK runs: record a UK run's `dataset` and `data_version` as the Output section describes. To run a UK reform on another dataset, take the local path.
 
 ### Dataset honored validation (REQUIRED)
 
@@ -249,6 +252,18 @@ budget = pe.us.calculate_budgetary_impact(baseline, reform)  # total / federal /
 
 `Simulation(policy=reform_dict)` takes the same flat reform dict as the API path. Call `economic_impact_analysis` before any manual `ensure()` — it configures the output variables both simulations need.
 
+For a UK run, follow the same pattern with `pe.uk`, which has `economic_impact_analysis` but no `calculate_budgetary_impact`, and whose analysis result carries no budget total. Take a UK run's cost from policyengine-uk's household `gov_balance`, which adds `gov_tax` and subtracts `gov_spending`. pe.uk's default outputs leave it out, so pass `extra_variables={"household": ["gov_balance"]}` to both `Simulation`s. The reform's weighted total minus the baseline's gives the change in the government's balance, and `annual_cost_billion_year1` takes the opposite sign, in £ billions. `pe.uk.ensure_datasets(years=[year])` loads the certified default, Microcosm's `microcosm_uk_2024_25`, from a private Hugging Face repo, so set `HUGGING_FACE_TOKEN`. When the caller names a dataset, load it by name: `pe.uk.ensure_datasets(datasets=[dataset], years=[year])`. policyengine.py serves the Enhanced FRS and FRS files that policyengine-uk-data builds (`enhanced_frs_2024_25`, `frs_2024_25`, and their 2023-24 and `_tiny` siblings) only by name, from the `dataset_overlays` in its bundle manifest. It downloads them from the gated `policyengine/policyengine-uk-data-private` repo, so the token also needs access there. Say in the result that a run on one of them left the certified default.
+
+Record the dataset the run used and its version for the output, in either country:
+
+```python
+from policyengine.provenance.manifest import dataset_logical_name, resolve_managed_dataset_reference
+
+uri = resolve_managed_dataset_reference(country, dataset)  # dataset=None gives the certified default
+dataset_name = dataset_logical_name(uri)  # e.g. "microcosm_uk_2024_25"
+data_version = uri.rsplit("@", 1)[1]  # the revision the bundle pins
+```
+
 For the analyst MicroSeries surface (weighted `.calc()` on the certified default `populace_us_2024`):
 
 ```python
@@ -258,7 +273,7 @@ sim = pe.us.managed_microsimulation()                       # certified default 
 sim.calc("household_net_income", period=year).sum()         # US: .calc(); UK: .calculate()
 ```
 
-For state- or district-level impacts, load `populace_us_2024_acs_local` **by name** and scope a `Simulation` with `RowFilterStrategy(variable_name="state_fips", ...)` from `policyengine.core.scoping_strategy` — never a per-state or per-district H5 file (those are gone; `policyengine-us-data` is archived). See the `policyengine` skill's regional-analysis section.
+For state- or district-level impacts, load `populace_us_2024_acs_local` **by name** and scope a `Simulation` with `RowFilterStrategy(variable_name="state_fips", ...)` from `policyengine.core.scoping_strategy` — never a per-state or per-district H5 file (policyengine.py's bundle serves none, and PolicyEngine archived `policyengine-us-data`). See the `policyengine` skill's regional-analysis section.
 
 ## Output
 
@@ -271,6 +286,8 @@ The agent normalizes the raw API response into this canonical shape. **Always in
   "jurisdiction": {"country": "us", "state": null},
   "year": 2026,
   "execution_mode": "api",
+  "dataset": "populace_us_2024",
+  "data_version": "populace-us-2024-spm-20260915",
   "wall_clock_seconds": 480,
   "results": {
     "budget": {
@@ -297,6 +314,8 @@ The agent normalizes the raw API response into this canonical shape. **Always in
 }
 ```
 
+**`dataset` and `data_version`** name the dataset that backed the run and its version. /analyze-policy records them in the archive's frontmatter as `dataset_at_run` and `data_version_at_run`, and report-logger routes a UK data issue by the dataset. On the API path, read both from `response.json()["result"]["policyengine_bundle"]`. When the result has no `policyengine_bundle`, its `dataset` reads `default` or its `data_version` is empty, take both from the default entry in `/{country}/metadata` under `economy_options.datasets`. On the local path, compute them as "Process — Local path" shows.
+
 **Sign conventions:**
 - `annual_cost_billion`: positive = revenue/spending COST to government (reform makes the gov spend more or collect less). For a cap repeal like SALT, this is a positive number (revenue loss to gov).
 - `gini_pct_change_relative` (e.g., -2.0%): change relative to baseline Gini. Use this for comparison to published PE scores, which typically report relative change.
@@ -314,7 +333,7 @@ The comparator agent expects BOTH absolute and relative values for Gini — publ
   - **Float-typed parameters** (caps, thresholds, amounts): accept either the string `".inf"` OR a large numeric like `1e15`. Prefer `.inf` for clarity.
   - **Integer-typed parameters** (ages, qualifying-children counts): the string `".inf"` fails silently — the POST is accepted but the `/economy` call later returns `status: "error", message: null` with no diagnostic. Use a large *integer* like `999` instead.
   - When unsure, read the YAML — if it has `value_type: int` or values look like integers (no decimal), use the integer form.
-- **Wrong baseline ID:** calling `/over/1` against an arbitrary reform returns a parse error or a stale baseline. Always use `/over/{baseline_policy_id}` — see Step 2.
+- **Wrong baseline ID:** a baseline ID other than the country's current-law ID returns a parse error or a stale baseline. Always use `/over/{baseline_policy_id}` — see Step 2.
 - **Multi-year discontinuities:** TCJA / OBBBA / similar regime-shift parameters make single-year results unrepresentative of a 10-year window. When the reform touches a parameter that sunsets or inflates, run all 10 years (`--horizon 10`) — do NOT extrapolate. The 2026-07-01 std-ded +$1K empirical case: yr1×10 = $178.6B understated the real 10-year cost ($196.10B) by 10%.
 
 ## Hand-off

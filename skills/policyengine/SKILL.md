@@ -275,14 +275,16 @@ Certified defaults resolve automatically — **do not pass raw `hf://` URIs**:
 | `populace_us_2024_acs_local` | US local-area build (~1.6M households; ACS records draw a district and county from PUMA overlaps, donor records keep block-based geography) | load **by name**. It's the `dataset_path` of the state and congressional-district entries in `region_registry`, but `Simulation` uses whatever dataset you pass |
 | `microcosm_uk_2024_25` | UK default (Microcosm) | private HF repo — set `HUGGING_FACE_TOKEN` |
 
-The pre-2026 datasets are gone:
-<!-- stale-ok -->
-`enhanced_cps_2024` and `enhanced_frs_2023_24` are superseded by Microcosm, and the per-area
-<!-- stale-ok -->
-files (`hf://policyengine/policyengine-us-data/states/*.h5`, `districts/*.h5`) no longer
-exist — policyengine-us-data is archived. **Local-area analysis = filter one national dataset
-by its geography columns**, never a per-area file. See the policyengine-data skill for how
-Microcosm is built and calibrated.
+policyengine.py also serves the Enhanced FRS and FRS files that policyengine-uk-data builds:
+`enhanced_frs_2024_25`, `frs_2024_25`, and their 2023-24 and `_tiny` siblings. It lists them as
+`dataset_overlays` in its bundle manifest and loads one only when a caller names it. It downloads them from the gated `policyengine/policyengine-uk-data-private` repo, so
+your token needs access there. Name one only when a task calls for it, and say in your results
+that the run left the certified default. The bundle serves no per-area file: the state and
+district H5s <!-- stale-ok -->
+(`hf://policyengine/policyengine-us-data/states/*.h5`, `districts/*.h5`) came from
+policyengine-us-data, which PolicyEngine archived. **Local-area analysis = filter one national
+dataset by its geography columns**, never a per-area file. See the policyengine-data skill for
+how Microcosm builds and calibrates its datasets.
 
 ## Regional analysis
 
