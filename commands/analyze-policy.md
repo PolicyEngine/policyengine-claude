@@ -149,7 +149,7 @@ reform-classifier
 
 Branch on `classification`:
 - **`not-possible`** — write `/tmp/{policy_id}-not-modelable.md` with rationale. EXIT.
-- **`structural`** — write `/tmp/{policy_id}-structural-backlog.md` with the model-change estimate. Optionally open a GitHub issue against `policyengine-{country}` if `--open-issue`. EXIT — and surface the unblock path: `/implement-structural <issue>` implements the model extension (baseline change for enacted law, gov/contrib for proposals) and records the re-run that completes this analysis.
+- **`structural`** — write `/tmp/{policy_id}-structural-backlog.md` with the model-change estimate. Optionally open a GitHub issue in the country's model repo (`PolicyEngine/policyengine-us`, `-uk` or `-canada`) if `--open-issue`. EXIT — and surface the unblock path: `/implement-structural <issue>` implements the model extension (baseline change for enacted law, gov/contrib for proposals) and records the re-run that completes this analysis.
 - **`parametric`** — proceed.
 
 Capture `reform_dict` from the classifier output.

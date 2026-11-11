@@ -107,7 +107,7 @@ Branch on the verdict:
 - **INVESTIGATE** → report the calibration diagnosis and STOP — unverified
   numbers never publish. Follow up in the data issue report-logger files (`us`
   and `uk` → `PolicyEngine/microcosm`; a `uk` run on a named Enhanced FRS or FRS
-  file → `PolicyEngine/policyengine-uk-data`; others → `policyengine-{country}-data`).
+  file → `PolicyEngine/policyengine-uk-data`; none for `ca`, which has no microdata).
 - **structural** → report why and STOP publication. Offer the unblock:
   `/implement-structural <backlog issue>` opens the policyengine-{country}
   model PR; once merged AND deployed, re-run this pipeline — the frozen
