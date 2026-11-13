@@ -10,7 +10,8 @@ description: |
   congressional district, constituency, Microcosm dataset, MicroSeries, ensure_datasets,
   economic_impact_analysis, managed_microsimulation, scenarios, uncertainty, Monte Carlo.
   NOT for: implementing new variables/parameters inside country models (use
-  policyengine-model-development) or calling the REST API from JS (use policyengine-api).
+  policyengine-model-development) or calling the REST API from a page or server (use
+  policyengine-api-access).
 metadata:
   category: analysis
 ---

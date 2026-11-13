@@ -26,6 +26,7 @@ Produces a structured YAML implementation plan from a natural-language dashboard
 - **policyengine-us** - US tax/benefit variables and programs
 - **policyengine-uk** - UK tax/benefit variables and programs
 - **policyengine-api** - REST API endpoint catalog (v1 production, v2 alpha status)
+- **policyengine-api-access** - What the dashboard API offers pages, and when a backend needs its own server credential
 - **policyengine-cloud-costs** - Worker sizing, maximums and the cost plan (custom-modal only)
 
 ## First: Load Required Skills
@@ -37,7 +38,8 @@ Produces a structured YAML implementation plan from a natural-language dashboard
 3. `Skill: policyengine-us` (if US dashboard)
 4. `Skill: policyengine-uk` (if UK dashboard)
 5. `Skill: policyengine-api`
-6. `Skill: policyengine-cloud-costs` (if custom-modal pattern)
+6. `Skill: policyengine-api-access`
+7. `Skill: policyengine-cloud-costs` (if custom-modal pattern)
 
 ## Input
 
@@ -144,19 +146,26 @@ in addition to whatever the description asks for:
      "Single filer, $25,000 benefit" and "Married couple, two children,
      $40,000 earnings" — not "average retiree", "typical family",
      "higher-income couple", or "modest income". The numbers ARE the label.
-   - **Hybrid compute (the NJ pattern), not a full precomputed grid.**
-     Presets ship as precomputed JSON (`public/data/example_households.json`)
-     so their charts render instantly; CUSTOM household inputs go to a
-     Modal spawn-and-poll backend (`scripts/modal_household_endpoint.py`,
-     `POST /household/start` → poll `/household/status/{id}`, per
-     nj-ctc-increase / CPID) that pins its own `policyengine[us]` stack — so the
-     calculator neither depends on the deployed API's version nor requires
-     precomputing every control combination. Plan a full precomputed grid
-     ONLY when the description forbids a backend; grid precompute burns
-     build time and caps the input space. For the `precomputed` data
-     pattern, sweep a grid over the lever inputs (one fast /calculate call
-     per grid slice — household-level, never a microsim) so every control
-     combination resolves to a precomputed point.
+   - **Precomputed presets, live custom inputs.** Presets ship as precomputed
+     JSON (`public/data/example_households.json`) so their charts render
+     instantly. CUSTOM household inputs go to the dashboard API's household
+     calculation through `@policyengine/api-client` (`policyengine-api`): one
+     calculation per user action, after a pause in typing, with every charted
+     input varied by `axes` in that same call. A Modal backend calculates them
+     only when Step 4 gives `custom-modal`. Presets come from the same place
+     as the custom inputs, so both use one model release. On
+     `policyengine-api`, the presets' precompute script calls the dashboard
+     API's household calculation (policyengine-api-access, "From a
+     dashboard's precompute script"). On `custom-modal`, it runs the
+     backend's pinned `policyengine` release in its own process, never the
+     dashboard API. Plan a full precomputed grid ONLY when the description
+     forbids live calculation; grid precompute burns build time and caps the
+     input space. For the `precomputed` data pattern, the precompute script
+     sweeps a grid over the lever inputs through the dashboard API's
+     household calculation (one calculation per grid slice, the slice's input
+     in `axes`, at most 15 a minute; household-level, never a microsim), or
+     with the pinned package when Step 4's model-version check allows it, so
+     every control combination resolves to a precomputed point.
 
 **Standard chrome (every dashboard, no exceptions):** the top of every page
 is the real PolicyEngine site header — ui-kit `PolicyEngineHeader` with the
@@ -232,11 +241,18 @@ Based on the description, identify:
 
 Choose from the data patterns defined in the `policyengine-tools` skill (loaded in the First step). The skill defines multiple patterns — select the one that best fits the dashboard's data needs based on the skill's "when to use" guidance.
 
-**Decision hierarchy (most preferred first):**
+**Decision order.** Check the four options in the skill's "Data and backend patterns", in order, for each feature the dashboard computes at run time. The dashboard takes the highest-numbered one any feature needs:
 
-1. `precomputed` / `precomputed-csv` — if parameter space is finite
-2. `policyengine-api` — if household-level calculations suffice (always prefer this for standard household tools)
-3. `custom-modal` — ONLY if microsimulation or custom reforms are needed
+1. `precomputed` / `precomputed-csv` — the inputs are a small, fixed set known before deploying
+2. `policyengine-api` — the dashboard API's four operations give each result as they are: household calculations (every charted input in `axes` in the same call), a parameter reform compared with current law across the economy, or country metadata (always prefer this for standard household tools). The page calls it through `@policyengine/api-client`, never api.policyengine.org (policyengine-api-access)
+3. A new dashboard operation — the page needs a Public API route outside those four, used unchanged, that other dashboards would want too. Say so in the plan, ask for it as policyengine-api-access describes, and plan `precomputed` until it ships
+4. `custom-modal` — ONLY for outputs specific to this dashboard that the Public API's economy result doesn't include and precomputing can't cover, or a dataset the Public API doesn't serve
+
+**Fix gaps where they are:** a structural reform goes into the country package as a contributed reform switched on by a `gov.contrib.…` parameter, and the plan uses `policyengine-api` once the Public API's model includes it; a general gap in the Public API is a change to the Public API. A server the dashboard needs for something other than PolicyEngine results (an LLM call, sending email) doesn't change its `data_pattern`.
+
+**The Public API's model version:** when it is older than the release the dashboard needs, run the check in the skill's "Data and backend patterns". If the `policyengine` package's model bundle is updated weekly, plan `policyengine-api` and say in the plan which model release it waits for. If it isn't, `custom-modal` is allowed, and a `precomputed` dashboard's script may run that release with the `policyengine` package; the plan says the check found no weekly updates and names the release the dashboard needs. It also says that once the check passes, a `custom-modal` dashboard moves to `policyengine-api`, and a `precomputed` one keeps its pattern while its script goes back to the dashboard API.
+
+**Not a reason for `custom-modal`:** a feature coming close to a rate limit (keep it within the budget in policyengine-api-access, and precompute what can't fit).
 
 Write the chosen pattern into `data_pattern` in plan.yaml using these identifiers:
 
@@ -244,7 +260,7 @@ Write the chosen pattern into `data_pattern` in plan.yaml using these identifier
 |---------------|----------------------|
 | Pattern A: Precomputed JSON | `precomputed` |
 | Pattern A: Precomputed CSV | `precomputed-csv` |
-| Pattern B: PolicyEngine API | `policyengine-api` |
+| Pattern B: the dashboard API (`@policyengine/api-client`) | `policyengine-api` |
 | Pattern C: Custom Modal backend (gateway + polling) | `custom-modal` |
 
 If the chosen pattern is `custom-modal`, the plan **must document why** the simpler patterns are insufficient. The plan must also specify which endpoints need long-running computation (microsimulation) vs. fast computation (household), as this determines worker timeout and memory allocation.
@@ -333,7 +349,7 @@ precomputed:  # for precomputed / precomputed-csv patterns
   output_files: ["public/data/results.json"]
 
 custom_modal:  # for custom-modal pattern
-  reason: "Needs microsimulation with custom CTC phase-out parameter"
+  reason: "Needs policyengine-us 2.118.4, newer than the Public API's model; Step 4's model-version check found no weekly bundle updates. Moves to policyengine-api once the check passes."
   policyengine_package: "policyengine[us]"  # top-level extra (>=5.0.1) — pins matched country model + certified bundle; microsim endpoints use pe.us.managed_microsimulation()
   architecture: gateway-polling  # Always use this — mirrors API v2 simulation service
   backend_files:  # Three-file structure (avoids module-level import crash-loop)

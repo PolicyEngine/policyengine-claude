@@ -72,10 +72,17 @@ publication router). Every human gate gets a deterministic resolution:
 16GB RAM — a `policyengine-us` national microsimulation OOM-kills the runner
 (verified 2026-07-13: exit 143 mid-build). Agents must NEVER run local
 microsimulations in headless mode. For `precomputed` data patterns, fetch
-impacts from the PolicyEngine API instead (create the policy via
-`POST /us/policy`, then the `/economy/{policy}/over/{baseline}` endpoints —
-the same server-side compute /analyze-policy uses), and scope the plan's
-metrics to what the API provides (budget, decile, poverty, winners/losers).
+impacts from www.policyengine.org's dashboard API instead, which needs no
+credential: create the policy with `POST https://www.policyengine.org/api/policies`,
+then read `GET https://www.policyengine.org/api/economy/compare` (query
+`country`, `policy`, `baseline`, `region`, `year`) with the polling rules in
+policyengine-api-access, "From a dashboard's precompute script": every 5
+seconds until its `status` is `ok`, giving up after 30 minutes, waiting 60
+seconds after a 429, and stopping at once on a failed comparison. Record a
+failed or timed-out comparison in the result file's `"warnings"`. The
+Public API computes it server-side. Scope the
+plan's metrics to what that comparison provides (budget, decile, poverty,
+winners/losers).
 Pass this constraint into the planner and backend-builder prompts verbatim.
 If a required metric genuinely cannot come from the API, drop it and record
 the omission in the result file's `"warnings"` rather than computing locally.

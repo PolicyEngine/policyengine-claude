@@ -9,8 +9,9 @@ description: |
   Triggers: new tool, standalone calculator, dashboard, embed in policyengine.org, multizone,
   basePath, assetPrefix, appZoneRoutes, Modal backend, scale to zero, vercel --scope
   policy-engine, ui-kit theme.css, recharts colors.
-  NOT for: developing policyengine.org itself (use policyengine-app) or token values
-  (policyengine-design).
+  NOT for: developing policyengine.org itself (use policyengine-app), token values
+  (policyengine-design), or how a page or backend reaches api.policyengine.org
+  (policyengine-api-access).
 metadata:
   category: apps
 ---
@@ -131,16 +132,85 @@ Never paste ad-hoc computed numbers into source. Always: Python script → data 
 shown (and arithmetic on those runs, such as reform minus baseline), plus clearly labelled
 external comparators; the pipeline and the frontend never scale, interpolate or extrapolate
 results to cover scenarios that were not run (see "Every reported number is a
-model run" in the `policyengine` skill). Pick by need:
+model run" in the `policyengine` skill).
+
+**Choosing a pattern.** Check these in order for each feature the page computes at run time,
+and take the first that fits. The dashboard uses the highest-numbered one any feature needs,
+so precomputed presets next to a free-input household calculator make it B.
+
+1. **A, precomputed files (`precomputed`, `precomputed-csv`)**, when the inputs are a small,
+   fixed set known before deploying: three named bills, five preset households, a few slider
+   steps.
+2. **B, the dashboard API (`policyengine-api`)**, when its four operations give each result as
+   they are: a household under current law or a parameter reform, with every charted input
+   varied by `axes` in the same call; a stored parameter reform compared with current law
+   across the economy, for one year and region, with the Public API's standard economy
+   result; storing a reform; country metadata.
+3. **A new dashboard operation** (policyengine-api-access), when the page needs a Public API
+   route outside those four, used unchanged, that other dashboards would want too, such as the
+   budget-window comparison. "Used unchanged" means the page sends inputs the route already
+   accepts and uses its answer as it comes back, with nothing computed on top. Precompute
+   until it ships.
+4. **C, the dashboard's own backend (`custom-modal`)**, for what is left: outputs specific to
+   this dashboard that the Public API's economy result doesn't include and precomputing can't
+   cover, such as custom income brackets for a reform the user designs, or a dataset the
+   Public API doesn't serve. It runs `policyengine` in its own process and doesn't call the
+   Public API, so it needs no Auth0 client.
+
+**Fix gaps where they are, not in a dashboard backend:**
+- A structural reform (new variables or formulas) goes into `policyengine-us` or
+  `policyengine-uk` as a contributed reform switched on by a `gov.contrib.…` parameter, as
+  many dashboards' reforms already are. The dashboard then uses B once the Public API's model
+  includes it.
+- Something general the Public API can't do yet, such as an output many dashboards would use
+  or a kind of parameter change it refuses, is a change to the Public API.
+- A server a page needs for something other than PolicyEngine results, such as an LLM call or
+  sending email, doesn't move its PolicyEngine calculations off the dashboard API.
+
+**When the Public API's model is older than the release the dashboard needs** (the dashboard
+API's metadata gives the Public API's model release as `result.version`), check whether the
+`policyengine` package's model bundle is updated weekly yet. The bundle is the
+`policyengine-us` and `policyengine-uk` versions each `policyengine` release pins in its
+`models` extra; the Public API runs the bundle its `policyengine` pin names. List the
+`policyengine` releases on PyPI in upload order and read each one's `requires_dist`
+(`https://pypi.org/pypi/policyengine/<version>/json`). The bundle is updated weekly when both
+hold:
+- in each of the four 7-day periods ending today, a release raised the pin for the
+  dashboard's country above every earlier release's pin (releases that lower it don't count,
+  such as a fix released from an older branch); and
+- the Public API keeps up: the release the dashboard API's metadata reports
+  (`result.version`) is no older than the highest pin among releases uploaded at least seven
+  days ago.
+
+What follows:
+- If the bundle is updated weekly, the model version is not a reason for C: build on B and say
+  which model release the dashboard waits for.
+- If it isn't, the dashboard may use C, running the release it needs, and a precomputed
+  dashboard's script may run that release with the `policyengine` package instead of calling
+  the dashboard API. The plan says the check found no weekly updates and names the release the
+  dashboard needs. Once the check passes, a dashboard on C moves to B, and a precomputed
+  dashboard stays precomputed while its script goes back to the dashboard API.
+
+**Not a reason for C:** a feature coming close to a rate limit. Keep it within the budget in
+policyengine-api-access, and precompute what can't fit.
+
+The patterns:
 
 - **A — Precomputed JSON/CSV**: finite scenarios (legislative trackers, static analyses). A
   `scripts/*.py` microsimulation writes to `public/data/`; the frontend imports it. Zero
   latency, works offline.
-- **B — v1 PolicyEngine API** (`https://api.policyengine.org`): household-level calc across
-  user-entered income/family/state. `POST /{country}/calculate` with a household payload, or
-  the stateful household/economy flow. Always up to date; network latency. See policyengine-api.
-- **C — Custom Modal backend**: only when the v1 API can't do it (society-wide microsim,
-  custom reform params, non-standard entities). Pattern below.
+- **B — the dashboard API** (`@policyengine/api-client`): household-level calc across
+  user-entered income/family/state, plus storing a reform and comparing it across the economy,
+  and country metadata. The page calls www.policyengine.org's dashboard API
+  (`POST /api/household/calculate`, `POST /api/policies`, `GET /api/economy/compare`,
+  `GET /api/metadata/{country}`), whose server adds PolicyEngine's credential and forwards to
+  the Public API. Always up to date; network latency. Never call the Public API
+  (api.policyengine.org) from the page. See policyengine-api-access for the operations,
+  polling, allowed origins and errors, and policyengine-api for the household shapes.
+- **C — Custom Modal backend**: number 4 above only, not structural reforms, which go into the
+  country package instead; the dashboard API's economy comparison already covers a parameter
+  reform's economy-wide effect. It runs `policyengine` in its own process and doesn't call the
+  Public API, so it needs no Auth0 client. Pattern below.
 
 ### Pattern C: Modal gateway + worker + polling
 
@@ -278,5 +348,6 @@ test, `bun run build`) before launch.
 
 - policyengine-app — the host site (policyengine.org) and its multizone registry
 - policyengine-design — ui-kit 0.4.0 components, tokens, chart colors, Plotly style
-- policyengine-api — v1/v2 API surfaces for Pattern B
+- policyengine-api-access — Pattern B's dashboard API, and server credentials for backends that call the Public API
+- policyengine-api — the Public API's endpoints and household shapes
 - policyengine (Python) — microsimulation for Pattern A/C data scripts

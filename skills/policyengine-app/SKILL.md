@@ -90,8 +90,17 @@ that add country-prefixed `*.vercel.app` rewrites to `vercel.json`. Full zone me
 
 ## Calling the API
 
-The legacy calculator calls the **v1 API** (`app/src/constants.ts`:
-`BASE_URL = 'https://api.policyengine.org'`). Verified shapes:
+The calculator's browser code reaches the **v1 API** (the Public API) through `BASE_URL`
+(`app/src/constants.ts`: `VITE_API_URL`, falling back to `https://api.policyengine.org`). The
+Public API is becoming callable only by PolicyEngine's servers, so those calls are moving to
+app.policyengine.org's own same-origin route, `/api/policyengine/{Public API path}`
+(`calculator-app/src/app/api/policyengine/[...path]/route.ts`). The route adds the calculator's
+server credential and forwards only the operations in `app/src/libs/publicApiRoute/allowList.ts`;
+anything else gets 404. New calculator code goes through that route, and an operation the app
+has not called before needs an allow-list entry in the same PR. Never add a browser call to
+api.policyengine.org. Dashboards use the website's dashboard API (`website/src/app/api/`)
+instead; see policyengine-api-access. Verified shapes, as Public API paths (through the route,
+each sits under `/api/policyengine`, for example `/api/policyengine/us/household/{id}`):
 
 - `GET  {BASE_URL}/{country}/household/{id}` and `.../household/{id}/policy/{policyId}` — household calc
 - `POST {BASE_URL}/{country}/household` — create household
@@ -131,6 +140,9 @@ policyengine-api skill for both APIs.
 | `website/src/data/appZoneRoutes.ts` | Registry of external Next zones |
 | `website/src/app/[countryId]/<slug>/page.tsx` | Server page + client split |
 | `app/src/constants.ts` | `BASE_URL` (v1 API) |
+| `app/src/libs/publicApiRoute/allowList.ts` | Operations app.policyengine.org's own route forwards to the Public API |
+| `website/src/app/api/` | The dashboard API dashboards call (policyengine-api-access) |
+| `packages/public-api-forwarding/` | Server-side forwarding both routes use: token cache, headers, errors |
 | `app/src/api/` and `app/src/api/v2/` | v1 fetchers and v2 alpha adapter |
 | `app/src/designTokens/` | Local JS token shim (re-exported by website) |
 | `vercel.json` (root) | Legacy config — do not add new zone rewrites here |
@@ -140,4 +152,5 @@ policyengine-api skill for both APIs.
 - policyengine-tools — standalone embedded tools + full multizone zone config
 - policyengine-design — ui-kit 0.4.0 components and design tokens
 - policyengine-api — v1 and v2 API surfaces
+- policyengine-api-access — the dashboard API and server credentials for the Public API
 - policyengine-writing — content and copy style

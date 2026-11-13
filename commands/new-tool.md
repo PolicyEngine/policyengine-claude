@@ -18,8 +18,8 @@ Ask the user for:
 2. **Countries** (us, uk, or both)
 3. **Data pattern** — how the tool gets model results:
    - **A) Precomputed** — Static JSON or CSV shipped with the app (best for finite parameter spaces)
-   - **B) PolicyEngine API** — Direct calls to `api.policyengine.org/us/calculate` (best for household calculators)
-   - **C) Custom Modal API** — Python serverless function with the top-level `policyengine[us]` / `policyengine[uk]` package (best when main API doesn't support needed variables/reforms)
+   - **B) Dashboard API** — The page calls www.policyengine.org's dashboard API through `@policyengine/api-client` (best for household calculators). Never call `api.policyengine.org` from the page: the Public API is becoming callable only by PolicyEngine's servers (policyengine-api-access skill)
+   - **C) Custom Modal API** — Python serverless function with the top-level `policyengine[us]` / `policyengine[uk]` package (only when the dashboard API doesn't cover it and precomputing can't: microsimulation output beyond its economy comparison, a dataset the Public API doesn't serve, or a newer model release while the `policyengine` package's model bundle isn't updated weekly; a structural reform goes into the country package as a contributed reform instead)
 4. **Brief description** of what the tool calculates
 
 ## Step 2: Create the project
@@ -156,27 +156,30 @@ export default function Home() {
 
 ## Step 4: Data pattern boilerplate
 
-> **Prefer Pattern B** (PolicyEngine API) unless the tool needs microsimulation,
-> custom reforms, or variables not in the API. Pattern C is significantly more complex
-> and should be the last resort.
+> **Prefer Pattern B** (the dashboard API) unless the tool needs outputs the dashboard API
+> can't give and precomputing can't cover. A structural reform goes into the country package
+> as a contributed reform rather than into a Pattern C backend, rate limits are not reasons
+> for Pattern C, and the Public API's model version is one only while the `policyengine`
+> package's model bundle isn't updated weekly (policyengine-tools, "Data and backend
+> patterns"). Pattern C is significantly more complex and should be the last resort.
 
 Based on the user's choice, add the appropriate data fetching code.
 
-**For Pattern B (PolicyEngine API):** Create `lib/api.js`:
+**For Pattern B (the dashboard API):** run `bun add @policyengine/api-client`, then create `lib/api.js`:
 
 ```js
-const API_BASE = "https://api.policyengine.org";
+import { createPolicyEngineApiClient } from "@policyengine/api-client";
 
-export async function calculate(countryId, household) {
-  const res = await fetch(`${API_BASE}/${countryId}/calculate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ household }),
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+// www.policyengine.org's dashboard API; its server adds PolicyEngine's credential.
+const policyengine = createPolicyEngineApiClient();
+
+export function calculate(countryId, household, signal) {
+  // Resolves with the calculated household; throws PolicyEngineApiError on a refusal.
+  return policyengine.calculateHousehold({ country: countryId, household }, { signal });
 }
 ```
+
+The dashboard API answers pages on the tool's www.policyengine.org path, on `localhost`, on the team's Vercel previews and on the tool's own `*.vercel.app` host once its rewrite is in `appZoneRoutes.ts`. The tool's `<project>-policy-engine.vercel.app` host is one of the team's Vercel hosts, so it is allowed from the first deploy, before the rewrite exists. A tool served from any other host, such as a Modal URL or a custom domain, needs an exact entry for that host in the allow list in `website/src/lib/dashboardApi/cors.ts` (PolicyEngine/policyengine-app-v2), deployed before its pages call the dashboard API; until then they get 403, which the browser shows as a CORS error. The policyengine-api-access skill has the other operations (policies, economy comparisons with polling, metadata) and the errors.
 
 **For Pattern C (Custom Modal API — gateway + polling):**
 
@@ -427,5 +430,6 @@ if jq -e '.scripts.test' package.json >/dev/null; then bun run test; fi
 
 See these skills for detailed guidance:
 - `policyengine-tools` — Embedding, hash sync, country detection, Vercel deployment patterns
+- `policyengine-api-access` — The dashboard API for Pattern B, and server credentials for a backend that calls the Public API
 - `policyengine-design` — Token reference
 - `policyengine-cloud-costs` — Backend defaults, declared exceptions, the README's running costs, and the cost checks

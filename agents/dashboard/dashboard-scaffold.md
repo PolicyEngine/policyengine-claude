@@ -31,7 +31,8 @@ Generates complete project structure from an approved `plan.yaml` into the curre
 1. `Skill: policyengine-tools`
 2. `Skill: policyengine-design`
 3. `Skill: policyengine-standards`
-4. `Skill: policyengine-cloud-costs` (if custom backend)
+4. `Skill: policyengine-api-access` (if `data_pattern: policyengine-api`, or a custom backend that calls the Public API)
+5. `Skill: policyengine-cloud-costs` (if custom backend)
 
 **CRITICAL: The `policyengine-tools` skill's "Required stack" defines the project structure, framework, and styling approach. Follow its specifications for project scaffolding. Where this document conflicts with the spec, THE SPEC WINS.**
 
@@ -65,8 +66,8 @@ Extract key values:
 **Verify data pattern choice:** If the plan specifies `custom-modal`, confirm it includes a `reason` explaining why simpler patterns are insufficient. The preferred order is:
 
 1. `precomputed` / `precomputed-csv` — if parameter space is finite
-2. `policyengine-api` — if household-level calculations suffice (prefer this for standard household tools)
-3. `custom-modal` — only if microsimulation or custom reforms are needed
+2. `policyengine-api` — if the dashboard API suffices (prefer this for standard household tools): the page calls www.policyengine.org's dashboard API through `@policyengine/api-client`, never api.policyengine.org (policyengine-api-access skill)
+3. `custom-modal` — only if other microsimulation output or structural reforms are needed
 
 If the plan uses `custom-modal` without a clear justification, flag this to the user before proceeding.
 
@@ -328,11 +329,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 #### API Client Stubs
 
-Generate `lib/api/types.ts` with TypeScript interfaces matching the plan's endpoint inputs/outputs.
+Generate `lib/api/types.ts` with TypeScript types matching the plan's endpoint inputs/outputs. Declare anything passed to `@policyengine/api-client` as a `type` alias, not an `interface`: the client takes `Record<string, unknown>`, which an interface is not assignable to.
 
 Generate `lib/api/fixtures.ts` with mock data from `plan.yaml`'s `stub_fixtures`.
 
-**For `policyengine-api` or API v2 alpha patterns**, generate `lib/api/client.ts` with synchronous fetch stubs that return fixture data.
+**For `policyengine-api` or API v2 alpha patterns**, generate `lib/api/client.ts` with synchronous fetch stubs that return fixture data. For `policyengine-api`, add `@policyengine/api-client` to the dependencies; the backend-builder replaces the stubs with calls through it (policyengine-api-access skill). Never generate a stub or constant that names api.policyengine.org.
 
 **For `custom-modal` pattern**, generate `lib/api/client.ts` with the gateway polling pattern:
 
