@@ -52,7 +52,7 @@ Most prior PE scores are reported as either single-year cost or 10-year cost, on
    - Population growth: +0.5-0.7%/yr.
    - Combined uprating factor: anchor_2023 × (1 + 0.035)^(2026-2023) ≈ × 1.10 for 2026 single-year.
 2. **Single-year vs 10-year normalization.** If the anchor is a 10-year score and our run is single-year, normalize the ANCHOR to a per-year average (divide by 10). Do NOT extrapolate our single-year to 10 years by multiplication — this is banned pipeline-wide because per-year cost evolves nontrivially over any window with baseline changes (see the 2026-07-01 std-ded case: yr1×10 understated the real 10-year by 10%). If a real 10-year comparison is required, re-run the microsim with `--horizon 10`.
-3. **Dataset version note.** Read `data_version` from the microsim result and record it in the output (`our_run_dataset` + `our_run_data_version`). Do NOT hardcode the dataset name. As of PE-US 1.729.0+ the deployed API's `enhanced_cps` name backs to `populace-us-2024`. Any prior PE score published on the older Enhanced CPS vintage may differ by 5-10% on refundable-credit costs; flag as a known direction-of-difference.
+3. **Dataset version note.** Read `dataset`, `data_version` and `model_version` from the microsim result and record them in the output (`our_run_dataset`, `our_run_data_version`, `our_run_model_version`). Preserve null fields; do NOT hardcode the dataset name. If the result's `dataset_matches_default` is false, say so in `normalization_notes`. If it reads null, note that the response cannot verify the dataset identity or release. Regional API runs can report a release without identifying the file, and budget-window results report neither. When the anchor ran on another dataset, such as an earlier PolicyEngine data release, record it in `anchor_dataset` and flag the dataset difference as a known source of disagreement.
 4. **CRITICAL — baseline-schedule alignment.** Most published anchors are scored against a specific current-law baseline at the time of writing. If the law has changed since (e.g., SALT cap raised to $40K by OBBBA in 2025, then snapping back to $10K in 2030), comparing our 2026 run (against the OBBBA $40K baseline) to a 2023 prior (against the TCJA $10K baseline) overstates the reform's incremental impact. The 2030 snap-back also means single-year extrapolation across 2030 is biased.
 
    **Required:** populate a `baseline_alignment` block in the output:
@@ -241,9 +241,9 @@ When triggering `calibration-diagnostics`, pass a precise signature so the diagn
     "anchor_dataset": "Enhanced CPS 2023",
     "anchor_static_or_dynamic": "static",
     "anchor_url": "https://policyengine.org/us/research/...",
-    "our_run_dataset": "populace-us-2024",        // read from result.data_version
-    "our_run_data_version": "populace-us-2024-cd-concept-budget-...",
-    "our_run_model_version": "1.745.0",           // read from result.model_version
+    "our_run_dataset": "populace_us_2024",        // read from result.dataset
+    "our_run_data_version": "populace-us-2024-spm-20260915",
+    "our_run_model_version": "2.2.1",             // read from result.model_version
     "our_run_mode": "api"
   },
   "next_stage": "write-report" | "diagnose-calibration"

@@ -40,6 +40,7 @@ path segment. Verified route surface (`policyengine_api/routes/`, `api.py`):
 | `/{country}/household/{id}/policy/{policyId}` | GET | household calc under a stored policy |
 | `/{country}/policy` · `/{country}/policy/{id}` | POST · GET | store / fetch a reform policy |
 | `/{country}/economy/{policyId}/over/{baselinePolicyId}` | GET | society-wide reform impact |
+| `/{country}/economy/{policyId}/over/{baselinePolicyId}/budget-window` | GET | budget impact for each year of a window |
 | `/{country}/simulation`, `/{country}/report` | POST/GET/PATCH | stored simulations / report output |
 | `/specification` | GET | OpenAPI spec (also `/liveness-check`, `/readiness-check`) |
 
@@ -48,13 +49,32 @@ finishes; the response is a status envelope, not the result on the first call:
 
 ```json
 { "status": "computing" | "ok" | "error",
-  "queue_position": 3, "average_time": 42.0,
-  "result": { /* deciles, poverty, budget… once status == "ok" */ },
-  "policyengine_bundle": { "model_version": "…", "data_version": "…" } }
+  "message": null,
+  "result": { /* budget, poverty, deciles…, plus model_version, data_version and
+                 policyengine_bundle, once status == "ok" */ } }
 ```
 
-Query params on the economy call: `region` (`us`, or a two-letter state code; `uk`, etc.),
-`time_period` (four-digit year), optional `dataset`. The household `POST /{country}/calculate`
+While the job runs, the envelope can also carry stage fields, such as `stage`, `progress`,
+`progress_max` and `segments`, and a failed run answers HTTP 502 with `status: "error"`.
+The budget-window route adds `progress`, the `completed_years`, `computing_years` and
+`queued_years` lists, and `error` to the same three keys. It reports a failed batch with HTTP 200,
+`status: "error"` and the reason in `error`, and answers HTTP 502 only when it can't reach
+the simulation service.
+
+Query params on the annual economy call: `region` (`us`, `state/ca` or a bare `ca`,
+`congressional_district/CA-01`, `uk`, etc.), `time_period` (a four-digit year that
+`/{country}/metadata` lists under `economy_options.time_period`), and optional `version`,
+`target` and `spm`; UK runs also take `breakdown`. The budget-window route takes `region`,
+`start_year`, `window_size`, `version`, `spm` and `target` (`general` only). The API answers
+HTTP 400 to any other parameter, such as `dataset`, or `breakdown` on the budget-window route.
+The executor selects data by region: national runs use the default that
+`/{country}/metadata` lists under `economy_options.datasets`, and US state and district
+runs use ACS-local data. The gateway's `policyengine_bundle` describes the app default,
+so it cannot identify a regional run's file. Preserve the worker's top-level `dataset`
+when supplied (UK local-area breakdowns include it), and its `data_version`; leave an
+unverified dataset name null. The budget-window result reports
+no dataset or model versions, so do not fill those from current metadata.
+The household `POST /{country}/calculate`
 body nests values by year (`{"people": {"you": {"age": {"2026": 40}}}, "households": {...}}`);
 read `/{country}/metadata` for the exact variable and entity names rather than guessing.
 

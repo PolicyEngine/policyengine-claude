@@ -95,9 +95,13 @@ The legacy calculator calls the **v1 API** (`app/src/constants.ts`:
 
 - `GET  {BASE_URL}/{country}/household/{id}` and `.../household/{id}/policy/{policyId}` — household calc
 - `POST {BASE_URL}/{country}/household` — create household
-- `GET  {BASE_URL}/{country}/economy/{reformPolicyId}/over/{baselinePolicyId}?region=&time_period=&dataset=`
-  — society-wide; **async/polling** (`status: "computing" | "ok" | "error"`, `queue_position`,
-  `average_time`, `result`)
+- `GET  {BASE_URL}/{country}/economy/{reformPolicyId}/over/{baselinePolicyId}?region=&time_period=`
+  (`app/src/api/societyWideCalculation.ts`, which adds `breakdown` for UK local-area runs)
+  — society-wide; **async/polling** (`status: "computing" | "ok" | "error"`, `message`,
+  `result`, and stage fields while computing)
+- `GET  {BASE_URL}/{country}/economy/{reformPolicyId}/over/{baselinePolicyId}/budget-window?region=&start_year=&window_size=`
+  (`app/src/api/budgetWindow.ts`) — budget impact for each year of a window, which the app
+  polls the same way
 
 An **api-v2 alpha adapter** lives in `app/src/api/v2/` (`API_V2_BASE_URL =
 process.env.NEXT_PUBLIC_API_V2_URL || 'https://v2.api.policyengine.org'`, endpoints per
